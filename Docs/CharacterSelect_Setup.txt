@@ -4,16 +4,33 @@
 ══════════════════════════════════════════════════════════════════════════════
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  SECTION 1 — ADD SCENES TO BUILD SETTINGS
+  SECTION 1 — CREATE YOUR SCENES FIRST
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-1. Go to File → Build Settings
-2. Click "Add Open Scenes" for each scene, OR drag scenes from the Project window
-3. Order them like this (index matters):
-     0 — MainMenu
-     1 — CharacterSelect
-     2 — SampleScene  (your game world)
-4. Close Build Settings
+You need to create two new scenes before registering anything.
+
+Step 1a — Create MainMenu scene:
+  1. File → New Scene
+  2. A popup appears — pick "Empty" and click Create
+  3. File → Save As
+  4. Navigate to  Assets/Scenes/
+  5. Name it  MainMenu  and click Save
+
+Step 1b — Create CharacterSelect scene:
+  1. File → New Scene → Empty → Create
+  2. File → Save As → Assets/Scenes/ → name it  CharacterSelect → Save
+
+Step 1c — Register all three scenes in Unity 6:
+  1. File → Build Profiles
+     (Unity 6 renamed "Build Settings" to "Build Profiles")
+  2. On the left side click  "Scene List"
+  3. Click the  +  button to add scenes, OR drag them from the Project window
+  4. Add them in this order — the number on the left must match:
+       0 — Assets/Scenes/MainMenu
+       1 — Assets/Scenes/CharacterSelect
+       2 — Assets/Scenes/SampleScene
+  5. To reorder — drag the scenes up/down by the handle on the left
+  6. Close Build Profiles
 
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -33,19 +50,23 @@ This keeps the spinning character visible only to the preview camera.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 1. In the Project window, right-click inside  Assets/UI/
-2. Create → Render Texture
+2. Create → Rendering → Render Texture
+   (Unity 6 nests it under Rendering — it's not at the top level)
 3. Name it:  CharacterPreviewRT
 4. In the Inspector set:  Width = 512,  Height = 512
 5. Leave everything else as default
 
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  SECTION 4 — CREATE THE CharacterSelect SCENE
+  SECTION 4 — OPEN THE CharacterSelect SCENE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-1. File → New Scene → select "Basic (Built-in)"
-2. File → Save As → save to  Assets/Scenes/CharacterSelect.unity
-3. Delete the default "Main Camera" that appears — we'll add a dedicated one below
+You already created this scene in Section 1. Now open it:
+
+1. In the Project window go to  Assets/Scenes/
+2. Double-click  CharacterSelect  to open it
+3. In the Hierarchy you may see a default camera — delete it
+   (we create a dedicated preview camera in Section 5)
 
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

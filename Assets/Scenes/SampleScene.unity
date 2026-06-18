@@ -5820,6 +5820,132 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 721466249}
   m_CullTransparentMesh: 1
+--- !u!1 &735364174
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 735364175}
+  - component: {fileID: 735364179}
+  - component: {fileID: 735364178}
+  - component: {fileID: 735364177}
+  - component: {fileID: 735364176}
+  m_Layer: 0
+  m_Name: RevealAura
+  m_TagString: RevealAura
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &735364175
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 735364174}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.59, z: 0}
+  m_LocalScale: {x: 39.863815, y: -0.75150555, z: 39.863815}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1223777328}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &735364176
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 735364174}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5b71959f3c8536a42ad603506365a991, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RevealAura
+--- !u!64 &735364177
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 735364174}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 5
+  m_Convex: 1
+  m_CookingOptions: 30
+  m_Mesh: {fileID: 10206, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!23 &735364178
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 735364174}
+  m_Enabled: 0
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: e20c1500f631f3348af710a48fb8d790, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &735364179
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 735364174}
+  m_Mesh: {fileID: 10206, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1001 &753498645
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -10337,6 +10463,883 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1192637399}
   m_Mesh: {fileID: 10206, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1001 &1223777326
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: -8679921383154817045, guid: 8f50577b41958994daa0685f4b38dcf6, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 67.41
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 8f50577b41958994daa0685f4b38dcf6, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.94
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 8f50577b41958994daa0685f4b38dcf6, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 67.85
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 8f50577b41958994daa0685f4b38dcf6, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.90832806
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 8f50577b41958994daa0685f4b38dcf6, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 8f50577b41958994daa0685f4b38dcf6, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0.41825846
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 8f50577b41958994daa0685f4b38dcf6, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 8f50577b41958994daa0685f4b38dcf6, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 8f50577b41958994daa0685f4b38dcf6, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 49.449
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 8f50577b41958994daa0685f4b38dcf6, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 8f50577b41958994daa0685f4b38dcf6, type: 3}
+      propertyPath: m_Name
+      value: Sentinal
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 8f50577b41958994daa0685f4b38dcf6, type: 3}
+      propertyPath: m_TagString
+      value: Player
+      objectReference: {fileID: 0}
+    - target: {fileID: 5866666021909216657, guid: 8f50577b41958994daa0685f4b38dcf6, type: 3}
+      propertyPath: m_Controller
+      value: 
+      objectReference: {fileID: 9100000, guid: 218529b102eab3c44847c505d2cfd011, type: 2}
+    - target: {fileID: 5866666021909216657, guid: 8f50577b41958994daa0685f4b38dcf6, type: 3}
+      propertyPath: m_ApplyRootMotion
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 8f50577b41958994daa0685f4b38dcf6, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 735364175}
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 8f50577b41958994daa0685f4b38dcf6, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1223777338}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 8f50577b41958994daa0685f4b38dcf6, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1223777337}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 8f50577b41958994daa0685f4b38dcf6, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1223777336}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 8f50577b41958994daa0685f4b38dcf6, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1223777335}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 8f50577b41958994daa0685f4b38dcf6, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1223777334}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 8f50577b41958994daa0685f4b38dcf6, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1223777333}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 8f50577b41958994daa0685f4b38dcf6, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1223777332}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 8f50577b41958994daa0685f4b38dcf6, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1223777331}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 8f50577b41958994daa0685f4b38dcf6, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1223777330}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 8f50577b41958994daa0685f4b38dcf6, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1223777329}
+  m_SourcePrefab: {fileID: 100100000, guid: 8f50577b41958994daa0685f4b38dcf6, type: 3}
+--- !u!1 &1223777327 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 8f50577b41958994daa0685f4b38dcf6, type: 3}
+  m_PrefabInstance: {fileID: 1223777326}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &1223777328 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 8f50577b41958994daa0685f4b38dcf6, type: 3}
+  m_PrefabInstance: {fileID: 1223777326}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1223777329
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1223777327}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3ca93769a4cf1824696ebd38dfb364db, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CastAnimator
+--- !u!114 &1223777330
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1223777327}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 22a55f7bd07b7464f8b54a468f482ad0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AbilityBar
+  caster: {fileID: 0}
+  ability1: {fileID: 0}
+  ability2: {fileID: 0}
+  ability3: {fileID: 0}
+  ability4: {fileID: 0}
+  cooldown1: {fileID: 0}
+  cooldown2: {fileID: 0}
+  cooldown3: {fileID: 0}
+  cooldown4: {fileID: 0}
+  keyLabel1: {fileID: 0}
+  keyLabel2: {fileID: 0}
+  keyLabel3: {fileID: 0}
+  keyLabel4: {fileID: 0}
+  spellbookPanel: {fileID: 0}
+--- !u!114 &1223777331
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1223777327}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f31fa88ea071f714f8ec8e803a2a2888, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AbilityCaster
+  cam: {fileID: 0}
+  inventory: {fileID: 0}
+  castAnimator: {fileID: 0}
+  castDelay: 0.3
+  minimumAimDistance: 1
+  spellbook:
+  - abilityName: Deploy Turret
+    shape: 0
+    category: 2
+    range: 10
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 1.5
+    spawnTurret: 1
+    turretPrefab: {fileID: 0}
+    turretItem: {fileID: 0}
+    cooldown: 6
+    icon: {fileID: 0}
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 10
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 0}
+    hitVFX: {fileID: 0}
+    shieldAbsorb: 0
+    shieldDuration: 0
+  - abilityName: Dark Blast
+    shape: 1
+    category: 0
+    range: 8
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 1.5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    turretItem: {fileID: 0}
+    cooldown: 3
+    icon: {fileID: 0}
+    chargeable: 1
+    maxChargeTime: 1.5
+    damage: 10
+    maxChargeDamage: 30
+    maxChargeSizeMultiplier: 1.6
+    targetTag: Enemy
+    chargedTint: {r: 0.4, g: 0.1, b: 0.8, a: 0.9}
+    fireVisual: 0
+    castVFX: {fileID: 0}
+    hitVFX: {fileID: 0}
+    shieldAbsorb: 0
+    shieldDuration: 0
+  - abilityName: Healing Pulse
+    shape: 0
+    category: 1
+    range: 6
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 3
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    turretItem: {fileID: 0}
+    cooldown: 5
+    icon: {fileID: 0}
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 10
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 0}
+    hitVFX: {fileID: 0}
+    shieldAbsorb: 0
+    shieldDuration: 0
+  - abilityName: Holy Beam
+    shape: 2
+    category: 0
+    range: 10
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 1.5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    turretItem: {fileID: 0}
+    cooldown: 4
+    icon: {fileID: 0}
+    chargeable: 1
+    maxChargeTime: 1.5
+    damage: 15
+    maxChargeDamage: 50
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 0}
+    hitVFX: {fileID: 0}
+    shieldAbsorb: 0
+    shieldDuration: 0
+  - abilityName: Fireball
+    shape: 0
+    category: 0
+    range: 12
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 2
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    turretItem: {fileID: 0}
+    cooldown: 4
+    icon: {fileID: 0}
+    chargeable: 1
+    maxChargeTime: 1.5
+    damage: 20
+    maxChargeDamage: 45
+    maxChargeSizeMultiplier: 2
+    targetTag: Enemy
+    chargedTint: {r: 1, g: 0.4, b: 0.05, a: 0.9}
+    fireVisual: 0
+    castVFX: {fileID: 0}
+    hitVFX: {fileID: 0}
+    shieldAbsorb: 0
+    shieldDuration: 0
+  - abilityName: Lightning Strike
+    shape: 0
+    category: 0
+    range: 10
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 2.5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    turretItem: {fileID: 0}
+    cooldown: 5
+    icon: {fileID: 0}
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 35
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 0}
+    hitVFX: {fileID: 0}
+    shieldAbsorb: 0
+    shieldDuration: 0
+  - abilityName: Ice Nova
+    shape: 0
+    category: 0
+    range: 5
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    turretItem: {fileID: 0}
+    cooldown: 6
+    icon: {fileID: 0}
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 15
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 0}
+    hitVFX: {fileID: 0}
+    shieldAbsorb: 0
+    shieldDuration: 0
+  - abilityName: Magic Shield
+    shape: 0
+    category: 2
+    range: 0
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 1
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    turretItem: {fileID: 0}
+    cooldown: 8
+    icon: {fileID: 0}
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 10
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 0}
+    hitVFX: {fileID: 0}
+    shieldAbsorb: 50
+    shieldDuration: 5
+  equippedIndices: 00000000010000000200000003000000
+  _equippedAbilities:
+  - abilityName: Ability
+    shape: 0
+    category: 0
+    range: 4
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 1.5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    turretItem: {fileID: 0}
+    cooldown: 3
+    icon: {fileID: 0}
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 10
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 0}
+    hitVFX: {fileID: 0}
+    shieldAbsorb: 0
+    shieldDuration: 0
+  - abilityName: Ability
+    shape: 0
+    category: 0
+    range: 4
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 1.5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    turretItem: {fileID: 0}
+    cooldown: 3
+    icon: {fileID: 0}
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 10
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 0}
+    hitVFX: {fileID: 0}
+    shieldAbsorb: 0
+    shieldDuration: 0
+  - abilityName: Ability
+    shape: 0
+    category: 0
+    range: 4
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 1.5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    turretItem: {fileID: 0}
+    cooldown: 3
+    icon: {fileID: 0}
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 10
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 0}
+    hitVFX: {fileID: 0}
+    shieldAbsorb: 0
+    shieldDuration: 0
+  - abilityName: Ability
+    shape: 0
+    category: 0
+    range: 4
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 1.5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    turretItem: {fileID: 0}
+    cooldown: 3
+    icon: {fileID: 0}
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 10
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 0}
+    hitVFX: {fileID: 0}
+    shieldAbsorb: 0
+    shieldDuration: 0
+--- !u!114 &1223777332
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1223777327}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e475180d233ff824b856c548c43875db, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Stats
+  characterName: BrbMuffins
+  maxHealth: 100
+  currentHealth: 100
+  attackPower: 10
+  armor: 10
+  isDead: 0
+--- !u!114 &1223777333
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1223777327}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d2296ad32ad777a4f8d824b9b1712049, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Inventory
+  slotCount: 10
+  items: []
+--- !u!114 &1223777334
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1223777327}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f31fa88ea071f714f8ec8e803a2a2888, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AbilityCaster
+  cam: {fileID: 330585545}
+  inventory: {fileID: 0}
+  castAnimator: {fileID: 0}
+  castDelay: 0.3
+  minimumAimDistance: 1
+  spellbook:
+  - abilityName: Deploy Turret
+    shape: 0
+    category: 2
+    range: 10
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 1.5
+    spawnTurret: 1
+    turretPrefab: {fileID: 0}
+    turretItem: {fileID: 0}
+    cooldown: 6
+    icon: {fileID: 0}
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 10
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 0}
+    hitVFX: {fileID: 0}
+    shieldAbsorb: 0
+    shieldDuration: 0
+  - abilityName: Dark Blast
+    shape: 1
+    category: 0
+    range: 8
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 1.5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    turretItem: {fileID: 0}
+    cooldown: 3
+    icon: {fileID: 0}
+    chargeable: 1
+    maxChargeTime: 1.5
+    damage: 10
+    maxChargeDamage: 30
+    maxChargeSizeMultiplier: 1.6
+    targetTag: Enemy
+    chargedTint: {r: 0.4, g: 0.1, b: 0.8, a: 0.9}
+    fireVisual: 0
+    castVFX: {fileID: 0}
+    hitVFX: {fileID: 0}
+    shieldAbsorb: 0
+    shieldDuration: 0
+  - abilityName: Healing Pulse
+    shape: 0
+    category: 1
+    range: 6
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 3
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    turretItem: {fileID: 0}
+    cooldown: 5
+    icon: {fileID: 0}
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 10
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 0}
+    hitVFX: {fileID: 0}
+    shieldAbsorb: 0
+    shieldDuration: 0
+  - abilityName: Holy Beam
+    shape: 2
+    category: 0
+    range: 10
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 1.5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    turretItem: {fileID: 0}
+    cooldown: 4
+    icon: {fileID: 0}
+    chargeable: 1
+    maxChargeTime: 1.5
+    damage: 15
+    maxChargeDamage: 50
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 0}
+    hitVFX: {fileID: 0}
+    shieldAbsorb: 0
+    shieldDuration: 0
+  - abilityName: Fireball
+    shape: 0
+    category: 0
+    range: 12
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 2
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    turretItem: {fileID: 0}
+    cooldown: 4
+    icon: {fileID: 0}
+    chargeable: 1
+    maxChargeTime: 1.5
+    damage: 20
+    maxChargeDamage: 45
+    maxChargeSizeMultiplier: 2
+    targetTag: Enemy
+    chargedTint: {r: 1, g: 0.4, b: 0.05, a: 0.9}
+    fireVisual: 0
+    castVFX: {fileID: 0}
+    hitVFX: {fileID: 0}
+    shieldAbsorb: 0
+    shieldDuration: 0
+  - abilityName: Lightning Strike
+    shape: 0
+    category: 0
+    range: 10
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 2.5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    turretItem: {fileID: 0}
+    cooldown: 5
+    icon: {fileID: 0}
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 35
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 0}
+    hitVFX: {fileID: 0}
+    shieldAbsorb: 0
+    shieldDuration: 0
+  - abilityName: Ice Nova
+    shape: 0
+    category: 0
+    range: 5
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    turretItem: {fileID: 0}
+    cooldown: 6
+    icon: {fileID: 0}
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 15
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 0}
+    hitVFX: {fileID: 0}
+    shieldAbsorb: 0
+    shieldDuration: 0
+  - abilityName: Magic Shield
+    shape: 0
+    category: 2
+    range: 0
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 1
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    turretItem: {fileID: 0}
+    cooldown: 8
+    icon: {fileID: 0}
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 10
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 0}
+    hitVFX: {fileID: 0}
+    shieldAbsorb: 50
+    shieldDuration: 5
+  equippedIndices: 00000000010000000200000003000000
+  _equippedAbilities:
+  - abilityName: Ability
+    shape: 0
+    category: 0
+    range: 4
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 1.5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    turretItem: {fileID: 0}
+    cooldown: 3
+    icon: {fileID: 0}
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 10
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 0}
+    hitVFX: {fileID: 0}
+    shieldAbsorb: 0
+    shieldDuration: 0
+  - abilityName: Ability
+    shape: 0
+    category: 0
+    range: 4
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 1.5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    turretItem: {fileID: 0}
+    cooldown: 3
+    icon: {fileID: 0}
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 10
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 0}
+    hitVFX: {fileID: 0}
+    shieldAbsorb: 0
+    shieldDuration: 0
+  - abilityName: Ability
+    shape: 0
+    category: 0
+    range: 4
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 1.5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    turretItem: {fileID: 0}
+    cooldown: 3
+    icon: {fileID: 0}
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 10
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 0}
+    hitVFX: {fileID: 0}
+    shieldAbsorb: 0
+    shieldDuration: 0
+  - abilityName: Ability
+    shape: 0
+    category: 0
+    range: 4
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 1.5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    turretItem: {fileID: 0}
+    cooldown: 3
+    icon: {fileID: 0}
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 10
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 0}
+    hitVFX: {fileID: 0}
+    shieldAbsorb: 0
+    shieldDuration: 0
+--- !u!114 &1223777335
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1223777327}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 932cce511b66cb3489da31f0adac5688, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement
+  moveSpeed: 5
+  sprintSpeed: 9
+  jumpForce: 6
+  rotationSpeed: 12
+  cam: {fileID: 330585545}
+--- !u!114 &1223777336
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1223777327}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8263a93312d773144b9336db4bacdc95, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerMountBike
+  motorcycle: {fileID: 664511942}
+  cameraFollow: {fileID: 330585548}
+--- !u!54 &1223777337
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1223777327}
+  serializedVersion: 5
+  m_Mass: 1.2
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 0
+  m_Interpolate: 1
+  m_Constraints: 80
+  m_CollisionDetection: 0
+--- !u!65 &1223777338
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1223777327}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.9102936, y: 1.943965, z: 1}
+  m_Center: {x: -0.04485321, y: 0.9614587, z: 0}
 --- !u!1 &1238541968
 GameObject:
   m_ObjectHideFlags: 0
@@ -17159,6 +18162,7 @@ SceneRoots:
   - {fileID: 681243022}
   - {fileID: 670231186}
   - {fileID: 2140736470}
+  - {fileID: 1223777326}
   - {fileID: 364677338}
   - {fileID: 118820136}
   - {fileID: 1335695023}
