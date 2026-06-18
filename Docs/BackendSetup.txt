@@ -326,40 +326,269 @@ In your GameManager.Start() (or NetworkManager equivalent):
 
 
 -----------------------------------------------------------
-PART 8 — VFX ASSET REFERENCE
+PART 8 — VFX ASSET REFERENCE (COMPLETE ABILITY MAPPING)
 -----------------------------------------------------------
 
 brbmuffins Technologies Particle Pack
   Path: Assets/brbmuffins Technologies Particle Pack/
-  Key prefabs used:
-    SmallExplosion.prefab        → Shock Mine blast
-    ElectricalSparks.prefab      → Shock Mine idle / Arc Lance
-    EnergyExplosion.prefab       → Kinetic Reversal release
-    SparksEffect.prefab          → Breach Slam, Nanite Swarm
-    EarthShatter.prefab          → Breach Slam ground hit
-    Steam.prefab                 → Siege Mode anchor
-    PlasmaExplosionEffect.prefab → Singularity burst
-    Dissolve.prefab              → Phase Shift depart
-    DissolveSolidHorizontal.prefab → Phase Cloak enter/exit
-    Plazma sphere.prefab         → Phase Shift arrive
-    GroundFog.prefab             → Null Field, Shadow Relay
+
+  ElectricalSparks.prefab
+    → Shock Mine idle (looping)
+    → Arc Lance chain bolts between targets
+    → Overdrive cast aura (tint yellow/orange)
+    → System Overload turret boost (heavy loop effect)
+    → Defibrillator revive shock effect
+
+  SmallExplosion.prefab
+    → Shock Mine detonation blast
+
+  EnergyExplosion.prefab
+    → Kinetic Reversal release burst (tint blue)
+    → Purge Protocol cleanse explosion (tint white/bright)
+
+  SparksEffect.prefab
+    → Breach Slam impact sparks
+    → Nanite Swarm trail effect (tint green)
+
+  EarthShatter.prefab
+    → Breach Slam ground rupture
+
+  Steam.prefab
+    → Siege Mode anchor point (idle steam)
+
+  PlasmaExplosionEffect.prefab
+    → Singularity burst at pull conclusion
+    → Collapse debuff explosion (dark plasma variant)
+
+  Dissolve.prefab
+    → Phase Shift departure fade
+
+  DissolveSolidHorizontal.prefab
+    → Phase Cloak stealth enter (forward)
+    → Phase Cloak stealth exit (reverse)
+
+  Plazma sphere.prefab
+    → Phase Shift arrival impact
+    → Magnetize pull vortex center (tint cyan)
+
+  GroundFog.prefab
+    → Null Field containment zone (tint purple, looping)
+    → Shadow Relay placement aura (dark variant)
+
 
 brbmuffins Dark Arts Fantasy Pack
   Path: Assets/brbmuffins Dark Arts/Fantasy Pack/Prefabs/
-  Key prefabs used:
-    Healing buff.prefab          → Restoration Beacon, Nanite Swarm
-    Shield buff.prefab           → Kinetic Reversal absorb,
-                                   Siege Mode aura, Bastion Node
-    Magic circle.prefab          → Restoration Beacon idle
-    Magic buff.prefab            → Phase Relay
-    Death magic circle.prefab    → Singularity pull phase
-    Glowing orbs.prefab          → Transfer Protocol orb on ally
-    Leaves shield.prefab         → Iron Tether anchor (tint blue)
-    Mana wall.prefab             → Last Bastion wall
+
+  Healing buff.prefab
+    → Restoration Beacon pulse heal (looping)
+    → Nanite Swarm healing trail (tint green)
+    → Field Repair deployable heal flash
+    → Defibrillator revival heal burst
+    → Adaptive Shield active growth (tint blue overlay)
+
+  Shield buff.prefab
+    → Kinetic Reversal absorb gain (tint blue)
+    → Siege Mode aura around Guardian (tint cyan)
+    → Bastion Node placement shield aura (tint blue)
+    → Adaptive Shield initial shield grant + growth
+
+  Magic circle.prefab
+    → Restoration Beacon idle circle (looping)
+    → Magnetize pull vortex circle (tint cyan, looping)
+
+  Magic buff.prefab
+    → Phase Relay placement buff aura (tint purple)
+    → Drone Command target lock indicator (tint cyan, on enemy)
+
+  Death magic circle.prefab
+    → Singularity pull phase (idle pull aura)
+    → Collapse dark circle (debuff consumption visual)
+
+  Glowing orbs.prefab
+    → Transfer Protocol tether orbs (tint green, floating on ally)
+
+  Leaves shield.prefab
+    → Iron Tether anchor on enemy (tint blue/grey, child of target)
+
+  Mana wall.prefab
+    → Last Bastion wall structure (child of ability GameObject)
+
+
+------- QUICK REFERENCE BY ABILITY -------
+
+ENGINEER
+  Shock Mine        → SmallExplosion (blast) + ElectricalSparks (idle)
+  Overdrive         → ElectricalSparks (yellow/orange tint on caster)
+  Drone Command     → Magic buff.prefab (cyan, on target enemy)
+  Field Repair      → Healing buff.prefab (green tint on deployable)
+  System Overload   → ElectricalSparks (heavy loop on turret)
+
+GUARDIAN
+  Kinetic Reversal  → Shield buff (absorb) + EnergyExplosion (release)
+  Magnetize         → Magic circle + Plazma sphere (cyan pull vortex)
+  Breach Slam       → SparksEffect (trail) + EarthShatter (ground)
+  Siege Mode        → Steam (anchor) + Shield buff (aura, cyan)
+  Iron Tether       → Leaves shield.prefab (on enemy, blue/grey)
+  Last Bastion      → Mana wall.prefab (wall structure)
+
+PHASER
+  Phase Shift       → Dissolve (depart) + Plazma sphere (arrive)
+  Singularity       → Death magic circle (pull) + PlasmaExplosionEffect (burst)
+  Arc Lance         → ElectricalSparks (chain bolts between targets)
+  Event Horizon     → Death magic circle (pull) + PlasmaExplosionEffect (burst, Exposed debuff)
+
+MEDIC
+  Transfer Protocol → Glowing orbs.prefab (green tint, on allies)
+  Nanite Swarm      → Healing buff (trail, green) + SparksEffect (swarm)
+  Defibrillator     → ElectricalSparks (shock) + Healing buff (revival)
+  Adaptive Shield   → Shield buff (initial + growth aura, blue)
+  Purge Protocol    → EnergyExplosion (white/bright cleanse burst)
+  System Rollback   → Dissolve (reversed temporal rewind effect)
+  Restoration Beacon → Magic circle (idle) + Healing buff (pulse, green)
+
+WRAITH
+  Phase Cloak       → DissolveSolidHorizontal (enter + exit reverse)
+  Null Field        → GroundFog.prefab (purple tint, looping zone)
+  Collapse          → PlasmaExplosionEffect + Death magic circle (dark plasma)
+  Shadow Relay      → GroundFog.prefab (dark variant aura)
 
 
 -----------------------------------------------------------
-PART 9 — COMPILER / DEPENDENCY NOTES
+PART 9 — ANIMATION SETUP
+-----------------------------------------------------------
+
+Animator Controller Setup (Unity 6.4)
+
+Each player character needs an Animator with the following trigger parameters:
+  • CastDamage  — damage abilities (primary attacks)
+  • CastHeal    — healing abilities (support/restoration)
+  • CastSupport — utility abilities (buffs, debuffs, control)
+
+Animation clips available from brbmuffins Moves - Human Spellcasting Pack:
+  Path: Assets/brbmuffins Moves/brbmuffins Human Animations/Animations/
+
+  MALE and FEMALE variants available in:
+    Idles/
+      • CastingIdle01.fbx          — idle with wand/staff raised
+    Combat/Spellcasting/
+      • CastingEnter01.fbx         — enter casting stance
+      • CastingExit01.fbx          — exit casting stance
+      • CastingDamage01.fbx        — damage cast animation
+    Combat/Spellcasting/MagicAttacks/
+      • Directional/ variants      — attacks aimed in direction
+        (Load, Cast versions available)
+      • Omnidirectional/ variants  — attacks from caster position
+        (Load, Cast versions available)
+
+Animator States & Transitions
+
+In your AnimatorController, create these states:
+  1. Idle              (blend between CastingIdle + movement animations)
+  2. CastDamage State  (triggered by CastDamage)
+     ├─ animation: CastingDamage01.fbx or MagicAttack Cast clip
+     ├─ duration: 0.8s typical
+     └─ transition back to Idle on exit
+  3. CastHeal State    (triggered by CastHeal)
+     ├─ animation: CastingDamage01.fbx (can reuse, or use Omnidirectional_Load)
+     ├─ duration: 1.0s typical (healing takes slightly longer)
+     └─ transition back to Idle on exit
+  4. CastSupport State (triggered by CastSupport)
+     ├─ animation: CastingEnter01.fbx + CastingIdle01.fbx loop
+     ├─ duration: variable by ability (0.5-2.0s)
+     └─ transition back to Idle on exit
+
+Timing Notes for AbilityCaster
+  The CastAnimator.PlayCast(AbilityCategory) triggers the animator state.
+  Ability damage hits on AbilityCaster.FinalizeCast() which can be synced to
+  animation speed via AnimationEvent callbacks in Unity Editor:
+    1. Select animation clip in inspector
+    2. Add AnimationEvent at 60% animation completion
+    3. Call a method to confirm damage is dealt
+
+Class-Specific Animation Overrides (Optional)
+
+For character-specific casting poses, create Animator Override Controllers:
+  • Engineer:  use rifle/tech stance animations
+  • Guardian:  use shield/heavy armor stance
+  • Phaser:    use ethereal/phase animations
+  • Medic:     use healing/support stance (arms open)
+  • Wraith:    use stealth/shadow animations (low profile)
+
+All can reuse the core CastDamage/CastHeal/CastSupport state machine with
+different animation clips per class.
+
+
+-----------------------------------------------------------
+PART 10 — ABILITY ICON SETUP
+-----------------------------------------------------------
+
+Icon Asset Pack: brbmuffins Free RPG Icons
+  Path: Assets/brbmuffins Icons/
+
+Available icon categories (5 variants each):
+  • Fire_1 through Fire_5          → damage/offensive spells
+  • Cold_1 through Cold_5          → slow/freeze abilities
+  • Holy_1 through Holy_5          → healing/protection spells
+  • Dark_1 through Dark_5          → debuffs/single-target damage
+  • Nature_1 through Nature_5      → area effects/swarms
+  • Wind_1 through Wind_5          → speed/movement abilities
+  • Water_1 through Water_5        → shields/defense
+  • Earth_1 through Earth_5        → crowd control/terrain
+  • Buff_1 through Buff_5          → temporary stat boosts
+  • Debuff_1 through Debuff_5      → negative status effects
+  • Lightning_1 through Lightning_5 → electric/shock abilities
+
+Recommended Icon Assignments by Ability
+
+ENGINEER (Tech/Electrical theme → Fire, Lightning, Buff categories)
+  • Shock Mine         → Lightning_1 (explosive shock)
+  • Overdrive          → Fire_3 (power surge) or Buff_1 (buff)
+  • Drone Command      → Buff_2 (targeting buff)
+  • Field Repair       → Holy_2 (healing)
+  • System Overload    → Fire_4 (overload)
+
+GUARDIAN (Defense/Control theme → Water, Earth, Buff categories)
+  • Kinetic Reversal   → Water_2 (shield reflect)
+  • Magnetize          → Earth_3 (magnetism/pull)
+  • Breach Slam        → Earth_4 (ground slam)
+  • Siege Mode         → Water_4 (defensive stance)
+  • Iron Tether        → Earth_2 (restraint)
+  • Last Bastion       → Water_5 (last stand/wall)
+
+PHASER (Spatial/Damage theme → Lightning, Dark, Wind categories)
+  • Phase Shift        → Wind_3 (teleport/movement)
+  • Singularity        → Dark_3 (gravity pull)
+  • Arc Lance          → Lightning_3 (electric chain)
+  • Event Horizon      → Dark_4 (void/exposed debuff)
+
+MEDIC (Healing/Support theme → Holy, Nature, Buff categories)
+  • Transfer Protocol  → Holy_3 (ally buff transfer)
+  • Nanite Swarm       → Nature_2 (healing swarm)
+  • Defibrillator      → Lightning_4 (revive shock)
+  • Adaptive Shield    → Water_3 (growing shield)
+  • Purge Protocol     → Debuff_1 (cleanse)
+  • System Rollback    → Wind_5 (temporal rewind)
+  • Restoration Beacon → Holy_4 (healing aura)
+
+WRAITH (Stealth/Damage theme → Dark, Wind, Debuff categories)
+  • Phase Cloak        → Wind_1 (stealth/invisible)
+  • Null Field         → Dark_1 (void zone)
+  • Collapse           → Debuff_5 (debuff explosion)
+  • Shadow Relay       → Dark_2 (shadow anchor)
+
+UI Implementation Notes
+
+In AbilityBar.cs, map each ability to its icon:
+  1. Store icon sprite reference in AbilityDef (ScriptableObject)
+  2. In UI, assign icon to Image component: image.sprite = abilityDef.icon
+  3. Recommended icon size: 64×64 or 128×128 pixels
+  4. Set Image.preserveAspect = true in inspector
+  5. Optionally: overlay cooldown radial progress bar on icon
+     (use Mask component to reveal circular progress)
+
+
+-----------------------------------------------------------
+PART 11 — COMPILER / DEPENDENCY NOTES
 -----------------------------------------------------------
 
 Scripts that require other scripts on the same GameObject:
