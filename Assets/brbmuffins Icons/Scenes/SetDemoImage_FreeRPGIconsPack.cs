@@ -1,3 +1,6 @@
+// This script uses AssetDatabase which is Editor-only.
+// Wrapped in UNITY_EDITOR guard so it compiles cleanly in server/runtime builds.
+#if UNITY_EDITOR
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -15,11 +18,11 @@ namespace DemoImage_FreeIconPack
         {
             DemoImage = GetComponentsInChildren<Image>();
             int j = 6;
-            
+
             for (int i = 1; i < 51; i++) // DemoImage[0] is background
             {
-                
-                if (((i - 1) % 5) == 0) { 
+
+                if (((i - 1) % 5) == 0) {
                     j = 6;
                 }
 
@@ -60,3 +63,4 @@ namespace DemoImage_FreeIconPack
         }
     }
 }
+#endif
