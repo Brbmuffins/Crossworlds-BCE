@@ -1,0 +1,146 @@
+You are extending the Node.js/Express/MySQL auth server for Rate of Decay ONLINE, a
+Unity 6 co-op MMO using Mirror Networking. The server already has:
+  - users table: id, username, email, password_hash, created_at
+  - POST /register and POST /login endpoints returning JWT tokens
+  - JWT middleware (verify token -> req.user.id)
+
+Your job is to add a full persistent character system. Do not touch existing endpoints.
+
+---
+
+CONTEXT - what we borrowed from AzerothCore's schema:
+- item_template vs item_instance separation (static data vs player-owned instance with random rolls)
+- slot-based inventory (bag + slot indices)
+- position stored on logout so players resume where they left off
+- online flag tracked server-side
+
+RoD-specific design:
+- 4 playable classes: 0=Engineer, 1=Guardian, 2=Wraith, 3=Medic
+- Gear has 6 slots: head(0), chest(1), hands(2), legs(3), feet(4), weapon(5)
+- Each gear piece has 2 attunement sockets (can be empty)
+- Gear items have random stat rolls within a template-defined min/max range
+- Stats: power, defense, speed, cooldown_reduction (CDR), heal_bonus
+- No levels yet - gear is the only progression. Keep a level column defaulting to 1 for future use.
+
+---
+
+TASK 1 - Create these MySQL tables (add to existing DB, do not drop users):
+
+characters
+  id            INT AUTO_INCREMENT PK
+  user_id       INT NOT NULL FK -> users(id)
+  class_index   TINYINT NOT NULL DEFAULT 0
+  class_name    VARCHAR(32) NOT NULL
+  level         INT NOT NULL DEFAULT 1
+  experience    INT NOT NULL DEFAULT 0
+  pos_x         FLOAT NOT NULL DEFAULT 0
+  pos_y         FLOAT NOT NULL DEFAULT 2
+  pos_z         FLOAT NOT NULL DEFAULT 0
+  pos_map       VARCHAR(64) NOT NULL DEFAULT 'GameWorld'
+  orientation   FLOAT NOT NULL DEFAULT 0
+  online        TINYINT NOT NULL DEFAULT 0
+  last_logout   DATETIME DEFAULT NULL
+  created_at    DATETIME DEFAULT NOW()
+
+item_template   (static definitions - seeded, not player-editable)
+  id            INT AUTO_INCREMENT PK
+  name          VARCHAR(64) NOT NULL
+  slot          TINYINT NOT NULL  (0-5, matches gear slot above)
+  class_mask    TINYINT NOT NULL DEFAULT 15  (bitmask: 1=Eng,2=Guard,4=Wraith,8=Medic; 15=all)
+  power_min     INT NOT NULL DEFAULT 0
+  power_max     INT NOT NULL DEFAULT 0
+  defense_min   INT NOT NULL DEFAULT 0
+  defense_max   INT NOT NULL DEFAULT 0
+  speed_min     FLOAT NOT NULL DEFAULT 0
+  speed_max     FLOAT NOT NULL DEFAULT 0
+  cdr_min       FLOAT NOT NULL DEFAULT 0
+  cdr_max       FLOAT NOT NULL DEFAULT 0
+  heal_min      INT NOT NULL DEFAULT 0
+  heal_max      INT NOT NULL DEFAULT 0
+  rarity        ENUM('common','uncommon','rare','exotic') NOT NULL DEFAULT 'common'
+  description   TEXT
+
+item_instance   (one row per item owned by a player - random rolls baked in at drop time)
+  id            INT AUTO_INCREMENT PK
+  template_id   INT NOT NULL FK -> item_template(id)
+  character_id  INT NOT NULL FK -> characters(id)
+  power         INT NOT NULL DEFAULT 0
+  defense       INT NOT NULL DEFAULT 0
+  speed         FLOAT NOT NULL DEFAULT 0
+  cdr           FLOAT NOT NULL DEFAULT 0
+  heal_bonus    INT NOT NULL DEFAULT 0
+  attune_a      VARCHAR(32) DEFAULT NULL   (attunement name or NULL if empty socket)
+  attune_b      VARCHAR(32) DEFAULT NULL
+  obtained_at   DATETIME DEFAULT NOW()
+
+character_gear  (which item_instance is in which slot - equipped loadout)
+  character_id  INT NOT NULL FK -> characters(id)
+  slot          TINYINT NOT NULL  (0-5)
+  item_id       INT NOT NULL FK -> item_instance(id)
+  PRIMARY KEY (character_id, slot)
+
+Seed item_template with 12 starter items - 2 per slot (one common, one uncommon),
+usable by all classes. Give them realistic RPG names fitting a dark sci-fi / decay aesthetic.
+Low stat ranges for now (this is alpha gear).
+
+---
+
+TASK 2 - Add these Express endpoints (all JWT-protected):
+
+POST /character
+  Body: { class_index: 0-3 }
+  - If user already has a character, return it (no duplicate creation)
+  - If not, insert into characters with class_name derived from class_index
+  - Return full character object including equipped gear
+
+GET /character
+  - Return the character for req.user.id
+  - JOIN character_gear + item_instance + item_template
+  - Return: { id, class_index, class_name, level, experience, position, gear: [...] }
+  - gear array: one entry per equipped slot, null if empty
+  - Used by the game server after JWT verify to know what to spawn
+
+PATCH /character/position
+  Body: { x, y, z, map, orientation }
+  - Update pos_x/y/z/pos_map/orientation for this user's character
+  - Set last_logout = NOW(), online = 0
+  - Called by Unity when the player disconnects or the server shuts down
+
+POST /character/gear/equip
+  Body: { item_id }
+  - Verify item_instance belongs to this character
+  - Read the item's slot from item_template
+  - Upsert into character_gear (character_id, slot, item_id)
+  - Return updated gear loadout
+
+GET /items
+  - Return all item_template rows (no auth needed)
+  - Used by Unity inventory UI to display item names/stats/icons
+
+---
+
+TASK 3 - Update the existing JWT middleware so after verifying the token it also
+fetches the character row and attaches it to req.character (null if no character yet).
+This way game-server routes can read req.character.class_index without an extra DB query.
+
+---
+
+TASK 4 - Write a migration script (migrate.js) that:
+1. Creates all new tables if they don't exist
+2. Seeds item_template with the 12 starter items
+3. Is safe to re-run (IF NOT EXISTS everywhere, INSERT IGNORE for seeds)
+4. Prints a clear summary of what it created/skipped
+
+---
+
+CONSTRAINTS:
+- Node.js with mysql2 (already installed)
+- Keep all DB credentials in process.env (already wired via .env)
+- No ORM - raw SQL queries are fine, this server is intentionally lightweight
+- Error responses: { error: "message" } with appropriate HTTP status codes
+- Validate all inputs - class_index must be 0-3, slot must be 0-5, etc.
+- The game server (Unity/Mirror) will call GET /character immediately after
+  verifying the JWT on connect. That response time is on the critical path for
+  player spawn - keep that query fast (add indexes where needed).
+
+Start with migrate.js, run it mentally to confirm it is correct, then write the endpoints.

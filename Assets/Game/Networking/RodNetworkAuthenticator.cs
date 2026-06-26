@@ -1,33 +1,39 @@
 using System.Collections;
 using Mirror;
 using UnityEngine;
+using UnityEngine.Networking;
 
 // ═══════════════════════════════════════════════════════════════════════════
 //  RodNetworkAuthenticator
 //  Attach to the NetworkManager GameObject alongside RodNetworkManager.
-//  Assign this component to NetworkManager.authenticator in the Inspector.
 //
-//  Flow:
-//    1. Client connects → OnClientAuthenticate() sends AuthRequest with JWT.
-//    2. Server receives it → validates token is present → ServerAccept().
-//    3. Client receives AuthResponse → ClientAccept() → Mirror continues.
-//    4. RodNetworkManager.OnClientConnect() fires → sends CreatePlayerMessage.
+//  Flow (production):
+//    1. Client connects → sends AuthRequestMessage with JWT + username.
+//    2. Server receives JWT → calls GET /character on the auth server.
+//    3. Auth server returns the character record (class, saved position).
+//    4. Server stores class + position on conn.authenticationData → ServerAccept.
+//    5. RodNetworkManager.OnCreatePlayer spawns the right prefab at saved position.
+//
+//  Flow (dev mode):
+//    Steps 2-3 are skipped. Class comes from PlayerPrefs, position is default.
 // ═══════════════════════════════════════════════════════════════════════════
 
 [AddComponentMenu("RoD/Network/Rod Network Authenticator")]
 public class RodNetworkAuthenticator : NetworkAuthenticator
 {
+    [Header("Auth Server")]
+    public string authServerURL = "http://15.204.243.36:3000";
+
     [Header("Dev Mode")]
-    [Tooltip("Bypasses JWT validation. Use in Editor for local host testing only.")]
+    [Tooltip("Bypasses JWT + DB lookup. Editor-only local testing.")]
     public bool devMode = false;
 
-    // ── Message types ────────────────────────────────────────────────────────
+    // ── Network messages ─────────────────────────────────────────────────────
 
     public struct AuthRequestMessage : NetworkMessage
     {
         public string jwt;
         public string username;
-        public int    selectedClass;  // 0=Engineer 1=Guardian 2=Wraith 3=Medic
     }
 
     public struct AuthResponseMessage : NetworkMessage
@@ -50,53 +56,92 @@ public class RodNetworkAuthenticator : NetworkAuthenticator
 
     public override void OnServerAuthenticate(NetworkConnectionToClient conn)
     {
-        // Wait for the client to send AuthRequestMessage — do nothing here.
+        // Wait for AuthRequestMessage — nothing to do here.
     }
 
     void OnAuthRequest(NetworkConnectionToClient conn, AuthRequestMessage msg)
     {
-        // Dev mode: skip all validation, accept anyone.
         if (devMode)
         {
+            // Dev: skip auth server, trust PlayerPrefs class selection
             conn.authenticationData = new RodPlayerAuth
             {
-                username      = string.IsNullOrEmpty(msg.username) ? "DevPlayer" : msg.username,
-                selectedClass = msg.selectedClass,
-                jwt           = "dev"
+                username    = string.IsNullOrEmpty(msg.username) ? "DevPlayer" : msg.username,
+                jwt         = "dev",
+                classIndex  = 0,       // will be overridden by CreatePlayerMessage in dev mode
+                characterId = -1,
+                spawnX      = 0f,
+                spawnY      = 2f,
+                spawnZ      = 0f,
+                fromDB      = false
             };
             conn.Send(new AuthResponseMessage { success = true, message = "Dev mode — accepted." });
             ServerAccept(conn);
             return;
         }
 
-        // Basic gate: must have a token and a username.
         if (string.IsNullOrEmpty(msg.jwt) || string.IsNullOrEmpty(msg.username))
         {
-            conn.Send(new AuthResponseMessage
-            {
-                success = false,
-                message = "Missing credentials. Please log in first."
-            });
-            StartCoroutine(DelayedReject(conn, 1f));
+            Reject(conn, "Missing credentials.");
             return;
         }
 
-        // Store auth data on the connection so RodNetworkManager can read it
-        // when spawning the player object.
+        StartCoroutine(FetchCharacterAndAccept(conn, msg));
+    }
+
+    IEnumerator FetchCharacterAndAccept(NetworkConnectionToClient conn, AuthRequestMessage msg)
+    {
+        string url = $"{authServerURL}/character";
+
+        using var req = UnityWebRequest.Get(url);
+        req.SetRequestHeader("Authorization", "Bearer " + msg.jwt);
+        req.SetRequestHeader("Content-Type", "application/json");
+        req.timeout = 8;
+
+        yield return req.SendWebRequest();
+
+        if (req.result != UnityWebRequest.Result.Success)
+        {
+            Debug.LogWarning($"[RodAuth] Character fetch failed for {msg.username}: {req.error}");
+            Reject(conn, "Could not verify character. Please try again.");
+            yield break;
+        }
+
+        CharacterResponse character = null;
+        try { character = JsonUtility.FromJson<CharacterResponse>(req.downloadHandler.text); }
+        catch { }
+
+        if (character == null || character.id == 0)
+        {
+            // No character yet — client should have POSTed /character before connecting.
+            // Reject so they go back through CharacterSelect.
+            Reject(conn, "No character found. Please complete character selection.");
+            yield break;
+        }
+
         conn.authenticationData = new RodPlayerAuth
         {
-            username      = msg.username,
-            selectedClass = msg.selectedClass,
-            jwt           = msg.jwt
+            username    = msg.username,
+            jwt         = msg.jwt,
+            classIndex  = character.class_index,
+            characterId = character.id,
+            spawnX      = character.pos_x,
+            spawnY      = character.pos_y,
+            spawnZ      = character.pos_z,
+            fromDB      = true
         };
 
-        conn.Send(new AuthResponseMessage
-        {
-            success = true,
-            message = "Authenticated."
-        });
-
+        conn.Send(new AuthResponseMessage { success = true, message = "Authenticated." });
         ServerAccept(conn);
+
+        Debug.Log($"[RodAuth] Accepted {msg.username} — class {character.class_index}, " +
+                  $"spawn ({character.pos_x:F1}, {character.pos_y:F1}, {character.pos_z:F1})");
+    }
+
+    void Reject(NetworkConnectionToClient conn, string reason)
+    {
+        conn.Send(new AuthResponseMessage { success = false, message = reason });
+        StartCoroutine(DelayedReject(conn, 1f));
     }
 
     IEnumerator DelayedReject(NetworkConnectionToClient conn, float delay)
@@ -119,33 +164,48 @@ public class RodNetworkAuthenticator : NetworkAuthenticator
 
     public override void OnClientAuthenticate()
     {
+        // Class is no longer sent here — server fetches it from DB.
+        // Only JWT and username are needed for identity.
         NetworkClient.Send(new AuthRequestMessage
         {
-            jwt           = devMode ? "dev" : PlayerPrefs.GetString("jwt_token", ""),
-            username      = PlayerPrefs.GetString("username", "DevPlayer"),
-            selectedClass = PlayerPrefs.GetInt("SelectedCharacter", 0)
+            jwt      = devMode ? "dev" : PlayerPrefs.GetString("jwt_token", ""),
+            username = PlayerPrefs.GetString("username", "DevPlayer"),
         });
     }
 
     void OnAuthResponse(AuthResponseMessage msg)
     {
-        if (msg.success)
-        {
-            ClientAccept();
-        }
+        if (msg.success) ClientAccept();
         else
         {
-            Debug.LogError("[RodAuth] Server rejected connection: " + msg.message);
+            Debug.LogError("[RodAuth] Rejected: " + msg.message);
             ClientReject();
         }
+    }
+
+    // ── JSON response shape ───────────────────────────────────────────────────
+
+    [System.Serializable]
+    class CharacterResponse
+    {
+        public int    id;
+        public int    class_index;
+        public string class_name;
+        public float  pos_x;
+        public float  pos_y;
+        public float  pos_z;
     }
 }
 
 // ── Auth data stored on each server connection ────────────────────────────
-// RodNetworkManager reads this during OnServerAddPlayer to spawn the right prefab.
+// RodNetworkManager reads this to spawn the right prefab at the right position.
+
 public class RodPlayerAuth
 {
     public string username;
-    public int    selectedClass;
     public string jwt;
+    public int    classIndex;
+    public int    characterId;  // DB row id — used when saving position on disconnect
+    public float  spawnX, spawnY, spawnZ;
+    public bool   fromDB;       // false in dev mode — falls back to CreatePlayerMessage class
 }

@@ -1,6 +1,9 @@
 using System;
+using System.Collections;
+using System.Text;
 using Mirror;
 using UnityEngine;
+using UnityEngine.Networking;
 using UnityEngine.UI;
 
 #if UNITY_EDITOR
@@ -331,8 +334,45 @@ public class CharacterSelectManager : MonoBehaviour
         }
 
         bool dev = PlayerPrefs.GetString("jwt_token", "") == "dev";
-        if (dev) NetworkManager.singleton.StartHost();
-        else     NetworkManager.singleton.StartClient();
+        if (dev)
+        {
+            // Dev mode: skip the HTTP call, go straight to host
+            NetworkManager.singleton.StartHost();
+        }
+        else
+        {
+            // Production: POST /character to create/confirm the DB record, then connect
+            _enterBtn.interactable = false;
+            if (_enterLabel != null) _enterLabel.text = "CONNECTING...";
+            StartCoroutine(PostCharacterThenConnect(mirrorIdx));
+        }
+    }
+
+    IEnumerator PostCharacterThenConnect(int classIndex)
+    {
+        string jwt = PlayerPrefs.GetString("jwt_token", "");
+        string url = "http://15.204.243.36:3000/character";
+        string json = $"{{\"class_index\":{classIndex}}}";
+
+        using var req = new UnityWebRequest(url, "POST");
+        req.uploadHandler   = new UploadHandlerRaw(Encoding.UTF8.GetBytes(json));
+        req.downloadHandler = new DownloadHandlerBuffer();
+        req.SetRequestHeader("Content-Type", "application/json");
+        req.SetRequestHeader("Authorization", "Bearer " + jwt);
+        req.timeout = 8;
+
+        yield return req.SendWebRequest();
+
+        if (req.result != UnityWebRequest.Result.Success)
+        {
+            Debug.LogError($"[CharSel] POST /character failed: {req.error}");
+            _enterBtn.interactable = true;
+            if (_enterLabel != null) _enterLabel.text = "ENTER WORLD";
+            yield break;
+        }
+
+        Debug.Log("[CharSel] Character confirmed. Connecting to server...");
+        NetworkManager.singleton.StartClient();
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
