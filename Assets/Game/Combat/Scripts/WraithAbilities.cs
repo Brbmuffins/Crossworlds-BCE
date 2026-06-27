@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 // ═══════════════════════════════════════════════════════════════════════════
 //  WraithAbilities
@@ -115,11 +116,13 @@ public class WraithAbilities : MonoBehaviour
 
     void HandleInput()
     {
-        if (Input.GetKeyDown(KeyCode.Q)) UseDarkBlast();
-        if (Input.GetKeyDown(KeyCode.W)) UseNullField();
-        if (Input.GetKeyDown(KeyCode.E)) UseEventHorizon();
-        if (Input.GetKeyDown(KeyCode.R)) UseCollapse();
-        if (Input.GetKeyDown(KeyCode.F)) UsePhaseShift();
+        var kb = Keyboard.current;
+        if (kb == null) return;
+        if (kb.qKey.wasPressedThisFrame) UseDarkBlast();
+        if (kb.wKey.wasPressedThisFrame) UseNullField();
+        if (kb.eKey.wasPressedThisFrame) UseEventHorizon();
+        if (kb.rKey.wasPressedThisFrame) UseCollapse();
+        if (kb.fKey.wasPressedThisFrame) UsePhaseShift();
     }
 
     // ── Public Cooldown Queries (for AbilityBar UI) ───────────────────────

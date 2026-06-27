@@ -59,6 +59,21 @@ public class RodNetworkManager : NetworkManager
         public int    selectedClass;
     }
 
+    // ── Headless dedicated-server auto-start ──────────────────────────────────
+
+    public override void Start()
+    {
+        base.Start();
+
+        // GraphicsDeviceType.Null = dedicated server build with Server Optimizations.
+        // Skip the LoginManager UI and go straight to StartServer().
+        if (SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.Null)
+        {
+            Debug.Log("[RodNM] Headless server detected — StartServer()");
+            StartServer();
+        }
+    }
+
     // ── Client startup ────────────────────────────────────────────────────────
 
     public override void OnStartClient()
@@ -116,13 +131,17 @@ public class RodNetworkManager : NetworkManager
             spawnPos = startPos != null ? startPos.position : new Vector3(0f, 2f, 0f);
         }
 
+        // Prefer server-verified username from auth data; fall back to client-sent value
+        string username = (auth != null && !string.IsNullOrEmpty(auth.username))
+            ? auth.username : msg.username;
+
         GameObject player = Instantiate(prefab, spawnPos, Quaternion.identity);
-        player.name = msg.username;
+        player.name = username;
 
         var identity = player.GetComponent<PlayerIdentity>();
         if (identity != null)
         {
-            identity.playerName = msg.username;
+            identity.playerName = username;
             identity.classIndex = classIndex;
         }
 
@@ -136,7 +155,7 @@ public class RodNetworkManager : NetworkManager
         }
 
         NetworkServer.AddPlayerForConnection(conn, player);
-        Debug.Log($"[RodNM] Spawned {msg.username} as class {classIndex} at {spawnPos} " +
+        Debug.Log($"[RodNM] Spawned {username} as class {classIndex} at {spawnPos} " +
                   $"(fromDB={auth?.fromDB})");
     }
 

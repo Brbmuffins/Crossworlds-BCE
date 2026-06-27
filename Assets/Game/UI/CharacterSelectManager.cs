@@ -350,8 +350,9 @@ public class CharacterSelectManager : MonoBehaviour
 
     IEnumerator PostCharacterThenConnect(int classIndex)
     {
-        string jwt = PlayerPrefs.GetString("jwt_token", "");
-        string url = "http://15.204.243.36:3000/character";
+        string jwt      = PlayerPrefs.GetString("jwt_token", "");
+        string serverIP = PlayerPrefs.GetString("game_server_ip", "15.204.243.36");
+        string url      = $"http://{serverIP}:3000/character";
         string json = $"{{\"class_index\":{classIndex}}}";
 
         using var req = new UnityWebRequest(url, "POST");
@@ -372,7 +373,6 @@ public class CharacterSelectManager : MonoBehaviour
         }
 
         // Apply whichever server IP the player entered on the login screen
-        string serverIP = PlayerPrefs.GetString("game_server_ip", "15.204.243.36");
         NetworkManager.singleton.networkAddress = serverIP;
         Debug.Log($"[CharSel] Connecting to game server at {serverIP}...");
         NetworkManager.singleton.StartClient();

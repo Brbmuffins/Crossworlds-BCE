@@ -67,7 +67,19 @@ public class LoginManager : MonoBehaviour
 
     void Awake()
     {
+        // Dedicated server build — Null graphics device means no display, skip all UI.
+        if (SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.Null)
+            return;
+
         BuildCanvas();
+    }
+
+    void Start()
+    {
+        // Set defaults after the canvas is fully initialized.
+        // Awake builds the fields; Start is the earliest safe time to assign text values.
+        if (_serverInput != null)
+            _serverInput.text = PlayerPrefs.GetString("game_server_ip", "15.204.243.36");
     }
 
     void Update()
@@ -88,10 +100,10 @@ public class LoginManager : MonoBehaviour
             _borderBot.color = new Color(BorderColor.r, BorderColor.g, BorderColor.b, b * 0.6f);
         }
 
-        // Enter key support
-        if (!_busy && Keyboard.current != null && Keyboard.current.enterKey.wasPressedThisFrame)
+        // Enter key support (canvas may be null on dedicated server)
+        if (_loginPanel != null && !_busy && Keyboard.current != null && Keyboard.current.enterKey.wasPressedThisFrame)
         {
-            if (_loginPanel.activeSelf)    OnLoginClicked();
+            if (_loginPanel.activeSelf)         OnLoginClicked();
             else if (_registerPanel.activeSelf) OnRegisterClicked();
         }
     }
@@ -127,6 +139,10 @@ public class LoginManager : MonoBehaviour
 
         // ── Bottom: Status bar ──
         BuildBottomBar(root);
+
+        // Force canvas to fully initialize all TMP_InputField components.
+        // Without this, fields built in code may silently fail to register clicks.
+        Canvas.ForceUpdateCanvases();
     }
 
     void BuildTitle(RectTransform root)
@@ -221,7 +237,6 @@ public class LoginManager : MonoBehaviour
         serverLabel.characterSpacing = 4f;
 
         _serverInput = BuildInputField(panelRt, "IP", new Vector2(0.05f, 0.235f), new Vector2(0.95f, 0.31f), false);
-        _serverInput.text = PlayerPrefs.GetString("game_server_ip", "15.204.243.36");
 
         // Status text (shifted up slightly to make room)
         _statusText = MakeLabel(panelRt, "Status", "", 12f, FontStyles.Normal, TextDim);
@@ -338,14 +353,13 @@ public class LoginManager : MonoBehaviour
     {
         GameObject go = new GameObject("Input_" + placeholder, typeof(RectTransform), typeof(Image), typeof(TMP_InputField));
         go.transform.SetParent(parent, false);
-        var img = go.GetComponent<Image>();
-        img.color = InputBG;
+        go.GetComponent<Image>().color = InputBG;
         var rt = go.GetComponent<RectTransform>();
         rt.anchorMin = anchorMin;
         rt.anchorMax = anchorMax;
         rt.offsetMin = rt.offsetMax = Vector2.zero;
 
-        // Thin cyan bottom underline — not a box, just a line
+        // Thin cyan bottom underline
         GameObject underline = new GameObject("Underline", typeof(RectTransform), typeof(Image));
         underline.transform.SetParent(go.transform, false);
         underline.GetComponent<Image>().color = new Color(AccentCyan.r, AccentCyan.g, AccentCyan.b, 0.5f);
@@ -354,51 +368,64 @@ public class LoginManager : MonoBehaviour
         ul.anchorMax = new Vector2(1f, 0.04f);
         ul.offsetMin = ul.offsetMax = Vector2.zero;
 
-        // Label above
+        // Field label above (USERNAME / PASSWORD etc.)
         GameObject label = new GameObject("Label", typeof(RectTransform), typeof(TextMeshProUGUI));
         label.transform.SetParent(go.transform, false);
         var lbl = label.GetComponent<TextMeshProUGUI>();
-        lbl.text           = placeholder;
-        lbl.fontSize       = 9f;
-        lbl.color          = new Color(AccentCyan.r, AccentCyan.g, AccentCyan.b, 0.7f);
+        lbl.text             = placeholder;
+        lbl.fontSize         = 9f;
+        lbl.color            = new Color(AccentCyan.r, AccentCyan.g, AccentCyan.b, 0.7f);
         lbl.characterSpacing = 4f;
-        lbl.fontStyle      = FontStyles.Bold;
+        lbl.fontStyle        = FontStyles.Bold;
         var lrt = label.GetComponent<RectTransform>();
         lrt.anchorMin = new Vector2(0.03f, 0.7f);
         lrt.anchorMax = new Vector2(0.97f, 1.0f);
         lrt.offsetMin = lrt.offsetMax = Vector2.zero;
 
-        // Placeholder text
+        // ── Viewport — use RectMask2D (more reliable than Mask+Image when built in code) ──
+        // TMP_InputField requires the viewport to be a PARENT of the text children.
+        // RectMask2D clips without needing an Image, which avoids raycast interference.
+        GameObject vpGO = new GameObject("Viewport", typeof(RectTransform), typeof(RectMask2D));
+        vpGO.transform.SetParent(go.transform, false);
+        var vpRt = vpGO.GetComponent<RectTransform>();
+        vpRt.anchorMin = new Vector2(0.03f, 0.05f);
+        vpRt.anchorMax = new Vector2(0.97f, 0.68f);
+        vpRt.offsetMin = vpRt.offsetMax = Vector2.zero;
+
+        // Placeholder text (child of Viewport)
         GameObject ph = new GameObject("Placeholder", typeof(RectTransform), typeof(TextMeshProUGUI));
-        ph.transform.SetParent(go.transform, false);
+        ph.transform.SetParent(vpGO.transform, false);
         var phT = ph.GetComponent<TextMeshProUGUI>();
-        phT.text      = password ? "••••••••" : "Enter " + placeholder.ToLower() + "...";
-        phT.fontSize  = 14f;
-        phT.color     = new Color(0.35f, 0.33f, 0.42f, 1f);
-        phT.fontStyle = FontStyles.Italic;
+        phT.text           = password ? "••••••••" : "Enter " + placeholder.ToLower() + "...";
+        phT.fontSize       = 14f;
+        phT.color          = new Color(0.35f, 0.33f, 0.42f, 1f);
+        phT.fontStyle      = FontStyles.Italic;
+        phT.raycastTarget  = false;
         var phRt = ph.GetComponent<RectTransform>();
-        phRt.anchorMin = new Vector2(0.03f, 0.05f);
-        phRt.anchorMax = new Vector2(0.97f, 0.65f);
+        phRt.anchorMin = Vector2.zero;
+        phRt.anchorMax = Vector2.one;
         phRt.offsetMin = phRt.offsetMax = Vector2.zero;
 
-        // Input text
+        // Input text (child of Viewport)
         GameObject txt = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
-        txt.transform.SetParent(go.transform, false);
+        txt.transform.SetParent(vpGO.transform, false);
         var txtT = txt.GetComponent<TextMeshProUGUI>();
-        txtT.fontSize = 14f;
-        txtT.color    = TextPrimary;
+        txtT.fontSize      = 14f;
+        txtT.color         = TextPrimary;
+        txtT.raycastTarget = false;
         var txtRt = txt.GetComponent<RectTransform>();
-        txtRt.anchorMin = new Vector2(0.03f, 0.05f);
-        txtRt.anchorMax = new Vector2(0.97f, 0.65f);
+        txtRt.anchorMin = Vector2.zero;
+        txtRt.anchorMax = Vector2.one;
         txtRt.offsetMin = txtRt.offsetMax = Vector2.zero;
 
-        // Wire the TMP_InputField
+        // Wire TMP_InputField
         var field = go.GetComponent<TMP_InputField>();
-        field.textViewport   = txtRt;
+        field.textViewport   = vpRt;
         field.textComponent  = txtT;
         field.placeholder    = phT;
         field.caretColor     = AccentCyan;
         field.selectionColor = new Color(AccentCyan.r, AccentCyan.g, AccentCyan.b, 0.3f);
+        field.interactable   = true;
         if (password)
             field.contentType = TMP_InputField.ContentType.Password;
 

@@ -248,6 +248,7 @@ MonoBehaviour:
   OnClientAuthenticated:
     m_PersistentCalls:
       m_Calls: []
+  authServerURL: http://15.204.243.36:3000
   devMode: 0
 --- !u!114 &286295839
 MonoBehaviour:
@@ -267,7 +268,7 @@ MonoBehaviour:
   editorAutoStart: 0
   sendRate: 60
   offlineScene: 
-  onlineScene: Assets/brbmuffins Skybox/Scenes/GameWorld.unity
+  onlineScene: Assets/Game/Scenes/Hub.unity
   offlineSceneLoadDelay: 0
   transport: {fileID: 286295840}
   networkAddress: 15.204.243.36
@@ -299,6 +300,7 @@ MonoBehaviour:
   - {fileID: 3137623603379455396, guid: 51b89f5a3b54400488f1c0806f2af027, type: 3}
   - {fileID: 876772388061055923, guid: d470aded85ff83c448d8e4773e96bd14, type: 3}
   - {fileID: 5535836385994071967, guid: ce8d619dc47011040a91bcf2c1fee855, type: 3}
+  authServerURL: http://15.204.243.36:3000
 --- !u!114 &286295840
 MonoBehaviour:
   m_ObjectHideFlags: 0

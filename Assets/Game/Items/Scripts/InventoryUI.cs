@@ -41,9 +41,8 @@ public class InventoryUI : MonoBehaviour
             inventoryPanel.SetActive(opening);
             equipmentPanel.SetActive(opening);
 
-            Cursor.lockState = opening ? CursorLockMode.None : CursorLockMode.Locked;
-            Cursor.visible = opening;
-            if (camFollow != null) camFollow.inputLocked = opening;
+            // Cursor is managed by CameraFollow (free when no mouse button held)
+            // No manual lock/unlock needed here.
         }
 
         if (inventoryPanel.activeSelf)

@@ -1,6 +1,8 @@
 using System.Collections;
 using Mirror;
+using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 
 public class PlayerMovement : MonoBehaviour
@@ -70,7 +72,7 @@ public class PlayerMovement : MonoBehaviour
         if (cam != null)
         {
             var follow = cam.GetComponent<CameraFollow>() ?? cam.gameObject.AddComponent<CameraFollow>();
-            follow.target = transform;
+            follow.target = transform; // setter calls SnapToTarget() automatically
         }
 
         targetRotation = transform.rotation;
@@ -95,8 +97,22 @@ public class PlayerMovement : MonoBehaviour
             anim.SetTrigger(param);
     }
 
+    // Returns true when the player is typing in any UI input field
+    static bool IsTypingInUI()
+    {
+        var sel = EventSystem.current?.currentSelectedGameObject;
+        return sel != null && sel.GetComponent<TMP_InputField>() != null;
+    }
+
     void Update()
     {
+        // Yield all keyboard input to UI while player is typing
+        if (IsTypingInUI())
+        {
+            wantsMove = false;
+            return;
+        }
+
         Vector2 input = Vector2.zero;
 
         bool pressingW = Keyboard.current.wKey.isPressed;
@@ -151,29 +167,34 @@ public class PlayerMovement : MonoBehaviour
             }
         }
 
-        if (isMoving && cam != null)
+        if (cam != null)
         {
             Vector3 camForward = cam.transform.forward;
-            Vector3 camRight = cam.transform.right;
+            Vector3 camRight   = cam.transform.right;
+            camForward.y = 0; camForward.Normalize();
+            camRight.y   = 0; camRight.Normalize();
 
-            camForward.y = 0;
-            camRight.y = 0;
+            var camFollow    = cam.GetComponent<CameraFollow>();
+            bool rightMouse  = camFollow != null && camFollow.RightMouseHeld;
 
-            camForward.Normalize();
-            camRight.Normalize();
-
-            moveDirection = camForward * input.y + camRight * input.x;
-            moveDirection.Normalize();
-
-            Vector3 faceDirection = moveDirection;
-
-            // If S is involved, face opposite the movement direction
-            if (pressingS)
+            if (isMoving)
             {
-                faceDirection = -moveDirection;
-            }
+                moveDirection = (camForward * input.y + camRight * input.x).normalized;
 
-            targetRotation = Quaternion.LookRotation(faceDirection);
+                // Face camera direction when right-mouse is held (WoW strafe feel)
+                // Face movement direction otherwise
+                Vector3 faceDir = rightMouse
+                    ? Quaternion.Euler(0, camFollow.Yaw, 0) * Vector3.forward
+                    : (pressingS ? -moveDirection : moveDirection);
+
+                if (faceDir.sqrMagnitude > 0.001f)
+                    targetRotation = Quaternion.LookRotation(faceDir);
+            }
+            else if (rightMouse && camFollow != null)
+            {
+                // Standing still + right mouse: character turns to face camera yaw
+                targetRotation = Quaternion.Euler(0, camFollow.Yaw, 0);
+            }
         }
     }
 

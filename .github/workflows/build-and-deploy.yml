@@ -1,0 +1,135 @@
+# ═══════════════════════════════════════════════════════════════════════════
+#  Rate of Decay ONLINE — Build & Deploy
+#
+#  Triggers on every push to main.
+#  Two parallel jobs:
+#    build-server  → Linux dedicated server → SCP to VPS → restart rod-server
+#    build-client  → Windows client → GitHub Release (stable download URL)
+#
+#  One-time secrets to add in GitHub → Settings → Secrets → Actions:
+#    UNITY_LICENSE   — contents of your .ulf license file
+#    UNITY_EMAIL     — Unity account email
+#    UNITY_PASSWORD  — Unity account password
+#    VPS_HOST        — 15.204.243.36
+#    VPS_SSH_KEY     — private key that can SSH as ubuntu@VPS_HOST
+#
+#  Stable client download URL (share this with friends):
+#    https://github.com/Brbmuffins/Rate-of-Decay-ONLINE/releases/latest/download/RateOfDecayOnline-Windows.zip
+# ═══════════════════════════════════════════════════════════════════════════
+
+name: Build and Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:   # lets you trigger manually from GitHub UI
+
+jobs:
+
+  # ── Dedicated Server ──────────────────────────────────────────────────────
+  build-server:
+    name: Server → VPS
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Cache Library (Linux Server)
+        uses: actions/cache@v4
+        with:
+          path: Library
+          key: Library-LinuxServer-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
+          restore-keys: Library-LinuxServer-
+
+      - name: Build dedicated server
+        uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE:  ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL:    ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          targetPlatform: StandaloneLinux64
+          buildMethod:    BuildScript.BuildDedicatedServer
+          versioning:     None
+
+      - name: Stop rod-server on VPS
+        uses: appleboy/ssh-action@v1
+        with:
+          host:     ${{ secrets.VPS_HOST }}
+          username: ubuntu
+          key:      ${{ secrets.VPS_SSH_KEY }}
+          script:   sudo systemctl stop rod-server || true
+
+      - name: Upload server build to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host:             ${{ secrets.VPS_HOST }}
+          username:         ubuntu
+          key:              ${{ secrets.VPS_SSH_KEY }}
+          source:           "build/DedicatedServer/*"
+          target:           /game/incoming/
+          strip_components: 2
+
+      - name: Swap build and restart rod-server
+        uses: appleboy/ssh-action@v1
+        with:
+          host:     ${{ secrets.VPS_HOST }}
+          username: ubuntu
+          key:      ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            rsync -a --delete /game/incoming/ /game/
+            rm -rf /game/incoming
+            chmod +x /game/RateOfDecayOnline.x86_64
+            sudo systemctl start rod-server
+            sleep 5
+            sudo systemctl status rod-server --no-pager
+            echo "--- last 10 log lines ---"
+            tail -10 /var/log/rod-server.log
+
+  # ── Windows Client ────────────────────────────────────────────────────────
+  build-client:
+    name: Client → GitHub Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Cache Library (Windows)
+        uses: actions/cache@v4
+        with:
+          path: Library
+          key: Library-Windows-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
+          restore-keys: Library-Windows-
+
+      - name: Build Windows client
+        uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE:  ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL:    ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          targetPlatform: StandaloneWindows64
+          buildMethod:    BuildScript.BuildWindowsClient
+          versioning:     None
+
+      - name: Zip client
+        run: |
+          cd build/WindowsClient
+          zip -r ../../RateOfDecayOnline-Windows.zip .
+
+      - name: Publish to GitHub Releases (stable "latest" tag)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name:   game-client
+          name:       "Rate of Decay ONLINE — Latest Client"
+          body:       "Auto-built from `${{ github.sha }}` on ${{ github.event.head_commit.timestamp }}"
+          prerelease: false
+          files:      RateOfDecayOnline-Windows.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -75,6 +75,24 @@ LoginScene → CharacterSelect → GameWorld
 | `World/Populate GameWorld with NPCs` | Places Zompy, Bob, Kodiac, Turret NPCs with VFX and ground plane |
 | `World/Build Combat Base` | Populates GameWorld: arena floor, cover blocks, Sentinel Turret (ElectricalSparks VFX), 3 zone indicators (Circle/Cone/Rect with Dark Arts VFX), 3 enemy clusters, WaveChest, ambient VFX |
 
+### GM Console (`GmConsole.cs`)
+Attach to any persistent GameObject in GameWorld. Toggle with `` ` `` or **F1**.
+
+| Command | Effect |
+|---------|--------|
+| `speed <n>` | Multiply move + sprint speed by n |
+| `fly` | Toggle fly mode (gravity off, Space/Ctrl for vertical) |
+| `god` | Toggle `Health.isInvulnerable` |
+| `heal` | Full heal self |
+| `kill` | Kill all `"Enemy"`-tagged objects |
+| `spawn [n]` | Spawn n red capsule enemies near player |
+| `wave` | Start WaveManager / show status |
+| `tp <x> <y> <z>` | Teleport player to world coords |
+| `noclip` | Toggle player colliders off |
+| `clear` / `help` | Clear log / list commands |
+
+Access is gated by the `GM_USERS` allowlist in `GmConsole.cs` — add usernames there. Command history navigable with ↑/↓.
+
 ### VFX
 - brbmuffins Technologies particle pack (ElectricalSparks, EnergyExplosion, SmallExplosion, FireFlies, HeatDistortion)
 - brbmuffins Dark Arts fantasy pack (Magic circle, Death magic circle, Lightning strike, Mana wall, Ground spikes, Fireball)
@@ -108,7 +126,7 @@ Assets/
 │   ├── Player/           — PlayerMovement (dodge roll), CameraFollow, ability handlers
 │   ├── Prefabs/          — Engineer, Guardian, Wraith, Medic
 │   ├── Scenes/           — LoginScene.unity, CharacterSelect.unity
-│   └── UI/               — LoginManager, CharacterSelectManager, LoginScreenVFX, AbilityCaster, AbilityBar
+│   └── UI/               — LoginManager, CharacterSelectManager, LoginScreenVFX, AbilityCaster, AbilityBar, GmConsole
 ├── brbmuffins */         — VFX asset packs
 ├── Mirror/               — Mirror Networking
 └── Docs/                 — vps-character-system-prompt.txt, BackendSetup

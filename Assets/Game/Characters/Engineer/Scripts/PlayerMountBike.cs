@@ -8,7 +8,8 @@ public class PlayerMountBike : MonoBehaviour
 
     void Update()
     {
-        if (Keyboard.current.backquoteKey.wasPressedThisFrame)
+        // G to mount — backtick is reserved for GM console
+        if (Keyboard.current != null && Keyboard.current.gKey.wasPressedThisFrame)
         {
             MountBike();
         }

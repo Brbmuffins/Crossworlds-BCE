@@ -1,6 +1,7 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.InputSystem;
 
 // Place on a chest GameObject. Player holds E to open it.
 // A prep window gives the team time to position before waves begin.
@@ -56,8 +57,7 @@ public class WaveChest : MonoBehaviour
         float dist = Vector3.Distance(transform.position, _cachedNearest.transform.position);
         bool inRange = dist <= 2.5f;
 
-        // NOTE: Uses old Input.GetKey — if your game uses InputSystem, wire an InputAction here instead
-        if (inRange && Input.GetKey(KeyCode.E))
+        if (inRange && Keyboard.current != null && Keyboard.current.eKey.isPressed)
         {
             _holdProgress += Time.deltaTime;
             if (_holdProgress >= holdTime)
