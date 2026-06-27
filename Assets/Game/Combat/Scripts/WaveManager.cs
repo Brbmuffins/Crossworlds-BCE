@@ -124,6 +124,36 @@ public class WaveManager : MonoBehaviour
     public int  CurrentCycle  => _cycle + 1;
     public bool IsRunning     => _running;
 
+    /// <summary>GM command: jump directly to a wave index, restarting the arena if needed.</summary>
+    public void JumpToWave(int waveIndex)
+    {
+        StopAllCoroutines();
+        _aliveEnemies.Clear();
+        waveIndex = Mathf.Clamp(waveIndex - 1, 0, waves.Length - 1); // convert 1-based to 0-based
+        _currentWave = waveIndex;
+        _running     = true;
+        StartCoroutine(RunFromWave(waveIndex));
+        Debug.Log($"[WaveManager] GM jumped to wave {waveIndex + 1}.");
+    }
+
+    IEnumerator RunFromWave(int startWave)
+    {
+        for (int w = startWave; w < waves.Length; w++)
+        {
+            _currentWave = w;
+            var def = waves[w];
+            yield return StartCoroutine(PrepCountdown(def.prepTime));
+            int displayNum = _cycle * waves.Length + w + 1;
+            onWaveStart?.Invoke(def.label, displayNum, -1);
+            yield return StartCoroutine(SpawnWave(def));
+            yield return StartCoroutine(WaitForClear(def));
+            onWaveCleared?.Invoke(displayNum);
+            if (w < waves.Length - 1) yield return new WaitForSeconds(3f);
+        }
+        float loot = CalculateLootScore();
+        onWaveCycleComplete?.Invoke(loot);
+    }
+
     // ── Arena loop ────────────────────────────────────────────────────────
 
     IEnumerator RunArena()

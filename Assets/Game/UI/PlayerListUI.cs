@@ -103,7 +103,7 @@ public class PlayerListUI : MonoBehaviour
         foreach (Transform child in _rowContainer)
             Destroy(child.gameObject);
 
-        var identities = Object.FindObjectsByType<PlayerIdentity>(FindObjectsSortMode.None);
+        var identities = Object.FindObjectsByType<PlayerIdentity>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
 
         _headerText.text = $"ONLINE  <size=10><color=#64748b>{identities.Length} player{(identities.Length == 1 ? "" : "s")}</color></size>";
 
