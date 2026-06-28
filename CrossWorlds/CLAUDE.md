@@ -33,31 +33,7 @@ enter portals into combat arenas, kill monsters, earn loot, level up, craft upgr
 
 **Scene order:** LoginScene(0) → CharacterSelect(1) → Hub(2) → (Portal/Arena in progress)
 
----
-
-## File Map
-
-```
-/opt/rod-auth/
-  server.js       — ALL auth + game API endpoints
-  .env            — DB creds, JWT secret, port — NEVER log or expose
-
-/opt/rod-dashboard/
-  server.js       — Dashboard API + Socket.io
-  public/         — Dashboard UI
-
-/game/Builds/
-  CrossworldsBCE.x86_64   — Unity server binary
-  CrossworldsBCE_Data/    — Must match binary name exactly
-  GameAssembly.so         — Must match UnityPlayer.so build session
-  UnityPlayer.so
-
-/var/www/rod/
-  index.html, roadmap.html, icon.png
-  downloads/CrossworldsBCE.zip
-
-/var/log/crossworlds.log  — Unity game server stdout
-```
+> **VPS ops** (service commands, ports, file locations, deploy steps, Nginx, logs): see `_context/VPS_SERVER.md`
 
 ---
 
@@ -188,45 +164,6 @@ PREPARE s FROM @sql; EXECUTE s; DEALLOCATE PREPARE s;
 ```
 /api/inventory/*   /api/craft   /api/professions/*
 /api/combat/*      /api/quests/*   /api/guilds/*   /api/marketplace/*
-```
-
----
-
-## Ports — Frozen
-
-| Port | Service | Rule |
-|---|---|---|
-| 3000 | Auth server | Never proxy or change |
-| 4000 | Dashboard | Never proxy or change |
-| 7777/UDP | Game server | Never change — hardcoded in Unity |
-| 80/443 | Nginx | SSL live via Certbot |
-| 3001 | Uptime Kuma | Do not touch |
-
----
-
-## Service Commands
-
-```bash
-# Status
-sudo systemctl status crossworlds-auth crossworlds-dashboard crossworlds
-
-# Restart
-sudo systemctl restart crossworlds-auth
-sudo systemctl restart crossworlds-dashboard
-sudo systemctl restart crossworlds
-
-# Logs
-sudo journalctl -u crossworlds-auth -n 50 --no-pager
-sudo journalctl -u crossworlds -n 50 --no-pager
-tail -f /var/log/crossworlds.log
-
-# Database
-mysql -u rodgame -p"$(grep DB_PASS /opt/rod-auth/.env | cut -d= -f2)" rod_online
-
-# Deploy build
-scp -r ./Build/* ubuntu@playcrossworlds.com:/game/Builds/
-chmod +x /game/Builds/CrossworldsBCE.x86_64
-sudo systemctl restart crossworlds
 ```
 
 ---
