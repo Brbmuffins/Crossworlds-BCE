@@ -12,7 +12,9 @@ Each file is self-contained: key files, known pitfalls, current state, active TO
 | Engine | Unity 6000.0.77f1, URP, IL2CPP |
 | Networking | Mirror + KCP transport, UDP 7777 |
 | Server IP | 15.204.243.36 |
-| Domain | playcrossworlds.com |
+| Website | https://playcrossworlds.com (A record live, SSL active) |
+| Download page | https://playcrossworlds.com (download + how-to-play) |
+| Client download | https://playcrossworlds.com/downloads/CrossworldsBCE.zip |
 | Auth server | Port 3000 — `/opt/rod-auth/server.js` |
 | Dashboard | Port 4000 — `/opt/rod-dashboard/server.js` |
 | Database | MySQL 8 — DB `rod_online`, user `rodgame` |

@@ -20,9 +20,9 @@
 | Controls | [DEVDOC → Section 3](DEVDOC.md#3-controls-reference) |
 | Architecture | [DEVDOC → Section 7](DEVDOC.md#7-technical-architecture) |
 | VPS & Server | [DEVDOC → Section 8](DEVDOC.md#8-vps--server-infrastructure) |
-| Download Page | http://15.204.243.36 |
-| Server Manager | http://15.204.243.36:4000 |
-| GM Dashboard | http://15.204.243.36:4000/gm-dashboard |
+| Website / Download | https://playcrossworlds.com |
+| Server Manager | http://playcrossworlds.com:4000 |
+| GM Dashboard | http://playcrossworlds.com:4000/gm-dashboard |
 
 ---
 
@@ -50,12 +50,12 @@ Each class has 4 equipped abilities + 1 ultimate. See [`COMBAT.md`](COMBAT.md) f
 
 ### Server Manager & Account Management
 
-**Manager Dashboard** — `http://15.204.243.36:4000` · HTTP Basic Auth (admin credentials in private notes)
+**Manager Dashboard** — `http://playcrossworlds.com:4000` · HTTP Basic Auth (admin credentials in private notes)
 - Player account overview
 - Service health and controls
 - Built on Node.js / Express at `/opt/rod-dashboard/` · systemd managed
 
-**GM Server Dashboard** — `http://15.204.243.36:4000/gm-dashboard` · token auth (in `.env` on VPS)
+**GM Server Dashboard** — `http://playcrossworlds.com:4000/gm-dashboard` · token auth (in `.env` on VPS)
 - Live crossworlds status (green/red pill)
 - Spawn events pulled from server log
 - Last 50 log lines, color-coded by type
@@ -63,7 +63,7 @@ Each class has 4 equipped abilities + 1 ultimate. See [`COMBAT.md`](COMBAT.md) f
 - Download full server log
 - Link to Uptime Kuma monitoring
 
-**Auth Server** — `http://15.204.243.36:3000` · systemd service `rod-auth` · do not expose publicly
+**Auth Server** — `http://playcrossworlds.com:3000` (internal — Unity connects here directly, not through Nginx)
 - `POST /register` — create account
 - `POST /login` — returns JWT
 - `GET /health` — service check
@@ -198,9 +198,9 @@ localized and behavior-preserving for existing working paths.
 
 | Priority | Item |
 |----------|------|
-| High | **HTTPS / Cloudflare** — all current URLs use plain HTTP (`http://15.204.243.36:3000`, `http://15.204.243.36:4000`). Route through Cloudflare proxy with SSL to secure auth tokens and JWT traffic before launch |
 | Medium | Clean up stale prefabs — `Engineer.prefab`, `Guardian.prefab`, `Wraith.prefab`, `Medic.prefab`, `PlayerPrefab.prefab` still in `Assets/Game/Prefabs/` |
 | Medium | Add Arcanist to CharacterSelect scene preview |
+| Medium | `GmConsole.cs` — needs `#if !UNITY_SERVER` guard (spamming errors every frame on server) |
 | Low | Position save on scene exit (currently only on disconnect/quit) |
 
 ---
