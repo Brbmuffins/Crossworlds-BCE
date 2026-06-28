@@ -154,13 +154,48 @@ public class DropTable : ScriptableObject {
 
 ---
 
+## Combat Scripts (all in `_scripts/` — copy to Unity)
+
+| Script | Copy to | Purpose |
+|---|---|---|
+| `Health.cs` | `Assets/Game/Combat/` | Shared HP component, SyncVar, TakeDamage/Heal/onDeath events |
+| `DropTable.cs` | `Assets/Game/Combat/` | ScriptableObject — weighted item + gold rolls |
+| `EnemyController.cs` | `Assets/Game/Combat/` | NavMesh state machine: Idle→Chase→Attack→Dead |
+| `EnemyProjectile.cs` | `Assets/Game/Combat/` | Linear projectile for ranged enemies |
+| `WorldItem.cs` | `Assets/Game/Combat/` | Floating pickup, rarity glow, server-authoritative pickup |
+| `InventoryManager.cs` | `Assets/Game/Systems/` | Singleton — tracks local inventory, POST /api/inventory/save |
+| `WaveSpawner.cs` | `Assets/Game/Combat/` | Arena wave manager, escalating difficulty |
+| `EnemyBuilder.cs` | `Assets/Game/Editor/` | BCE menu: 4a–4e auto-create all prefabs + spawn points |
+
+### Quick-Start Order
+1. Copy all scripts above into Unity
+2. Run `BCE/Setup/4a` → `4b` → `4c` → `4d` (creates prefabs + DropTable assets)
+3. Run `BCE/Setup/4e` in your arena scene (creates WaveSpawner + spawn points)
+4. Drag WorldItem.prefab → each EnemyController.worldItemPrefab in inspector
+5. Drag prefabs into WaveSpawner slots (enemyPrefabs[0]=Grunt, [1]=Ranged, elitePrefab=Elite)
+6. Add Enemy_Grunt, Enemy_Ranged, Enemy_Elite, WorldItem to NetworkManager.spawnPrefabs
+7. Bake NavMesh (Window → AI → Navigation → Bake)
+8. Wire portal arrival trigger → `WaveSpawner.StartWaves()`
+9. Wire AuthManager.Token + AuthManager.CharacterId into InventoryManager (or delete the stub)
+
+### InventoryManager — AuthManager wiring
+`InventoryManager.cs` references a static `AuthManager` class with `Token` and `CharacterId`.
+If your project already has an auth manager with different field names, either:
+- Rename the references in InventoryManager.cs, OR
+- Add `#define AUTHMANAGER_EXISTS` to your project and set the fields externally
+
 ## Combat TODOs (Week 4 Unity)
 
-- [ ] Enemy prefabs: grunt + ranged (NavMesh, aggro, attack hitbox, death anim)
-- [ ] Wave spawner in arena (N enemies, escalating per wave)
-- [ ] `DropTable` ScriptableObject + WorldItem prefab (float, rotate, rarity glow)
-- [ ] Pickup sphere → POST /api/inventory/save
-- [ ] Multiplayer hit confirmation (server-authoritative damage)
+- [x] `DropTable` ScriptableObject (scripted — see above)
+- [x] `WorldItem` prefab (float, rotate, rarity glow) (scripted — BCE/Setup/4d)
+- [x] Pickup sphere → POST /api/inventory/save (scripted — InventoryManager)
+- [x] Enemy prefabs: grunt + ranged (NavMesh, aggro, attack hitbox, death) (scripted — BCE/Setup/4a–4c)
+- [x] Wave spawner in arena (scripted — BCE/Setup/4e)
+- [x] Server-authoritative damage (scripted — Health + EnemyController)
+- [ ] Wire portal → WaveSpawner.StartWaves() (needs portal transition scene)
+- [ ] Wire AuthManager fields in InventoryManager (project-specific)
+- [ ] Add all new prefabs to NetworkManager.spawnPrefabs
+- [ ] Bake NavMesh in arena scene
 - [ ] Damage number display (Week 7 polish but can stub now)
 
 ## Combat TODOs (Week 7 Polish)
