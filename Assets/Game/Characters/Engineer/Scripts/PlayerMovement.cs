@@ -178,26 +178,16 @@ public class PlayerMovement : MonoBehaviour
             camForward.y = 0; camForward.Normalize();
             camRight.y   = 0; camRight.Normalize();
 
-            var camFollow    = cam.GetComponent<CameraFollow>();
-            bool rightMouse  = camFollow != null && camFollow.RightMouseHeld;
-
             if (isMoving)
             {
                 moveDirection = (camForward * input.y + camRight * input.x).normalized;
 
-                // Face camera direction when right-mouse is held (WoW strafe feel)
-                // Face movement direction otherwise
-                Vector3 faceDir = rightMouse
-                    ? Quaternion.Euler(0, camFollow.Yaw, 0) * Vector3.forward
-                    : (pressingS ? -moveDirection : moveDirection);
+                Vector3 faceDir = pressingS && !bothMouseHeld
+                    ? -moveDirection
+                    : moveDirection;
 
                 if (faceDir.sqrMagnitude > 0.001f)
                     targetRotation = Quaternion.LookRotation(faceDir);
-            }
-            else if (rightMouse && camFollow != null)
-            {
-                // Standing still + right mouse: character turns to face camera yaw
-                targetRotation = Quaternion.Euler(0, camFollow.Yaw, 0);
             }
         }
     }
