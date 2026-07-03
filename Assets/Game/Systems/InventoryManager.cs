@@ -62,7 +62,10 @@ public class InventoryManager : MonoBehaviour
         if (itemId.StartsWith("gold:"))
         {
             if (int.TryParse(itemId.Substring(5), out int gold))
-                Debug.Log($"[LOOT] Picked up {gold} gold — sync via save-progress");
+            {
+                Debug.Log($"[LOOT] Picked up {gold} gold");
+                PlayerProgressManager.Local?.AwardGold(gold);
+            }
             return;
         }
 
