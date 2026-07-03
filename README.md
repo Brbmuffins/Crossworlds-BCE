@@ -111,63 +111,63 @@ The Arcanist controls space. Arcane Step is a true blink — it bypasses terrain
 
 | | # | Ability | Type | Shape | Damage | CD | Description |
 |---|---|---------|------|-------|--------|----|-------------|
-| <img src="Docs/icons/runic-sentinel.png" width="64"/> | 0 | **Runic Sentinel** | Support | Deploy | — | 6s | Deploys a stationary runic turret that fires void bolts at nearby enemies until destroyed. |
-| <img src="Docs/icons/void-bolt.png" width="64"/> | 1 | **Void Bolt** | Damage | Skill Shot | 15–45 | 3s | Fires a skill-shot bolt of void energy. Charge up to triple damage — you must aim and dodge to use it well. |
-| <img src="Docs/icons/mending-circle.png" width="64"/> | 2 | **Mending Circle** | Heal | AoE | — | 5s | Inscribes a glowing rune circle on the ground that heals all allies standing inside it. |
-| <img src="Docs/icons/storm-lash.png" width="64"/> | 3 | **Storm Lash** | Damage | Line | 15–50 | 4s | Unleashes a rushing wall of storm energy in a line, damaging all enemies it passes through. |
-| <img src="Docs/icons/ember-surge.png" width="64"/> | 4 | **Ember Surge** | Damage | AoE | 20–45 | 4s | Detonates a burst of fire at the target point, scorching all enemies caught in the blast. |
-| <img src="Docs/icons/mind-spike.png" width="64"/> | 5 | **Mind Spike** | Damage | AoE | 35 | 5s | Sends a focused psychic spike to the target point, dealing heavy single-target damage. |
-| <img src="Docs/icons/binding-wave.png" width="64"/> | 6 | **Binding Wave** | Damage | AoE | 15 | 6s | Releases a wide void pulse that damages and Binds all enemies in range, rooting them in place. |
-| <img src="Docs/icons/arcane-ward.png" width="64"/> | 7 | **Arcane Ward** | Support | Self | 50 absorb | 8s | Instantly wraps you in an arcane barrier absorbing up to 50 damage. Expires after 5 seconds. |
+| <img src="Docs/icons/runic-sentinel.png" width="120"/> | 0 | **Runic Sentinel** | Support | Deploy | — | 6s | Deploys a stationary runic turret that fires void bolts at nearby enemies until destroyed. |
+| <img src="Docs/icons/void-bolt.png" width="120"/> | 1 | **Void Bolt** | Damage | Skill Shot | 15–45 | 3s | Fires a skill-shot bolt of void energy. Charge up to triple damage — you must aim and dodge to use it well. |
+| <img src="Docs/icons/mending-circle.png" width="120"/> | 2 | **Mending Circle** | Heal | AoE | — | 5s | Inscribes a glowing rune circle on the ground that heals all allies standing inside it. |
+| <img src="Docs/icons/storm-lash.png" width="120"/> | 3 | **Storm Lash** | Damage | Line | 15–50 | 4s | Unleashes a rushing wall of storm energy in a line, damaging all enemies it passes through. |
+| <img src="Docs/icons/ember-surge.png" width="120"/> | 4 | **Ember Surge** | Damage | AoE | 20–45 | 4s | Detonates a burst of fire at the target point, scorching all enemies caught in the blast. |
+| <img src="Docs/icons/mind-spike.png" width="120"/> | 5 | **Mind Spike** | Damage | AoE | 35 | 5s | Sends a focused psychic spike to the target point, dealing heavy single-target damage. |
+| <img src="Docs/icons/binding-wave.png" width="120"/> | 6 | **Binding Wave** | Damage | AoE | 15 | 6s | Releases a wide void pulse that damages and Binds all enemies in range, rooting them in place. |
+| <img src="Docs/icons/arcane-ward.png" width="120"/> | 7 | **Arcane Ward** | Support | Self | 50 absorb | 8s | Instantly wraps you in an arcane barrier absorbing up to 50 damage. Expires after 5 seconds. |
 
 ### Warden (indices 8–12)
 
 | | # | Ability | Type | Shape | Damage | CD | Description |
 |---|---|---------|------|-------|--------|----|-------------|
-| <img src="Docs/icons/runic-snare.png" width="64"/> | 8 | **Runic Snare** | Damage | Deploy | 40 | 5s | Places an armed rune trap at the target point. Detonates in a burst when an enemy walks over it. |
-| <img src="Docs/icons/battle-hymn.png" width="64"/> | 9 | **Battle Hymn** | Support | AoE | — | 12s | Channels a rallying war hymn that reduces ability cooldowns for all nearby allies. |
-| <img src="Docs/icons/spirit-redirect.png" width="64"/> | 10 | **Spirit Redirect** | Support | Target | — | 8s | Commands your active Runic Sentinel to abandon its post and focus fire on your target. |
-| <img src="Docs/icons/mend.png" width="64"/> | 11 | **Mend** | Heal | Target | — | 6s | Channels restorative energy into a single ally, healing wounds and purging all active debuffs. |
-| <img src="Docs/icons/conjurers-surge.png" width="64"/> | 12 | **Conjurer's Surge** | Support | Self | — | 45s | Surges all your active deployed constructs simultaneously, triggering them at full power at once. |
+| <img src="Docs/icons/runic-snare.png" width="120"/> | 8 | **Runic Snare** | Damage | Deploy | 40 | 5s | Places an armed rune trap at the target point. Detonates in a burst when an enemy walks over it. |
+| <img src="Docs/icons/battle-hymn.png" width="120"/> | 9 | **Battle Hymn** | Support | AoE | — | 12s | Channels a rallying war hymn that reduces ability cooldowns for all nearby allies. |
+| <img src="Docs/icons/spirit-redirect.png" width="120"/> | 10 | **Spirit Redirect** | Support | Target | — | 8s | Commands your active Runic Sentinel to abandon its post and focus fire on your target. |
+| <img src="Docs/icons/mend.png" width="120"/> | 11 | **Mend** | Heal | Target | — | 6s | Channels restorative energy into a single ally, healing wounds and purging all active debuffs. |
+| <img src="Docs/icons/conjurers-surge.png" width="120"/> | 12 | **Conjurer's Surge** | Support | Self | — | 45s | Surges all your active deployed constructs simultaneously, triggering them at full power at once. |
 
 ### Ironclad (indices 13–18)
 
 | | # | Ability | Type | Shape | Damage | CD | Description |
 |---|---|---------|------|-------|--------|----|-------------|
-| <img src="Docs/icons/counter-blow.png" width="64"/> | 13 | **Counter Blow** | Support/Damage | Cone | up to 60 | 10s | Enters an absorption stance for 3 seconds. Releasing unleashes all absorbed damage as a cone burst. |
-| <img src="Docs/icons/gravity-slam.png" width="64"/> | 14 | **Gravity Slam** | Support | AoE | — | 7s | Slams the ground with gravitational force, pulling all nearby enemies into the impact point. |
-| <img src="Docs/icons/shieldwall-charge.png" width="64"/> | 15 | **Shieldwall Charge** | Damage | Line | 25 | 6s | Charges forward, slamming through enemies for 25 damage and generating Threat stacks on each hit. |
-| <img src="Docs/icons/stalwart-stance.png" width="64"/> | 16 | **Stalwart Stance** | Support | Self | — | 14s | Plants your feet: 40% damage reduction and tripled Threat generation for 6 seconds. Cannot move. |
-| <img src="Docs/icons/rune-chain.png" width="64"/> | 17 | **Rune Chain** | Support | Target | — | 9s | Etches a runic leash onto one enemy for 5 seconds, absorbing 15% of attacks they land on allies. |
-| <img src="Docs/icons/iron-rampart.png" width="64"/> | 18 | **Iron Rampart** | Support | Deploy | — | 50s | Raises a massive stone rune wall in front of you that blocks all projectiles for 10 seconds. |
+| <img src="Docs/icons/counter-blow.png" width="120"/> | 13 | **Counter Blow** | Support/Damage | Cone | up to 60 | 10s | Enters an absorption stance for 3 seconds. Releasing unleashes all absorbed damage as a cone burst. |
+| <img src="Docs/icons/gravity-slam.png" width="120"/> | 14 | **Gravity Slam** | Support | AoE | — | 7s | Slams the ground with gravitational force, pulling all nearby enemies into the impact point. |
+| <img src="Docs/icons/shieldwall-charge.png" width="120"/> | 15 | **Shieldwall Charge** | Damage | Line | 25 | 6s | Charges forward, slamming through enemies for 25 damage and generating Threat stacks on each hit. |
+| <img src="Docs/icons/stalwart-stance.png" width="120"/> | 16 | **Stalwart Stance** | Support | Self | — | 14s | Plants your feet: 40% damage reduction and tripled Threat generation for 6 seconds. Cannot move. |
+| <img src="Docs/icons/rune-chain.png" width="120"/> | 17 | **Rune Chain** | Support | Target | — | 9s | Etches a runic leash onto one enemy for 5 seconds, absorbing 15% of attacks they land on allies. |
+| <img src="Docs/icons/iron-rampart.png" width="120"/> | 18 | **Iron Rampart** | Support | Deploy | — | 50s | Raises a massive stone rune wall in front of you that blocks all projectiles for 10 seconds. |
 
 ### Arcanist (indices 19–22)
 
 | | # | Ability | Type | Shape | Damage | CD | Description |
 |---|---|---------|------|-------|--------|----|-------------|
-| <img src="Docs/icons/arcane-step.png" width="64"/> | 19 | **Arcane Step** | Support | Blink | — | 4s | Phase-shifts your body to the targeted location, bypassing terrain and enemy colliders. |
-| <img src="Docs/icons/void-maw.png" width="64"/> | 20 | **Void Maw** | Damage | AoE | 20 | 9s | Opens a singularity that pulls all enemies inward for 3 seconds, then detonates in a burst of void energy. |
-| <img src="Docs/icons/forked-lightning.png" width="64"/> | 21 | **Forked Lightning** | Damage | AoE | 30 chain | 7s | Unleashes chain lightning that arcs between up to 4 enemies (30 / 25 / 20 / 15 damage per jump). |
-| <img src="Docs/icons/collapsing-void.png" width="64"/> | 22 | **Collapsing Void** | Damage | AoE | 60 | 50s | Summons a massive event horizon. Pulls for 3 seconds, then collapses for 60 AoE and applies Weakened. |
+| <img src="Docs/icons/arcane-step.png" width="120"/> | 19 | **Arcane Step** | Support | Blink | — | 4s | Phase-shifts your body to the targeted location, bypassing terrain and enemy colliders. |
+| <img src="Docs/icons/void-maw.png" width="120"/> | 20 | **Void Maw** | Damage | AoE | 20 | 9s | Opens a singularity that pulls all enemies inward for 3 seconds, then detonates in a burst of void energy. |
+| <img src="Docs/icons/forked-lightning.png" width="120"/> | 21 | **Forked Lightning** | Damage | AoE | 30 chain | 7s | Unleashes chain lightning that arcs between up to 4 enemies (30 / 25 / 20 / 15 damage per jump). |
+| <img src="Docs/icons/collapsing-void.png" width="120"/> | 22 | **Collapsing Void** | Damage | AoE | 60 | 50s | Summons a massive event horizon. Pulls for 3 seconds, then collapses for 60 AoE and applies Weakened. |
 
 ### Cleric — Brandolf (indices 23–28)
 
 | | # | Ability | Type | Shape | Damage | CD | Description |
 |---|---|---------|------|-------|--------|----|-------------|
-| <img src="Docs/icons/soul-bond.png" width="64"/> | 23 | **Soul Bond** | Support | Target | — | 9s | Bonds with a nearby ally for 5 seconds, rerouting all incoming damage dealt to them onto you instead. |
-| <img src="Docs/icons/spirit-wisps.png" width="64"/> | 24 | **Spirit Wisps** | Heal | Deploy | — | 7s | Releases drifting wisps that seek out nearby allies to heal them and chip enemies they pass through. |
-| <img src="Docs/icons/divine-spark.png" width="64"/> | 25 | **Divine Spark** | Heal/Damage | Target | 60 (undead) | 14s | Revives a downed ally at 30% HP — or, if cast on undead enemies, detonates for 60 holy damage. |
-| <img src="Docs/icons/sacred-aegis.png" width="64"/> | 26 | **Sacred Aegis** | Support | Target | — | 10s | Places a living shield on an ally that grows stronger (up to 80 absorb) as they take hits over 8 seconds. |
-| <img src="Docs/icons/dispel.png" width="64"/> | 27 | **Dispel** | Support | Target | — | 7s | Instantly purges every active debuff from a target ally, no matter how many are stacked. |
-| <img src="Docs/icons/temporal-grace.png" width="64"/> | 28 | **Temporal Grace** | Heal | Team | — | 60s | Rewinds the entire team 5 seconds, restoring their HP, positions, and clearing all debuffs gained since then. |
+| <img src="Docs/icons/soul-bond.png" width="120"/> | 23 | **Soul Bond** | Support | Target | — | 9s | Bonds with a nearby ally for 5 seconds, rerouting all incoming damage dealt to them onto you instead. |
+| <img src="Docs/icons/spirit-wisps.png" width="120"/> | 24 | **Spirit Wisps** | Heal | Deploy | — | 7s | Releases drifting wisps that seek out nearby allies to heal them and chip enemies they pass through. |
+| <img src="Docs/icons/divine-spark.png" width="120"/> | 25 | **Divine Spark** | Heal/Damage | Target | 60 (undead) | 14s | Revives a downed ally at 30% HP — or, if cast on undead enemies, detonates for 60 holy damage. |
+| <img src="Docs/icons/sacred-aegis.png" width="120"/> | 26 | **Sacred Aegis** | Support | Target | — | 10s | Places a living shield on an ally that grows stronger (up to 80 absorb) as they take hits over 8 seconds. |
+| <img src="Docs/icons/dispel.png" width="120"/> | 27 | **Dispel** | Support | Target | — | 7s | Instantly purges every active debuff from a target ally, no matter how many are stacked. |
+| <img src="Docs/icons/temporal-grace.png" width="120"/> | 28 | **Temporal Grace** | Heal | Team | — | 60s | Rewinds the entire team 5 seconds, restoring their HP, positions, and clearing all debuffs gained since then. |
 
 ### Shadowblade — Bo-gar (indices 29–31)
 
 | | # | Ability | Type | Shape | Damage | CD | Description |
 |---|---|---------|------|-------|--------|----|-------------|
-| <img src="Docs/icons/shadow-veil.png" width="64"/> | 29 | **Shadow Veil** | Support | Self | — | 10s | Vanishes into full invisibility for 4 seconds. Breaking stealth immediately with Mind Spike deals +50% bonus damage. |
-| <img src="Docs/icons/silence-ward.png" width="64"/> | 30 | **Silence Ward** | Support | Deploy | — | 12s | Plants a cursed fog field that silences all enemy abilities and applies Cursed (DoT) while they remain inside. |
-| <img src="Docs/icons/dark-harvest.png" width="64"/> | 31 | **Dark Harvest** | Damage | AoE | 20/stack | 40s | Consumes all active debuff stacks on nearby enemies, dealing 20 damage per stack consumed. |
+| <img src="Docs/icons/shadow-veil.png" width="120"/> | 29 | **Shadow Veil** | Support | Self | — | 10s | Vanishes into full invisibility for 4 seconds. Breaking stealth immediately with Mind Spike deals +50% bonus damage. |
+| <img src="Docs/icons/silence-ward.png" width="120"/> | 30 | **Silence Ward** | Support | Deploy | — | 12s | Plants a cursed fog field that silences all enemy abilities and applies Cursed (DoT) while they remain inside. |
+| <img src="Docs/icons/dark-harvest.png" width="120"/> | 31 | **Dark Harvest** | Damage | AoE | 20/stack | 40s | Consumes all active debuff stacks on nearby enemies, dealing 20 damage per stack consumed. |
 
 ---
 
