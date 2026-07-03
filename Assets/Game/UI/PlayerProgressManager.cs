@@ -58,7 +58,6 @@ public class PlayerProgressManager : MonoBehaviour
     // ── Internal ──────────────────────────────────────────────────────────────
     int    _characterId = -1;
     string _jwt         = "";
-    string _serverIP    = ServerConfig.DefaultServerIP;
     bool   _fetching    = false;
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
@@ -80,9 +79,8 @@ public class PlayerProgressManager : MonoBehaviour
             var id = FindLocalIdentity();
             if (id != null && id.characterId > 0)
             {
-                _characterId = id.characterId;
-                _jwt         = PlayerPrefs.GetString("jwt_token", "");
-                _serverIP    = ServerConfig.ServerIP;
+                _characterId = AuthManager.CharacterId > 0 ? AuthManager.CharacterId : id.characterId;
+                _jwt         = !string.IsNullOrEmpty(AuthManager.Token) ? AuthManager.Token : PlayerPrefs.GetString("jwt_token", "");
                 StartCoroutine(FetchProgress());
                 yield break;
             }

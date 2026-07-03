@@ -379,7 +379,7 @@ public class CharacterSelectManager : MonoBehaviour
     {
         string jwt      = PlayerPrefs.GetString("jwt_token", "");
         string serverIP = PlayerPrefs.GetString("game_server_ip", ServerConfig.DefaultServerIP);
-        string url      = $"http://{serverIP}:3000/character";
+        string url      = $"{ServerConfig.AuthBaseUrl}/character";
         string json = $"{{\"class_index\":{classIndex}}}";
 
         using var req = new UnityWebRequest(url, "POST");

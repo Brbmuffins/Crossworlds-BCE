@@ -137,7 +137,6 @@ public class HeroCosmeticApplier : MonoBehaviour
     // API
     int    _characterId = -1;
     string _jwt         = "";
-    string _serverIP    = ServerConfig.DefaultServerIP;
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
     void Awake()
@@ -160,9 +159,8 @@ public class HeroCosmeticApplier : MonoBehaviour
             var id = FindLocalIdentity();
             if (id != null && id.characterId > 0)
             {
-                _characterId = id.characterId;
-                _jwt         = PlayerPrefs.GetString("jwt_token", "");
-                _serverIP    = ServerConfig.ServerIP;
+                _characterId = AuthManager.CharacterId > 0 ? AuthManager.CharacterId : id.characterId;
+                _jwt         = !string.IsNullOrEmpty(AuthManager.Token) ? AuthManager.Token : PlayerPrefs.GetString("jwt_token", "");
                 _playerRoot  = id.gameObject;
                 StartCoroutine(FetchCosmetics());
                 yield break;
@@ -264,7 +262,7 @@ public class HeroCosmeticApplier : MonoBehaviour
     // ── Fetch from server ─────────────────────────────────────────────────────
     IEnumerator FetchCosmetics()
     {
-        string url = $"http://{_serverIP}:3000/api/cosmetics/{_characterId}";
+        string url = $"{ServerConfig.AuthBaseUrl}/api/cosmetics/{_characterId}";
         using var req = UnityWebRequest.Get(url);
         req.SetRequestHeader("Authorization", $"Bearer {_jwt}");
         req.timeout = 8;

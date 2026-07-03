@@ -60,7 +60,6 @@ public class HeroMasteryManager : MonoBehaviour
     // ── Private state ─────────────────────────────────────────────────────────
     int    _characterId = -1;
     string _jwt         = "";
-    string _serverIP    = ServerConfig.DefaultServerIP;
     bool   _loaded      = false;
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
@@ -77,9 +76,8 @@ public class HeroMasteryManager : MonoBehaviour
             var id = FindLocalIdentity();
             if (id != null && id.characterId > 0)
             {
-                _characterId = id.characterId;
-                _jwt         = PlayerPrefs.GetString("jwt_token", "");
-                _serverIP    = ServerConfig.ServerIP;
+                _characterId = AuthManager.CharacterId > 0 ? AuthManager.CharacterId : id.characterId;
+                _jwt         = !string.IsNullOrEmpty(AuthManager.Token) ? AuthManager.Token : PlayerPrefs.GetString("jwt_token", "");
                 StartCoroutine(FetchMastery());
                 yield break;
             }
@@ -129,7 +127,7 @@ public class HeroMasteryManager : MonoBehaviour
     // ── Fetch ─────────────────────────────────────────────────────────────────
     IEnumerator FetchMastery()
     {
-        string url = $"http://{_serverIP}:3000/api/mastery/{_characterId}";
+        string url = $"{ServerConfig.AuthBaseUrl}/api/mastery/{_characterId}";
         using var req = UnityWebRequest.Get(url);
         req.SetRequestHeader("Authorization", $"Bearer {_jwt}");
         req.timeout = 8;
@@ -182,7 +180,7 @@ public class HeroMasteryManager : MonoBehaviour
     // ── Post XP award ─────────────────────────────────────────────────────────
     IEnumerator PostAwardXp(int heroId, int amount)
     {
-        string url = $"http://{_serverIP}:3000/api/mastery/award-xp";
+        string url = $"{ServerConfig.AuthBaseUrl}/api/mastery/award-xp";
         string body = JsonUtility.ToJson(new AwardXpRequest
         {
             characterId = _characterId,
