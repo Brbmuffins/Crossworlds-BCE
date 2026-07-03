@@ -29,8 +29,17 @@ public class PlayerIdentity : NetworkBehaviour
         // Refresh nameplate (it will hide itself for local player)
         GetComponent<PlayerNameplate>()?.Refresh();
 
-        // Wire combat session tracker so it can count healing done this run
 #if !UNITY_SERVER
+        // Populate AuthManager so InventoryManager and combat kill API have credentials.
+        // SyncVars (characterId) are applied before OnStartLocalPlayer fires.
+        AuthManager.CharacterId = characterId;
+        AuthManager.Token       = PlayerPrefs.GetString("jwt_token", "");
+
+        // Re-trigger inventory load now that auth is ready (Start() ran too early).
+        var inv = InventoryManager.Instance;
+        if (inv != null) inv.StartCoroutine(inv.LoadInventory());
+
+        // Wire combat session tracker so it can count healing done this run
         CombatSessionTracker.Local?.NotifyAllySpawned(gameObject);
 #endif
     }
