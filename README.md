@@ -19,9 +19,12 @@
 | **SNAPSHOT.md** | Architecture map, what's implemented vs stubbed |
 | **`_CONTEXT/CLAUDE.md`** | DB schema, API endpoints, server conventions |
 | **`_CONTEXT/VPS_SERVER.md`** | SSH, service commands, deploy, logs |
+| **`web/`** | Three.js browser client — [Cross-Worlds-Web](https://github.com/Brbmuffins/Cross-Worlds-Web) (git submodule, branch `CrossWorldsWEB`) |
 | Website / Download | https://playcrossworlds.com |
 | Server Manager | http://playcrossworlds.com:4000 |
 | GM Dashboard | http://playcrossworlds.com:4000/gm-dashboard |
+
+> **Web client:** `git submodule update --init` after cloning to check out the Three.js browser client into `web/`.
 
 ---
 
