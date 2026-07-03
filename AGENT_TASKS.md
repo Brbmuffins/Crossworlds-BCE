@@ -23,7 +23,7 @@ not start one whose *Depends* is unmet. Update the checkbox + ROADMAP status whe
 
 ---
 
-## ☐ T1 — Central server config (ROADMAP 2.1)
+## ✅ T1 — Central server config (ROADMAP 2.1)
 
 **Context:** The VPS IP `15.204.243.36` is hardcoded in ~8 scripts and serialized in
 LoginScene. A server move requires many edits. Create one source of truth.
@@ -45,7 +45,7 @@ initializers so serialized scene values still win if deliberately set.
 fine — note them for an editor cleanup); compile gate passes.
 **Depends:** none. **Editor step for owner:** none.
 
-## ☐ T2 — Scene-name constants (ROADMAP 2.2)
+## ✅ T2 — Scene-name constants (ROADMAP 2.2)
 
 **Context:** Scene names/paths are string literals (`"Arena_Copper"`, full paths in
 `RodNetworkManager.Awake`). A scene rename breaks portals silently.
@@ -62,7 +62,7 @@ Replace literals. Do NOT rename any scene.
 **Accept:** no scene-name string literals left in the edited files; compile gate passes.
 **Depends:** none.
 
-## ☐ T3 — Arena scene generation, script side (ROADMAP 1.1)
+## ✅ T3 — Arena scene generation, script side (ROADMAP 1.1)
 
 **Context:** No arena scene exists; `PortalTransition.arenaSceneName` defaults to
 `"Arena_Copper"`. An editor script `Assets/Game/Editor/ArenaSceneBuilder.cs` arrived in
@@ -81,7 +81,7 @@ checklist (portal → arena → wave 1 spawns → return to hub).
 **Depends:** T2 recommended first (scene constants). **Editor step for owner:** run the
 builder menu item, bake NavMesh, verify in play mode.
 
-## ☐ T4 — API contract smoke tests (ROADMAP 2.3)
+## ✅ T4 — API contract smoke tests (ROADMAP 2.3)
 
 **Context:** All client JSON parsing is `JsonUtility` on ad-hoc classes; float-format
 and NaN bugs have burned time. Catch server/response drift before players do.
