@@ -84,6 +84,48 @@ public class InventoryManager : MonoBehaviour
 
     public List<InventorySlot> GetSlots() => new List<InventorySlot>(_slots);
 
+    /// <summary>
+    /// Mark an item equipped/unequipped in local cache and POST to /api/inventory/equip.
+    /// Call after Equipment.EquipItem() / UnequipItem() succeeds.
+    /// </summary>
+    public void OnItemEquipped(string itemId, bool equipped)
+    {
+        if (string.IsNullOrEmpty(itemId)) return;
+
+        var slot = _slots.Find(s => s.item_id == itemId && (equipped ? s.equipped == 0 : s.equipped == 1));
+        if (slot == null)
+        {
+            Debug.LogWarning($"[LOOT] OnItemEquipped: no matching slot for {itemId} (equipped={equipped})");
+            return;
+        }
+
+        slot.equipped = equipped ? 1 : 0;
+        StartCoroutine(PostEquip(slot.slot_index, slot.equipped));
+    }
+
+    IEnumerator PostEquip(int slotIndex, int equippedFlag)
+    {
+        int charId   = AuthManager.CharacterId;
+        string token = AuthManager.Token;
+        if (charId <= 0 || string.IsNullOrEmpty(token)) yield break;
+
+        string url  = $"{ServerConfig.AuthBaseUrl}/api/inventory/equip";
+        string json = $"{{\"characterId\":{charId},\"slot_index\":{slotIndex},\"equipped\":{equippedFlag}}}";
+
+        using var req = new UnityWebRequest(url, "POST");
+        req.uploadHandler   = new UploadHandlerRaw(Encoding.UTF8.GetBytes(json));
+        req.downloadHandler = new DownloadHandlerBuffer();
+        req.SetRequestHeader("Content-Type", "application/json");
+        req.SetRequestHeader("Authorization", $"Bearer {token}");
+        req.timeout = 8;
+        yield return req.SendWebRequest();
+
+        if (req.result != UnityWebRequest.Result.Success)
+            Debug.LogWarning($"[LOOT] Equip POST failed: {req.error}");
+        else
+            Debug.Log($"[LOOT] Slot {slotIndex} equipped={equippedFlag} saved");
+    }
+
     // ── Load ─────────────────────────────────────────────────────────────────
 
     public IEnumerator LoadInventory()

@@ -16,6 +16,7 @@ public class EquipmentSlot : MonoBehaviour, IPointerClickHandler, IPointerEnterH
         if (inventory.AddItem(item))
         {
             equipment.UnequipItem(slotType);
+            InventoryManager.Instance?.OnItemEquipped(item.id, false);
         }
     }
 

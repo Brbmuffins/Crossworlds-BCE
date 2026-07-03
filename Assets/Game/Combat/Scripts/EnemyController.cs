@@ -60,6 +60,10 @@ public class EnemyController : NetworkBehaviour
     [Tooltip("Bonus gold awarded to every player (on top of drop table gold)")]
     public int goldReward = 0;
 
+    [Header("API")]
+    [Tooltip("Matches enemy_templates.id in the DB (e.g. 'goblin_grunt'). When set, death calls /api/combat/hit + /api/combat/kill for server-authoritative XP/gold. Leave empty to use local xpReward/goldReward only.")]
+    public string enemyTemplateId = "";
+
     // ── Private ──────────────────────────────────────────────────────────────────
     private Health               _health;
     private NavMeshAgent         _agent;
@@ -426,9 +430,77 @@ public class EnemyController : NetworkBehaviour
     [ClientRpc]
     void RpcAwardProgress(int xp, int gold)
     {
-        if (xp   > 0) PlayerProgressManager.Local?.AwardXp(xp);
-        if (gold  > 0) PlayerProgressManager.Local?.AwardGold(gold);
+#if !UNITY_SERVER
+        if (!string.IsNullOrEmpty(enemyTemplateId))
+        {
+            // Server-authoritative path: hit + kill API awards XP/gold and logs loot.
+            // Fallback to local award if the API fails (network error, auth missing).
+            StartCoroutine(PostCombatKill(enemyTemplateId, xp, gold));
+        }
+        else
+        {
+            if (xp   > 0) PlayerProgressManager.Local?.AwardXp(xp);
+            if (gold > 0) PlayerProgressManager.Local?.AwardGold(gold);
+        }
+#endif
     }
+
+#if !UNITY_SERVER
+    IEnumerator PostCombatKill(string templateId, int fallbackXp, int fallbackGold)
+    {
+        int charId    = AuthManager.CharacterId;
+        string jwt    = AuthManager.Token;
+        if (charId <= 0 || string.IsNullOrEmpty(jwt))
+        {
+            // No auth — fall back to local award so XP always registers
+            if (fallbackXp   > 0) PlayerProgressManager.Local?.AwardXp(fallbackXp);
+            if (fallbackGold > 0) PlayerProgressManager.Local?.AwardGold(fallbackGold);
+            yield break;
+        }
+
+        byte[] HitBody(string tid, float dmg)
+        {
+            string j = $"{{\"characterId\":{charId},\"enemyTemplateId\":\"{tid}\",\"damageDealt\":{dmg}}}";
+            return System.Text.Encoding.UTF8.GetBytes(j);
+        }
+
+        // 1. POST hit (satisfies the server's 30s hit-gate before kill)
+        using (var hitReq = new UnityWebRequest($"{ServerConfig.AuthBaseUrl}/api/combat/hit", "POST"))
+        {
+            hitReq.uploadHandler   = new UploadHandlerRaw(HitBody(templateId, damage));
+            hitReq.downloadHandler = new DownloadHandlerBuffer();
+            hitReq.SetRequestHeader("Content-Type", "application/json");
+            hitReq.SetRequestHeader("Authorization", $"Bearer {jwt}");
+            hitReq.timeout = 5;
+            yield return hitReq.SendWebRequest();
+            // hit failure is non-fatal — kill will fail the gate below and we fallback
+        }
+
+        // 2. POST kill — server awards XP + gold + rolls loot into DB
+        string killJson = $"{{\"characterId\":{charId},\"enemyTemplateId\":\"{templateId}\"}}";
+        using (var killReq = new UnityWebRequest($"{ServerConfig.AuthBaseUrl}/api/combat/kill", "POST"))
+        {
+            killReq.uploadHandler   = new UploadHandlerRaw(System.Text.Encoding.UTF8.GetBytes(killJson));
+            killReq.downloadHandler = new DownloadHandlerBuffer();
+            killReq.SetRequestHeader("Content-Type", "application/json");
+            killReq.SetRequestHeader("Authorization", $"Bearer {jwt}");
+            killReq.timeout = 8;
+            yield return killReq.SendWebRequest();
+
+            if (killReq.result == UnityWebRequest.Result.Success)
+            {
+                // Refresh progress from server so XP bar + gold reflect DB truth
+                PlayerProgressManager.Local?.Refresh();
+            }
+            else
+            {
+                Debug.LogWarning($"[COMBAT] Kill API failed ({killReq.responseCode}): {killReq.error} — awarding locally");
+                if (fallbackXp   > 0) PlayerProgressManager.Local?.AwardXp(fallbackXp);
+                if (fallbackGold > 0) PlayerProgressManager.Local?.AwardGold(fallbackGold);
+            }
+        }
+    }
+#endif
 
     // ─────────────────────────────────────────────────────────────────────────────
     // Gizmos

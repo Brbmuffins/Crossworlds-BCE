@@ -29,6 +29,8 @@ public enum ItemRarity
 [CreateAssetMenu(fileName = "New Item", menuName = "Inventory/Item")]
 public class ItemData : ScriptableObject
 {
+    [Tooltip("Matches item_id in the DB items table (e.g. 'iron_sword'). Set in Inspector; used for equip/save API calls.")]
+    public string id;
     public string itemName;
     public Sprite icon;
     [TextArea]
