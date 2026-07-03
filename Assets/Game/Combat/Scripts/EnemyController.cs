@@ -46,6 +46,11 @@ public class EnemyController : NetworkBehaviour
     public DropTable  dropTable;
     public GameObject worldItemPrefab;
 
+    // ── Telegraph ────────────────────────────────────────────────────────────────
+    [Header("Attack Telegraph")]
+    [Tooltip("Seconds of red AoE preview shown before the attack lands. 0 = no telegraph.")]
+    public float telegraphDuration = 0.45f;
+
     // ── VFX / Audio (client-side only) ───────────────────────────────────────────
     [Header("VFX — assign from brbmuffins packs")]
     [Tooltip("Impact spark on melee hit, e.g. Sparks red.prefab or MetalImpacts.prefab")]
@@ -249,7 +254,7 @@ public class EnemyController : NetworkBehaviour
         if (_attackTimer > 0f) return;
         _attackTimer = attackInterval;
 
-        PerformAttack();
+        StartCoroutine(AttackSequence());
     }
 
     // ─────────────────────────────────────────────────────────────────────────────
@@ -290,6 +295,48 @@ public class EnemyController : NetworkBehaviour
             }
             RpcRangedShot();
         }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // Attack sequence with telegraph
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    [Server]
+    IEnumerator AttackSequence()
+    {
+        if (telegraphDuration > 0f && _target != null)
+        {
+            // Show red indicator at attack landing zone before damage lands
+            Vector3 telegraphPos = isRanged
+                ? transform.position + transform.forward * preferredRange  // rough projectile landing
+                : _target.position;                                         // melee: target feet
+
+            float radius = isRanged ? 0.6f : attackRange;
+            RpcShowTelegraph(telegraphPos, radius, telegraphDuration);
+            yield return new WaitForSeconds(telegraphDuration);
+        }
+
+        PerformAttack();
+    }
+
+    [ClientRpc]
+    void RpcShowTelegraph(Vector3 center, float radius, float duration)
+    {
+#if !UNITY_SERVER
+        // Red flat cylinder on the ground — same technique as AbilityCaster indicators
+        var indicator = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+        indicator.transform.position = center + Vector3.up * 0.02f;
+        indicator.transform.localScale = new Vector3(radius * 2f, 0.02f, radius * 2f);
+
+        var col = indicator.GetComponent<Collider>();
+        if (col != null) Object.Destroy(col);
+
+        var mat = new Material(Shader.Find("Sprites/Default"));
+        mat.color = new Color(1f, 0.12f, 0.12f, 0.55f);
+        indicator.GetComponent<Renderer>().material = mat;
+
+        Object.Destroy(indicator, duration);
+#endif
     }
 
     // ─────────────────────────────────────────────────────────────────────────────

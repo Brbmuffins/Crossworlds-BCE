@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Controls;
 
-public enum AbilityShape { Circle, Cone, Rectangle }
+public enum AbilityShape { Circle, Cone, Rectangle, SkillShot }
 public enum AbilityCategory { Damage, Heal, Support }
 
 [System.Serializable]
@@ -55,6 +55,9 @@ public class AbilityDef
     public float pullRadius   = 0f;        // Magnetize, Singularity, Event Horizon
     public float pullDuration = 0f;        // Singularity pull phase
 
+    [Header("Skill Shot")]
+    public float projectileSpeed = 18f;   // travel speed when shape == SkillShot
+
     [Header("Deployable Scene Prefab")]
     // The runtime object spawned in the world by this ability (mine, wall, zone, etc.)
     public GameObject deployablePrefab;
@@ -101,6 +104,10 @@ public class AbilityCaster : NetworkBehaviour
     [Tooltip("ShadowRelayDeployable (Shadowblade)")]
     public GameObject shadowRelayPrefab;
 
+    [Header("Skill Shot")]
+    [Tooltip("PlayerProjectile prefab — needs NetworkIdentity + PlayerProjectile component, registered in NetworkManager spawnable prefabs")]
+    public GameObject playerProjectilePrefab;
+
     [Header("Mouse Aim")]
     public float minimumAimDistance = 1f;
 
@@ -109,7 +116,7 @@ public class AbilityCaster : NetworkBehaviour
     {
         // ── SHARED / CROSS-CLASS (indices 0–7) ─────────────────────────────────────────
         new AbilityDef { abilityName = "Runic Sentinel",   shape = AbilityShape.Circle,    category = AbilityCategory.Support, range = 10f, indicatorSize = 1.5f, spawnTurret = true, cooldown = 6f },
-        new AbilityDef { abilityName = "Void Bolt",        shape = AbilityShape.Cone,      category = AbilityCategory.Damage,  range = 8f, coneAngle = 60f, cooldown = 3f, chargeable = true, maxChargeTime = 1.5f, damage = 10f, maxChargeDamage = 30f, maxChargeSizeMultiplier = 1.6f, targetTag = "Enemy", chargedTint = new Color(0.4f, 0.1f, 0.8f, 0.9f) },
+        new AbilityDef { abilityName = "Void Bolt",        shape = AbilityShape.SkillShot, category = AbilityCategory.Damage,  range = 14f, projectileSpeed = 20f, cooldown = 3f, chargeable = true, maxChargeTime = 1.5f, damage = 15f, maxChargeDamage = 45f, maxChargeSizeMultiplier = 1.6f, targetTag = "Enemy", chargedTint = new Color(0.4f, 0.1f, 0.8f, 0.9f) },
         new AbilityDef { abilityName = "Mending Circle",   shape = AbilityShape.Circle,    category = AbilityCategory.Heal,    range = 6f, indicatorSize = 3f, cooldown = 5f },
         new AbilityDef { abilityName = "Storm Lash",       shape = AbilityShape.Rectangle, category = AbilityCategory.Damage,  range = 10f, rectWidth = 1.5f, cooldown = 4f, chargeable = true, maxChargeTime = 1.5f, damage = 15f, maxChargeDamage = 50f, maxChargeSizeMultiplier = 1.8f, targetTag = "Enemy" },
         new AbilityDef { abilityName = "Ember Surge",      shape = AbilityShape.Circle,    category = AbilityCategory.Damage,  range = 12f, indicatorSize = 2f, cooldown = 4f, chargeable = true, maxChargeTime = 1.5f, damage = 20f, maxChargeDamage = 45f, maxChargeSizeMultiplier = 2f, targetTag = "Enemy", chargedTint = new Color(1f, 0.4f, 0.05f, 0.9f) },
@@ -495,6 +502,12 @@ public class AbilityCaster : NetworkBehaviour
             indicator = GameObject.CreatePrimitive(PrimitiveType.Cube);
             indicator.transform.localScale = new Vector3(ability.rectWidth, 0.02f, ability.range);
         }
+        else if (ability.shape == AbilityShape.SkillShot)
+        {
+            // Thin beam pointing in aim direction
+            indicator = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            indicator.transform.localScale = new Vector3(0.18f, 0.05f, ability.range);
+        }
         else
         {
             indicator = CreateConeIndicator(ability.range, ability.coneAngle);
@@ -552,6 +565,12 @@ public class AbilityCaster : NetworkBehaviour
             indicator.transform.rotation = Quaternion.LookRotation(aimDir);
             indicator.transform.localScale = Vector3.one * distanceMul * chargeMul;
         }
+        else if (ability.shape == AbilityShape.SkillShot)
+        {
+            // Beam anchored at player, extending forward in aim direction
+            indicator.transform.position = transform.position + aimDir * (ability.range * 0.5f) + Vector3.up * 0.3f;
+            indicator.transform.rotation = Quaternion.LookRotation(aimDir);
+        }
 
         if (ability.chargeable)
         {
@@ -576,6 +595,30 @@ public class AbilityCaster : NetworkBehaviour
         if (prefab == null) return;
         GameObject fx = Instantiate(prefab, position, rotation);
         Destroy(fx, 4f);
+    }
+
+    void SpawnSkillShot(Vector3 origin, Vector3 direction, float damage, float maxRange, float speed)
+    {
+        if (playerProjectilePrefab == null)
+        {
+            Debug.LogWarning("[COMBAT] playerProjectilePrefab not assigned on AbilityCaster — skill shot skipped.");
+            return;
+        }
+
+        if (!isServer && NetworkClient.active) return; // only server spawns networked projectiles
+
+        Quaternion rot = direction.sqrMagnitude > 0.001f ? Quaternion.LookRotation(direction) : transform.rotation;
+        var go   = Instantiate(playerProjectilePrefab, origin, rot);
+        var proj = go.GetComponent<PlayerProjectile>();
+        if (proj != null)
+        {
+            proj.speed    = speed;
+            proj.maxRange = maxRange;
+            proj.Init(damage, origin);
+        }
+
+        if (NetworkServer.active)
+            NetworkServer.Spawn(go);
     }
 
     // Called by BountySystem passive when a kill is registered.
@@ -658,6 +701,14 @@ public class AbilityCaster : NetworkBehaviour
         if (ability.shape == AbilityShape.Circle && ability.damage > 0f)
         {
             ApplyCircleDamage(ability, indicator, damageMultiplier);
+        }
+
+        if (ability.shape == AbilityShape.SkillShot && ability.damage > 0f)
+        {
+            float chargeFraction = GetChargeFraction(ability, aimTime);
+            float damage = Mathf.Lerp(ability.damage, ability.maxChargeDamage, chargeFraction) * damageMultiplier;
+            Vector3 dir = indicator != null ? indicator.transform.forward : transform.forward;
+            SpawnSkillShot(transform.position + Vector3.up * 1f, dir, damage, ability.range, ability.projectileSpeed);
         }
 
         if (ability.shieldAbsorb > 0f)
