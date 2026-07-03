@@ -1,3 +1,4 @@
+#if !UNITY_SERVER
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -424,3 +425,4 @@ public class InventoryBagUI : MonoBehaviour
         public int    equipped;   // 0 or 1
     }
 }
+#endif

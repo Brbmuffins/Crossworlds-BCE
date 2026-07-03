@@ -1,3 +1,4 @@
+#if !UNITY_SERVER
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -458,3 +459,4 @@ public class CraftingUI : MonoBehaviour
         public string result_item_id;
     }
 }
+#endif

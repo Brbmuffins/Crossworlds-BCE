@@ -1,3 +1,4 @@
+#if !UNITY_SERVER
 ﻿using UnityEngine;
 using UnityEngine.UI;
 using Mirror;
@@ -180,3 +181,4 @@ public class WorldBossHealthBar : MonoBehaviour
         rect.offsetMin = rect.offsetMax = Vector2.zero;
     }
 }
+#endif

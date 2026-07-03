@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿#if !UNITY_SERVER
+using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System.Collections;
@@ -214,3 +215,4 @@ public class XpBar : MonoBehaviour
         rt.offsetMin = rt.offsetMax = Vector2.zero;
     }
 }
+#endif

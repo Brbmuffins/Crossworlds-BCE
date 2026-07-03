@@ -1,3 +1,4 @@
+#if !UNITY_SERVER
 using Mirror;
 using TMPro;
 using UnityEngine;
@@ -238,3 +239,4 @@ public class EscMenu : MonoBehaviour
         btn.onClick.AddListener(onClick);
     }
 }
+#endif

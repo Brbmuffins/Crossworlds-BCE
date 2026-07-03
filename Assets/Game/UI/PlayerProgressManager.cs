@@ -1,3 +1,4 @@
+#if !UNITY_SERVER
 using System;
 using System.Collections;
 using UnityEngine;
@@ -128,7 +129,7 @@ public class PlayerProgressManager : MonoBehaviour
         if (_fetching || _characterId < 0) yield break;
         _fetching = true;
 
-        string url = $"http://{_serverIP}:3000/character";
+        string url = $"{ServerConfig.AuthBaseUrl}/character";
         using var req = UnityWebRequest.Get(url);
         req.SetRequestHeader("Authorization", $"Bearer {_jwt}");
         req.timeout = 8;
@@ -169,7 +170,7 @@ public class PlayerProgressManager : MonoBehaviour
     {
         if (_characterId < 0) yield break;
 
-        string url  = $"http://{_serverIP}:3000/api/character/save-progress";
+        string url  = $"{ServerConfig.AuthBaseUrl}/api/character/save-progress";
         string body = JsonUtility.ToJson(new SaveProgressRequest
         {
             characterId = _characterId,
@@ -218,3 +219,4 @@ public class PlayerProgressManager : MonoBehaviour
         public int characterId, level, xp, gold, stat_str, stat_agi, stat_int, stat_vit;
     }
 }
+#endif

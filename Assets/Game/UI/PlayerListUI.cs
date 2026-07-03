@@ -1,3 +1,4 @@
+#if !UNITY_SERVER
 ﻿using System.Collections.Generic;
 using Mirror;
 using TMPro;
@@ -284,3 +285,4 @@ public class PlayerListUI : MonoBehaviour
         return tmp;
     }
 }
+#endif
