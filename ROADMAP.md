@@ -48,12 +48,16 @@ conversation: it names its files, acceptance criteria, and dependencies. Tasks m
 > ItemData: added `id` field for DB item_id bridge. InventorySlot/EquipmentSlot wired.
 > **Editor steps needed:** assign `enemyTemplateId` on enemy prefabs; assign `id` on ItemData SOs.
 > **URL / AuthManager sweep (2026-07-03):** HeroMasteryManager, HeroCosmeticApplier,
-> PlayerProgressManager, CharacterSelectManager — replaced `http://{_serverIP}:3000/...`
-> with `ServerConfig.AuthBaseUrl`; prefer `AuthManager.CharacterId/Token` over PlayerIdentity
-> poll loop. Zero remaining hardcoded URL literals in Game/ scripts.
+> PlayerProgressManager, CharacterSelectManager, CraftingUI, InventoryBagUI,
+> RodNetworkAuthenticator — all now prefer AuthManager.Token/CharacterId with PlayerPrefs fallback.
+> Zero remaining raw `PlayerPrefs.GetString("jwt_token")` calls (all are now fallbacks only).
 > XpBar (3.1) and LevelUpScreen code-complete and confirmed wired to PlayerProgressManager.
 > 3.1 ✅ code-side. 3.2 code-side complete (stat recalc chain verified). 3.4 code-side complete.
-> **Blocked on owner auth:** `git push` (~46 commits ahead) and `git lfs pull`
+> **HeroMasteryManager:** now accepts AuthManager creds before PlayerIdentity spawns;
+> RetryApplyBonuses coroutine re-applies when CharacterStats appears post-spawn.
+> **1.4 ✅ code-side:** CombatSessionTracker fully wired — WaveSpawner notifies via Rpc,
+> PlayerIdentity.OnStartLocalPlayer calls NotifyAllySpawned, ArenaAutoStarter calls BeginSession().
+> **Blocked on owner auth:** `git push` (~50 commits ahead) and `git lfs pull`
 > (2 missing LFS objects: Wisp_Mob.prefab, grass.png) need GitHub Desktop auth.
 
 - **0.1 — Commit the working tree in reviewable slices.** Files: everything in `git status`.
