@@ -46,6 +46,20 @@ public class EnemyController : NetworkBehaviour
     public DropTable  dropTable;
     public GameObject worldItemPrefab;
 
+    // ── VFX / Audio (client-side only) ───────────────────────────────────────────
+    [Header("VFX — assign from brbmuffins packs")]
+    [Tooltip("Impact spark on melee hit, e.g. Sparks red.prefab or MetalImpacts.prefab")]
+    public GameObject meleeImpactVFX;
+    [Tooltip("Explosion/smoke on death, e.g. SmallExplosion.prefab or Smoke puff.prefab")]
+    public GameObject deathVFX;
+
+    // ── XP / Gold reward (broadcast to all players on death) ─────────────────────
+    [Header("XP Reward")]
+    [Tooltip("XP awarded to every player in the scene on death")]
+    public int xpReward   = 20;
+    [Tooltip("Bonus gold awarded to every player (on top of drop table gold)")]
+    public int goldReward = 0;
+
     // ── Private ──────────────────────────────────────────────────────────────────
     private Health               _health;
     private NavMeshAgent         _agent;
@@ -72,6 +86,31 @@ public class EnemyController : NetworkBehaviour
         _health.onDeath.AddListener(OnDeath);
         StartCoroutine(BehaviorLoop());
     }
+
+#if !UNITY_SERVER
+    public override void OnStartClient()
+    {
+        base.OnStartClient();
+        // Show floating damage numbers client-side on every hit.
+        _health.onDamageTaken.AddListener(OnClientDamageTaken);
+        // Attach world-space health bar (self-builds its Canvas in Awake).
+        if (GetComponent<EnemyHealthBar>() == null)
+            gameObject.AddComponent<EnemyHealthBar>();
+        // Session stats: OnStartClient fires on every client for every spawned
+        // enemy (host or dedicated server), unlike WaveSpawner's server-only path.
+        CombatSessionTracker.Local?.NotifyEnemySpawned(gameObject);
+    }
+
+    void OnClientDamageTaken(float amount)
+    {
+        Vector3 spawnPos = transform.position + Vector3.up * 1.8f;
+        // Flag as critical if the hit is 30%+ above the enemy's base damage value
+        var type = amount >= damage * 1.3f
+            ? FloatingDamageText.DamageType.Critical
+            : FloatingDamageText.DamageType.Normal;
+        FloatingDamageText.Spawn(spawnPos, amount, type);
+    }
+#endif
 
     // ─────────────────────────────────────────────────────────────────────────────
     // Behavior loop
@@ -280,6 +319,10 @@ public class EnemyController : NetworkBehaviour
             }
         }
 
+        // Award XP and gold to all clients
+        if (xpReward > 0 || goldReward > 0)
+            RpcAwardProgress(xpReward, goldReward);
+
         yield return new WaitForSeconds(2.6f);
         NetworkServer.Destroy(gameObject);
     }
@@ -319,17 +362,70 @@ public class EnemyController : NetworkBehaviour
 
     void OnStateChanged(EnemyState _, EnemyState newState)
     {
-        // Hook animator here when animation rig is ready (Week 7)
-        // GetComponent<Animator>()?.SetInteger("state", (int)newState);
+#if !UNITY_SERVER
+        var anim = GetComponentInChildren<Animator>();
+        if (anim == null) return;
+
+        // Speed float: moving when chasing or attacking
+        bool isMoving = newState == EnemyState.Chase || newState == EnemyState.Attack;
+        anim.SetFloat("Speed", isMoving ? 1f : 0f);
+
+        if (newState == EnemyState.Dead)
+            anim.SetTrigger("Death");
+#endif
     }
 
     // ─────────────────────────────────────────────────────────────────────────────
     // RPCs (Week 7: wire anim + SFX)
     // ─────────────────────────────────────────────────────────────────────────────
 
-    [ClientRpc] void RpcMeleeSwing()    { /* swing anim + impact SFX */ }
-    [ClientRpc] void RpcRangedShot()    { /* ranged anim + projectile SFX */ }
-    [ClientRpc] void RpcPlayDeathEffect() { /* death VFX + SFX */ }
+    [ClientRpc]
+    void RpcMeleeSwing()
+    {
+#if !UNITY_SERVER
+        GetComponentInChildren<Animator>()?.SetTrigger("Attack");
+        CombatAudio.Instance?.PlayMeleeHit();
+
+        if (meleeImpactVFX != null)
+        {
+            Vector3 hitPos = transform.position + Vector3.up * 1f;
+            var fx = Instantiate(meleeImpactVFX, hitPos, Quaternion.identity);
+            Destroy(fx, 2f);
+        }
+#endif
+    }
+
+    [ClientRpc]
+    void RpcRangedShot()
+    {
+#if !UNITY_SERVER
+        GetComponentInChildren<Animator>()?.SetTrigger("Attack");
+        CombatAudio.Instance?.PlayRangedHit();
+#endif
+    }
+
+    [ClientRpc]
+    void RpcPlayDeathEffect()
+    {
+#if !UNITY_SERVER
+        GetComponentInChildren<Animator>()?.SetTrigger("Death");
+        CombatAudio.Instance?.PlayDeath();
+
+        if (deathVFX != null)
+        {
+            Vector3 pos = transform.position + Vector3.up * 0.5f;
+            var fx = Instantiate(deathVFX, pos, Quaternion.identity);
+            Destroy(fx, 3f);
+        }
+#endif
+    }
+
+    [ClientRpc]
+    void RpcAwardProgress(int xp, int gold)
+    {
+        if (xp   > 0) PlayerProgressManager.Local?.AwardXp(xp);
+        if (gold  > 0) PlayerProgressManager.Local?.AwardGold(gold);
+    }
 
     // ─────────────────────────────────────────────────────────────────────────────
     // Gizmos

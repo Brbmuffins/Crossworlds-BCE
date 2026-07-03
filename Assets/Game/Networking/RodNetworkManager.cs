@@ -32,6 +32,10 @@ public class RodNetworkManager : NetworkManager
     [Tooltip("0=Warden, 1=Ironclad, 2=Shadowblade, 3=Cleric, 4=Arcanist")]
     public GameObject[] classPrefabs;
 
+    [Header("Networked Prefabs")]
+    [Tooltip("Server-spawned non-player prefabs clients must know: Enemy_Grunt, Enemy_Ranged, Enemy_Elite, WorldItem, boss…")]
+    public GameObject[] networkedPrefabs;
+
     [Header("Auth Server")]
     [Tooltip("Must match RodNetworkAuthenticator.authServerURL")]
     public string authServerURL = "http://15.204.243.36:3000";
@@ -92,17 +96,29 @@ public class RodNetworkManager : NetworkManager
 
     public override void OnStartClient()
     {
-        if (classPrefabs != null)
-            foreach (var p in classPrefabs)
-                if (p != null && !spawnPrefabs.Contains(p))
-                    spawnPrefabs.Add(p);
+        AddToSpawnList(classPrefabs);
+        AddToSpawnList(networkedPrefabs);
 
-        base.OnStartClient(); // registers spawnPrefabs (now includes our class prefabs)
+        base.OnStartClient(); // registers spawnPrefabs (now includes our prefabs)
 
         // Direct registration as well — redundant but safe
-        if (classPrefabs != null)
-            foreach (var prefab in classPrefabs)
-                if (prefab != null) NetworkClient.RegisterPrefab(prefab);
+        RegisterDirect(classPrefabs);
+        RegisterDirect(networkedPrefabs);
+    }
+
+    void AddToSpawnList(GameObject[] prefabs)
+    {
+        if (prefabs == null) return;
+        foreach (var p in prefabs)
+            if (p != null && !spawnPrefabs.Contains(p))
+                spawnPrefabs.Add(p);
+    }
+
+    void RegisterDirect(GameObject[] prefabs)
+    {
+        if (prefabs == null) return;
+        foreach (var p in prefabs)
+            if (p != null) NetworkClient.RegisterPrefab(p);
     }
 
     // ── Client connected + authenticated ──────────────────────────────────────
@@ -200,14 +216,7 @@ public class RodNetworkManager : NetworkManager
         GameObject player = Instantiate(prefab, spawnPos, Quaternion.identity);
         player.name = username;
 
-        var identity = player.GetComponent<PlayerIdentity>();
-        if (identity != null)
-        {
-            identity.playerName = username;
-            identity.classIndex = classIndex;
-        }
-
-        // Attach position saver — saves back to DB on disconnect or app quit
+        // Attach position saver BEFORE spawn (it's not a NetworkBehaviour — safe here)
         if (auth != null && auth.characterId > 0)
         {
             var saver = player.AddComponent<RodPositionSaver>();
@@ -216,7 +225,18 @@ public class RodNetworkManager : NetworkManager
             saver.jwt           = auth.jwt;
         }
 
+        // Spawn first — SyncVars must be set AFTER AddPlayerForConnection so Mirror
+        // doesn't try to pack initial values into the spawn message (causes EndOfStreamException)
         NetworkServer.AddPlayerForConnection(conn, player);
+
+        // Now safe to set SyncVars — Mirror will sync them via the dirty system
+        var identity = player.GetComponent<PlayerIdentity>();
+        if (identity != null)
+        {
+            identity.playerName  = username;
+            identity.classIndex  = classIndex;
+            identity.characterId = auth?.characterId ?? -1;
+        }
         Debug.Log($"[RodNM] Spawned {username} as class {classIndex} at {spawnPos} " +
                   $"(fromDB={auth?.fromDB}, hasSavedPos={hasSavedPos})");
     }

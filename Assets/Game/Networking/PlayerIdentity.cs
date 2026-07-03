@@ -11,8 +11,9 @@ using UnityEngine;
 
 public class PlayerIdentity : NetworkBehaviour
 {
-    [SyncVar] public string playerName  = "Player";
-    [SyncVar] public int    classIndex  = 0;
+    [SyncVar] public string playerName   = "Player";
+    [SyncVar] public int    classIndex   = 0;
+    [SyncVar] public int    characterId  = -1;  // DB row id — used by inventory/progress APIs
 
     static readonly string[] ClassNames = { "Warden", "Ironclad", "Shadowblade", "Cleric", "Arcanist" };
 
@@ -27,6 +28,11 @@ public class PlayerIdentity : NetworkBehaviour
 
         // Refresh nameplate (it will hide itself for local player)
         GetComponent<PlayerNameplate>()?.Refresh();
+
+        // Wire combat session tracker so it can count healing done this run
+#if !UNITY_SERVER
+        CombatSessionTracker.Local?.NotifyAllySpawned(gameObject);
+#endif
     }
 
     public override void OnStartClient()
@@ -44,6 +50,12 @@ public class PlayerIdentity : NetworkBehaviour
 
         // Notify player list so it updates immediately on join
         PlayerListUI.RequestRefresh();
+
+        // Session stats: track every player (not just local) so healing done to
+        // party members counts. HashSet inside the tracker dedupes re-notifies.
+#if !UNITY_SERVER
+        CombatSessionTracker.Local?.NotifyAllySpawned(gameObject);
+#endif
     }
 
     public override void OnStopClient()
