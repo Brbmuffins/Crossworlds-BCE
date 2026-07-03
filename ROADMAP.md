@@ -139,8 +139,9 @@ Highest-value phase: every piece exists, only glue is missing.
   *Deps:* 1.1–1.4. **READY**
 
 - **1.7 — Place HangmanNPC in Hub.** Files: `Hub.unity`. Component + dialogue UI already exist
-  (`Assets/Game/NPC/HangmanNPC.cs`). *Accept:* E-interaction opens dialogue; arena entry path
-  works. *Deps:* 1.3. **READY**
+  (`Assets/Game/NPC/HangmanNPC.cs`). HangmanDialogueUI is self-bootstrapping.
+  **Editor step:** BCE → Hub Setup → 9 - Place HangmanNPC (Arena Entrance) → Ctrl+S.
+  *Accept:* E-interaction opens dialogue; arena entry path works. *Deps:* 1.3. **READY**
 
 ---
 
