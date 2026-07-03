@@ -63,7 +63,7 @@ public class HangmanNPC : NetworkBehaviour, INPCInteractable
         if (ni == null || !ni.isLocalPlayer) return;
 
         // Only interactable in Hub
-        if (!SceneManager.GetActiveScene().name.Contains("Hub")) return;
+        if (!SceneManager.GetActiveScene().name.Contains(SceneNames.Hub)) return;
 
 #if !UNITY_SERVER
         NPCInteractionManager.Instance?.RegisterNearby(this);

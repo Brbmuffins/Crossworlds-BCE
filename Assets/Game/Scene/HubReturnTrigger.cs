@@ -17,7 +17,7 @@ public class HubReturnTrigger : MonoBehaviour
 {
     [Header("Hub Scene")]
     [Tooltip("Build-settings name of the hub scene. Must match your build order.")]
-    public string hubSceneName = "Hub";
+    public string hubSceneName = SceneNames.Hub;
 
     [Header("Prompt")]
     public string promptText = "Press E to Return to Hub";

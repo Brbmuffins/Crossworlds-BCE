@@ -50,8 +50,8 @@ public class RodNetworkManager : NetworkManager
         // Wire scenes in code so they're never mis-set in the Inspector.
         // Mirror uses offlineScene to auto-navigate back to login on disconnect —
         // this is what makes Logout and chat teardown work correctly.
-        offlineScene = "Assets/Game/Scenes/LoginScene.unity";
-        onlineScene  = "Assets/Game/Scenes/Hub.unity";
+        offlineScene = SceneNames.LoginPath;
+        onlineScene  = SceneNames.HubPath;
 
         if (transport == null)
             transport = GetComponent<Mirror.Transport>();

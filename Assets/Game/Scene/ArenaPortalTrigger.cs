@@ -23,7 +23,7 @@ public class ArenaPortalTrigger : NetworkBehaviour
 {
     [Header("Arena Scene")]
     [Tooltip("Build-settings name of the arena scene to load.")]
-    public string arenaSceneName = "Arena_01";
+    public string arenaSceneName = SceneNames.ArenaCopper;
 
     [Header("Prompt")]
     [Tooltip("Text shown above the portal when the player is nearby.")]

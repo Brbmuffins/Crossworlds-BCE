@@ -576,7 +576,7 @@ public class LoginManager : MonoBehaviour
         PlayerPrefs.Save();
 
         SetStatus(_statusText, "Opening character select...", true);
-        SceneManager.LoadScene("CharacterSelect");
+        SceneManager.LoadScene(SceneNames.CharacterSelect);
     }
 #endif
 
@@ -650,7 +650,7 @@ public class LoginManager : MonoBehaviour
 
         // Route through CharacterSelect so the player can pick their class.
         // CharacterSelectManager will call NetworkManager.StartClient() after selection.
-        SceneManager.LoadScene("CharacterSelect");
+        SceneManager.LoadScene(SceneNames.CharacterSelect);
     }
 
     IEnumerator RegisterRoutine(string username, string email, string password)

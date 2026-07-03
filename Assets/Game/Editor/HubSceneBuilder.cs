@@ -89,7 +89,7 @@ public static class HubSceneBuilder
         // HubPortal (client-side SceneManager.LoadScene) — correct for multiplayer.
         var portalDefs = new (string label, string scene, Color color)[]
         {
-            ("Copper Arena",  "Arena_Copper",  new Color(0.2f, 0.6f, 1.0f)), // blue
+            ("Copper Arena",  SceneNames.ArenaCopper,  new Color(0.2f, 0.6f, 1.0f)), // blue
             ("Iron Arena",    "Arena_Iron",    new Color(0.3f, 0.9f, 0.3f)), // green
             ("Dark Forge",    "",              new Color(1.0f, 0.8f, 0.1f)), // yellow — coming soon
         };

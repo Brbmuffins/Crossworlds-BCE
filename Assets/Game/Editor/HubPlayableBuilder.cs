@@ -44,8 +44,8 @@ public static class HubPlayableBuilder
 {
     // ── Asset paths ──────────────────────────────────────────────────────────────
     const string PrefabDir   = "Assets/Game/Prefabs";
-    const string LoginScene  = "Assets/Game/Scenes/LoginScene.unity";
-    const string HubScene    = "Assets/Game/Scenes/Hub.unity";
+    const string LoginScene  = SceneNames.LoginPath;
+    const string HubScene    = SceneNames.HubPath;
 
     const string MetalImpactsPath   =
         "Assets/brbmuffins Technologies/brbmuffins Particle Pack/EffectExamples/Weapon Effects/Prefabs/MetalImpacts.prefab";

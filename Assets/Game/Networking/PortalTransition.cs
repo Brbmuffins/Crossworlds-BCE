@@ -19,7 +19,7 @@ public class PortalTransition : NetworkBehaviour
 {
     [Header("Portal Config")]
     [Tooltip("Scene name exactly as it appears in Build Settings")]
-    public string arenaSceneName = "Arena_Copper";
+    public string arenaSceneName = SceneNames.ArenaCopper;
     [Tooltip("Shown in the prompt and chat announcement")]
     public string portalDisplayName = "Copper Arena";
     [Tooltip("Seconds before scene loads after trigger — lets the prompt show")]

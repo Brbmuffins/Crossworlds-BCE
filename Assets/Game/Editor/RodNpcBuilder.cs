@@ -118,7 +118,7 @@ public static class RodNpcBuilder
         AssetDatabase.Refresh();
 
         // ── Return to LoginScene so buttons stay wired ────────────────────────
-        const string LOGIN_SCENE = "Assets/Game/Scenes/LoginScene.unity";
+        const string LOGIN_SCENE = SceneNames.LoginPath;
         if (File.Exists(LOGIN_SCENE))
             EditorSceneManager.OpenScene(LOGIN_SCENE, OpenSceneMode.Single);
 

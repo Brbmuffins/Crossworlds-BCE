@@ -201,7 +201,7 @@ public static class ArenaSceneBuilder
 
         returnPortal.AddComponent<Mirror.NetworkIdentity>();
         var rpt = returnPortal.AddComponent<PortalTransition>();
-        rpt.arenaSceneName    = "Hub";
+        rpt.arenaSceneName    = SceneNames.Hub;
         rpt.portalDisplayName = "Return to Hub";
 
         // ── RodChatManager ────────────────────────────────────────────────────
@@ -220,7 +220,7 @@ public static class ArenaSceneBuilder
         camGO.AddComponent<AudioListener>();
 
         // ── Save ──────────────────────────────────────────────────────────────
-        string savePath = "Assets/Game/Scenes/Arena_Copper.unity";
+        string savePath = SceneNames.ArenaCopperPath;
         EditorSceneManager.SaveScene(arenaScene, savePath);
         EditorSceneManager.MarkSceneDirty(arenaScene);
 

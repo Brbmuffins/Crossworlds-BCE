@@ -13,7 +13,7 @@ public static class RodPrefabBuilder
 {
     const string FBX_PATH      = "Assets/Game/Characters/Engineer/Model/Idle.fbx";
     const string PREFABS_DIR   = "Assets/Game/Prefabs";
-    const string LOGIN_SCENE   = "Assets/Game/Scenes/LoginScene.unity";
+    const string LOGIN_SCENE   = SceneNames.LoginPath;
     const string ANIM_CTRL     = "Assets/Game/Characters/Engineer/Animations/AnimationController.controller";
 
     static readonly string[] ClassNames = { "Warden", "Ironclad", "Shadowblade", "Cleric", "Arcanist" };

@@ -15,9 +15,9 @@ public static class BuildScript
 {
     static readonly string[] SCENES =
     {
-        "Assets/Game/Scenes/LoginScene.unity",
-        "Assets/Game/Scenes/CharacterSelect.unity",
-        "Assets/Game/Scenes/Hub.unity",
+        SceneNames.LoginPath,
+        SceneNames.CharacterSelectPath,
+        SceneNames.HubPath,
     };
 
     // ── Dedicated Server (Linux) ─────────────────────────────────────────

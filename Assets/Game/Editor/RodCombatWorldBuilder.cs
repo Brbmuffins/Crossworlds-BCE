@@ -25,7 +25,7 @@ using UnityEngine.SceneManagement;
 public static class RodCombatWorldBuilder
 {
     const string GAME_WORLD_PATH = "Assets/brbmuffins Skybox/Scenes/GameWorld.unity";
-    const string LOGIN_SCENE     = "Assets/Game/Scenes/LoginScene.unity";
+    const string LOGIN_SCENE     = SceneNames.LoginPath;
     const string ROOT_NAME       = "CombatBase";
 
     // ── VFX paths ─────────────────────────────────────────────────────────────
