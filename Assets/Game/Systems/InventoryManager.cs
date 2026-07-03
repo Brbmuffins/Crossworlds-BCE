@@ -191,14 +191,15 @@ public class InventoryManager : MonoBehaviour
     [System.Serializable] class InventorySavePayload { public int characterId; public List<InventorySlot> slots; }
 }
 
+#endif
+
 // ── AuthManager stub ──────────────────────────────────────────────────────────
-// If you already have an AuthManager with Token + CharacterId, delete this block
-// and add AUTHMANAGER_EXISTS to Project Settings → Player → Scripting Define Symbols.
+// Compiled in ALL build targets (client + server) so every script can reference it.
+// If you add a real AuthManager, define AUTHMANAGER_EXISTS in Player → Scripting Defines.
 #if !AUTHMANAGER_EXISTS
 public static class AuthManager
 {
     public static string Token       { get; set; } = "";
     public static int    CharacterId { get; set; } = 0;
 }
-#endif
 #endif
