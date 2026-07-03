@@ -28,11 +28,14 @@ public class WaveSpawner : NetworkBehaviour
     public float spawnStagger        = 0.5f;
     public int   eliteEveryNWaves    = 3;
     public float introDelay          = 4f;
+    [Tooltip("Total waves before arena is complete. 0 = infinite.")]
+    public int   maxWaves            = 10;
 
     [SyncVar(hook = nameof(OnWaveChanged))]
-    public int  currentWave  = 0;
-    [SyncVar] public int  enemiesAlive = 0;
-    [SyncVar] public bool waveActive   = false;
+    public int  currentWave    = 0;
+    [SyncVar] public int  enemiesAlive  = 0;
+    [SyncVar] public bool waveActive    = false;
+    [SyncVar] public bool arenaComplete = false;
 
     private bool _running = false;
 
@@ -67,12 +70,33 @@ public class WaveSpawner : NetworkBehaviour
         {
             currentWave++;
             yield return StartCoroutine(RunWave(currentWave));
+            RpcNotifyWaveComplete();
+            RpcAwardWaveMasteryXp(currentWave);   // mastery XP scales with wave number
 
             if (!_running) yield break;
+
+            // Check if we've hit the wave cap
+            if (maxWaves > 0 && currentWave >= maxWaves)
+            {
+                _running      = false;
+                arenaComplete = true;
+                RpcAnnounce("⭐ ARENA CLEAR! All waves defeated!");
+                RpcAwardArenaCompletionXp();       // bonus mastery XP for finishing all waves
+                RpcOnArenaComplete();
+                yield break;
+            }
 
             RpcAnnounce($"Wave {currentWave} cleared! Next wave in {timeBetweenWaves}s...");
             yield return new WaitForSeconds(timeBetweenWaves);
         }
+    }
+
+    [ClientRpc]
+    void RpcOnArenaComplete()
+    {
+#if !UNITY_SERVER
+        ArenaClearUI.ShowArenaClear();
+#endif
     }
 
     [Server]
@@ -125,6 +149,10 @@ public class WaveSpawner : NetworkBehaviour
         if (health != null) health.onDeath.AddListener(OnEnemyDied);
         NetworkServer.Spawn(enemy);
         enemiesAlive++;
+
+        // Notify client-side CombatSessionTracker so it can hook damage/kill events
+        var ni = enemy.GetComponent<NetworkIdentity>();
+        if (ni != null) RpcNotifyEnemySpawned(ni.netId);
     }
 
     [Server]
@@ -151,6 +179,60 @@ public class WaveSpawner : NetworkBehaviour
     void OnWaveChanged(int _, int newVal)
     {
         // Hook into ArenaHUD.UpdateWave(newVal) when that UI exists (Week 7)
+    }
+
+    /// <summary>
+    /// Resolves a just-spawned enemy by netId on each client and notifies
+    /// CombatSessionTracker so it can hook damage/kill events. Guard against
+    /// the tiny window between NetworkServer.Spawn and the object arriving on
+    /// the client by doing nothing if netId isn't in spawned yet — the tracker
+    /// will still catch damage through its own onDamageTaken listener.
+    /// </summary>
+    [ClientRpc]
+    void RpcNotifyEnemySpawned(uint netId)
+    {
+#if !UNITY_SERVER
+        if (NetworkClient.spawned.TryGetValue(netId, out var ni))
+            CombatSessionTracker.Local?.NotifyEnemySpawned(ni.gameObject);
+#endif
+    }
+
+    [ClientRpc]
+    void RpcNotifyWaveComplete()
+    {
+#if !UNITY_SERVER
+        CombatSessionTracker.Local?.NotifyWaveComplete();
+#endif
+    }
+
+    /// <summary>
+    /// Award mastery XP for the current hero scaled to the wave just cleared.
+    /// Base 40 XP + 15 XP per wave number (wave 1 → 55, wave 5 → 115, wave 10 → 190).
+    /// </summary>
+    [ClientRpc]
+    void RpcAwardWaveMasteryXp(int wave)
+    {
+#if !UNITY_SERVER
+        int heroId = PlayerProgressManager.Local?.ClassIndex ?? 0;
+        int xp     = 40 + wave * 15;
+        HeroMasteryManager.Local?.AwardXp(heroId, xp);
+        Debug.Log($"[MASTERY] Wave {wave} clear — +{xp}xp to hero {heroId}");
+#endif
+    }
+
+    /// <summary>
+    /// Award a flat bonus for completing all waves in the arena.
+    /// 200 XP to the current hero.
+    /// </summary>
+    [ClientRpc]
+    void RpcAwardArenaCompletionXp()
+    {
+#if !UNITY_SERVER
+        int heroId = PlayerProgressManager.Local?.ClassIndex ?? 0;
+        const int bonus = 200;
+        HeroMasteryManager.Local?.AwardXp(heroId, bonus);
+        Debug.Log($"[MASTERY] Arena clear bonus — +{bonus}xp to hero {heroId}");
+#endif
     }
 
     [ClientRpc]

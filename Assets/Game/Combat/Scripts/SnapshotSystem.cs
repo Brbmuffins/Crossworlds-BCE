@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -77,7 +77,7 @@ public class SnapshotSystem : MonoBehaviour
         foreach (GameObject go in _tracked)
         {
             if (go == null) continue;
-            int id = go.GetInstanceID();
+            int id = go.GetEntityId();
             if (!frame.chars.TryGetValue(id, out CharSnap snap)) continue;
 
             // Restore position
@@ -120,7 +120,7 @@ public class SnapshotSystem : MonoBehaviour
             if (go == null) continue;
             Health h = go.GetComponent<Health>();
 
-            frame.chars[go.GetInstanceID()] = new CharSnap
+            frame.chars[go.GetEntityId()] = new CharSnap
             {
                 position = go.transform.position,
                 rotation = go.transform.rotation,

@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Mirror;
@@ -326,7 +326,7 @@ public class WorldBossController : NetworkBehaviour
         RpcAnnounce($"⚠ TETHER WEB — stay within {tetherWebLeashDistance}u of your partner or take {tetherWebSnapDamage} damage!");
 
         var players = new List<Health>();
-        foreach (var h in FindObjectsOfType<Health>())
+        foreach (var h in FindObjectsByType<Health>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
             if (h.IsAlive && h.gameObject.CompareTag("Player")) players.Add(h);
 
         // Pair players; odd one out is safe
@@ -390,7 +390,7 @@ public class WorldBossController : NetworkBehaviour
         {
             yield return new WaitForSeconds(1f);
             elapsed += 1f;
-            foreach (var h in FindObjectsOfType<Health>())
+            foreach (var h in FindObjectsByType<Health>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
             {
                 if (!h.IsAlive || !h.gameObject.CompareTag("Player")) continue;
                 if (Vector3.Distance(h.transform.position, transform.position) > voidDrainRadius)
@@ -472,7 +472,7 @@ public class WorldBossController : NetworkBehaviour
 
     void OnPhaseSync(BossPhase _, BossPhase newPhase)
     {
-        FindObjectOfType<WorldBossHealthBar>()?.OnPhaseChanged(newPhase);
+        FindFirstObjectByType<WorldBossHealthBar>()?.OnPhaseChanged(newPhase);
     }
 
     // ─────────────────────────────────────────────────────────────────────────────
