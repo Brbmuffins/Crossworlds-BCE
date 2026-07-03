@@ -58,6 +58,10 @@ public class AbilityDef
     [Header("Skill Shot")]
     public float projectileSpeed = 18f;   // travel speed when shape == SkillShot
 
+    [Header("Description")]
+    [TextArea(2, 4)]
+    public string description = "";
+
     [Header("Deployable Scene Prefab")]
     // The runtime object spawned in the world by this ability (mine, wall, zone, etc.)
     public GameObject deployablePrefab;
