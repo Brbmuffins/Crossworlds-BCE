@@ -89,7 +89,7 @@ public class InventoryBagUI : MonoBehaviour
         string charId = GetCharacterId();
         if (string.IsNullOrEmpty(charId)) { SetStatus("No character loaded."); _loading = false; yield break; }
 
-        string token  = PlayerPrefs.GetString("jwt_token", "");
+        string token  = !string.IsNullOrEmpty(AuthManager.Token) ? AuthManager.Token : PlayerPrefs.GetString("jwt_token", "");
         string url    = $"{ServerConfig.AuthBaseUrl}/api/inventory/{charId}";
 
         using var req = UnityWebRequest.Get(url);
@@ -134,7 +134,7 @@ public class InventoryBagUI : MonoBehaviour
         string charId = GetCharacterId();
         if (string.IsNullOrEmpty(charId)) yield break;
 
-        string token = PlayerPrefs.GetString("jwt_token", "");
+        string token = !string.IsNullOrEmpty(AuthManager.Token) ? AuthManager.Token : PlayerPrefs.GetString("jwt_token", "");
         string url   = $"{ServerConfig.AuthBaseUrl}/api/inventory/equip";
 
         string body = $"{{\"characterId\":{charId},\"slot_index\":{slotIndex},\"equipped\":{(equip ? 1 : 0)}}}";
@@ -182,6 +182,7 @@ public class InventoryBagUI : MonoBehaviour
     // ── Helpers ───────────────────────────────────────────────────────────────
     static string GetCharacterId()
     {
+        if (AuthManager.CharacterId > 0) return AuthManager.CharacterId.ToString();
         foreach (var id in FindObjectsByType<PlayerIdentity>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
             if (id.isLocalPlayer) return id.characterId.ToString();
         return null;
