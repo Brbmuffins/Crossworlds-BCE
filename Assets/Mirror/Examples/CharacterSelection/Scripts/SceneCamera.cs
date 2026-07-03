@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace Mirror.Examples.CharacterSelection
 {
@@ -31,7 +31,7 @@ namespace Mirror.Examples.CharacterSelection
             sceneReferencer = GameObject.FindAnyObjectByType<SceneReferencer>();
 #else
             // Deprecated in Unity 2023.1
-            sceneReferencer = GameObject.FindObjectOfType<SceneReferencer>();
+            sceneReferencer = GameObject.FindFirstObjectByType<SceneReferencer>();
 #endif
 
             cameraObj = sceneReferencer.cameraObject.transform;

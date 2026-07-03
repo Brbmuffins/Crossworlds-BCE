@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -48,7 +48,7 @@ namespace Mirror.Examples.CouchCoop
                 couchPlayerManager = GameObject.FindAnyObjectByType<CouchPlayerManager>();
 #else
                 // Deprecated in Unity 2023.1
-                couchPlayerManager = GameObject.FindObjectOfType<CouchPlayerManager>();
+                couchPlayerManager = GameObject.FindFirstObjectByType<CouchPlayerManager>();
 #endif
                 // setup controls according to the pre-sets on CouchPlayerManager
                 jumpKey = couchPlayerManager.playerKeyJump[playerNumber];

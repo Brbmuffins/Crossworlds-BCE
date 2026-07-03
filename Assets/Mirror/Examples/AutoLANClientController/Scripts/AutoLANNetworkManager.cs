@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Mirror;
@@ -49,7 +49,7 @@ namespace Mirror.Examples.AutoLANClientController
                 canvasHUD = GameObject.FindAnyObjectByType<CanvasHUD>();
 #else
                 // Deprecated in Unity 2023.1
-                canvasHUD = GameObject.FindObjectOfType<CanvasHUD>();
+                canvasHUD = GameObject.FindFirstObjectByType<CanvasHUD>();
 #endif
             }
         }

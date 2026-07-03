@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Mirror;
@@ -59,7 +59,7 @@ namespace Mirror.Examples.TopDownShooter
 #if UNITY_2022_2_OR_NEWER
             canvasTopDown = GameObject.FindAnyObjectByType<CanvasTopDown>();
 #else
-            canvasTopDown = GameObject.FindObjectOfType<CanvasTopDown>();
+            canvasTopDown = GameObject.FindFirstObjectByType<CanvasTopDown>();
 #endif
         }
 
