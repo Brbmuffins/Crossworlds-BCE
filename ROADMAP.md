@@ -39,10 +39,16 @@ conversation: it names its files, acceptance criteria, and dependencies. Tasks m
 > to ArenaSessionController; GmConsole and all client-only UI/Systems scripts guarded with
 > `#if !UNITY_SERVER` (InventoryManager, FloatingDamageText, plus 8 UI files committed
 > earlier). AbilityCaster FloatingDamageText call-sites individually guarded.
-> **Blocked on owner auth:** `git push` (local main ~40+ commits ahead) and `git lfs pull`
-> (2 missing objects: Wisp_Mob.prefab, grass.png) need interactive GitHub auth —
-> push/fetch in GitHub Desktop, run `git lfs pull`, then rebuild for the real
-> deploy artifact.
+> **Server-build audit + combat/equip APIs (2026-07-03):** Full cross-reference sweep fixed
+> — PlayerProgressManager guard narrowed to Bootstrap only (class stays server-compilable);
+> ResourceNode, WorldItem, WorldBossController, PlayerIdentity individually guarded.
+> EnemyController: added `enemyTemplateId` field + `PostCombatKill` coroutine — on death
+> posts hit+kill to /api/combat/kill, refreshes PlayerProgressManager from server.
+> InventoryManager: added `OnItemEquipped` + `PostEquip` coroutine (POST /api/inventory/equip).
+> ItemData: added `id` field for DB item_id bridge. InventorySlot/EquipmentSlot wired.
+> **Editor steps needed:** assign `enemyTemplateId` on enemy prefabs; assign `id` on ItemData SOs.
+> **Blocked on owner auth:** `git push` (~46 commits ahead) and `git lfs pull`
+> (2 missing LFS objects: Wisp_Mob.prefab, grass.png) need GitHub Desktop auth.
 
 - **0.1 — Commit the working tree in reviewable slices.** Files: everything in `git status`.
   Group commits by system (prefabs+scenes / combat scripts / UI / networking / docs); do not
