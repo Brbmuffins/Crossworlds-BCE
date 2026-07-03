@@ -1,3 +1,6 @@
+﻿// Client-only: the dedicated server build has no input devices or UI canvas,
+// and this component was spamming errors every frame on headless builds.
+#if !UNITY_SERVER
 using System;
 using System.Collections.Generic;
 using Mirror;
@@ -492,7 +495,7 @@ public class GmConsole : MonoBehaviour
         title.fontSize  = 11f;
         title.color     = new Color(0.6f, 0.4f, 1f);
         title.fontStyle = FontStyles.Bold;
-        title.alignment = TextAlignmentOptions.MidlineLeft;
+        title.alignment = TextAlignmentOptions.Left;
         var tRt = titleGO.GetComponent<RectTransform>();
         tRt.anchorMin = new Vector2(0.01f, 0f);
         tRt.anchorMax = new Vector2(1f, 1f);
@@ -554,7 +557,7 @@ public class GmConsole : MonoBehaviour
         prompt.text     = ">";
         prompt.fontSize = 13f;
         prompt.color    = new Color(0.6f, 0.4f, 1f, 1f);
-        prompt.alignment = TextAlignmentOptions.MidlineLeft;
+        prompt.alignment = TextAlignmentOptions.Left;
         var pRt = promptGO.GetComponent<RectTransform>();
         pRt.anchorMin = new Vector2(0.01f, 0f);
         pRt.anchorMax = new Vector2(0.05f, 1f);
@@ -598,3 +601,4 @@ public class GmConsole : MonoBehaviour
         Log("<color=#6366f1>GM Console ready. Type 'help' for commands.</color>");
     }
 }
+#endif // !UNITY_SERVER
