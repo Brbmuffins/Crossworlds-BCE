@@ -217,8 +217,7 @@ public static class EnemyBuilder
         // Disable placeholder capsule renderer — keep collider for physics
         var rootRenderer = root.GetComponent<MeshRenderer>();
         if (rootRenderer != null) rootRenderer.enabled = false;
-        var rootFilter = root.GetComponent<MeshFilter>();
-        if (rootFilter != null) rootFilter.enabled = false;
+        // MeshFilter has no .enabled — disabling the Renderer is sufficient
 
         var model = (GameObject)PrefabUtility.InstantiatePrefab(modelAsset, root.transform);
         model.name = "Model";

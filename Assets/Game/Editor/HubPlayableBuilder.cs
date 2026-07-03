@@ -409,6 +409,10 @@ public static class HubPlayableBuilder
 
     static int PatchCombatAudio()
     {
+#if UNITY_SERVER
+        // CombatAudio is client-only; this step is a no-op in server builds.
+        return 0;
+#else
         // CombatAudio sits on the WaveSpawner GO in Arena_Copper (or Hub as fallback).
         const string ArenaScene = SceneNames.ArenaCopperPath;
         string targetScene = File.Exists(ArenaScene) ? ArenaScene : HubScene;
@@ -474,6 +478,7 @@ public static class HubPlayableBuilder
         EditorSceneManager.MarkSceneDirty(scene);
         Debug.Log($"[HubPlayable] CombatAudio: {7 - missing}/7 clips assigned on '{host.name}' in {System.IO.Path.GetFileName(targetScene)}");
         return missing > 0 ? 1 : 0;
+#endif
     }
 
     // ── Step 5: Bake NavMesh ──────────────────────────────────────────────────────

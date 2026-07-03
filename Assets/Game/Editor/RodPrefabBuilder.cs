@@ -202,9 +202,12 @@ public static class RodPrefabBuilder
             root.AddComponent<AbilityCaster>();
 
         // PlayerAnimator bridges Health events to animation triggers (GetHit, Death).
-        // Guard: only compile on non-server (it's in an Editor script so this is safe).
+        // Guarded: PlayerAnimator is #if !UNITY_SERVER so the type is invisible when
+        // Build Target is Dedicated Server — skip silently in that case.
+#if !UNITY_SERVER
         if (root.GetComponent<PlayerAnimator>() == null)
             root.AddComponent<PlayerAnimator>();
+#endif
     }
 
     // ── Step 5: Fix AnimatorController on existing prefabs ────────────────────

@@ -227,7 +227,8 @@ public static class HubSceneBuilder
             bc.center = new Vector3(0f, 0.4f, 0f);
             bc.size   = new Vector3(0.9f, 0.7f, 0.9f);
 
-            // ResourceNode script
+            // ResourceNode script (client-only component — guard against server build target)
+#if !UNITY_SERVER
             var rn = mineGO.AddComponent<ResourceNode>();
             rn.yieldItemId       = "ore_copper";
             rn.yieldQuantity     = 1;
@@ -236,6 +237,7 @@ public static class HubSceneBuilder
             rn.interactRange     = 3f;
             rn.professionId      = 2;
             rn.professionXpPerHit = 15;
+#endif
         }
 
         Debug.Log("[HubSceneBuilder] ✓ Added 3 Copper Ore nodes. Press Ctrl+S to save scene.");
