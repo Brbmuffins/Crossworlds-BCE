@@ -1,3 +1,7 @@
+> **Deferred:** the canonical agent context is the root `CLAUDE.md`. This file is kept
+> as the server/API reference (schema, endpoints, conventions, anti-exploit design).
+> Where they disagree, the root file wins.
+
 # Crossworlds BCE — Claude Code Agent
 
 You are the senior backend developer for Crossworlds BCE, a live multiplayer action RPG.

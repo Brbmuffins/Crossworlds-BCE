@@ -26,6 +26,9 @@ conversation: it names its files, acceptance criteria, and dependencies. Tasks m
 > fuse_hidden artifacts removed). 1.2 ✅ code side (`networkedPrefabs` array — Inspector
 > assignment still an editor step). 1.4 ✅ (hooks moved to client-side `OnStartClient`,
 > which also covers dedicated-server clients). 1.5 ✅. `.gitattributes` LF rules added.
+> 0.4 ✅ — root `CLAUDE.md` is now the canonical agent context (session playbook:
+> ground rules, CLI can/cannot, verification bar, how to pick tasks); the other two
+> CLAUDE.md files defer to it.
 
 - **0.1 — Commit the working tree in reviewable slices.** Files: everything in `git status`.
   Group commits by system (prefabs+scenes / combat scripts / UI / networking / docs); do not
