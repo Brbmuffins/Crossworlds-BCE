@@ -1,0 +1,37 @@
+{
+  "task_id": "71240d87-6925-48af-b23d-38d30b4d54e6",
+  "type": "text_to_model",
+  "status": "success",
+  "input": {
+    "prompt": "Void Archer enemy, skeletal ranged attacker with dark energy bow, glowing purple eyes, dark void robes, dark fantasy game enemy, T-pose, full body, game-ready",
+    "model_version": "v3.1-20260211",
+    "texture": true,
+    "pbr": true,
+    "texture_quality": "detailed",
+    "texture_alignment": "geometry",
+    "export_uv": true,
+    "geometry_quality": "detailed"
+  },
+  "output": {
+    "pbr_model": "https://tripo-data.rg1.data.tripo3d.com/tcli_2efb6ab9cf694c6eab16a3e8dc01d3bf/20260703/71240d87-6925-48af-b23d-38d30b4d54e6/tripo_pbr_model_71240d87-6925-48af-b23d-38d30b4d54e6.glb?Key-Pair-Id=K1676C64NMVM2J&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly90cmlwby1kYXRhLnJnMS5kYXRhLnRyaXBvM2QuY29tL3RjbGlfMmVmYjZhYjljZjY5NGM2ZWFiMTZhM2U4ZGMwMWQzYmYvMjAyNjA3MDMvNzEyNDBkODctNjkyNS00OGFmLWIyM2QtMzhkMzBiNGQ1NGU2L3RyaXBvX3Bicl9tb2RlbF83MTI0MGQ4Ny02OTI1LTQ4YWYtYjIzZC0zOGQzMGI0ZDU0ZTYuZ2xiIiwiQ29uZGl0aW9uIjp7IkRhdGVMZXNzVGhhbiI6eyJBV1M6RXBvY2hUaW1lIjoxNzgzMTIzMjAwfX19XX0_&Signature=oVZK-StA8WXycuzwyjPsWVbg2o5e0QWiny9IbIBdpO77NBYohkNDrJPt4WeRcF-W1v-I~1oT1fJ-NpETZ5UonoaoIYEJzVHUN8ryR-sfXWLrfHt5pqXd9HD7q4nwNb1DBgaVg1uObONIm9zA9TDn4~sFT0hf1fGX-SEKROI8~idOWnAQjbI01LvaeQO-HUX0SBiwqUIWH35HMvR0xGvflJnTKuROC24jlAf0MwSsVDNc-8ejfn2IqqKqZYq7nhTDdt6ARHAq5glNuGe29FnQD5Bc3~cUcbVmygbfYSTOgFwtD5XIuKRUna7--YhkymtSYTJgeWy5BEO56GFvda7I2w__",
+    "generated_image": "https://tripo-data.rg1.data.tripo3d.com/tcli_2efb6ab9cf694c6eab16a3e8dc01d3bf/20260703/71240d87-6925-48af-b23d-38d30b4d54e6/text2image_71240d87-6925-48af-b23d-38d30b4d54e6.jpeg?Key-Pair-Id=K1676C64NMVM2J&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly90cmlwby1kYXRhLnJnMS5kYXRhLnRyaXBvM2QuY29tL3RjbGlfMmVmYjZhYjljZjY5NGM2ZWFiMTZhM2U4ZGMwMWQzYmYvMjAyNjA3MDMvNzEyNDBkODctNjkyNS00OGFmLWIyM2QtMzhkMzBiNGQ1NGU2L3RleHQyaW1hZ2VfNzEyNDBkODctNjkyNS00OGFmLWIyM2QtMzhkMzBiNGQ1NGU2LmpwZWciLCJDb25kaXRpb24iOnsiRGF0ZUxlc3NUaGFuIjp7IkFXUzpFcG9jaFRpbWUiOjE3ODMxMjMyMDB9fX1dfQ__&Signature=d1z95bMiVL9kyJC0dK7oznsVzMM2uyv585xHCH-i~QFH9mY2hKxF7jG~Uo1iLxhEhxbjT9-NyjabQXnDUCHrdxKGCGCQ~29lNCLtIBLAGkjpCYpSwuNjFIKveeOoYDYlVvbeyoCMq~tjf4y2Gt7pYOys8E04P2MDKeaGNdfccNL3E1uwLO-pe~~mrWDSsGILvCaAZ8y6zhPsUcMHk9Zy04RYw75IheklP8vCsZvmwZSB4pYyRJXnlumq0OcTaonr7ZD63f2ryKsxCJRp4B56ukPEFzJy1S1tObQS151oRv1lpbVQqym2mbILEsFL6~7c8yXgDoIjrsSG1x0nQokCFQ__",
+    "rendered_image": "https://tripo-data.rg1.data.tripo3d.com/tcli_2efb6ab9cf694c6eab16a3e8dc01d3bf/20260703/71240d87-6925-48af-b23d-38d30b4d54e6/legacy_mesh.webp?Key-Pair-Id=K1676C64NMVM2J&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly90cmlwby1kYXRhLnJnMS5kYXRhLnRyaXBvM2QuY29tL3RjbGlfMmVmYjZhYjljZjY5NGM2ZWFiMTZhM2U4ZGMwMWQzYmYvMjAyNjA3MDMvNzEyNDBkODctNjkyNS00OGFmLWIyM2QtMzhkMzBiNGQ1NGU2L2xlZ2FjeV9tZXNoLndlYnAiLCJDb25kaXRpb24iOnsiRGF0ZUxlc3NUaGFuIjp7IkFXUzpFcG9jaFRpbWUiOjE3ODMxMjMyMDB9fX1dfQ__&Signature=PLnm82HtHbeQhe372twImW3aq7l9VMVOqmJ17-2jR3oX-K4UivKhfh6R2KL7KfCWyHaQ0Q9rvuUZFYrH~mUv-YO-z8K0sSxs84Ki1KijqIIh~hKKzi8mnph9QgbIO02m6CY9SyyltHZwarAY8KjqiUSEt5~X0n5~aUurChdF3aG4Lk5EVKF9VjYoVH6KGs81ZIkPGO3-yjF6YGglZAMmq-J3r44W691q7RXQfB~Z4JEq3TEd7oehFfdfnTPe82y8vcxFIIdje2QXdMft5oug0juH16VbXgNLesyE9EKZLlNLXXayGSXlgC6sX~zpmal2ESpHqCg9eXrngW3zO74tNw__"
+  },
+  "progress": 100,
+  "create_time": 1783116925,
+  "consumed_credit": 50,
+  "prompt": "Void Archer enemy, skeletal ranged attacker with dark energy bow, glowing purple eyes, dark void robes, dark fantasy game enemy, T-pose, full body, game-ready",
+  "thumbnail": "https://tripo-data.rg1.data.tripo3d.com/tcli_2efb6ab9cf694c6eab16a3e8dc01d3bf/20260703/71240d87-6925-48af-b23d-38d30b4d54e6/legacy_mesh.webp?Key-Pair-Id=K1676C64NMVM2J&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly90cmlwby1kYXRhLnJnMS5kYXRhLnRyaXBvM2QuY29tL3RjbGlfMmVmYjZhYjljZjY5NGM2ZWFiMTZhM2U4ZGMwMWQzYmYvMjAyNjA3MDMvNzEyNDBkODctNjkyNS00OGFmLWIyM2QtMzhkMzBiNGQ1NGU2L2xlZ2FjeV9tZXNoLndlYnAiLCJDb25kaXRpb24iOnsiRGF0ZUxlc3NUaGFuIjp7IkFXUzpFcG9jaFRpbWUiOjE3ODMxMjMyMDB9fX1dfQ__&Signature=PLnm82HtHbeQhe372twImW3aq7l9VMVOqmJ17-2jR3oX-K4UivKhfh6R2KL7KfCWyHaQ0Q9rvuUZFYrH~mUv-YO-z8K0sSxs84Ki1KijqIIh~hKKzi8mnph9QgbIO02m6CY9SyyltHZwarAY8KjqiUSEt5~X0n5~aUurChdF3aG4Lk5EVKF9VjYoVH6KGs81ZIkPGO3-yjF6YGglZAMmq-J3r44W691q7RXQfB~Z4JEq3TEd7oehFfdfnTPe82y8vcxFIIdje2QXdMft5oug0juH16VbXgNLesyE9EKZLlNLXXayGSXlgC6sX~zpmal2ESpHqCg9eXrngW3zO74tNw__",
+  "queuing_num": -1,
+  "running_left_time": -1,
+  "result": {
+    "pbr_model": {
+      "type": "glb",
+      "url": "https://tripo-data.rg1.data.tripo3d.com/tcli_2efb6ab9cf694c6eab16a3e8dc01d3bf/20260703/71240d87-6925-48af-b23d-38d30b4d54e6/tripo_pbr_model_71240d87-6925-48af-b23d-38d30b4d54e6.glb?Key-Pair-Id=K1676C64NMVM2J&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly90cmlwby1kYXRhLnJnMS5kYXRhLnRyaXBvM2QuY29tL3RjbGlfMmVmYjZhYjljZjY5NGM2ZWFiMTZhM2U4ZGMwMWQzYmYvMjAyNjA3MDMvNzEyNDBkODctNjkyNS00OGFmLWIyM2QtMzhkMzBiNGQ1NGU2L3RyaXBvX3Bicl9tb2RlbF83MTI0MGQ4Ny02OTI1LTQ4YWYtYjIzZC0zOGQzMGI0ZDU0ZTYuZ2xiIiwiQ29uZGl0aW9uIjp7IkRhdGVMZXNzVGhhbiI6eyJBV1M6RXBvY2hUaW1lIjoxNzgzMTIzMjAwfX19XX0_&Signature=oVZK-StA8WXycuzwyjPsWVbg2o5e0QWiny9IbIBdpO77NBYohkNDrJPt4WeRcF-W1v-I~1oT1fJ-NpETZ5UonoaoIYEJzVHUN8ryR-sfXWLrfHt5pqXd9HD7q4nwNb1DBgaVg1uObONIm9zA9TDn4~sFT0hf1fGX-SEKROI8~idOWnAQjbI01LvaeQO-HUX0SBiwqUIWH35HMvR0xGvflJnTKuROC24jlAf0MwSsVDNc-8ejfn2IqqKqZYq7nhTDdt6ARHAq5glNuGe29FnQD5Bc3~cUcbVmygbfYSTOgFwtD5XIuKRUna7--YhkymtSYTJgeWy5BEO56GFvda7I2w__"
+    },
+    "rendered_image": {
+      "type": "webp",
+      "url": "https://tripo-data.rg1.data.tripo3d.com/tcli_2efb6ab9cf694c6eab16a3e8dc01d3bf/20260703/71240d87-6925-48af-b23d-38d30b4d54e6/legacy_mesh.webp?Key-Pair-Id=K1676C64NMVM2J&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly90cmlwby1kYXRhLnJnMS5kYXRhLnRyaXBvM2QuY29tL3RjbGlfMmVmYjZhYjljZjY5NGM2ZWFiMTZhM2U4ZGMwMWQzYmYvMjAyNjA3MDMvNzEyNDBkODctNjkyNS00OGFmLWIyM2QtMzhkMzBiNGQ1NGU2L2xlZ2FjeV9tZXNoLndlYnAiLCJDb25kaXRpb24iOnsiRGF0ZUxlc3NUaGFuIjp7IkFXUzpFcG9jaFRpbWUiOjE3ODMxMjMyMDB9fX1dfQ__&Signature=PLnm82HtHbeQhe372twImW3aq7l9VMVOqmJ17-2jR3oX-K4UivKhfh6R2KL7KfCWyHaQ0Q9rvuUZFYrH~mUv-YO-z8K0sSxs84Ki1KijqIIh~hKKzi8mnph9QgbIO02m6CY9SyyltHZwarAY8KjqiUSEt5~X0n5~aUurChdF3aG4Lk5EVKF9VjYoVH6KGs81ZIkPGO3-yjF6YGglZAMmq-J3r44W691q7RXQfB~Z4JEq3TEd7oehFfdfnTPe82y8vcxFIIdje2QXdMft5oug0juH16VbXgNLesyE9EKZLlNLXXayGSXlgC6sX~zpmal2ESpHqCg9eXrngW3zO74tNw__"
+    }
+  }
+}

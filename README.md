@@ -21,6 +21,11 @@ Crossworlds BCE is a server-authoritative co-op action RPG built on Unity 6 and 
 - [Classes](#classes)
 - [Spellbook — All 32 Abilities](#spellbook--all-32-abilities)
 - [Combat System](#combat-system)
+- [AFK Professions](#afk-professions)
+- [Encounters & NPCs](#encounters--npcs)
+  - [NPCs — Hub World](#npcs--hub-world)
+  - [Enemy Roster](#enemy-roster)
+  - [Boss Encounter — The Null Architect](#boss-encounter--the-null-architect)
 - [Features Status](#features-status)
 - [Developer Reference](#developer-reference)
   - [VPS Operations](#vps-operations)
@@ -104,65 +109,65 @@ The Arcanist controls space. Arcane Step is a true blink — it bypasses terrain
 
 ### Shared Pool (indices 0–7 — available to all classes)
 
-| # | Ability | Type | Shape | Damage | CD | Description |
-|---|---------|------|-------|--------|----|-------------|
-| 0 | **Runic Sentinel** | Support | Deploy | — | 6s | Deploys a stationary runic turret that fires void bolts at nearby enemies until destroyed. |
-| 1 | **Void Bolt** | Damage | Skill Shot | 15–45 | 3s | Fires a skill-shot bolt of void energy. Charge up to triple damage — you must aim and dodge to use it well. |
-| 2 | **Mending Circle** | Heal | AoE | — | 5s | Inscribes a glowing rune circle on the ground that heals all allies standing inside it. |
-| 3 | **Storm Lash** | Damage | Line | 15–50 | 4s | Unleashes a rushing wall of storm energy in a line, damaging all enemies it passes through. |
-| 4 | **Ember Surge** | Damage | AoE | 20–45 | 4s | Detonates a burst of fire at the target point, scorching all enemies caught in the blast. |
-| 5 | **Mind Spike** | Damage | AoE | 35 | 5s | Sends a focused psychic spike to the target point, dealing heavy single-target damage. |
-| 6 | **Binding Wave** | Damage | AoE | 15 | 6s | Releases a wide void pulse that damages and Binds all enemies in range, rooting them in place. |
-| 7 | **Arcane Ward** | Support | Self | 50 absorb | 8s | Instantly wraps you in an arcane barrier absorbing up to 50 damage. Expires after 5 seconds. |
+| | # | Ability | Type | Shape | Damage | CD | Description |
+|---|---|---------|------|-------|--------|----|-------------|
+| <img src="Docs/icons/runic-sentinel.png" width="36"/> | 0 | **Runic Sentinel** | Support | Deploy | — | 6s | Deploys a stationary runic turret that fires void bolts at nearby enemies until destroyed. |
+| <img src="Docs/icons/void-bolt.png" width="36"/> | 1 | **Void Bolt** | Damage | Skill Shot | 15–45 | 3s | Fires a skill-shot bolt of void energy. Charge up to triple damage — you must aim and dodge to use it well. |
+| <img src="Docs/icons/mending-circle.png" width="36"/> | 2 | **Mending Circle** | Heal | AoE | — | 5s | Inscribes a glowing rune circle on the ground that heals all allies standing inside it. |
+| <img src="Docs/icons/storm-lash.png" width="36"/> | 3 | **Storm Lash** | Damage | Line | 15–50 | 4s | Unleashes a rushing wall of storm energy in a line, damaging all enemies it passes through. |
+| <img src="Docs/icons/ember-surge.png" width="36"/> | 4 | **Ember Surge** | Damage | AoE | 20–45 | 4s | Detonates a burst of fire at the target point, scorching all enemies caught in the blast. |
+| <img src="Docs/icons/mind-spike.png" width="36"/> | 5 | **Mind Spike** | Damage | AoE | 35 | 5s | Sends a focused psychic spike to the target point, dealing heavy single-target damage. |
+| <img src="Docs/icons/binding-wave.png" width="36"/> | 6 | **Binding Wave** | Damage | AoE | 15 | 6s | Releases a wide void pulse that damages and Binds all enemies in range, rooting them in place. |
+| <img src="Docs/icons/arcane-ward.png" width="36"/> | 7 | **Arcane Ward** | Support | Self | 50 absorb | 8s | Instantly wraps you in an arcane barrier absorbing up to 50 damage. Expires after 5 seconds. |
 
 ### Warden (indices 8–12)
 
-| # | Ability | Type | Shape | Damage | CD | Description |
-|---|---------|------|-------|--------|----|-------------|
-| 8 | **Runic Snare** | Damage | Deploy | 40 | 5s | Places an armed rune trap at the target point. Detonates in a burst when an enemy walks over it. |
-| 9 | **Battle Hymn** | Support | AoE | — | 12s | Channels a rallying war hymn that reduces ability cooldowns for all nearby allies. |
-| 10 | **Spirit Redirect** | Support | Target | — | 8s | Commands your active Runic Sentinel to abandon its post and focus fire on your target. |
-| 11 | **Mend** | Heal | Target | — | 6s | Channels restorative energy into a single ally, healing wounds and purging all active debuffs. |
-| 12 | **Conjurer's Surge** | Support | Self | — | 45s | Surges all your active deployed constructs simultaneously, triggering them at full power at once. |
+| | # | Ability | Type | Shape | Damage | CD | Description |
+|---|---|---------|------|-------|--------|----|-------------|
+| <img src="Docs/icons/runic-snare.png" width="36"/> | 8 | **Runic Snare** | Damage | Deploy | 40 | 5s | Places an armed rune trap at the target point. Detonates in a burst when an enemy walks over it. |
+| <img src="Docs/icons/battle-hymn.png" width="36"/> | 9 | **Battle Hymn** | Support | AoE | — | 12s | Channels a rallying war hymn that reduces ability cooldowns for all nearby allies. |
+| <img src="Docs/icons/spirit-redirect.png" width="36"/> | 10 | **Spirit Redirect** | Support | Target | — | 8s | Commands your active Runic Sentinel to abandon its post and focus fire on your target. |
+| <img src="Docs/icons/mend.png" width="36"/> | 11 | **Mend** | Heal | Target | — | 6s | Channels restorative energy into a single ally, healing wounds and purging all active debuffs. |
+| <img src="Docs/icons/conjurers-surge.png" width="36"/> | 12 | **Conjurer's Surge** | Support | Self | — | 45s | Surges all your active deployed constructs simultaneously, triggering them at full power at once. |
 
 ### Ironclad (indices 13–18)
 
-| # | Ability | Type | Shape | Damage | CD | Description |
-|---|---------|------|-------|--------|----|-------------|
-| 13 | **Counter Blow** | Support/Damage | Cone | up to 60 | 10s | Enters an absorption stance for 3 seconds. Releasing unleashes all absorbed damage as a cone burst. |
-| 14 | **Gravity Slam** | Support | AoE | — | 7s | Slams the ground with gravitational force, pulling all nearby enemies into the impact point. |
-| 15 | **Shieldwall Charge** | Damage | Line | 25 | 6s | Charges forward, slamming through enemies for 25 damage and generating Threat stacks on each hit. |
-| 16 | **Stalwart Stance** | Support | Self | — | 14s | Plants your feet: 40% damage reduction and tripled Threat generation for 6 seconds. Cannot move. |
-| 17 | **Rune Chain** | Support | Target | — | 9s | Etches a runic leash onto one enemy for 5 seconds, absorbing 15% of attacks they land on allies. |
-| 18 | **Iron Rampart** | Support | Deploy | — | 50s | Raises a massive stone rune wall in front of you that blocks all projectiles for 10 seconds. |
+| | # | Ability | Type | Shape | Damage | CD | Description |
+|---|---|---------|------|-------|--------|----|-------------|
+| <img src="Docs/icons/counter-blow.png" width="36"/> | 13 | **Counter Blow** | Support/Damage | Cone | up to 60 | 10s | Enters an absorption stance for 3 seconds. Releasing unleashes all absorbed damage as a cone burst. |
+| <img src="Docs/icons/gravity-slam.png" width="36"/> | 14 | **Gravity Slam** | Support | AoE | — | 7s | Slams the ground with gravitational force, pulling all nearby enemies into the impact point. |
+| <img src="Docs/icons/shieldwall-charge.png" width="36"/> | 15 | **Shieldwall Charge** | Damage | Line | 25 | 6s | Charges forward, slamming through enemies for 25 damage and generating Threat stacks on each hit. |
+| <img src="Docs/icons/stalwart-stance.png" width="36"/> | 16 | **Stalwart Stance** | Support | Self | — | 14s | Plants your feet: 40% damage reduction and tripled Threat generation for 6 seconds. Cannot move. |
+| <img src="Docs/icons/rune-chain.png" width="36"/> | 17 | **Rune Chain** | Support | Target | — | 9s | Etches a runic leash onto one enemy for 5 seconds, absorbing 15% of attacks they land on allies. |
+| <img src="Docs/icons/iron-rampart.png" width="36"/> | 18 | **Iron Rampart** | Support | Deploy | — | 50s | Raises a massive stone rune wall in front of you that blocks all projectiles for 10 seconds. |
 
 ### Arcanist (indices 19–22)
 
-| # | Ability | Type | Shape | Damage | CD | Description |
-|---|---------|------|-------|--------|----|-------------|
-| 19 | **Arcane Step** | Support | Blink | — | 4s | Phase-shifts your body to the targeted location, bypassing terrain and enemy colliders. |
-| 20 | **Void Maw** | Damage | AoE | 20 | 9s | Opens a singularity that pulls all enemies inward for 3 seconds, then detonates in a burst of void energy. |
-| 21 | **Forked Lightning** | Damage | AoE | 30 chain | 7s | Unleashes chain lightning that arcs between up to 4 enemies (30 / 25 / 20 / 15 damage per jump). |
-| 22 | **Collapsing Void** | Damage | AoE | 60 | 50s | Summons a massive event horizon. Pulls for 3 seconds, then collapses for 60 AoE and applies Weakened. |
+| | # | Ability | Type | Shape | Damage | CD | Description |
+|---|---|---------|------|-------|--------|----|-------------|
+| <img src="Docs/icons/arcane-step.png" width="36"/> | 19 | **Arcane Step** | Support | Blink | — | 4s | Phase-shifts your body to the targeted location, bypassing terrain and enemy colliders. |
+| <img src="Docs/icons/void-maw.png" width="36"/> | 20 | **Void Maw** | Damage | AoE | 20 | 9s | Opens a singularity that pulls all enemies inward for 3 seconds, then detonates in a burst of void energy. |
+| <img src="Docs/icons/forked-lightning.png" width="36"/> | 21 | **Forked Lightning** | Damage | AoE | 30 chain | 7s | Unleashes chain lightning that arcs between up to 4 enemies (30 / 25 / 20 / 15 damage per jump). |
+| <img src="Docs/icons/collapsing-void.png" width="36"/> | 22 | **Collapsing Void** | Damage | AoE | 60 | 50s | Summons a massive event horizon. Pulls for 3 seconds, then collapses for 60 AoE and applies Weakened. |
 
-### Cleric (indices 23–28)
+### Cleric — Brandolf (indices 23–28)
 
-| # | Ability | Type | Shape | Damage | CD | Description |
-|---|---------|------|-------|--------|----|-------------|
-| 23 | **Soul Bond** | Support | Target | — | 9s | Bonds with a nearby ally for 5 seconds, rerouting all incoming damage dealt to them onto you instead. |
-| 24 | **Spirit Wisps** | Heal | Deploy | — | 7s | Releases drifting wisps that seek out nearby allies to heal them and chip enemies they pass through. |
-| 25 | **Divine Spark** | Heal/Damage | Target | 60 (undead) | 14s | Revives a downed ally at 30% HP — or, if cast on undead enemies, detonates for 60 holy damage. |
-| 26 | **Sacred Aegis** | Support | Target | — | 10s | Places a living shield on an ally that grows stronger (up to 80 absorb) as they take hits over 8 seconds. |
-| 27 | **Dispel** | Support | Target | — | 7s | Instantly purges every active debuff from a target ally, no matter how many are stacked. |
-| 28 | **Temporal Grace** | Heal | Team | — | 60s | Rewinds the entire team 5 seconds, restoring their HP, positions, and clearing all debuffs gained since then. |
+| | # | Ability | Type | Shape | Damage | CD | Description |
+|---|---|---------|------|-------|--------|----|-------------|
+| <img src="Docs/icons/soul-bond.png" width="36"/> | 23 | **Soul Bond** | Support | Target | — | 9s | Bonds with a nearby ally for 5 seconds, rerouting all incoming damage dealt to them onto you instead. |
+| <img src="Docs/icons/spirit-wisps.png" width="36"/> | 24 | **Spirit Wisps** | Heal | Deploy | — | 7s | Releases drifting wisps that seek out nearby allies to heal them and chip enemies they pass through. |
+| <img src="Docs/icons/divine-spark.png" width="36"/> | 25 | **Divine Spark** | Heal/Damage | Target | 60 (undead) | 14s | Revives a downed ally at 30% HP — or, if cast on undead enemies, detonates for 60 holy damage. |
+| <img src="Docs/icons/sacred-aegis.png" width="36"/> | 26 | **Sacred Aegis** | Support | Target | — | 10s | Places a living shield on an ally that grows stronger (up to 80 absorb) as they take hits over 8 seconds. |
+| <img src="Docs/icons/dispel.png" width="36"/> | 27 | **Dispel** | Support | Target | — | 7s | Instantly purges every active debuff from a target ally, no matter how many are stacked. |
+| <img src="Docs/icons/temporal-grace.png" width="36"/> | 28 | **Temporal Grace** | Heal | Team | — | 60s | Rewinds the entire team 5 seconds, restoring their HP, positions, and clearing all debuffs gained since then. |
 
-### Shadowblade (indices 29–31)
+### Shadowblade — Bo-gar (indices 29–31)
 
-| # | Ability | Type | Shape | Damage | CD | Description |
-|---|---------|------|-------|--------|----|-------------|
-| 29 | **Shadow Veil** | Support | Self | — | 10s | Vanishes into full invisibility for 4 seconds. Breaking stealth immediately with Mind Spike deals +50% bonus damage. |
-| 30 | **Silence Ward** | Support | Deploy | — | 12s | Plants a cursed fog field that silences all enemy abilities and applies Cursed (DoT) while they remain inside. |
-| 31 | **Dark Harvest** | Damage | AoE | 20/stack | 40s | Consumes all active debuff stacks on nearby enemies, dealing 20 damage per stack consumed. |
+| | # | Ability | Type | Shape | Damage | CD | Description |
+|---|---|---------|------|-------|--------|----|-------------|
+| <img src="Docs/icons/shadow-veil.png" width="36"/> | 29 | **Shadow Veil** | Support | Self | — | 10s | Vanishes into full invisibility for 4 seconds. Breaking stealth immediately with Mind Spike deals +50% bonus damage. |
+| <img src="Docs/icons/silence-ward.png" width="36"/> | 30 | **Silence Ward** | Support | Deploy | — | 12s | Plants a cursed fog field that silences all enemy abilities and applies Cursed (DoT) while they remain inside. |
+| <img src="Docs/icons/dark-harvest.png" width="36"/> | 31 | **Dark Harvest** | Damage | AoE | 20/stack | 40s | Consumes all active debuff stacks on nearby enemies, dealing 20 damage per stack consumed. |
 
 ---
 
@@ -301,6 +306,433 @@ Each boss reads at least one active state from the party and reacts to it.
 - **Void Mark Escalation:** stealth phase applies Void Mark to all players (3 Cursed stacks, boss-applied, not Harvest-consumable). +1 stack per 2s. Silence Ward placed inside reveals the Herald for 2s. Dispel clears 3 stacks from one ally per cast.
 - **Dark Harvest Mirror:** at 8+ Void Mark stacks when stealth ends → 160 instant damage (20 × 8). Temporal Grace is the primary counter — but rolling back also un-Dispels any cleanse casts made in the last 5s.
 - **Void Leak Trap:** if the Herald has Void Leak active when stealth ends, the reveal detonation spreads 1 Cursed stack to nearby players. Arcanist must track their own Arcane Step echo to not seed Void Leak on the Herald during setup.
+
+---
+
+## AFK Professions
+
+Press **F** once at a gathering station, then go make a coffee. The game rewards you while you're idle.
+
+Every `tickInterval` seconds the station awards one item directly to your inventory (via `/api/inventory/add-item`) and posts profession XP to the server (via `POST /api/professions/award-xp`). Moving more than 4 units away, pressing **F** again, or pressing **Escape** cancels the session. Level gates prevent high-tier nodes until you've earned them.
+
+---
+
+### Professions
+
+<table>
+<tr>
+<td align="center"><img src="Docs/icons/professions/mining.png" width="80"/><br/><b>Mining</b><br/>ID 2</td>
+<td align="center"><img src="Docs/icons/professions/woodcutting.png" width="80"/><br/><b>Woodcutting</b><br/>ID 0</td>
+<td align="center"><img src="Docs/icons/professions/fishing.png" width="80"/><br/><b>Fishing</b><br/>ID 1</td>
+</tr>
+</table>
+
+XP formula (matches web panel): **xpToNextLevel = currentLevel × 50**
+(Level 1→2: 50 xp · Level 5→6: 250 xp · Level 10→11: 500 xp)
+
+---
+
+### Resource Tiers
+
+<table>
+<tr>
+  <th>Profession</th>
+  <th>Tier</th>
+  <th>Station</th>
+  <th>Item</th>
+  <th>Level Req</th>
+  <th>Tick</th>
+  <th>XP/tick</th>
+  <th>Bonus ×2 at</th>
+</tr>
+<tr>
+  <td rowspan="3"><b>Mining</b></td>
+  <td>1</td>
+  <td>Copper Vein</td>
+  <td><img src="Docs/icons/professions/ore-copper.png" width="28"/> ore_copper</td>
+  <td>1</td>
+  <td>5s</td>
+  <td>10</td>
+  <td>Lv 10</td>
+</tr>
+<tr>
+  <td>2</td>
+  <td>Iron Vein</td>
+  <td><img src="Docs/icons/professions/ore-iron.png" width="28"/> ore_iron</td>
+  <td>5</td>
+  <td>6s</td>
+  <td>20</td>
+  <td>Lv 15</td>
+</tr>
+<tr>
+  <td>3</td>
+  <td>Gold Vein</td>
+  <td><img src="Docs/icons/professions/ore-gold.png" width="28"/> ore_gold</td>
+  <td>15</td>
+  <td>8s</td>
+  <td>40</td>
+  <td>Lv 25</td>
+</tr>
+<tr>
+  <td rowspan="1"><b>Woodcutting</b></td>
+  <td>1</td>
+  <td>Oak Tree</td>
+  <td><img src="Docs/icons/professions/log-oak.png" width="28"/> log_oak</td>
+  <td>1</td>
+  <td>6s</td>
+  <td>10</td>
+  <td>Lv 10</td>
+</tr>
+<tr>
+  <td rowspan="1"><b>Fishing</b></td>
+  <td>1</td>
+  <td>Fishing Spot</td>
+  <td><img src="Docs/icons/professions/fish-river.png" width="28"/> fish_river</td>
+  <td>1</td>
+  <td>8s</td>
+  <td>8</td>
+  <td>Lv 10</td>
+</tr>
+</table>
+
+---
+
+### Gathering HUD
+
+While AFK gathering a minimal HUD appears at the bottom of the screen:
+
+```
+⛏  Copper Vein                          [STOP]
+    ore_copper          Next: 3.2s   ████████░░
+```
+
+- Progress bar fills toward next item reward
+- Flashes yellow on yield (`+1× ore_copper`)
+- Flashes and shows `🎉 Mining level 5!` on level-up
+- **STOP** button or **F / Escape** cancels the session
+
+---
+
+### AFK Loop — How It Works
+
+```
+Player presses F at station
+        │
+        ▼
+Level check (ProfessionManager.GetLevel)
+        │
+    Level OK?──No──► "Requires Mining level X" in chat
+        │
+       Yes
+        │
+        ▼
+Gather coroutine starts (every tickInterval seconds):
+  1. POST /api/inventory/add-item     → item saved to DB
+  2. POST /api/professions/award-xp   → XP saved, level-up checked
+  3. GatheringHUD.Pulse(qty)          → bar flashes, counter updates
+  4. 20% chance bonus ×2 at high level
+        │
+        ▼
+Cancel triggers:
+  • Player drifts > 4u from start position
+  • F key or Escape
+  • STOP button in HUD
+```
+
+---
+
+### Backend — `POST /api/professions/award-xp`
+
+New VPS endpoint. Code in [`_CONTEXT/professions-award-xp-patch.js`](_CONTEXT/professions-award-xp-patch.js) — insert near `GET /api/professions/:characterId` in `server.js`.
+
+```
+POST /api/professions/award-xp   (requireJWT)
+Body: { characterId, professionId, xpAmount }
+Returns: { success, data: { skill_level, skill_xp, leveled_up, profession_id } }
+```
+
+- Upserts the `professions` row (safe for first-time use)
+- XP is capped 1–500 per call (anti-exploit)
+- Level-up loop handles multi-level gains at low XP totals
+- Level-up logged server-side: `[PROF] char 1 — Mining leveled up to 5`
+
+**Apply to VPS:**
+```bash
+# On VPS: insert the patch block into server.js, then restart
+sudo nano /opt/crossworlds-auth/server.js   # paste near GET /api/professions route
+sudo systemctl restart crossworlds-auth
+curl -s http://localhost:3000/api/professions/1   # verify endpoint responds
+```
+
+---
+
+### Implementation Files
+
+| File | Purpose |
+|------|---------|
+| [`Assets/Game/Systems/AfkGatheringStation.cs`](Assets/Game/Systems/AfkGatheringStation.cs) | AFK loop — F to start, auto-award per tick, drift cancel |
+| [`Assets/Game/Systems/ProfessionManager.cs`](Assets/Game/Systems/ProfessionManager.cs) | Client singleton — loads/caches profession levels, posts XP, fires level-up event |
+| [`Assets/Game/UI/GatheringHUD.cs`](Assets/Game/UI/GatheringHUD.cs) | Screen-space HUD — progress bar, pulse on yield, level-up flash |
+| [`Assets/Game/Editor/AfkStationBuilder.cs`](Assets/Game/Editor/AfkStationBuilder.cs) | BCE menu: 8a–8f drop stations into Hub scene |
+| [`_CONTEXT/professions-award-xp-patch.js`](_CONTEXT/professions-award-xp-patch.js) | VPS patch — `POST /api/professions/award-xp` |
+| `Assets/Game/Combat/Scripts/ResourceNode.cs` | Legacy manual F-key harvest (still valid for one-shot depleting nodes) |
+
+**Editor steps to wire it up:**
+1. Open Unity → Hub scene
+2. `BCE/Setup/8f` — adds `ProfessionManager` to scene
+3. `BCE/Setup/8a` through `8e` — drops each station mesh into the scene; position as desired
+4. Call `ProfessionManager.Local.Load()` from your hub `OnStartClient` (or `LoginManager` post-login callback)
+5. Apply VPS patch → `sudo systemctl restart crossworlds-auth`
+
+---
+
+## Encounters & NPCs
+
+### NPCs — Hub World
+
+Two persistent NPCs live in the Hub world and drive the crafting and trading loop.
+
+| NPC | Script | Role |
+|-----|--------|------|
+| **Forge Master** | `ForgeNPC.cs` | Crafting station — material → gear recipes, interacts via `INPCInteractable` |
+| **The Hangman** | `HangmanNPC.cs` | Travelling merchant — rare item trades, triggers dialogue UI before arena entry |
+
+<table>
+<tr>
+<td align="center"><img src="Docs/icons/characters/npc-forge.png" width="200"/><br/><b>Forge Master</b></td>
+<td align="center"><img src="Docs/icons/characters/npc-hangman.png" width="200"/><br/><b>The Hangman</b></td>
+</tr>
+</table>
+
+**NPC architecture:**  
+- All hub NPCs implement `INPCInteractable` — proximity-trigger interaction, handled by `NPCInteractionManager`
+- `NpcController.cs` drives idle breathing + slow patrol within `patrolRadius`
+- Animated via `Animator` Speed parameter (0 = idle, 1 = walk)
+- No Health/Mirror dependency — hub NPCs are purely cosmetic/interactive
+
+---
+
+### Enemy Roster
+
+Three enemy variants spawn in arenas. All are server-authoritative via `EnemyController.cs`.
+
+<table>
+<tr>
+<td align="center">
+  <img src="Docs/models/enemy-grunt/enemy-grunt.webp" width="200"/><br/>
+  <sub><i>3D model render</i></sub><br/>
+  <img src="Docs/icons/characters/enemy-grunt.png" width="200"/><br/>
+  <b>Void Grunt</b><br/>
+  <a href="Docs/models/enemy-grunt/enemy-grunt.glb">⬇ GLB</a>
+</td>
+<td align="center">
+  <img src="Docs/models/enemy-ranged/enemy-ranged.webp" width="200"/><br/>
+  <sub><i>3D model render</i></sub><br/>
+  <img src="Docs/icons/characters/enemy-ranged.png" width="200"/><br/>
+  <b>Void Archer</b><br/>
+  <a href="Docs/models/enemy-ranged/enemy-ranged.glb">⬇ GLB</a>
+</td>
+<td align="center">
+  <img src="Docs/models/enemy-elite/enemy-elite.webp" width="200"/><br/>
+  <sub><i>3D model render</i></sub><br/>
+  <img src="Docs/icons/characters/enemy-elite.png" width="200"/><br/>
+  <b>Void Knight (Elite)</b><br/>
+  <a href="Docs/models/enemy-elite/enemy-elite.glb">⬇ GLB</a>
+</td>
+</tr>
+</table>
+
+| Type | Prefab | Role | Aggro | Attack | Damage | XP |
+|------|--------|------|-------|--------|--------|----|
+| **Void Grunt** | `Enemy_Grunt` | Melee frontline | 8u | 1.5s | 12 | 20 |
+| **Void Archer** | `Enemy_Ranged` | Ranged kite | 8u | 2s | 10 | 20 |
+| **Void Knight** | `Enemy_Elite` | Elite tank | 10u | 2s | 20 | 50 |
+
+**Enemy AI state machine** (`EnemyController.cs`):
+
+```
+Idle → (player enters aggroRadius) → Chase → (in attackRange) → Attack
+              ↑ leashRadius exceeded ←──────────────────────────────────┘
+```
+
+- **0.45s attack telegraph** — red cylinder AoE preview before damage lands (dodge it)
+- Ranged enemies backpedal if the player closes inside `tooCloseDistance = 3u`
+- Respects all status effects: Stagger (interrupt), Bound (immobile), Silenced (can't attack), Slow (speed multiplied)
+- Death: VFX burst → loot rolls → `POST /api/combat/kill` for server-authoritative XP → `NetworkServer.Destroy`
+
+**Wave composition** (`WaveSpawner.cs`):
+- 67% Grunts / 33% Archers per wave
+- +2 enemies per wave (Wave 1 = 4, Wave 5 = 12, Wave 10 = 22)
+- Elite spawns every 3rd wave; wave waits for all enemies dead before advancing
+- Max 10 waves → arena clear bonus (+200 mastery XP)
+
+---
+
+### Cursed Chest Encounter
+
+<img src="Docs/icons/characters/wave-chest.png" width="300" align="right"/>
+
+The **Wave Chest** (`WaveChest.cs`) is a special encounter placed in arena rooms. Hold-to-open (2s) → spawns a custom enemy roster → loot on completion.
+
+- Scales enemy count to nearby player count
+- Prep window lets players position Warden turrets before first wave
+- Drops configured loot on all-clear
+
+---
+
+### Boss Encounter — The Null Architect
+
+<img src="Docs/icons/characters/boss-arena-scene.png" width="100%"/>
+
+<table>
+<tr>
+<td align="center" width="50%">
+  <img src="Docs/models/null-architect/null-architect.webp" width="100%"/><br/>
+  <sub><i>3D model — Tripo PBR render</i></sub><br/>
+  <a href="Docs/models/null-architect/null-architect.glb">⬇ Download GLB</a>
+</td>
+<td align="center" width="50%">
+  <img src="Docs/icons/characters/null-architect-phase1.png" width="100%"/><br/>
+  <img src="Docs/icons/characters/null-architect-phase2.png" width="100%"/><br/>
+  <img src="Docs/icons/characters/null-architect-phase3.png" width="100%"/><br/>
+  <sub><i>Phase 1 · Phase 2 · Phase 3</i></sub>
+</td>
+</tr>
+</table>
+
+> *"The Null Architect did not build the void — it was built by it."*
+
+The Null Architect is Crossworlds BCE's world boss. It is a fully scripted 3-phase encounter implemented in `WorldBossController.cs`. The fight is server-authoritative: all ability timing, phase transitions, and damage are computed on the dedicated server and broadcast to clients via Mirror RPCs.
+
+**Entry:** A `BossTrigger` child collider (radius 15u) starts the fight the moment the first player steps inside. Once started, the encounter cannot be reset until the boss dies or the server restarts.
+
+---
+
+#### Phase 1 — The Mirror (100% → 60% HP)
+
+<img src="Docs/icons/characters/null-architect-phase1.png" width="260" align="right"/>
+
+The Null Architect fights at full strength. Every 18 seconds it enters a **Reflect window**.
+
+| Timing | Event |
+|--------|-------|
+| T−3s | Chat warning: *"REFLECT in 3s — stop attacking!"*; telegraph VFX pulses |
+| T=0 | `isReflecting = true` — **stop all DPS** |
+| T+4s | Reflect window closes — resume attack |
+
+**Mechanic:** Any damage dealt to the boss during the 4-second window is reflected as an AoE pulse hitting all players within 10u for **75% of that damage**. A single Collapsing Void (60 dmg) during reflect hits every teammate for 45 damage.
+
+**Counter:** Watch chat + VFX. Cease fire on the warning. Repositioning and dodge-rolling are safe.
+
+**Phase transition at 60% HP:**
+- 4-second immunity window (`isImmune = true`)
+- Chat: *"PHASE SHIFT — Null Architect fragments into shards!"*
+- All Phase 1 coroutines stopped cleanly
+
+---
+
+#### Phase 2 — Shard Fracture (60% → 30% HP)
+
+<img src="Docs/icons/characters/null-architect-phase2.png" width="260" align="right"/>
+
+Three **Null Shards** spawn at 6u spacing from the boss. Each has 400 HP and must be destroyed **simultaneously** — surviving shards cross-heal for 50% of damage dealt to their sibling.
+
+| Shard Count | Cross-heal per hit |
+|-------------|-------------------|
+| 3 alive | Others heal 50% of damage received |
+| 2 alive | Survivor heals 50% of damage to dead sibling |
+| 1 alive | Safe to kill freely |
+
+Every 25 seconds the boss casts **Tether Web**:
+- Randomly pairs all players
+- Each pair must stay within **6u** of each other for 6 seconds
+- Snapping the tether deals **40 damage to both** tethered players
+
+**Strategy:** Coordinate DPS on shards (burst simultaneously), stack with your tether partner, then swap focus to the boss.
+
+**Phase transition at 30% HP:**
+- 4-second immunity window
+- Chat: *"CRITICAL — Null Architect destabilises! All damage amplified!"*
+- Boss gains `Weakened` status effect → **+25% incoming damage** for the rest of the fight
+
+---
+
+#### Phase 3 — Null Collapse (30% → 0% HP)
+
+<img src="Docs/icons/characters/null-architect-phase3.png" width="260" align="right"/>
+
+No more shards. The boss is weakened (+25% dmg taken) but dangerous — Void Drain punishes spread.
+
+Every 12 seconds: **Void Drain**
+
+| Zone | Effect |
+|------|--------|
+| Within 5u of boss | Safe |
+| Beyond 5u | 8 damage/second for 4 seconds |
+
+Players must stack on the boss during Void Drain, then spread for Tether safety between casts. Void Drain and Tether Web can overlap — coordinate both.
+
+**At 10% HP: Final Surge** (one-time)
+
+- Chat: *"⚠⚠ FINAL SURGE — Null Architect ENRAGED! Burn it down NOW!"*
+- Boss movement speed ×3, attack speed ×3
+- Lasts 15 seconds — if the boss survives the surge it returns to normal
+- Burn everything; cooldowns should be saved for this window
+
+---
+
+#### Boss Loot Table
+
+| Item | Drop Type | Chance |
+|------|-----------|--------|
+| `sword_iron` | Guaranteed | 100% |
+| `plate_iron` | Guaranteed | 100% |
+| `ring_copper` | Rare | 35% |
+| `material_copper_bar` | Rare | 35% |
+
+#### Boss HP Bar (Client UI — `WorldBossHealthBar.cs`)
+
+- Phase markers drawn at 60% and 30% HP thresholds
+- Bar color changes by phase: **cyan** (P1) → **orange** (P2) → **red** (P3) → **white** (immune/transition)
+- Driven by `SyncVar` hook `OnPhaseSync` → `WorldBossHealthBar.OnPhaseChanged(phase)`
+
+---
+
+#### Boss Quick Reference Card
+
+```
+The Null Architect — 2000 HP · 3 Phases · Server-Authoritative
+
+Phase 1 (100–60%)   Reflect Pulse every 18s — stop DPS during 4s window
+                    Transition: 4s immune → 3 Null Shards spawn
+
+Phase 2 (60–30%)    3 Shards (400HP each) — burst simultaneously or cross-heal
+                    Tether Web every 25s — stay within 6u of your pair
+                    Transition: 4s immune → Boss gains Weakened (+25% dmg taken)
+
+Phase 3 (30–0%)     Void Drain every 12s — stack within 5u or 8dps for 4s
+                    Final Surge at 10% — speed×3, atk×3 for 15s (burn window)
+
+Loot:               sword_iron + plate_iron (guaranteed)
+                    ring_copper, material_copper_bar (35% each)
+```
+
+---
+
+#### Implementation Files
+
+| File | Purpose |
+|------|---------|
+| [`Assets/Game/Combat/Scripts/WorldBossController.cs`](Assets/Game/Combat/Scripts/WorldBossController.cs) | All phase logic, RPCs, loot |
+| [`Assets/Game/Combat/Scripts/WaveSpawner.cs`](Assets/Game/Combat/Scripts/WaveSpawner.cs) | Arena wave manager |
+| [`Assets/Game/Combat/Scripts/WaveManager.cs`](Assets/Game/Combat/Scripts/WaveManager.cs) | Flexible wave rosters (boss, elite, mob tiers) |
+| [`Assets/Game/Combat/Scripts/EnemyController.cs`](Assets/Game/Combat/Scripts/EnemyController.cs) | Enemy AI state machine |
+| [`Assets/Game/Combat/Scripts/StatusEffectManager.cs`](Assets/Game/Combat/Scripts/StatusEffectManager.cs) | Buff/debuff system |
+| [`Assets/Game/Combat/Scripts/ArenaSessionController.cs`](Assets/Game/Combat/Scripts/ArenaSessionController.cs) | Session XP/kill tracking |
+| [`Assets/Game/Combat/Scripts/WaveChest.cs`](Assets/Game/Combat/Scripts/WaveChest.cs) | Cursed chest encounter |
+| [`Assets/Game/UI/WorldBossHealthBar.cs`](Assets/Game/UI/WorldBossHealthBar.cs) | Client phase-aware HP bar |
+| [`Assets/Game/Editor/WorldBossBuilder.cs`](Assets/Game/Editor/WorldBossBuilder.cs) | One-click boss prefab builder |
+| [`Assets/Game/Editor/ArenaSceneBuilder.cs`](Assets/Game/Editor/ArenaSceneBuilder.cs) | One-click arena scene builder |
 
 ---
 

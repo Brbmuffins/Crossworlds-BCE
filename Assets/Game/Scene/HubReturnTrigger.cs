@@ -23,7 +23,9 @@ public class HubReturnTrigger : NetworkBehaviour
     [Header("Prompt")]
     public string promptText = "Press E to Return to Hub";
 
+#if !UNITY_SERVER
     bool _returning = false;
+#endif
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
     void Awake()

@@ -1,0 +1,37 @@
+{
+  "task_id": "e7dbce5f-ad4f-489c-a5a0-87bf3445f4ae",
+  "type": "text_to_model",
+  "status": "success",
+  "input": {
+    "prompt": "Void Knight elite enemy, imposing heavily armored dark plate armor with glowing purple runes, elite champion dark fantasy game, T-pose, full body, game-ready",
+    "model_version": "v3.1-20260211",
+    "texture": true,
+    "pbr": true,
+    "texture_quality": "detailed",
+    "texture_alignment": "geometry",
+    "export_uv": true,
+    "geometry_quality": "detailed"
+  },
+  "output": {
+    "pbr_model": "https://tripo-data.rg1.data.tripo3d.com/tcli_2efb6ab9cf694c6eab16a3e8dc01d3bf/20260703/e7dbce5f-ad4f-489c-a5a0-87bf3445f4ae/tripo_pbr_model_e7dbce5f-ad4f-489c-a5a0-87bf3445f4ae.glb?Key-Pair-Id=K1676C64NMVM2J&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly90cmlwby1kYXRhLnJnMS5kYXRhLnRyaXBvM2QuY29tL3RjbGlfMmVmYjZhYjljZjY5NGM2ZWFiMTZhM2U4ZGMwMWQzYmYvMjAyNjA3MDMvZTdkYmNlNWYtYWQ0Zi00ODljLWE1YTAtODdiZjM0NDVmNGFlL3RyaXBvX3Bicl9tb2RlbF9lN2RiY2U1Zi1hZDRmLTQ4OWMtYTVhMC04N2JmMzQ0NWY0YWUuZ2xiIiwiQ29uZGl0aW9uIjp7IkRhdGVMZXNzVGhhbiI6eyJBV1M6RXBvY2hUaW1lIjoxNzgzMTIzMjAwfX19XX0_&Signature=HEmHPQu8Zz5lIKv9x-vmyBF74DW7mbXMSOBDWelecAU5Z6YnZWUBpbEk0-Y8QOdg-WpAOz3NN6eN5FONgyQ0QkMoTVFalKEh7cx9XOA58ERaNVV8P-2VtCDI-AJD1df6mqOAP0eWeZoMiskPHKs0WUiPS23TFbQtgXT4jeZB06c8KTgmDUVtgSwBh1-WnHb5YGL6ud6b5GV5qjTFNz2CHzugn4eCy1f5JMbuSyasXH1-6lzIzh-42cTx5SEejuOia9s0bZOxx5WlhJdQ~~Ss39l39t~4Txt2YTDvNHV1jaO-L1EEHFeTrzwV23uSHlUCPqpXHj-vxKvpe0UbLcn-Ow__",
+    "generated_image": "https://tripo-data.rg1.data.tripo3d.com/tcli_2efb6ab9cf694c6eab16a3e8dc01d3bf/20260703/e7dbce5f-ad4f-489c-a5a0-87bf3445f4ae/text2image_e7dbce5f-ad4f-489c-a5a0-87bf3445f4ae.jpeg?Key-Pair-Id=K1676C64NMVM2J&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly90cmlwby1kYXRhLnJnMS5kYXRhLnRyaXBvM2QuY29tL3RjbGlfMmVmYjZhYjljZjY5NGM2ZWFiMTZhM2U4ZGMwMWQzYmYvMjAyNjA3MDMvZTdkYmNlNWYtYWQ0Zi00ODljLWE1YTAtODdiZjM0NDVmNGFlL3RleHQyaW1hZ2VfZTdkYmNlNWYtYWQ0Zi00ODljLWE1YTAtODdiZjM0NDVmNGFlLmpwZWciLCJDb25kaXRpb24iOnsiRGF0ZUxlc3NUaGFuIjp7IkFXUzpFcG9jaFRpbWUiOjE3ODMxMjMyMDB9fX1dfQ__&Signature=QGaE6OZMZhgIo93DdhLBPIAcHG8zElJ7x-h~qnBgC5w1vLJvJ3lbuFdyklqAVlXAEcKQ~CRkCKcqq9OVYznA~f2ERmXkE4coVmV8eWLW-Mn-rgxyBRg~BZYXc98fXww~RQTlGUkNEujtktXppFf3EFY06TkaCAYbPwEsVJnS01SP4FP7Kv2~CFyZKOaseORtgbaurO1xYjkGEqWGw1HtZZRMVV4dW~WEWd8VcCgpRkTMdxPWzXo6IqsinkLtzoUdQZaWno5hL6-m9qHdEefgbRedZTrhy~9u2NiyPnkZjaChGz-OmlTVjyNt9zs2WH84vf0r17gK87ZO1dckTJ3Qvg__",
+    "rendered_image": "https://tripo-data.rg1.data.tripo3d.com/tcli_2efb6ab9cf694c6eab16a3e8dc01d3bf/20260703/e7dbce5f-ad4f-489c-a5a0-87bf3445f4ae/legacy_mesh.webp?Key-Pair-Id=K1676C64NMVM2J&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly90cmlwby1kYXRhLnJnMS5kYXRhLnRyaXBvM2QuY29tL3RjbGlfMmVmYjZhYjljZjY5NGM2ZWFiMTZhM2U4ZGMwMWQzYmYvMjAyNjA3MDMvZTdkYmNlNWYtYWQ0Zi00ODljLWE1YTAtODdiZjM0NDVmNGFlL2xlZ2FjeV9tZXNoLndlYnAiLCJDb25kaXRpb24iOnsiRGF0ZUxlc3NUaGFuIjp7IkFXUzpFcG9jaFRpbWUiOjE3ODMxMjMyMDB9fX1dfQ__&Signature=qaGdiJZEx9RpTI7j9a4s54cRQOEIh2QmwKegdAaVSnG2UE4UXT7dmac6uvWiC6aCEglCg4Qo1cgS2ftmAJqadeNWDzucLS3Dr5qkKHDBcTKHlNKwgd22D7ufa63nkR-tnDudM2V3KnN2Wn92hsgHUPCV9p2Q5DuDuBmEEvBiNDqFxZbudqSFbNjmFA~I8HPBOVggTjTjLllASfHRbgusDDm8IDR4dIL~4-B8Djlb7HR0iMj8yWjRXqhksNmuwNbH3L3VEigHk5DIBCmJX9wuCIs~1b7N1ybVuau45WzTIqVgMtGeR3gZe0E9dpdz3qu8SoykjyzMzoRok7cvCAHLwA__"
+  },
+  "progress": 100,
+  "create_time": 1783116777,
+  "consumed_credit": 50,
+  "prompt": "Void Knight elite enemy, imposing heavily armored dark plate armor with glowing purple runes, elite champion dark fantasy game, T-pose, full body, game-ready",
+  "thumbnail": "https://tripo-data.rg1.data.tripo3d.com/tcli_2efb6ab9cf694c6eab16a3e8dc01d3bf/20260703/e7dbce5f-ad4f-489c-a5a0-87bf3445f4ae/legacy_mesh.webp?Key-Pair-Id=K1676C64NMVM2J&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly90cmlwby1kYXRhLnJnMS5kYXRhLnRyaXBvM2QuY29tL3RjbGlfMmVmYjZhYjljZjY5NGM2ZWFiMTZhM2U4ZGMwMWQzYmYvMjAyNjA3MDMvZTdkYmNlNWYtYWQ0Zi00ODljLWE1YTAtODdiZjM0NDVmNGFlL2xlZ2FjeV9tZXNoLndlYnAiLCJDb25kaXRpb24iOnsiRGF0ZUxlc3NUaGFuIjp7IkFXUzpFcG9jaFRpbWUiOjE3ODMxMjMyMDB9fX1dfQ__&Signature=qaGdiJZEx9RpTI7j9a4s54cRQOEIh2QmwKegdAaVSnG2UE4UXT7dmac6uvWiC6aCEglCg4Qo1cgS2ftmAJqadeNWDzucLS3Dr5qkKHDBcTKHlNKwgd22D7ufa63nkR-tnDudM2V3KnN2Wn92hsgHUPCV9p2Q5DuDuBmEEvBiNDqFxZbudqSFbNjmFA~I8HPBOVggTjTjLllASfHRbgusDDm8IDR4dIL~4-B8Djlb7HR0iMj8yWjRXqhksNmuwNbH3L3VEigHk5DIBCmJX9wuCIs~1b7N1ybVuau45WzTIqVgMtGeR3gZe0E9dpdz3qu8SoykjyzMzoRok7cvCAHLwA__",
+  "queuing_num": -1,
+  "running_left_time": -1,
+  "result": {
+    "pbr_model": {
+      "type": "glb",
+      "url": "https://tripo-data.rg1.data.tripo3d.com/tcli_2efb6ab9cf694c6eab16a3e8dc01d3bf/20260703/e7dbce5f-ad4f-489c-a5a0-87bf3445f4ae/tripo_pbr_model_e7dbce5f-ad4f-489c-a5a0-87bf3445f4ae.glb?Key-Pair-Id=K1676C64NMVM2J&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly90cmlwby1kYXRhLnJnMS5kYXRhLnRyaXBvM2QuY29tL3RjbGlfMmVmYjZhYjljZjY5NGM2ZWFiMTZhM2U4ZGMwMWQzYmYvMjAyNjA3MDMvZTdkYmNlNWYtYWQ0Zi00ODljLWE1YTAtODdiZjM0NDVmNGFlL3RyaXBvX3Bicl9tb2RlbF9lN2RiY2U1Zi1hZDRmLTQ4OWMtYTVhMC04N2JmMzQ0NWY0YWUuZ2xiIiwiQ29uZGl0aW9uIjp7IkRhdGVMZXNzVGhhbiI6eyJBV1M6RXBvY2hUaW1lIjoxNzgzMTIzMjAwfX19XX0_&Signature=HEmHPQu8Zz5lIKv9x-vmyBF74DW7mbXMSOBDWelecAU5Z6YnZWUBpbEk0-Y8QOdg-WpAOz3NN6eN5FONgyQ0QkMoTVFalKEh7cx9XOA58ERaNVV8P-2VtCDI-AJD1df6mqOAP0eWeZoMiskPHKs0WUiPS23TFbQtgXT4jeZB06c8KTgmDUVtgSwBh1-WnHb5YGL6ud6b5GV5qjTFNz2CHzugn4eCy1f5JMbuSyasXH1-6lzIzh-42cTx5SEejuOia9s0bZOxx5WlhJdQ~~Ss39l39t~4Txt2YTDvNHV1jaO-L1EEHFeTrzwV23uSHlUCPqpXHj-vxKvpe0UbLcn-Ow__"
+    },
+    "rendered_image": {
+      "type": "webp",
+      "url": "https://tripo-data.rg1.data.tripo3d.com/tcli_2efb6ab9cf694c6eab16a3e8dc01d3bf/20260703/e7dbce5f-ad4f-489c-a5a0-87bf3445f4ae/legacy_mesh.webp?Key-Pair-Id=K1676C64NMVM2J&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly90cmlwby1kYXRhLnJnMS5kYXRhLnRyaXBvM2QuY29tL3RjbGlfMmVmYjZhYjljZjY5NGM2ZWFiMTZhM2U4ZGMwMWQzYmYvMjAyNjA3MDMvZTdkYmNlNWYtYWQ0Zi00ODljLWE1YTAtODdiZjM0NDVmNGFlL2xlZ2FjeV9tZXNoLndlYnAiLCJDb25kaXRpb24iOnsiRGF0ZUxlc3NUaGFuIjp7IkFXUzpFcG9jaFRpbWUiOjE3ODMxMjMyMDB9fX1dfQ__&Signature=qaGdiJZEx9RpTI7j9a4s54cRQOEIh2QmwKegdAaVSnG2UE4UXT7dmac6uvWiC6aCEglCg4Qo1cgS2ftmAJqadeNWDzucLS3Dr5qkKHDBcTKHlNKwgd22D7ufa63nkR-tnDudM2V3KnN2Wn92hsgHUPCV9p2Q5DuDuBmEEvBiNDqFxZbudqSFbNjmFA~I8HPBOVggTjTjLllASfHRbgusDDm8IDR4dIL~4-B8Djlb7HR0iMj8yWjRXqhksNmuwNbH3L3VEigHk5DIBCmJX9wuCIs~1b7N1ybVuau45WzTIqVgMtGeR3gZe0E9dpdz3qu8SoykjyzMzoRok7cvCAHLwA__"
+    }
+  }
+}
