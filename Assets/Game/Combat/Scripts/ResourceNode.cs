@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿#if !UNITY_SERVER
+using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Mirror;
@@ -214,3 +215,4 @@ public class ResourceNode : MonoBehaviour
         Gizmos.DrawSphere(transform.position, interactRange);
     }
 }
+#endif

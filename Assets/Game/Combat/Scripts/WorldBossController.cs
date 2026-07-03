@@ -472,7 +472,9 @@ public class WorldBossController : NetworkBehaviour
 
     void OnPhaseSync(BossPhase _, BossPhase newPhase)
     {
+#if !UNITY_SERVER
         FindFirstObjectByType<WorldBossHealthBar>()?.OnPhaseChanged(newPhase);
+#endif
     }
 
     // ─────────────────────────────────────────────────────────────────────────────

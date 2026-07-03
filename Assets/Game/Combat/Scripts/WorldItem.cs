@@ -113,11 +113,13 @@ public class WorldItem : NetworkBehaviour
             return;
         }
 
+#if !UNITY_SERVER
         var inv = InventoryManager.Instance;
         if (inv != null)
             inv.OnItemPickedUp(pickedItemId, qty);
         else
             Debug.LogWarning($"[LOOT] InventoryManager not found — {pickedItemId} x{qty} lost on client");
+#endif
     }
 
     void OnItemIdChanged(string _, string newVal) => ApplyRarityGlow(newVal);

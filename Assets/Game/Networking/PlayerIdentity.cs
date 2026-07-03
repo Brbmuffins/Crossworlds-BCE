@@ -49,7 +49,9 @@ public class PlayerIdentity : NetworkBehaviour
         plate.Refresh();
 
         // Notify player list so it updates immediately on join
+#if !UNITY_SERVER
         PlayerListUI.RequestRefresh();
+#endif
 
         // Session stats: track every player (not just local) so healing done to
         // party members counts. HashSet inside the tracker dedupes re-notifies.
@@ -61,6 +63,8 @@ public class PlayerIdentity : NetworkBehaviour
     public override void OnStopClient()
     {
         // Notify player list immediately on leave
+#if !UNITY_SERVER
         PlayerListUI.RequestRefresh();
+#endif
     }
 }

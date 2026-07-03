@@ -1,4 +1,3 @@
-#if !UNITY_SERVER
 using System;
 using System.Collections;
 using UnityEngine;
@@ -19,6 +18,7 @@ public class PlayerProgressManager : MonoBehaviour
     // ── Singleton ─────────────────────────────────────────────────────────────
     public static PlayerProgressManager Local { get; private set; }
 
+#if !UNITY_SERVER
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     static void Bootstrap()
     {
@@ -27,6 +27,7 @@ public class PlayerProgressManager : MonoBehaviour
         DontDestroyOnLoad(go);
         Local = go.AddComponent<PlayerProgressManager>();
     }
+#endif
 
     // ── Data (read by UI) ─────────────────────────────────────────────────────
     public int   Level   { get; private set; } = 1;
@@ -219,4 +220,3 @@ public class PlayerProgressManager : MonoBehaviour
         public int characterId, level, xp, gold, stat_str, stat_agi, stat_int, stat_vit;
     }
 }
-#endif
