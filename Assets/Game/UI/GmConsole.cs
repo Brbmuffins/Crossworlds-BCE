@@ -1,6 +1,8 @@
 ﻿// Client-only: the dedicated server build has no input devices or UI canvas,
 // and this component was spamming errors every frame on headless builds.
-#if !UNITY_SERVER
+// UNITY_EDITOR keeps it compiling for editor scripts (RodHubSceneBuilder)
+// even when the active build target is Dedicated Server.
+#if UNITY_EDITOR || !UNITY_SERVER
 using System;
 using System.Collections.Generic;
 using Mirror;
@@ -601,4 +603,4 @@ public class GmConsole : MonoBehaviour
         Log("<color=#6366f1>GM Console ready. Type 'help' for commands.</color>");
     }
 }
-#endif // !UNITY_SERVER
+#endif // UNITY_EDITOR || !UNITY_SERVER
