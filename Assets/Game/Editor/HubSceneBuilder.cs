@@ -241,5 +241,50 @@ public static class HubSceneBuilder
         Debug.Log("[HubSceneBuilder] ✓ Added 3 Copper Ore nodes. Press Ctrl+S to save scene.");
         EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
     }
+
+    //  Step 9: Place HangmanNPC (arena entrance challenge NPC)
+    //    • Capsule body near the Copper Arena portal
+    //    • SphereCollider trigger auto-created by HangmanNPC.Awake
+    //    • NetworkIdentity (required — HangmanNPC is a NetworkBehaviour)
+    [MenuItem("BCE/Hub Setup/9 - Place HangmanNPC (Arena Entrance)")]
+    static void PlaceHangmanNPC()
+    {
+        // Position in front of the Copper Arena portal (portal is near 0,0,20 by convention)
+        var go = new GameObject("HangmanNPC");
+        go.transform.position = new Vector3(0f, 0f, 14f);
+
+        // Capsule visual
+        var capsule = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+        capsule.name = "Body";
+        capsule.transform.SetParent(go.transform, false);
+        capsule.transform.localPosition = new Vector3(0f, 1f, 0f);
+        Object.DestroyImmediate(capsule.GetComponent<CapsuleCollider>());
+        var mat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+        mat.color = new Color(0.12f, 0.08f, 0.22f);
+        capsule.GetComponent<Renderer>().sharedMaterial = mat;
+
+        // Eerie glow light
+        var lightGO = new GameObject("HangmanGlow");
+        lightGO.transform.SetParent(go.transform, false);
+        lightGO.transform.localPosition = new Vector3(0f, 2f, 0f);
+        var l = lightGO.AddComponent<Light>();
+        l.type = LightType.Point; l.color = new Color(0.6f, 0.1f, 0.9f); l.intensity = 1.8f; l.range = 6f;
+
+        // NetworkIdentity (required for NetworkBehaviour + Commands)
+        go.AddComponent<Mirror.NetworkIdentity>();
+
+        // HangmanNPC script (arenaSceneName defaults to SceneNames.ArenaCopper)
+        go.AddComponent<HangmanNPC>();
+
+        // Mark dirty
+        EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
+        UnityEditor.Selection.activeGameObject = go;
+
+        Debug.Log("[HubSceneBuilder] ✓ HangmanNPC placed at (0, 0, 14).\n" +
+                  "NEXT:\n" +
+                  "1. Add HangmanNPC to NetworkManager.spawnPrefabs (or register by code in RodNetworkManager)\n" +
+                  "2. Place HangmanDialogueUI prefab in scene (it is NOT self-bootstrapping)\n" +
+                  "3. Ctrl+S");
+    }
 }
 #endif
