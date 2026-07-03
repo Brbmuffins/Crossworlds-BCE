@@ -81,9 +81,10 @@ public class ForgeCraftingPanel : MonoBehaviour
 
     IEnumerator LoadRecipes()
     {
-        string charId = AuthManager.CharacterId;
+        int    charId = AuthManager.CharacterId;
         string token  = AuthManager.Token;
-        string url    = $"{ApiConfig.BaseUrl}/professions/recipes/{charId}";
+        if (charId <= 0 || string.IsNullOrEmpty(token)) yield break;
+        string url    = $"{ServerConfig.AuthBaseUrl}/api/professions/recipes/{charId}";
 
         using var req = UnityEngine.Networking.UnityWebRequest.Get(url);
         req.SetRequestHeader("Authorization", $"Bearer {token}");
@@ -132,7 +133,7 @@ public class ForgeCraftingPanel : MonoBehaviour
         progressBar.value  = 0f;
 
         float elapsed  = 0f;
-        float duration = recipe.craft_time_seconds;
+        float duration = Mathf.Max(0.1f, recipe.craft_time_seconds);
 
         while (elapsed < duration)
         {
@@ -142,11 +143,11 @@ public class ForgeCraftingPanel : MonoBehaviour
         }
 
         // POST /api/craft
-        string charId = AuthManager.CharacterId;
+        int    charId = AuthManager.CharacterId;
         string token  = AuthManager.Token;
         string body   = JsonUtility.ToJson(new CraftRequest { characterId = charId, recipeId = recipe.recipe_id });
 
-        using var req = new UnityEngine.Networking.UnityWebRequest($"{ApiConfig.BaseUrl}/craft", "POST");
+        using var req = new UnityEngine.Networking.UnityWebRequest($"{ServerConfig.AuthBaseUrl}/api/craft", "POST");
         req.uploadHandler   = new UnityEngine.Networking.UploadHandlerRaw(System.Text.Encoding.UTF8.GetBytes(body));
         req.downloadHandler = new UnityEngine.Networking.DownloadHandlerBuffer();
         req.SetRequestHeader("Content-Type", "application/json");
@@ -161,20 +162,23 @@ public class ForgeCraftingPanel : MonoBehaviour
             var resp = JsonUtility.FromJson<CraftResponse>(req.downloadHandler.text);
             if (resp.success)
             {
-                RodChatManager.Instance?.SystemMessage(
+                RodChatManager.Instance?.AddSystemMessage(
                     $"[FORGE] Crafted {resp.data.result_name}!" +
                     (resp.data.leveled_up ? $" {GetProfessionName(recipe.profession_id)} leveled up to {resp.data.skill_level}!" : ""));
-                InventoryManager.Local?.Reload();
+                var inv = InventoryManager.Instance;
+                if (inv != null) inv.StartCoroutine(inv.LoadInventory());
                 StartCoroutine(LoadRecipes()); // refresh ingredient counts
             }
             else
             {
-                RodChatManager.Instance?.SystemMessage($"[FORGE] {resp.data?.result_name ?? "Craft failed"}");
+                // API convention: error strings are player-readable, show verbatim
+                RodChatManager.Instance?.AddSystemMessage(
+                    $"[FORGE] {(string.IsNullOrEmpty(resp.error) ? "Craft failed" : resp.error)}");
             }
         }
         else
         {
-            RodChatManager.Instance?.SystemMessage("[FORGE] Server error — try again.");
+            RodChatManager.Instance?.AddSystemMessage("[FORGE] Server error — try again.");
         }
     }
 
@@ -216,13 +220,14 @@ public class ForgeCraftingPanel : MonoBehaviour
     }
     [System.Serializable] class CraftRequest
     {
-        public string characterId;
-        public int    recipeId;
+        public int characterId;
+        public int recipeId;
     }
     [System.Serializable] class CraftResponse
     {
-        public bool       success;
+        public bool        success;
         public CraftResult data;
+        public string      error;
     }
     [System.Serializable] class CraftResult
     {
@@ -262,7 +267,7 @@ public class RecipeRowUI : MonoBehaviour
             foreach (var ing in recipe.ingredients)
             {
                 // Check inventory count — red if short
-                int have = InventoryManager.Local?.GetItemCount(ing.item_id) ?? 0;
+                int have = InventoryManager.Instance?.GetItemCount(ing.item_id) ?? 0;
                 string col = have >= ing.quantity ? "white" : "red";
                 ingParts.Add($"<color={col}>{ing.quantity}× {ing.name}</color>");
             }
@@ -279,16 +284,19 @@ public class RecipeRowUI : MonoBehaviour
             };
         }
 
+        var group = GetComponent<CanvasGroup>();
+        if (group == null) group = gameObject.AddComponent<CanvasGroup>();
+
         if (recipe.unlocked)
         {
             craftButton.interactable = true;
             craftButton.onClick.AddListener(() => onCraft(recipe));
-            GetComponent<CanvasGroup>().alpha = 1f;
+            group.alpha = 1f;
         }
         else
         {
             craftButton.interactable = false;
-            GetComponent<CanvasGroup>().alpha = 0.45f;
+            group.alpha = 0.45f;
             nameLabel.color = ColourLocked;
         }
     }

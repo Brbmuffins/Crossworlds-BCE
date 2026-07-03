@@ -126,7 +126,7 @@ public class WaveSpawner : NetworkBehaviour
         {
             yield return new WaitForSeconds(1f);
             SpawnEnemy(elitePrefab);
-            RpcAnnounce("⚠ ELITE has arrived!");
+            RpcAnnounce("ELITE has arrived!");
         }
 
         // Wait until all enemies are dead

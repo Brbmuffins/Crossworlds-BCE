@@ -59,6 +59,17 @@ public class CharacterStats : MonoBehaviour
         _temporaryCDR = Mathf.Clamp(_temporaryCDR + delta, -0.6f, 0.6f);
     }
 
+    // ── Temporary damage bonus (consumable flasks) ─────────────────
+    // Additive percentage folded into DamageMultiplier on Recalculate.
+    // Call AddTemporaryDamagePct(+0.15f) to apply, AddTemporaryDamagePct(-0.15f) to remove.
+    private float _temporaryDmgPct = 0f;
+
+    public void AddTemporaryDamagePct(float delta)
+    {
+        _temporaryDmgPct = Mathf.Clamp(_temporaryDmgPct + delta, -1f, 2f);
+        Recalculate();
+    }
+
     void Awake()
     {
         _health    = GetComponent<Health>();
@@ -104,7 +115,7 @@ public class CharacterStats : MonoBehaviour
 
         float masteryHpFlat = _health != null ? _health.BaseMaxHealth * _masteryMaxHpPct : 0f;
         MaxHealthBonus      = flatHealth + masteryHpFlat;
-        DamageMultiplier    = Mathf.Max(0f,   1f + pctDamage + _masteryDmgPct);
+        DamageMultiplier    = Mathf.Max(0f,   1f + pctDamage + _masteryDmgPct + _temporaryDmgPct);
         DamageReduction     = Mathf.Clamp(pctDR,  0f, 0.8f);
         MoveSpeedMultiplier = Mathf.Max(0.1f, 1f + pctSpeed);
         CooldownReduction   = Mathf.Clamp(pctCdr + _masteryCdrPct, 0f, 0.6f);

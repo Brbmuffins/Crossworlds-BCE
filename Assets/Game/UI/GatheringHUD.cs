@@ -67,6 +67,7 @@ public class GatheringHUD : MonoBehaviour
         var scaler = gameObject.AddComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = new Vector2(1920, 1080);
+        gameObject.AddComponent<GraphicRaycaster>();   // required for the STOP button to receive clicks
 
         // Root panel — bottom-center
         var panel = MakeImage("Panel", _canvas.transform, new Color(0.05f, 0.05f, 0.08f, 0.90f));

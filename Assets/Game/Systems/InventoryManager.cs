@@ -87,6 +87,15 @@ public class InventoryManager : MonoBehaviour
 
     public List<InventorySlot> GetSlots() => new List<InventorySlot>(_slots);
 
+    /// Total unequipped quantity of an item across all slots (recipe ingredient checks).
+    public int GetItemCount(string itemId)
+    {
+        int total = 0;
+        foreach (var s in _slots)
+            if (s.item_id == itemId && s.equipped == 0) total += s.quantity;
+        return total;
+    }
+
     /// <summary>
     /// Mark an item equipped/unequipped in local cache and POST to /api/inventory/equip.
     /// Call after Equipment.EquipItem() / UnequipItem() succeeds.

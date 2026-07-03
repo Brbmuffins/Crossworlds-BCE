@@ -68,6 +68,8 @@ public class WorldBossController : NetworkBehaviour
 
     // ── Loot ─────────────────────────────────────────────────────────────────────
     [Header("Drop Table")]
+    [Tooltip("WorldItem.prefab — must be registered in NetworkManager.spawnPrefabs")]
+    public GameObject worldItemPrefab;
     public List<string> guaranteedDropItemIds = new List<string> { "sword_iron", "plate_iron" };
     public List<string> rareDropItemIds       = new List<string> { "ring_copper", "material_copper_bar" };
     [Range(0f, 1f)] public float rareDropChance = 0.35f;
@@ -502,9 +504,17 @@ public class WorldBossController : NetworkBehaviour
     [Server]
     void SpawnLoot(string itemId)
     {
+        if (worldItemPrefab == null)
+        {
+            Debug.LogWarning($"[BOSS] worldItemPrefab not assigned — {itemId} lost");
+            return;
+        }
         Vector3 pos = transform.position + Random.insideUnitSphere * 2f;
-        pos.y = transform.position.y;
-        WorldItem.Spawn(itemId, pos);
+        pos.y = transform.position.y + 0.5f;
+        var wi   = Instantiate(worldItemPrefab, pos, Quaternion.identity);
+        var comp = wi.GetComponent<WorldItem>();
+        if (comp != null) { comp.itemId = itemId; comp.quantity = 1; }
+        NetworkServer.Spawn(wi);
         Debug.Log($"[BOSS] Dropped: {itemId}");
     }
 

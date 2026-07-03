@@ -1,44 +1,60 @@
 #if !UNITY_SERVER
 using System.Collections;
-using System.Globalization;
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
 /// Applies timed stat effects from crafted consumable items.
 ///
-/// Effect types (match stat_bonus JSON "effect" field from items table):
+/// Effect definitions live in the static table below and MUST match the
+/// stat_bonus JSON seeded by _CONTEXT/professions-full-patch.sql — the server
+/// validates crafting/ownership, the client only plays out the buff.
+///
+/// Effect types:
 ///   hp_regen      — restores {value} HP over {duration} seconds (ticks every 2 s)
-///   resist_void   — reduces void/boss damage by {value}% for {duration} s
-///   resist_blast  — reduces blast/boss damage by {value}% for {duration} s
-///   speed         — adds {value}% move speed bonus for {duration} s
-///   damage_amp    — adds {value}% outgoing damage bonus for {duration} s
+///   resist_void   — reduces incoming damage by {value} fraction for {duration} s
+///   resist_blast  — reduces incoming damage by {value} fraction for {duration} s
+///   speed         — adds {value} fraction move speed for {duration} s
+///   damage_amp    — adds {value} fraction outgoing damage for {duration} s
 ///
 /// Usage:
 ///   ConsumableEffect.Apply("flask_hp_minor", localPlayerGO);
 ///
 /// One effect per type active at a time; reusing the same type refreshes duration.
+///
+/// NOTE: hp_regen and resist mutate Health, which only accepts server-side
+/// changes — they take effect in host mode / on the server player object.
+/// Pure-client authoritative buffs need a Command bridge (ROADMAP item).
 /// </summary>
 public static class ConsumableEffect
 {
-    public static void Apply(string itemId, GameObject target)
+    class EffectDef
     {
-        var catalog = ItemCatalog.Instance;
-        if (catalog == null) return;
+        public string type; public float value; public float duration;
+        public EffectDef(string t, float v, float d) { type = t; value = v; duration = d; }
+    }
 
-        var item = catalog.Get(itemId);
-        if (item?.statBonus == null) return;
+    // Keep in sync with the consumable seeds in professions-full-patch.sql
+    static readonly Dictionary<string, EffectDef> Effects = new Dictionary<string, EffectDef>
+    {
+        { "flask_hp_minor",    new EffectDef("hp_regen",     30f,   60f) },
+        { "flask_hp_major",    new EffectDef("hp_regen",     80f,   60f) },
+        { "flask_void_resist", new EffectDef("resist_void",  0.25f, 90f) },
+        { "kit_iron_warden",   new EffectDef("resist_blast", 0.25f, 60f) },
+        { "flask_speed",       new EffectDef("speed",        0.20f, 30f) },
+        { "flask_damage",      new EffectDef("damage_amp",   0.15f, 45f) },
+    };
 
-        if (!item.statBonus.TryGetValue("effect",   out var effectRaw)) return;
-        if (!item.statBonus.TryGetValue("value",    out var valueRaw))  return;
-        if (!item.statBonus.TryGetValue("duration", out var durRaw))    return;
-
-        if (!float.TryParse(valueRaw.ToString(),    NumberStyles.Float, CultureInfo.InvariantCulture, out float value))    return;
-        if (!float.TryParse(durRaw.ToString(),      NumberStyles.Float, CultureInfo.InvariantCulture, out float duration)) return;
+    /// Returns true if the item is a known consumable and its effect was started.
+    public static bool Apply(string itemId, GameObject target)
+    {
+        if (target == null || !Effects.TryGetValue(itemId, out var def)) return false;
 
         var runner = target.GetComponent<ConsumableEffectRunner>()
                   ?? target.AddComponent<ConsumableEffectRunner>();
 
-        runner.Apply(effectRaw.ToString(), value, duration);
+        runner.Apply(def.type, def.value, def.duration);
+        return true;
     }
 }
 
@@ -48,8 +64,7 @@ public static class ConsumableEffect
 /// </summary>
 public class ConsumableEffectRunner : MonoBehaviour
 {
-    readonly System.Collections.Generic.Dictionary<string, Coroutine> _active =
-        new System.Collections.Generic.Dictionary<string, Coroutine>();
+    readonly Dictionary<string, Coroutine> _active = new Dictionary<string, Coroutine>();
 
     public void Apply(string effectType, float value, float duration)
     {
@@ -74,8 +89,8 @@ public class ConsumableEffectRunner : MonoBehaviour
     // ── HP Regen ─────────────────────────────────────────────────────────────
     IEnumerator HpRegenEffect(int totalHeal, float duration)
     {
-        var hp     = GetComponent<Health>();
-        int ticks  = Mathf.Max(1, Mathf.RoundToInt(duration / 2f));
+        var hp      = GetComponent<Health>();
+        int ticks   = Mathf.Max(1, Mathf.RoundToInt(duration / 2f));
         int perTick = Mathf.Max(1, totalHeal / ticks);
 
         for (int i = 0; i < ticks; i++)
@@ -86,33 +101,33 @@ public class ConsumableEffectRunner : MonoBehaviour
         _active.Remove("hp_regen");
     }
 
-    // ── Resist — uses Health.SetDamageReduction ───────────────────────────────
-    IEnumerator ResistEffect(string damageType, float resistPct, float duration)
+    // ── Resist — uses Health.SetDamageReduction via StatusEffectManager ───────
+    IEnumerator ResistEffect(string damageType, float resistFraction, float duration)
     {
         var sem = GetComponent<StatusEffectManager>();
-        sem?.AddResist(damageType, resistPct);
+        sem?.AddResist(damageType, resistFraction);
         yield return new WaitForSeconds(duration);
-        sem?.RemoveResist(damageType, resistPct);
+        sem?.RemoveResist(damageType, resistFraction);
         _active.Remove($"resist_{damageType}");
     }
 
-    // ── Speed ──────────────────────────────────────────────────────────────────
+    // ── Speed — scales PlayerMovement.moveSpeed (client-authoritative) ────────
     IEnumerator SpeedEffect(float bonus, float duration)
     {
-        var cc = GetComponent<PlayerController>();
-        cc?.AddSpeedBonus(bonus);
+        var pm = GetComponent<PlayerMovement>();
+        if (pm != null) pm.moveSpeed *= (1f + bonus);
         yield return new WaitForSeconds(duration);
-        cc?.RemoveSpeedBonus(bonus);
+        if (pm != null) pm.moveSpeed /= (1f + bonus);
         _active.Remove("speed");
     }
 
-    // ── Damage Amp ────────────────────────────────────────────────────────────
+    // ── Damage Amp — temporary channel on CharacterStats ─────────────────────
     IEnumerator DamageAmpEffect(float bonus, float duration)
     {
-        var combat = GetComponent<PlayerCombat>();
-        combat?.AddDamageMultiplier(bonus);
+        var stats = GetComponent<CharacterStats>();
+        stats?.AddTemporaryDamagePct(bonus);
         yield return new WaitForSeconds(duration);
-        combat?.RemoveDamageMultiplier(bonus);
+        stats?.AddTemporaryDamagePct(-bonus);
         _active.Remove("damage_amp");
     }
 }

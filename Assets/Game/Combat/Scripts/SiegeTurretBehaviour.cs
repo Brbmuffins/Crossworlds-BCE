@@ -6,9 +6,14 @@ using Mirror;
 /// Spawned by IronWardenController.SpawnSiegeTurrets() at two flanking positions.
 ///
 /// Fires orange energy bolts at nearby players every 3 s (10 dmg per bolt).
-/// When health reaches 0, calls warden.OnTurretDestroyed() so the boss can track
-/// simultaneous destruction for the immunity mechanic.
+/// Damage is taken through the standard Health component (player attacks hit it
+/// like any enemy). On death, calls warden.OnTurretDestroyed() so the boss can
+/// track simultaneous destruction for the immunity mechanic.
+///
+/// Prefab requirements: NetworkIdentity + Health (maxHealth set here) + collider,
+/// registered in NetworkManager.spawnPrefabs.
 /// </summary>
+[RequireComponent(typeof(Health))]
 public class SiegeTurretBehaviour : NetworkBehaviour
 {
     [Header("Stats")]
@@ -19,14 +24,17 @@ public class SiegeTurretBehaviour : NetworkBehaviour
 
     [HideInInspector] public IronWardenController warden;
 
-    [SyncVar] int _health;
-
+    Health    _health;
     Coroutine _fireLoop;
+    bool      _died;
 
     public override void OnStartServer()
     {
-        _health    = maxHealth;
-        _fireLoop  = StartCoroutine(FireLoop());
+        _health = GetComponent<Health>();
+        _health.maxHealth     = maxHealth;
+        _health.currentHealth = maxHealth;
+        _health.onDeath.AddListener(OnDeath);
+        _fireLoop = StartCoroutine(FireLoop());
     }
 
     [Server]
@@ -39,8 +47,9 @@ public class SiegeTurretBehaviour : NetworkBehaviour
             foreach (var t in targets)
             {
                 if (!t.CompareTag("Player")) continue;
-                var hp = t.GetComponent<HealthComponent>();
-                hp?.TakeDamage(boltDamage, gameObject);
+                var hp = t.GetComponent<Health>();
+                if (hp == null || !hp.IsAlive) continue;
+                hp.TakeDamage(boltDamage, gameObject);
                 RpcFireVfx(t.transform.position);
                 break; // one target per burst
             }
@@ -48,16 +57,10 @@ public class SiegeTurretBehaviour : NetworkBehaviour
     }
 
     [Server]
-    public void TakeDamage(int amount)
-    {
-        if (_health <= 0) return;
-        _health = Mathf.Max(0, _health - amount);
-        if (_health <= 0) OnDeath();
-    }
-
-    [Server]
     void OnDeath()
     {
+        if (_died) return;
+        _died = true;
         if (_fireLoop != null) StopCoroutine(_fireLoop);
         warden?.OnTurretDestroyed();
         RpcDeathVfx();

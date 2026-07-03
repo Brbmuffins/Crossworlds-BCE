@@ -73,7 +73,12 @@ public class AfkGatheringStation : MonoBehaviour
         }
 
         // Null-check every frame — player object can be destroyed on disconnect
-        if (_localPlayer == null || !_localPlayer.gameObject.activeInHierarchy) return;
+        if (_localPlayer == null || !_localPlayer.gameObject.activeInHierarchy)
+        {
+            // Player vanished mid-gather (disconnect/scene change) — stop cleanly
+            if (_gathering) StopGathering();
+            return;
+        }
 
         float dist    = Vector3.Distance(transform.position, _localPlayer.position);
         bool  inRange = dist <= interactRange;

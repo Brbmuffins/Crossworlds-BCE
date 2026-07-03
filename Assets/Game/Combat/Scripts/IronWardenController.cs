@@ -58,6 +58,8 @@ public class IronWardenController : NetworkBehaviour
     public GameObject warningCirclePrefab;  // assign in Inspector
 
     [Header("Drop Table")]
+    [Tooltip("WorldItem.prefab — must be registered in NetworkManager.spawnPrefabs")]
+    public GameObject worldItemPrefab;
     public System.Collections.Generic.List<string> guaranteedDropItemIds =
         new System.Collections.Generic.List<string> { "helm_iron", "chest_iron" };
     public System.Collections.Generic.List<string> rareDropItemIds =
@@ -81,9 +83,11 @@ public class IronWardenController : NetworkBehaviour
     Coroutine _slamRoutine;
 
     bool _lockdownFired;
-    bool _turretRepairPending;
+    Coroutine _repairRoutine;
     int  _turretsAlive;
     bool _inTransition;
+    readonly System.Collections.Generic.List<GameObject> _liveTurrets =
+        new System.Collections.Generic.List<GameObject>();
 
     // ── Lifecycle ──────────────────────────────────────────────────────────────
     void Awake()
@@ -163,12 +167,15 @@ public class IronWardenController : NetworkBehaviour
             case WardenPhase.ShieldMatrix:
                 RpcAnnounce("[BOSS] Shield Matrix online — destroy BOTH turrets simultaneously!");
                 _turretsAlive = 2;
+                _health.SetDamageReduction(1f);   // immune while turrets stand
                 SpawnSiegeTurrets();
                 _magnetRoutine = StartCoroutine(MagnetPullLoop());
                 break;
 
             case WardenPhase.Rampage:
                 RpcAnnounce("[BOSS] The Iron Warden's core is exposed — RAMPAGE!");
+                _health.ClearDamageReduction();
+                DespawnTurrets();
                 if (_agent != null) _agent.speed = _baseSpeed * rampageSpeedMult;
                 _slamRoutine = StartCoroutine(GroundSlamLoop());
                 break;
@@ -188,6 +195,15 @@ public class IronWardenController : NetworkBehaviour
         if (_mortarRoutine  != null) { StopCoroutine(_mortarRoutine);  _mortarRoutine  = null; }
         if (_magnetRoutine  != null) { StopCoroutine(_magnetRoutine);  _magnetRoutine  = null; }
         if (_slamRoutine    != null) { StopCoroutine(_slamRoutine);    _slamRoutine    = null; }
+        if (_repairRoutine  != null) { StopCoroutine(_repairRoutine);  _repairRoutine  = null; }
+    }
+
+    [Server]
+    void DespawnTurrets()
+    {
+        foreach (var t in _liveTurrets)
+            if (t != null) NetworkServer.Destroy(t);
+        _liveTurrets.Clear();
     }
 
     // ── Phase 1 ────────────────────────────────────────────────────────────────
@@ -255,30 +271,37 @@ public class IronWardenController : NetworkBehaviour
         var turret = go.GetComponent<SiegeTurretBehaviour>();
         if (turret != null) turret.warden = this;
         NetworkServer.Spawn(go);
+        _liveTurrets.Add(go);
     }
 
     [Server]
     public void OnTurretDestroyed()
     {
+        if (currentPhase != WardenPhase.ShieldMatrix) return;
+
         _turretsAlive = Mathf.Max(0, _turretsAlive - 1);
         if (_turretsAlive == 0)
         {
+            // Both down inside the repair window — drop immunity, cancel any pending repair
+            if (_repairRoutine != null) { StopCoroutine(_repairRoutine); _repairRoutine = null; }
+            _health.ClearDamageReduction();
             RpcAnnounce("[BOSS] Both turrets destroyed — the Warden is vulnerable!");
             return;
         }
-        if (!_turretRepairPending)
-        {
-            _turretRepairPending = true;
-            StartCoroutine(TurretRepairDelay());
-        }
+        if (_repairRoutine == null)
+            _repairRoutine = StartCoroutine(TurretRepairDelay());
     }
 
     [Server]
     IEnumerator TurretRepairDelay()
     {
         yield return new WaitForSeconds(turretRepairDelay);
-        _turretsAlive        = 2;
-        _turretRepairPending = false;
+        _repairRoutine = null;
+        if (currentPhase != WardenPhase.ShieldMatrix) yield break;
+
+        DespawnTurrets();               // remove the survivor, spawn a fresh pair
+        _turretsAlive = 2;
+        _health.SetDamageReduction(1f); // re-immune in case it lapsed
         SpawnSiegeTurrets();
         RpcAnnounce("[BOSS] Turret repaired — destroy BOTH simultaneously!");
     }
@@ -353,7 +376,7 @@ public class IronWardenController : NetworkBehaviour
         RpcPlayDeathVfx();
         yield return new WaitForSeconds(3f);
         RollDrops();
-        ArenaSessionController.Instance?.OnBossKilled();
+        ArenaSessionController.Instance?.EndSession();
         yield return new WaitForSeconds(2f);
         NetworkServer.Destroy(gameObject);
     }
@@ -372,8 +395,16 @@ public class IronWardenController : NetworkBehaviour
     [Server]
     void TrySpawnDrop(string itemId, Vector3 pos)
     {
-        pos.y = transform.position.y;
-        WorldItem.Spawn(itemId, pos);
+        if (worldItemPrefab == null)
+        {
+            Debug.LogWarning($"[WARDEN] worldItemPrefab not assigned — {itemId} lost");
+            return;
+        }
+        pos.y = transform.position.y + 0.5f;
+        var wi   = Instantiate(worldItemPrefab, pos, Quaternion.identity);
+        var comp = wi.GetComponent<WorldItem>();
+        if (comp != null) { comp.itemId = itemId; comp.quantity = 1; }
+        NetworkServer.Spawn(wi);
         Debug.Log($"[WARDEN] Dropped: {itemId}");
     }
 
@@ -427,11 +458,11 @@ public class IronWardenController : NetworkBehaviour
     void RpcPullPlayersTo(Vector3 bossPos)
     {
 #if !UNITY_SERVER
-        var localId = FindAnyObjectByType<Mirror.NetworkIdentity>();
-        if (localId == null || !localId.isLocalPlayer) return;
-        var cc = localId.GetComponent<CharacterController>();
+        var localPlayer = NetworkClient.localPlayer;
+        if (localPlayer == null) return;
+        var cc = localPlayer.GetComponent<CharacterController>();
         if (cc == null) return;
-        Vector3 dir = (bossPos - localId.transform.position).normalized;
+        Vector3 dir = (bossPos - localPlayer.transform.position).normalized;
         cc.Move(dir * 6f);
 #endif
     }
