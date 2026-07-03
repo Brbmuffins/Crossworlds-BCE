@@ -84,7 +84,7 @@ public class CraftingUI : MonoBehaviour
         SetStatus("Loading recipes...");
         ClearRecipeList();
 
-        string token = PlayerPrefs.GetString("jwt_token", "");
+        string token = !string.IsNullOrEmpty(AuthManager.Token) ? AuthManager.Token : PlayerPrefs.GetString("jwt_token", "");
         string url   = $"{ServerConfig.AuthBaseUrl}/api/recipes?profession={_currentProfession}";
 
         using var req = UnityWebRequest.Get(url);
@@ -120,7 +120,7 @@ public class CraftingUI : MonoBehaviour
         string charId = GetCharacterId();
         if (string.IsNullOrEmpty(charId)) { SetResult("No character loaded."); yield break; }
 
-        string token = PlayerPrefs.GetString("jwt_token", "");
+        string token = !string.IsNullOrEmpty(AuthManager.Token) ? AuthManager.Token : PlayerPrefs.GetString("jwt_token", "");
         string url   = $"{ServerConfig.AuthBaseUrl}/api/craft";
         string body  = $"{{\"characterId\":{charId},\"recipeId\":{recipeId}}}";
 
@@ -254,6 +254,7 @@ public class CraftingUI : MonoBehaviour
     // ── Helpers ───────────────────────────────────────────────────────────────
     static string GetCharacterId()
     {
+        if (AuthManager.CharacterId > 0) return AuthManager.CharacterId.ToString();
         foreach (var id in FindObjectsByType<PlayerIdentity>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
             if (id.isLocalPlayer) return id.characterId.ToString();
         return null;
