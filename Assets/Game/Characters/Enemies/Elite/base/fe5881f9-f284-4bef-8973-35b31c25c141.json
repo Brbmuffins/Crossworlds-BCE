@@ -1,0 +1,37 @@
+{
+  "task_id": "fe5881f9-f284-4bef-8973-35b31c25c141",
+  "type": "text_to_model",
+  "status": "success",
+  "input": {
+    "prompt": "massive orc berserker elite warrior, heavily muscled, dark green skin, scarred chest, bone necklace, war paint, no armor plates on limbs for clear anatomy, full-body T-pose arms horizontal and away from body, legs far apart, front-facing, whole body visible head to feet, game-ready, PBR materials, symmetric",
+    "model_version": "v3.1-20260211",
+    "texture": true,
+    "pbr": true,
+    "texture_quality": "detailed",
+    "texture_alignment": "geometry",
+    "export_uv": true,
+    "geometry_quality": "detailed"
+  },
+  "output": {
+    "pbr_model": "https://tripo-data.rg1.data.tripo3d.com/tcli_2efb6ab9cf694c6eab16a3e8dc01d3bf/20260703/fe5881f9-f284-4bef-8973-35b31c25c141/tripo_pbr_model_fe5881f9-f284-4bef-8973-35b31c25c141.glb?Key-Pair-Id=K1676C64NMVM2J&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly90cmlwby1kYXRhLnJnMS5kYXRhLnRyaXBvM2QuY29tL3RjbGlfMmVmYjZhYjljZjY5NGM2ZWFiMTZhM2U4ZGMwMWQzYmYvMjAyNjA3MDMvZmU1ODgxZjktZjI4NC00YmVmLTg5NzMtMzViMzFjMjVjMTQxL3RyaXBvX3Bicl9tb2RlbF9mZTU4ODFmOS1mMjg0LTRiZWYtODk3My0zNWIzMWMyNWMxNDEuZ2xiIiwiQ29uZGl0aW9uIjp7IkRhdGVMZXNzVGhhbiI6eyJBV1M6RXBvY2hUaW1lIjoxNzgzMTIzMjAwfX19XX0_&Signature=hEkjFd5OSPtoYqpFqNdkamnExmsST69F7ILGMg7AjIeajRQCSTJB7nSpbIWkxAzFcF2J6B5KbMk7V8PLUR0Q5S3~wfWFTjTx1Fj91yYeNQzPcg2VrEHTQUxLAvG0OWixT1kJjOiop4YeDZBQobsB0g4uqcDvKicMbc-ZgRnTIRO3GVmsBzMCHF30CKureaNcJ4JfPr2l3wIAgAMqNfEJZhgddG0FC9cO5gVOJZ4s7JZFbDXz0RGRvH4TuXwC5F~8K9Ie0xhKx2zr6-EoJGJ0i2FvtWn4CxI-0NkZmvhyaXdixYB4eZGAx2LMhmQXoEjh7deQLvXIpYl7eXUg2v7n1g__",
+    "generated_image": "https://tripo-data.rg1.data.tripo3d.com/tcli_2efb6ab9cf694c6eab16a3e8dc01d3bf/20260703/fe5881f9-f284-4bef-8973-35b31c25c141/text2image_fe5881f9-f284-4bef-8973-35b31c25c141.jpeg?Key-Pair-Id=K1676C64NMVM2J&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly90cmlwby1kYXRhLnJnMS5kYXRhLnRyaXBvM2QuY29tL3RjbGlfMmVmYjZhYjljZjY5NGM2ZWFiMTZhM2U4ZGMwMWQzYmYvMjAyNjA3MDMvZmU1ODgxZjktZjI4NC00YmVmLTg5NzMtMzViMzFjMjVjMTQxL3RleHQyaW1hZ2VfZmU1ODgxZjktZjI4NC00YmVmLTg5NzMtMzViMzFjMjVjMTQxLmpwZWciLCJDb25kaXRpb24iOnsiRGF0ZUxlc3NUaGFuIjp7IkFXUzpFcG9jaFRpbWUiOjE3ODMxMjMyMDB9fX1dfQ__&Signature=TuXWTh39bJ-Eke2FJ4WmR2imXWnFQr13LOajmZx9v6hXrAYj1Q6Uno5fmIiNBERgnuLo4ncLL5y8~huzLo0NBH3kSxRDvWJZoLcMjEFFquCRhk5WjWN8z~XSgRV-iYnMw3iBUvFm5b8UuBHQILzJiu5kXgvBxVUJXNi5TI85LMnPZ-o2oJ0chBgtkEp-FBim8gv1bTaBUVqNveA~BK4v~gATyrO4Mzl-FdEZnM2Vyi1kp0RGtNFfFA~ZwSZE3Br6McEyVzVRFJ8gAhk1nxsJO0KG1tPChfkqf9jr4oieA13dcYP0erzxScZlJ~EVAGDfK6vwa9-H-IdcvggouOIX-g__",
+    "rendered_image": "https://tripo-data.rg1.data.tripo3d.com/tcli_2efb6ab9cf694c6eab16a3e8dc01d3bf/20260703/fe5881f9-f284-4bef-8973-35b31c25c141/legacy_mesh.webp?Key-Pair-Id=K1676C64NMVM2J&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly90cmlwby1kYXRhLnJnMS5kYXRhLnRyaXBvM2QuY29tL3RjbGlfMmVmYjZhYjljZjY5NGM2ZWFiMTZhM2U4ZGMwMWQzYmYvMjAyNjA3MDMvZmU1ODgxZjktZjI4NC00YmVmLTg5NzMtMzViMzFjMjVjMTQxL2xlZ2FjeV9tZXNoLndlYnAiLCJDb25kaXRpb24iOnsiRGF0ZUxlc3NUaGFuIjp7IkFXUzpFcG9jaFRpbWUiOjE3ODMxMjMyMDB9fX1dfQ__&Signature=ZrI165M9mV5d0h2tBboqau6Iku3p0PjwMBJWSdI~inJPx6YkBtS1P2xX-T-W0sh9b0T8VLCI32Jvbd8jQl5T~V6PwO8B6ZWD9ubgrlRmLG1HlLhnjoJGm~PGiSngjuk4J2bzSAf29r0Ijm8ExAnGYxz15vD2jAr6B1rOXe8Fj~QomnxlyRT4n~S4AEfKB60XoJbBhzjjQ5alAoaWmHKl8~R3bfooSVRiHXdEIFk3ykIhqrQwEd3~sFCdO47J0jC5ZACSJ05k-GRz53h9XAa7NfeYusb5Ed7sv1BmjF0kTqytZ50hUr0pmolGqrA~cU3oDbLDU3RUtGV8lDxQXrM7VQ__"
+  },
+  "progress": 100,
+  "create_time": 1783098840,
+  "consumed_credit": 50,
+  "prompt": "massive orc berserker elite warrior, heavily muscled, dark green skin, scarred chest, bone necklace, war paint, no armor plates on limbs for clear anatomy, full-body T-pose arms horizontal and away from body, legs far apart, front-facing, whole body visible head to feet, game-ready, PBR materials, symmetric",
+  "thumbnail": "https://tripo-data.rg1.data.tripo3d.com/tcli_2efb6ab9cf694c6eab16a3e8dc01d3bf/20260703/fe5881f9-f284-4bef-8973-35b31c25c141/legacy_mesh.webp?Key-Pair-Id=K1676C64NMVM2J&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly90cmlwby1kYXRhLnJnMS5kYXRhLnRyaXBvM2QuY29tL3RjbGlfMmVmYjZhYjljZjY5NGM2ZWFiMTZhM2U4ZGMwMWQzYmYvMjAyNjA3MDMvZmU1ODgxZjktZjI4NC00YmVmLTg5NzMtMzViMzFjMjVjMTQxL2xlZ2FjeV9tZXNoLndlYnAiLCJDb25kaXRpb24iOnsiRGF0ZUxlc3NUaGFuIjp7IkFXUzpFcG9jaFRpbWUiOjE3ODMxMjMyMDB9fX1dfQ__&Signature=ZrI165M9mV5d0h2tBboqau6Iku3p0PjwMBJWSdI~inJPx6YkBtS1P2xX-T-W0sh9b0T8VLCI32Jvbd8jQl5T~V6PwO8B6ZWD9ubgrlRmLG1HlLhnjoJGm~PGiSngjuk4J2bzSAf29r0Ijm8ExAnGYxz15vD2jAr6B1rOXe8Fj~QomnxlyRT4n~S4AEfKB60XoJbBhzjjQ5alAoaWmHKl8~R3bfooSVRiHXdEIFk3ykIhqrQwEd3~sFCdO47J0jC5ZACSJ05k-GRz53h9XAa7NfeYusb5Ed7sv1BmjF0kTqytZ50hUr0pmolGqrA~cU3oDbLDU3RUtGV8lDxQXrM7VQ__",
+  "queuing_num": -1,
+  "running_left_time": -1,
+  "result": {
+    "pbr_model": {
+      "type": "glb",
+      "url": "https://tripo-data.rg1.data.tripo3d.com/tcli_2efb6ab9cf694c6eab16a3e8dc01d3bf/20260703/fe5881f9-f284-4bef-8973-35b31c25c141/tripo_pbr_model_fe5881f9-f284-4bef-8973-35b31c25c141.glb?Key-Pair-Id=K1676C64NMVM2J&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly90cmlwby1kYXRhLnJnMS5kYXRhLnRyaXBvM2QuY29tL3RjbGlfMmVmYjZhYjljZjY5NGM2ZWFiMTZhM2U4ZGMwMWQzYmYvMjAyNjA3MDMvZmU1ODgxZjktZjI4NC00YmVmLTg5NzMtMzViMzFjMjVjMTQxL3RyaXBvX3Bicl9tb2RlbF9mZTU4ODFmOS1mMjg0LTRiZWYtODk3My0zNWIzMWMyNWMxNDEuZ2xiIiwiQ29uZGl0aW9uIjp7IkRhdGVMZXNzVGhhbiI6eyJBV1M6RXBvY2hUaW1lIjoxNzgzMTIzMjAwfX19XX0_&Signature=hEkjFd5OSPtoYqpFqNdkamnExmsST69F7ILGMg7AjIeajRQCSTJB7nSpbIWkxAzFcF2J6B5KbMk7V8PLUR0Q5S3~wfWFTjTx1Fj91yYeNQzPcg2VrEHTQUxLAvG0OWixT1kJjOiop4YeDZBQobsB0g4uqcDvKicMbc-ZgRnTIRO3GVmsBzMCHF30CKureaNcJ4JfPr2l3wIAgAMqNfEJZhgddG0FC9cO5gVOJZ4s7JZFbDXz0RGRvH4TuXwC5F~8K9Ie0xhKx2zr6-EoJGJ0i2FvtWn4CxI-0NkZmvhyaXdixYB4eZGAx2LMhmQXoEjh7deQLvXIpYl7eXUg2v7n1g__"
+    },
+    "rendered_image": {
+      "type": "webp",
+      "url": "https://tripo-data.rg1.data.tripo3d.com/tcli_2efb6ab9cf694c6eab16a3e8dc01d3bf/20260703/fe5881f9-f284-4bef-8973-35b31c25c141/legacy_mesh.webp?Key-Pair-Id=K1676C64NMVM2J&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly90cmlwby1kYXRhLnJnMS5kYXRhLnRyaXBvM2QuY29tL3RjbGlfMmVmYjZhYjljZjY5NGM2ZWFiMTZhM2U4ZGMwMWQzYmYvMjAyNjA3MDMvZmU1ODgxZjktZjI4NC00YmVmLTg5NzMtMzViMzFjMjVjMTQxL2xlZ2FjeV9tZXNoLndlYnAiLCJDb25kaXRpb24iOnsiRGF0ZUxlc3NUaGFuIjp7IkFXUzpFcG9jaFRpbWUiOjE3ODMxMjMyMDB9fX1dfQ__&Signature=ZrI165M9mV5d0h2tBboqau6Iku3p0PjwMBJWSdI~inJPx6YkBtS1P2xX-T-W0sh9b0T8VLCI32Jvbd8jQl5T~V6PwO8B6ZWD9ubgrlRmLG1HlLhnjoJGm~PGiSngjuk4J2bzSAf29r0Ijm8ExAnGYxz15vD2jAr6B1rOXe8Fj~QomnxlyRT4n~S4AEfKB60XoJbBhzjjQ5alAoaWmHKl8~R3bfooSVRiHXdEIFk3ykIhqrQwEd3~sFCdO47J0jC5ZACSJ05k-GRz53h9XAa7NfeYusb5Ed7sv1BmjF0kTqytZ50hUr0pmolGqrA~cU3oDbLDU3RUtGV8lDxQXrM7VQ__"
+    }
+  }
+}

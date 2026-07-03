@@ -1,0 +1,37 @@
+{
+  "task_id": "408aa9e9-c684-4d97-94e9-0a7e47672f0e",
+  "type": "text_to_model",
+  "status": "success",
+  "input": {
+    "prompt": "goblin melee warrior, stocky build, green skin, leather armor with metal studs, large hands and feet, full-body T-pose arms horizontal, legs apart, front-facing, whole body visible head to feet, game-ready low-poly, PBR materials, no weapon in hand, symmetric",
+    "model_version": "v3.1-20260211",
+    "texture": true,
+    "pbr": true,
+    "texture_quality": "detailed",
+    "texture_alignment": "geometry",
+    "export_uv": true,
+    "geometry_quality": "detailed"
+  },
+  "output": {
+    "pbr_model": "https://tripo-data.rg1.data.tripo3d.com/tcli_2efb6ab9cf694c6eab16a3e8dc01d3bf/20260703/408aa9e9-c684-4d97-94e9-0a7e47672f0e/tripo_pbr_model_408aa9e9-c684-4d97-94e9-0a7e47672f0e.glb?Key-Pair-Id=K1676C64NMVM2J&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly90cmlwby1kYXRhLnJnMS5kYXRhLnRyaXBvM2QuY29tL3RjbGlfMmVmYjZhYjljZjY5NGM2ZWFiMTZhM2U4ZGMwMWQzYmYvMjAyNjA3MDMvNDA4YWE5ZTktYzY4NC00ZDk3LTk0ZTktMGE3ZTQ3NjcyZjBlL3RyaXBvX3Bicl9tb2RlbF80MDhhYTllOS1jNjg0LTRkOTctOTRlOS0wYTdlNDc2NzJmMGUuZ2xiIiwiQ29uZGl0aW9uIjp7IkRhdGVMZXNzVGhhbiI6eyJBV1M6RXBvY2hUaW1lIjoxNzgzMTIzMjAwfX19XX0_&Signature=NC-13sUVfFsT5UJ9-zGywXa1VX811thPARECu4qfSzf2gluSao39MWWVw1y1x4eHJ3-S4~qM02by4Ep8wRUD4H8dR1ZOfqNBrY9ePxVRJY3PVzFjTlo9CzTH3OLeSvLOc8cUrkIm1WrixWkvOPuZ-62s94kt~YtKNq~kqC6faKt-vW2zq1838H1peRwRid9LlW7c3TOEgHxC-Y0fLNSCN54J1WWftT2EudcjZ7O8lYYykpEAnFyuPKYg3JkWNk3trkQRLJlDOkn1AUcEPCfkZQMq3z0P5ca9dRPz5r8Fujt9sHQHVf1XDT2t4m5M4iivWrPSG76f0BjOyKgeM5UdVA__",
+    "generated_image": "https://tripo-data.rg1.data.tripo3d.com/tcli_2efb6ab9cf694c6eab16a3e8dc01d3bf/20260703/408aa9e9-c684-4d97-94e9-0a7e47672f0e/text2image_408aa9e9-c684-4d97-94e9-0a7e47672f0e.jpeg?Key-Pair-Id=K1676C64NMVM2J&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly90cmlwby1kYXRhLnJnMS5kYXRhLnRyaXBvM2QuY29tL3RjbGlfMmVmYjZhYjljZjY5NGM2ZWFiMTZhM2U4ZGMwMWQzYmYvMjAyNjA3MDMvNDA4YWE5ZTktYzY4NC00ZDk3LTk0ZTktMGE3ZTQ3NjcyZjBlL3RleHQyaW1hZ2VfNDA4YWE5ZTktYzY4NC00ZDk3LTk0ZTktMGE3ZTQ3NjcyZjBlLmpwZWciLCJDb25kaXRpb24iOnsiRGF0ZUxlc3NUaGFuIjp7IkFXUzpFcG9jaFRpbWUiOjE3ODMxMjMyMDB9fX1dfQ__&Signature=gSvtdcdBdmfDKxjOUSzJ0i4oE-uGRkec-ZtferGMmyjNnQi7XrX5BthtZqjHnxReD~z6Vq6bQ0jC-zT1jFK8YmkvGEYaXmpuVqAeauPzJ5XCTEUSaK6FpKmH2NmcA-~FOVaJs-LD6da7FpwJiNcfaeubfrVfAkf1M1EH7iF8ej9pIZarUepd1wilpXtFbYvKNLebV6EMQ3d7KWICzHFRnGR3EAbNMY5uJ~BulQKe1A-AHGiOYLr-Ut~FkN6JoHjjnKO4xNr3PtdWohV-9YVYUV9tMQUc7r8jsutwcyrxdJCtMkh2-wLowmwYgyZuzuWNZnjcfjeFv45jL8gzruhipg__",
+    "rendered_image": "https://tripo-data.rg1.data.tripo3d.com/tcli_2efb6ab9cf694c6eab16a3e8dc01d3bf/20260703/408aa9e9-c684-4d97-94e9-0a7e47672f0e/legacy_mesh.webp?Key-Pair-Id=K1676C64NMVM2J&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly90cmlwby1kYXRhLnJnMS5kYXRhLnRyaXBvM2QuY29tL3RjbGlfMmVmYjZhYjljZjY5NGM2ZWFiMTZhM2U4ZGMwMWQzYmYvMjAyNjA3MDMvNDA4YWE5ZTktYzY4NC00ZDk3LTk0ZTktMGE3ZTQ3NjcyZjBlL2xlZ2FjeV9tZXNoLndlYnAiLCJDb25kaXRpb24iOnsiRGF0ZUxlc3NUaGFuIjp7IkFXUzpFcG9jaFRpbWUiOjE3ODMxMjMyMDB9fX1dfQ__&Signature=a~bcZ4GLmXO9twOb914WFvrb5QqfmjuTq84NEYiiObDJ9ic458Ei4k8BoKGEqBPiNOQLAHHN4isgrmh6SQc7r40PsBshEeqMgtxIMJhSI2cEpOwNX2nOqo9pSmsBFqsQ4D7V5r4XdC3DfRaLi9oDytdr5JHVSpLUbRP5jPPEHOYpdM0li1ju2IA3~bwW5x3Ei81XPCehw2yOj85yzSBao4vx8Zptorwgmd-sQkjdGg7XDiggo5Qhxda-hqnAXcZ-9itkqrQCDLndfFFp9YVvptZY~fuMsxOAINDlJkJncbu1wnd~llkmFq4mPVtG8y7wSbmvpwSoTVEUNMfu3~zF7A__"
+  },
+  "progress": 100,
+  "create_time": 1783098798,
+  "consumed_credit": 50,
+  "prompt": "goblin melee warrior, stocky build, green skin, leather armor with metal studs, large hands and feet, full-body T-pose arms horizontal, legs apart, front-facing, whole body visible head to feet, game-ready low-poly, PBR materials, no weapon in hand, symmetric",
+  "thumbnail": "https://tripo-data.rg1.data.tripo3d.com/tcli_2efb6ab9cf694c6eab16a3e8dc01d3bf/20260703/408aa9e9-c684-4d97-94e9-0a7e47672f0e/legacy_mesh.webp?Key-Pair-Id=K1676C64NMVM2J&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly90cmlwby1kYXRhLnJnMS5kYXRhLnRyaXBvM2QuY29tL3RjbGlfMmVmYjZhYjljZjY5NGM2ZWFiMTZhM2U4ZGMwMWQzYmYvMjAyNjA3MDMvNDA4YWE5ZTktYzY4NC00ZDk3LTk0ZTktMGE3ZTQ3NjcyZjBlL2xlZ2FjeV9tZXNoLndlYnAiLCJDb25kaXRpb24iOnsiRGF0ZUxlc3NUaGFuIjp7IkFXUzpFcG9jaFRpbWUiOjE3ODMxMjMyMDB9fX1dfQ__&Signature=a~bcZ4GLmXO9twOb914WFvrb5QqfmjuTq84NEYiiObDJ9ic458Ei4k8BoKGEqBPiNOQLAHHN4isgrmh6SQc7r40PsBshEeqMgtxIMJhSI2cEpOwNX2nOqo9pSmsBFqsQ4D7V5r4XdC3DfRaLi9oDytdr5JHVSpLUbRP5jPPEHOYpdM0li1ju2IA3~bwW5x3Ei81XPCehw2yOj85yzSBao4vx8Zptorwgmd-sQkjdGg7XDiggo5Qhxda-hqnAXcZ-9itkqrQCDLndfFFp9YVvptZY~fuMsxOAINDlJkJncbu1wnd~llkmFq4mPVtG8y7wSbmvpwSoTVEUNMfu3~zF7A__",
+  "queuing_num": -1,
+  "running_left_time": -1,
+  "result": {
+    "pbr_model": {
+      "type": "glb",
+      "url": "https://tripo-data.rg1.data.tripo3d.com/tcli_2efb6ab9cf694c6eab16a3e8dc01d3bf/20260703/408aa9e9-c684-4d97-94e9-0a7e47672f0e/tripo_pbr_model_408aa9e9-c684-4d97-94e9-0a7e47672f0e.glb?Key-Pair-Id=K1676C64NMVM2J&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly90cmlwby1kYXRhLnJnMS5kYXRhLnRyaXBvM2QuY29tL3RjbGlfMmVmYjZhYjljZjY5NGM2ZWFiMTZhM2U4ZGMwMWQzYmYvMjAyNjA3MDMvNDA4YWE5ZTktYzY4NC00ZDk3LTk0ZTktMGE3ZTQ3NjcyZjBlL3RyaXBvX3Bicl9tb2RlbF80MDhhYTllOS1jNjg0LTRkOTctOTRlOS0wYTdlNDc2NzJmMGUuZ2xiIiwiQ29uZGl0aW9uIjp7IkRhdGVMZXNzVGhhbiI6eyJBV1M6RXBvY2hUaW1lIjoxNzgzMTIzMjAwfX19XX0_&Signature=NC-13sUVfFsT5UJ9-zGywXa1VX811thPARECu4qfSzf2gluSao39MWWVw1y1x4eHJ3-S4~qM02by4Ep8wRUD4H8dR1ZOfqNBrY9ePxVRJY3PVzFjTlo9CzTH3OLeSvLOc8cUrkIm1WrixWkvOPuZ-62s94kt~YtKNq~kqC6faKt-vW2zq1838H1peRwRid9LlW7c3TOEgHxC-Y0fLNSCN54J1WWftT2EudcjZ7O8lYYykpEAnFyuPKYg3JkWNk3trkQRLJlDOkn1AUcEPCfkZQMq3z0P5ca9dRPz5r8Fujt9sHQHVf1XDT2t4m5M4iivWrPSG76f0BjOyKgeM5UdVA__"
+    },
+    "rendered_image": {
+      "type": "webp",
+      "url": "https://tripo-data.rg1.data.tripo3d.com/tcli_2efb6ab9cf694c6eab16a3e8dc01d3bf/20260703/408aa9e9-c684-4d97-94e9-0a7e47672f0e/legacy_mesh.webp?Key-Pair-Id=K1676C64NMVM2J&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly90cmlwby1kYXRhLnJnMS5kYXRhLnRyaXBvM2QuY29tL3RjbGlfMmVmYjZhYjljZjY5NGM2ZWFiMTZhM2U4ZGMwMWQzYmYvMjAyNjA3MDMvNDA4YWE5ZTktYzY4NC00ZDk3LTk0ZTktMGE3ZTQ3NjcyZjBlL2xlZ2FjeV9tZXNoLndlYnAiLCJDb25kaXRpb24iOnsiRGF0ZUxlc3NUaGFuIjp7IkFXUzpFcG9jaFRpbWUiOjE3ODMxMjMyMDB9fX1dfQ__&Signature=a~bcZ4GLmXO9twOb914WFvrb5QqfmjuTq84NEYiiObDJ9ic458Ei4k8BoKGEqBPiNOQLAHHN4isgrmh6SQc7r40PsBshEeqMgtxIMJhSI2cEpOwNX2nOqo9pSmsBFqsQ4D7V5r4XdC3DfRaLi9oDytdr5JHVSpLUbRP5jPPEHOYpdM0li1ju2IA3~bwW5x3Ei81XPCehw2yOj85yzSBao4vx8Zptorwgmd-sQkjdGg7XDiggo5Qhxda-hqnAXcZ-9itkqrQCDLndfFFp9YVvptZY~fuMsxOAINDlJkJncbu1wnd~llkmFq4mPVtG8y7wSbmvpwSoTVEUNMfu3~zF7A__"
+    }
+  }
+}
