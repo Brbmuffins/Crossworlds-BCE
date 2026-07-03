@@ -5,67 +5,56 @@ using UnityEngine.InputSystem;
 using UnityEngine.Networking;
 
 /// <summary>
-/// AfkGatheringStation — Press F once, then go AFK.
+/// AfkGatheringStation — Press F once to start, then go AFK.
 ///
-/// The player presses F to start gathering. Every <tickInterval> seconds
-/// the station awards one item (via /api/inventory/add-item) and some
-/// profession XP (via ProfessionManager.AwardXp). Moving away, pressing F
-/// again, or pressing Escape cancels the session.
+/// Drift beyond cancelRadius, press F/Escape, or click STOP to cancel.
+/// Items are added via POST /api/inventory/add-item (server validates JWT + ownership).
+/// XP is awarded via ProfessionManager.AwardXp → POST /api/professions/award-xp.
 ///
 /// Profession IDs:  0 = Woodcutting  |  1 = Fishing  |  2 = Mining
-///
-/// Level gates:
-///   minLevelRequired — station refuses to start if player is below this level.
-///   bonusYieldLevel  — at this level the station has a 20% chance to double yield.
-///
-/// Place this on any mesh in the Hub scene. No network component required —
-/// resource gathering is purely client-authoritative for alpha; the server
-/// validates via JWT + character ownership on every inventory/XP write.
 /// </summary>
 public class AfkGatheringStation : MonoBehaviour
 {
     // ── Inspector ─────────────────────────────────────────────────────────────────
 
     [Header("Identity")]
-    [Tooltip("Display name shown in the HUD while gathering.")]
     public string stationName = "Copper Vein";
 
     [Header("Profession")]
     [Tooltip("0 = Woodcutting  1 = Fishing  2 = Mining")]
-    public int professionId = 2;
-    public int minLevelRequired = 1;
+    public int professionId      = 2;
+    public int minLevelRequired  = 1;
 
     [Header("Yield — per tick")]
-    public string itemId = "ore_copper";
+    public string itemId       = "ore_copper";
     public int    itemQuantity = 1;
-    public float  tickInterval = 5f;     // seconds between each reward
+    public float  tickInterval = 5f;
 
     [Header("XP")]
     public int xpPerTick = 10;
 
     [Header("Bonus Yield")]
-    [Tooltip("At this level there is a 20 % chance to award double items per tick.")]
+    [Tooltip("At this level there is a 20% chance to award double items per tick.")]
     public int bonusYieldLevel = 10;
 
     [Header("Interaction")]
     public float interactRange = 3f;
     [Tooltip("How far the player must drift before gathering auto-cancels.")]
-    public float cancelRadius = 4f;
+    public float cancelRadius  = 4f;
 
     // ── Runtime ───────────────────────────────────────────────────────────────────
 
     bool       _gathering;
     Coroutine  _loop;
     Transform  _localPlayer;
-    Vector3    _gatherOrigin;     // player position when gathering started
+    Vector3    _gatherOrigin;
     float      _scanTimer;
-    float      _tickProgress;    // 0–1 within the current tick
+    float      _tickProgress;
 
     GameObject _promptGO;
     TextMesh   _promptMesh;
     bool       _promptVisible;
 
-    // HUD (instance owned by this station while gathering)
     GatheringHUD _hud;
 
     // ─────────────────────────────────────────────────────────────────────────────
@@ -75,47 +64,51 @@ public class AfkGatheringStation : MonoBehaviour
 
     void Update()
     {
-        // Throttled player search
+        // Throttled local-player search
         _scanTimer -= Time.deltaTime;
-        if (_localPlayer == null && _scanTimer <= 0f)
+        if (_scanTimer <= 0f)
         {
             _scanTimer   = 0.5f;
             _localPlayer = FindLocalPlayer();
         }
-        if (_localPlayer == null) return;
 
-        float dist   = Vector3.Distance(transform.position, _localPlayer.position);
+        // Null-check every frame — player object can be destroyed on disconnect
+        if (_localPlayer == null || !_localPlayer.gameObject.activeInHierarchy) return;
+
+        float dist    = Vector3.Distance(transform.position, _localPlayer.position);
         bool  inRange = dist <= interactRange;
 
-        // Drift cancel while gathering
+        // ── Gathering active ───────────────────────────────────────────────────
         if (_gathering)
         {
             _tickProgress += Time.deltaTime / tickInterval;
-            _hud?.SetProgress(_tickProgress, tickInterval - (_tickProgress * tickInterval));
+            if (_hud != null)
+                _hud.SetProgress(_tickProgress, tickInterval - _tickProgress * tickInterval);
 
             float drift = Vector3.Distance(_localPlayer.position, _gatherOrigin);
             if (drift > cancelRadius)
+            {
                 StopGathering("You moved away and stopped gathering.");
+                return;
+            }
 
-            // Escape or F cancels
             if (Keyboard.current != null)
             {
                 if (Keyboard.current.escapeKey.wasPressedThisFrame)
                     StopGathering("You stopped gathering.");
-                if (Keyboard.current.fKey.wasPressedThisFrame)
+                else if (Keyboard.current.fKey.wasPressedThisFrame)
                     StopGathering("You stopped gathering.");
             }
             return;
         }
 
-        // Prompt visibility
+        // ── Prompt visibility ──────────────────────────────────────────────────
         if (inRange != _promptVisible)
         {
             _promptVisible = inRange;
             _promptGO.SetActive(inRange);
         }
 
-        // Billboard prompt
         if (_promptVisible)
         {
             var cam = Camera.main;
@@ -124,7 +117,6 @@ public class AfkGatheringStation : MonoBehaviour
                     _promptGO.transform.position - cam.transform.position, cam.transform.up);
         }
 
-        // Start gathering
         if (inRange && Keyboard.current != null && Keyboard.current.fKey.wasPressedThisFrame)
             TryStartGathering();
     }
@@ -133,18 +125,23 @@ public class AfkGatheringStation : MonoBehaviour
 
     void TryStartGathering()
     {
-        // Level gate
-        int level = ProfessionManager.Local != null
-            ? ProfessionManager.Local.GetLevel(professionId)
-            : 1;
+        var pm = ProfessionManager.Local;
 
+        // Wait for profession data to load before allowing level-gated stations
+        if (pm != null && !pm.IsLoaded && minLevelRequired > 1)
+        {
+            RodChatManager.Instance?.AddSystemMessage("Loading profession data — try again in a moment.");
+            return;
+        }
+
+        int level = pm != null ? pm.GetLevel(professionId) : 1;
         if (level < minLevelRequired)
         {
-            string profName = professionId < ProfessionManager.ProfessionNames.Length
+            string name = professionId < ProfessionManager.ProfessionNames.Length
                 ? ProfessionManager.ProfessionNames[professionId]
                 : $"Profession {professionId}";
             RodChatManager.Instance?.AddSystemMessage(
-                $"Requires {profName} level {minLevelRequired}. You are level {level}.");
+                $"Requires {name} level {minLevelRequired}. You are level {level}.");
             return;
         }
 
@@ -153,16 +150,14 @@ public class AfkGatheringStation : MonoBehaviour
         _tickProgress = 0f;
         _promptGO.SetActive(false);
 
-        // Announce
         string verb = GetGatherVerb();
         RodChatManager.Instance?.AddSystemMessage($"You begin {verb} {stationName}...");
 
-        // HUD
-        _hud = GatheringHUD.Show(stationName, itemId, tickInterval);
+        // Pass onStop callback so STOP button cancels cleanly through StopGathering
+        _hud = GatheringHUD.Show(stationName, itemId, tickInterval, professionId,
+                                 () => StopGathering("You stopped gathering."));
 
-        // Subscribe to level-up so HUD can flash
-        if (ProfessionManager.Local != null)
-            ProfessionManager.Local.onLevelUp += OnLevelUp;
+        if (pm != null) pm.onLevelUp += OnLevelUp;
 
         _loop = StartCoroutine(GatherLoop());
     }
@@ -176,25 +171,20 @@ public class AfkGatheringStation : MonoBehaviour
 
             _tickProgress = 0f;
 
-            // Bonus yield
-            int qty = itemQuantity;
+            int qty   = itemQuantity;
             int level = ProfessionManager.Local?.GetLevel(professionId) ?? 1;
             if (level >= bonusYieldLevel && Random.value < 0.20f)
             {
                 qty *= 2;
-                RodChatManager.Instance?.AddSystemMessage($"⭐ Bonus yield! ×{qty} {itemId}");
+                RodChatManager.Instance?.AddSystemMessage($"Bonus yield! x{qty} {itemId}");
             }
 
-            // Award item
             StartCoroutine(PostItem(qty));
-
-            // Award profession XP
             ProfessionManager.Local?.AwardXp(professionId, xpPerTick);
 
-            // HUD pulse
-            _hud?.Pulse(qty);
+            if (_hud != null) _hud.Pulse(qty);
 
-            Debug.Log($"[GATHER] {stationName}: +{qty}× {itemId}, +{xpPerTick} xp");
+            Debug.Log($"[GATHER] {stationName}: +{qty}x {itemId}, +{xpPerTick} xp");
         }
     }
 
@@ -205,17 +195,22 @@ public class AfkGatheringStation : MonoBehaviour
 
         if (_loop != null) { StopCoroutine(_loop); _loop = null; }
 
-        if (ProfessionManager.Local != null)
-            ProfessionManager.Local.onLevelUp -= OnLevelUp;
+        var pm = ProfessionManager.Local;
+        if (pm != null) pm.onLevelUp -= OnLevelUp;
 
-        _hud?.Hide();
-        _hud = null;
+        // Only call Hide if the HUD object still exists (STOP button may have
+        // already destroyed it via the onStop callback path)
+        if (_hud != null)
+        {
+            _hud.Hide();
+            _hud = null;
+        }
+
         _tickProgress = 0f;
 
         if (!string.IsNullOrEmpty(message))
             RodChatManager.Instance?.AddSystemMessage(message);
 
-        // Restore prompt if still in range
         if (_localPlayer != null)
         {
             float d = Vector3.Distance(transform.position, _localPlayer.position);
@@ -226,8 +221,8 @@ public class AfkGatheringStation : MonoBehaviour
 
     void OnLevelUp(int profId, int newLevel)
     {
-        if (profId != professionId) return;
-        _hud?.FlashLevelUp(newLevel);
+        if (profId != professionId || _hud == null) return;
+        _hud.FlashLevelUp(newLevel);
     }
 
     // ── Item API ──────────────────────────────────────────────────────────────────
@@ -251,7 +246,7 @@ public class AfkGatheringStation : MonoBehaviour
         if (req.result == UnityWebRequest.Result.Success)
             InventoryBagUI.Refresh();
         else
-            Debug.LogWarning($"[GATHER] Inventory save failed: {req.error}");
+            Debug.LogWarning($"[GATHER] Inventory save failed ({req.responseCode}): {req.error}");
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -280,8 +275,8 @@ public class AfkGatheringStation : MonoBehaviour
         _promptMesh.anchor        = TextAnchor.MiddleCenter;
         _promptMesh.alignment     = TextAlignment.Center;
         _promptMesh.color         = minLevelRequired <= 1
-            ? new Color(0.70f, 0.95f, 0.50f)   // green — available
-            : new Color(0.90f, 0.80f, 0.30f);   // gold — gated
+            ? new Color(0.70f, 0.95f, 0.50f)
+            : new Color(0.90f, 0.80f, 0.30f);
     }
 
     static Transform FindLocalPlayer()

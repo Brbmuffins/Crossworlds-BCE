@@ -434,7 +434,7 @@ public class WorldBossController : NetworkBehaviour
         isReflecting = false;
         isDraining   = false;
 
-        RpcAnnounce("💀 BOSS DEFEATED — The Null Architect collapses!");
+        RpcAnnounce("BOSS DEFEATED — The Null Architect collapses!");
         StartCoroutine(BossDeathSequence());
     }
 
@@ -452,18 +452,10 @@ public class WorldBossController : NetworkBehaviour
     void RollDrops()
     {
         foreach (var id in guaranteedDropItemIds)
-        {
-            RpcSpawnLoot(id);
-            Debug.Log($"[LOOT] Boss dropped (guaranteed): {id}");
-        }
+            SpawnLoot(id);
         foreach (var id in rareDropItemIds)
-        {
             if (Random.value <= rareDropChance)
-            {
-                RpcSpawnLoot(id);
-                Debug.Log($"[LOOT] Boss dropped (rare): {id}");
-            }
-        }
+                SpawnLoot(id);
     }
 
     // ─────────────────────────────────────────────────────────────────────────────
@@ -473,7 +465,7 @@ public class WorldBossController : NetworkBehaviour
     void OnPhaseSync(BossPhase _, BossPhase newPhase)
     {
 #if !UNITY_SERVER
-        FindFirstObjectByType<WorldBossHealthBar>()?.OnPhaseChanged(newPhase);
+        FindAnyObjectByType<WorldBossHealthBar>()?.OnPhaseChanged(newPhase);
 #endif
     }
 
@@ -507,10 +499,13 @@ public class WorldBossController : NetworkBehaviour
     [ClientRpc]
     void RpcPlayDeathVFX() { /* Wire death VFX here (Week 7) */ }
 
-    [ClientRpc]
-    void RpcSpawnLoot(string itemId)
+    [Server]
+    void SpawnLoot(string itemId)
     {
-        Debug.Log($"[BOSS] Loot dropped: {itemId}");
+        Vector3 pos = transform.position + Random.insideUnitSphere * 2f;
+        pos.y = transform.position.y;
+        WorldItem.Spawn(itemId, pos);
+        Debug.Log($"[BOSS] Dropped: {itemId}");
     }
 
     [ClientRpc]

@@ -82,7 +82,7 @@ public class WaveSpawner : NetworkBehaviour
                 _running      = false;
                 arenaComplete = true;
                 ArenaSessionController.Instance?.EndSession();
-                RpcAnnounce("⭐ ARENA CLEAR! All waves defeated!");
+                RpcAnnounce("ARENA CLEAR! All waves defeated!");
                 RpcAwardArenaCompletionXp();       // bonus mastery XP for finishing all waves
                 RpcOnArenaComplete();
                 yield break;

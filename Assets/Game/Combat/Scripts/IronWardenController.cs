@@ -6,42 +6,40 @@ using Mirror;
 /// The Iron Warden — second world boss.
 ///
 /// Phase 1 (100–60 %): Siege Protocol
-///   • Barrier Wall: a ring of iron shields orbits the boss every 12 s.
-///     Players on the wrong arc receive 10 dmg/s push-back; correct arc deals full damage.
-///   • Mortar Strike: every 20 s, five AoE circles stagger-detonate (1 s apart), 30 dmg each.
+///   Barrier Wall orbits every 12 s; Mortar Strike every 20 s (5 staggered blasts, 30 dmg each).
 ///
 /// Phase 2 (60–25 %): Shield Matrix
-///   • Two Siege Turrets spawn at opposite flanks. Boss gains immunity until BOTH are
-///     destroyed simultaneously. If only one dies the other auto-repairs after 10 s.
-///   • Magnet Pull every 20 s: drag all players to centre, then stomp (60 AoE).
+///   Boss immune until both Siege Turrets destroyed simultaneously.
+///   Survivor auto-repairs after 10 s if only one dies. Magnet Pull every 20 s.
 ///
 /// Phase 3 (25–0 %): Rampage
-///   • Ground Slam every 4 s in a 6 u radius (35 dmg).
-///   • Boss move speed +50 %.
-///   • At ≤15 % HP: Lockdown roots all players for 5 s, boss charges a 60-AoE devastation slam.
+///   Ground Slam every 4 s (35 dmg, 6u). Speed +50 %.
+///   At 15 % HP: Lockdown (Bound 5 s) then Devastation slam (60 dmg, 10u).
 ///
-/// Follows the same server-authoritative pattern as WorldBossController.
-/// All game-state changes are [Server]; VFX/announcements use [ClientRpc].
+/// Follows same server-authoritative pattern as WorldBossController:
+///   Health.onHealthChanged drives phase transitions (no polling).
+///   Health.onDeath drives the death sequence.
+///   All game-state on [Server]; VFX/announcements via [ClientRpc].
 /// </summary>
+[RequireComponent(typeof(Health))]
+[RequireComponent(typeof(StatusEffectManager))]
 public class IronWardenController : NetworkBehaviour
 {
     // ── Inspector ──────────────────────────────────────────────────────────────
-    [Header("Health")]
-    public int maxHealth = 3000;
-
-    [Header("Phase Thresholds (0-1)")]
-    public float phase2Threshold = 0.60f;
-    public float phase3Threshold = 0.25f;
+    [Header("Phase Thresholds (0–1)")]
+    public float phase2Threshold   = 0.60f;
+    public float phase3Threshold   = 0.25f;
     public float lockdownThreshold = 0.15f;
 
     [Header("Phase 1 — Siege Protocol")]
-    public float barrierInterval   = 12f;
-    public float mortarInterval    = 20f;
-    public int   mortarDamage      = 30;
-    public float mortarRadius      = 4f;
-    public int   mortarCount       = 5;
+    public float barrierInterval = 12f;
+    public float mortarInterval  = 20f;
+    public int   mortarDamage    = 30;
+    public float mortarRadius    = 4f;
+    public int   mortarCount     = 5;
 
     [Header("Phase 2 — Shield Matrix")]
+    public GameObject siegeTurretPrefab;    // assign in Inspector (editor step)
     public float magnetInterval    = 20f;
     public int   magnetStompDamage = 60;
     public float magnetRadius      = 8f;
@@ -57,7 +55,14 @@ public class IronWardenController : NetworkBehaviour
     public float devastationRadius = 10f;
 
     [Header("Telegraph")]
-    public GameObject warningCirclePrefab;  // assign in inspector
+    public GameObject warningCirclePrefab;  // assign in Inspector
+
+    [Header("Drop Table")]
+    public System.Collections.Generic.List<string> guaranteedDropItemIds =
+        new System.Collections.Generic.List<string> { "helm_iron", "chest_iron" };
+    public System.Collections.Generic.List<string> rareDropItemIds =
+        new System.Collections.Generic.List<string> { "helm_gold", "flask_damage" };
+    [Range(0f, 1f)] public float rareDropChance = 0.30f;
 
     // ── Network state ──────────────────────────────────────────────────────────
     public enum WardenPhase { Dormant, SiegeProtocol, ShieldMatrix, Rampage, Dead }
@@ -65,24 +70,37 @@ public class IronWardenController : NetworkBehaviour
     [SyncVar(hook = nameof(OnPhaseChanged))]
     public WardenPhase currentPhase = WardenPhase.Dormant;
 
-    [SyncVar] public int currentHealth;
+    // ── Private (server only) ──────────────────────────────────────────────────
+    Health         _health;
+    UnityEngine.AI.NavMeshAgent _agent;
+    float          _baseSpeed;
 
-    // ── Private state (server only) ────────────────────────────────────────────
     Coroutine _barrierRoutine;
     Coroutine _mortarRoutine;
     Coroutine _magnetRoutine;
     Coroutine _slamRoutine;
+
     bool _lockdownFired;
     bool _turretRepairPending;
     int  _turretsAlive;
+    bool _inTransition;
 
     // ── Lifecycle ──────────────────────────────────────────────────────────────
-    public override void OnStartServer()
+    void Awake()
     {
-        currentHealth = maxHealth;
+        _health = GetComponent<Health>();
+        _agent  = GetComponent<UnityEngine.AI.NavMeshAgent>();
+        if (_agent != null) _baseSpeed = _agent.speed;
     }
 
-    // ── Public API called by arena trigger / wave system ──────────────────────
+    public override void OnStartServer()
+    {
+        base.OnStartServer();
+        _health.onHealthChanged.AddListener(OnHealthChanged);
+        _health.onDeath.AddListener(OnWardenDeath);
+    }
+
+    // ── Entry point (called by arena trigger) ──────────────────────────────────
     [Server]
     public void Activate()
     {
@@ -91,42 +109,47 @@ public class IronWardenController : NetworkBehaviour
         TransitionTo(WardenPhase.SiegeProtocol);
     }
 
+    // ── Health event → phase transitions ──────────────────────────────────────
     [Server]
-    public void TakeDamage(int amount)
+    void OnHealthChanged(float current, float max)
     {
-        if (currentPhase == WardenPhase.Dead) return;
+        if (_inTransition || currentPhase == WardenPhase.Dead) return;
 
-        // Phase 2: immune while two turrets are alive
-        if (currentPhase == WardenPhase.ShieldMatrix && _turretsAlive >= 2) return;
+        // Immune during Phase 2 while turrets live — Health still fires events
+        // but we don't transition down on those hits
+        float fraction = max > 0f ? current / max : 0f;
 
-        currentHealth = Mathf.Max(0, currentHealth - amount);
-        float ratio   = (float)currentHealth / maxHealth;
-
-        if (currentPhase == WardenPhase.SiegeProtocol && ratio <= phase2Threshold)
+        if (currentPhase == WardenPhase.SiegeProtocol && fraction <= phase2Threshold)
         {
             TransitionTo(WardenPhase.ShieldMatrix);
             return;
         }
 
-        if (currentPhase == WardenPhase.ShieldMatrix && ratio <= phase3Threshold)
+        if (currentPhase == WardenPhase.ShieldMatrix && fraction <= phase3Threshold)
         {
             TransitionTo(WardenPhase.Rampage);
             return;
         }
 
-        if (currentPhase == WardenPhase.Rampage && ratio <= lockdownThreshold && !_lockdownFired)
+        if (currentPhase == WardenPhase.Rampage
+            && !_lockdownFired && fraction <= lockdownThreshold)
         {
             _lockdownFired = true;
             StartCoroutine(LockdownSequence());
         }
+    }
 
-        if (currentHealth <= 0) TransitionTo(WardenPhase.Dead);
+    [Server]
+    void OnWardenDeath()
+    {
+        TransitionTo(WardenPhase.Dead);
     }
 
     // ── Phase transition ───────────────────────────────────────────────────────
     [Server]
     void TransitionTo(WardenPhase next)
     {
+        _inTransition = true;
         StopPhaseCoroutines();
         currentPhase = next;
 
@@ -146,15 +169,17 @@ public class IronWardenController : NetworkBehaviour
 
             case WardenPhase.Rampage:
                 RpcAnnounce("[BOSS] The Iron Warden's core is exposed — RAMPAGE!");
+                if (_agent != null) _agent.speed = _baseSpeed * rampageSpeedMult;
                 _slamRoutine = StartCoroutine(GroundSlamLoop());
-                // Speed boost applied on clients via hook
                 break;
 
             case WardenPhase.Dead:
+                if (_agent != null) _agent.speed = 0f;
                 RpcAnnounce("[BOSS] The Iron Warden has fallen!");
-                ArenaSessionController.Instance?.OnBossKilled();
+                StartCoroutine(DeathSequence());
                 break;
         }
+        _inTransition = false;
     }
 
     void StopPhaseCoroutines()
@@ -165,12 +190,12 @@ public class IronWardenController : NetworkBehaviour
         if (_slamRoutine    != null) { StopCoroutine(_slamRoutine);    _slamRoutine    = null; }
     }
 
-    // ── Phase 1: Siege Protocol ────────────────────────────────────────────────
+    // ── Phase 1 ────────────────────────────────────────────────────────────────
 
     [Server]
     IEnumerator BarrierWallLoop()
     {
-        while (true)
+        while (currentPhase == WardenPhase.SiegeProtocol && _health.IsAlive)
         {
             yield return new WaitForSeconds(barrierInterval);
             if (currentPhase != WardenPhase.SiegeProtocol) yield break;
@@ -181,24 +206,24 @@ public class IronWardenController : NetworkBehaviour
     [Server]
     IEnumerator MortarStrikeLoop()
     {
-        yield return new WaitForSeconds(5f); // initial delay
-        while (true)
+        yield return new WaitForSeconds(5f);
+        while (currentPhase == WardenPhase.SiegeProtocol && _health.IsAlive)
         {
             yield return new WaitForSeconds(mortarInterval);
             if (currentPhase != WardenPhase.SiegeProtocol) yield break;
-            StartCoroutine(MortarSequence());
+            yield return StartCoroutine(MortarSequence());
         }
     }
 
     [Server]
     IEnumerator MortarSequence()
     {
-        RpcAnnounce("[BOSS] Mortar Strike incoming — move!");
+        RpcAnnounce("[BOSS] Mortar Strike incoming — spread out!");
         var players = FindObjectsByType<PlayerIdentity>(FindObjectsSortMode.None);
+        if (players.Length == 0) yield break;
 
         for (int i = 0; i < mortarCount; i++)
         {
-            // Target a random player position
             var target = players[Random.Range(0, players.Length)];
             Vector3 pos = target.transform.position;
             RpcShowWarningCircle(pos, mortarRadius, 1f);
@@ -208,26 +233,27 @@ public class IronWardenController : NetworkBehaviour
         }
     }
 
-    // ── Phase 2: Shield Matrix ─────────────────────────────────────────────────
+    // ── Phase 2 ────────────────────────────────────────────────────────────────
 
     [Server]
     void SpawnSiegeTurrets()
     {
-        // Spawn turrets at 0° and 180° relative to boss
-        Vector3 right = transform.right * 8f;
-        SpawnTurret(transform.position + right);
-        SpawnTurret(transform.position - right);
-        RpcAnnounce("[BOSS] Siege Turrets deployed! Destroy both at the same time!");
+        if (siegeTurretPrefab == null)
+        {
+            Debug.LogError("[WARDEN] siegeTurretPrefab not assigned — Phase 2 turrets will not spawn. Assign in Inspector.");
+            return;
+        }
+        SpawnTurretAt(transform.position + transform.right * 8f);
+        SpawnTurretAt(transform.position - transform.right * 8f);
+        RpcAnnounce("[BOSS] Siege Turrets deployed — destroy both at the same time!");
     }
 
-    void SpawnTurret(Vector3 position)
+    [Server]
+    void SpawnTurretAt(Vector3 pos)
     {
-        // SiegeTurret prefab must be assigned or created in editor
-        // It calls IronWardenController.OnTurretDestroyed() when killed
-        var go = new GameObject($"SiegeTurret_{position}");
-        go.transform.position = position;
-        var turret = go.AddComponent<SiegeTurretBehaviour>();
-        turret.warden = this;
+        var go = Instantiate(siegeTurretPrefab, pos, Quaternion.identity);
+        var turret = go.GetComponent<SiegeTurretBehaviour>();
+        if (turret != null) turret.warden = this;
         NetworkServer.Spawn(go);
     }
 
@@ -235,14 +261,11 @@ public class IronWardenController : NetworkBehaviour
     public void OnTurretDestroyed()
     {
         _turretsAlive = Mathf.Max(0, _turretsAlive - 1);
-
         if (_turretsAlive == 0)
         {
             RpcAnnounce("[BOSS] Both turrets destroyed — the Warden is vulnerable!");
             return;
         }
-
-        // Only one destroyed — surviving turret auto-repairs after delay
         if (!_turretRepairPending)
         {
             _turretRepairPending = true;
@@ -257,18 +280,18 @@ public class IronWardenController : NetworkBehaviour
         _turretsAlive        = 2;
         _turretRepairPending = false;
         SpawnSiegeTurrets();
-        RpcAnnounce("[BOSS] Turret repaired to full! Destroy both simultaneously!");
+        RpcAnnounce("[BOSS] Turret repaired — destroy BOTH simultaneously!");
     }
 
     [Server]
     IEnumerator MagnetPullLoop()
     {
         yield return new WaitForSeconds(10f);
-        while (true)
+        while (currentPhase == WardenPhase.ShieldMatrix && _health.IsAlive)
         {
             yield return new WaitForSeconds(magnetInterval);
             if (currentPhase != WardenPhase.ShieldMatrix) yield break;
-            StartCoroutine(MagnetPullSequence());
+            yield return StartCoroutine(MagnetPullSequence());
         }
     }
 
@@ -276,35 +299,21 @@ public class IronWardenController : NetworkBehaviour
     IEnumerator MagnetPullSequence()
     {
         RpcAnnounce("[BOSS] Magnetic Pull — brace yourself!");
-        RpcMagnetPullVfx(transform.position);
-
-        // Pull all players toward boss centre
-        var players = FindObjectsByType<PlayerIdentity>(FindObjectsSortMode.None);
-        foreach (var p in players)
-        {
-            var cc = p.GetComponent<CharacterController>();
-            if (cc != null)
-            {
-                Vector3 dir = (transform.position - p.transform.position).normalized;
-                cc.Move(dir * 6f);
-            }
-        }
-
+        // Pull happens client-side via CharacterController — server sends position
+        RpcPullPlayersTo(transform.position);
         yield return new WaitForSeconds(1f);
-
-        // Ground stomp
         RpcShowWarningCircle(transform.position, magnetRadius, 1f);
         yield return new WaitForSeconds(1f);
         DealAoeDamage(transform.position, magnetRadius, magnetStompDamage);
         RpcExplosionVfx(transform.position);
     }
 
-    // ── Phase 3: Rampage ───────────────────────────────────────────────────────
+    // ── Phase 3 ────────────────────────────────────────────────────────────────
 
     [Server]
     IEnumerator GroundSlamLoop()
     {
-        while (true)
+        while (currentPhase == WardenPhase.Rampage && _health.IsAlive)
         {
             yield return new WaitForSeconds(slamInterval);
             if (currentPhase != WardenPhase.Rampage) yield break;
@@ -319,21 +328,53 @@ public class IronWardenController : NetworkBehaviour
     IEnumerator LockdownSequence()
     {
         RpcAnnounce("[BOSS] LOCKDOWN — The Iron Warden prepares a devastating blow!");
-        RpcLockdownVfx();
 
-        // Root all players
+        // Root all players via StatusEffectManager.Bound
         var players = FindObjectsByType<PlayerIdentity>(FindObjectsSortMode.None);
         foreach (var p in players)
-            p.GetComponent<StatusEffectManager>()?.ApplyRoot(lockdownDuration);
+            p.GetComponent<StatusEffectManager>()?.AddEffect(
+                new StatusEffect(StatusEffectType.Bound, lockdownDuration, 0f));
 
+        RpcLockdownVfx();
         yield return new WaitForSeconds(lockdownDuration);
 
-        // Charge up and slam
         RpcShowWarningCircle(transform.position, devastationRadius, 1.5f);
         yield return new WaitForSeconds(1.5f);
         DealAoeDamage(transform.position, devastationRadius, devastationDamage);
         RpcExplosionVfx(transform.position);
         RpcAnnounce("[BOSS] DEVASTATION!");
+    }
+
+    // ── Death ──────────────────────────────────────────────────────────────────
+
+    [Server]
+    IEnumerator DeathSequence()
+    {
+        RpcPlayDeathVfx();
+        yield return new WaitForSeconds(3f);
+        RollDrops();
+        ArenaSessionController.Instance?.OnBossKilled();
+        yield return new WaitForSeconds(2f);
+        NetworkServer.Destroy(gameObject);
+    }
+
+    [Server]
+    void RollDrops()
+    {
+        Vector3 scatter = transform.position + Vector3.forward * 2f;
+        foreach (var id in guaranteedDropItemIds)
+            TrySpawnDrop(id, scatter);
+        foreach (var id in rareDropItemIds)
+            if (Random.value <= rareDropChance)
+                TrySpawnDrop(id, scatter + Random.insideUnitSphere * 1.5f);
+    }
+
+    [Server]
+    void TrySpawnDrop(string itemId, Vector3 pos)
+    {
+        pos.y = transform.position.y;
+        WorldItem.Spawn(itemId, pos);
+        Debug.Log($"[WARDEN] Dropped: {itemId}");
     }
 
     // ── Shared helpers ─────────────────────────────────────────────────────────
@@ -344,32 +385,29 @@ public class IronWardenController : NetworkBehaviour
         var hits = Physics.OverlapSphere(centre, radius);
         foreach (var hit in hits)
         {
-            var hp = hit.GetComponent<HealthComponent>();
-            if (hp != null && hit.CompareTag("Player"))
-                hp.TakeDamage(damage, gameObject);
+            if (!hit.CompareTag("Player")) continue;
+            hit.GetComponent<Health>()?.TakeDamage(damage, gameObject);
         }
     }
 
     // ── SyncVar hook ───────────────────────────────────────────────────────────
-
-    void OnPhaseChanged(WardenPhase oldPhase, WardenPhase newPhase)
+    void OnPhaseChanged(WardenPhase _, WardenPhase newPhase)
     {
 #if !UNITY_SERVER
-        if (newPhase == WardenPhase.Rampage)
-        {
-            var nav = GetComponent<UnityEngine.AI.NavMeshAgent>();
-            if (nav != null) nav.speed *= rampageSpeedMult;
-        }
+        FindAnyObjectByType<WorldBossHealthBar>()?.OnPhaseChanged(
+            newPhase == WardenPhase.Dead
+                ? WorldBossController.BossPhase.Dead
+                : WorldBossController.BossPhase.Phase1);
 #endif
     }
 
-    // ── ClientRpc VFX / announcements ─────────────────────────────────────────
+    // ── ClientRpc ──────────────────────────────────────────────────────────────
 
     [ClientRpc]
     void RpcAnnounce(string msg)
     {
 #if !UNITY_SERVER
-        RodChatManager.Instance?.SystemMessage(msg);
+        RodChatManager.Instance?.AddSystemMessage(msg);
 #endif
     }
 
@@ -384,18 +422,32 @@ public class IronWardenController : NetworkBehaviour
 #endif
     }
 
-    [ClientRpc] void RpcSpawnBarrierWall()       { /* Animator / VFX trigger on client */ }
-    [ClientRpc] void RpcExplosionVfx(Vector3 p)  { /* Play explosion particle at p */ }
-    [ClientRpc] void RpcGroundSlamVfx(Vector3 p) { /* Shockwave ring particle at p */ }
-    [ClientRpc] void RpcMagnetPullVfx(Vector3 p) { /* Purple magnetic pull particle at p */ }
-    [ClientRpc] void RpcLockdownVfx()            { /* Red screen flash + chain VFX */ }
+    // Pulls local player toward bossPos — runs client-side so CharacterController is available
+    [ClientRpc]
+    void RpcPullPlayersTo(Vector3 bossPos)
+    {
+#if !UNITY_SERVER
+        var localId = FindAnyObjectByType<Mirror.NetworkIdentity>();
+        if (localId == null || !localId.isLocalPlayer) return;
+        var cc = localId.GetComponent<CharacterController>();
+        if (cc == null) return;
+        Vector3 dir = (bossPos - localId.transform.position).normalized;
+        cc.Move(dir * 6f);
+#endif
+    }
+
+    [ClientRpc] void RpcSpawnBarrierWall()      { /* barrier wall VFX/collider — editor step */ }
+    [ClientRpc] void RpcExplosionVfx(Vector3 p) { /* explosion particle at p */ }
+    [ClientRpc] void RpcGroundSlamVfx(Vector3 p){ /* shockwave ring at p */ }
+    [ClientRpc] void RpcLockdownVfx()           { /* red screen flash + chain VFX */ }
+    [ClientRpc] void RpcPlayDeathVfx()          { /* death sequence particle */ }
 
 #if UNITY_EDITOR
     void OnDrawGizmosSelected()
     {
-        Gizmos.color = new Color(1f, 0.4f, 0f, 0.3f);
+        Gizmos.color = new Color(1f, 0.4f, 0f, 0.25f);
         Gizmos.DrawWireSphere(transform.position, slamRadius);
-        Gizmos.color = new Color(1f, 0f, 0f, 0.2f);
+        Gizmos.color = new Color(1f, 0f, 0f, 0.15f);
         Gizmos.DrawWireSphere(transform.position, devastationRadius);
     }
 #endif

@@ -1,21 +1,22 @@
 #if !UNITY_SERVER
 using System.Collections;
+using System.Globalization;
 using UnityEngine;
 
 /// <summary>
 /// Applies timed stat effects from crafted consumable items.
 ///
 /// Effect types (match stat_bonus JSON "effect" field from items table):
-///   hp_regen      — restores {value} HP over {duration} seconds (ticks every 2s)
-///   resist_void   — reduces Null Architect void damage by {value}% for {duration}s
-///   resist_blast  — reduces Iron Warden blast damage by {value}% for {duration}s
-///   speed         — adds {value}% move speed bonus for {duration}s
-///   damage_amp    — adds {value}% outgoing damage bonus for {duration}s
+///   hp_regen      — restores {value} HP over {duration} seconds (ticks every 2 s)
+///   resist_void   — reduces void/boss damage by {value}% for {duration} s
+///   resist_blast  — reduces blast/boss damage by {value}% for {duration} s
+///   speed         — adds {value}% move speed bonus for {duration} s
+///   damage_amp    — adds {value}% outgoing damage bonus for {duration} s
 ///
 /// Usage:
 ///   ConsumableEffect.Apply("flask_hp_minor", localPlayerGO);
-///   // Reads effect metadata from InventoryManager's item catalog.
-///   // Only one effect per type can be active; reuse refreshes duration.
+///
+/// One effect per type active at a time; reusing the same type refreshes duration.
 /// </summary>
 public static class ConsumableEffect
 {
@@ -25,56 +26,56 @@ public static class ConsumableEffect
         if (catalog == null) return;
 
         var item = catalog.Get(itemId);
-        if (item == null || item.statBonus == null) return;
+        if (item?.statBonus == null) return;
 
         if (!item.statBonus.TryGetValue("effect",   out var effectRaw)) return;
         if (!item.statBonus.TryGetValue("value",    out var valueRaw))  return;
         if (!item.statBonus.TryGetValue("duration", out var durRaw))    return;
 
-        string effectType = effectRaw.ToString();
-        float  value      = float.Parse(valueRaw.ToString());
-        float  duration   = float.Parse(durRaw.ToString());
+        if (!float.TryParse(valueRaw.ToString(),    NumberStyles.Float, CultureInfo.InvariantCulture, out float value))    return;
+        if (!float.TryParse(durRaw.ToString(),      NumberStyles.Float, CultureInfo.InvariantCulture, out float duration)) return;
 
         var runner = target.GetComponent<ConsumableEffectRunner>()
                   ?? target.AddComponent<ConsumableEffectRunner>();
 
-        runner.Apply(effectType, value, duration, itemId);
+        runner.Apply(effectRaw.ToString(), value, duration);
     }
 }
 
 /// <summary>
 /// MonoBehaviour that runs active consumable coroutines on the player GameObject.
-/// One instance per player — manages all simultaneous effects.
+/// One instance per player, manages all simultaneous effects.
 /// </summary>
 public class ConsumableEffectRunner : MonoBehaviour
 {
-    // Active effect coroutines keyed by effect type so same type refreshes rather than stacks
-    System.Collections.Generic.Dictionary<string, Coroutine> _active =
+    readonly System.Collections.Generic.Dictionary<string, Coroutine> _active =
         new System.Collections.Generic.Dictionary<string, Coroutine>();
 
-    public void Apply(string effectType, float value, float duration, string itemId)
+    public void Apply(string effectType, float value, float duration)
     {
         if (_active.TryGetValue(effectType, out var existing) && existing != null)
             StopCoroutine(existing);
 
-        RodChatManager.Instance?.SystemMessage($"[BUFF] {effectType.Replace('_', ' ')} active for {duration}s");
+        string label = System.Globalization.CultureInfo.InvariantCulture
+            .TextInfo.ToTitleCase(effectType.Replace('_', ' '));
+        RodChatManager.Instance?.AddSystemMessage($"[BUFF] {label} active for {duration:F0}s");
 
         _active[effectType] = effectType switch
         {
-            "hp_regen"      => StartCoroutine(HpRegenEffect((int)value, duration)),
-            "resist_void"   => StartCoroutine(ResistEffect("void",  value, duration)),
-            "resist_blast"  => StartCoroutine(ResistEffect("blast", value, duration)),
-            "speed"         => StartCoroutine(SpeedEffect(value, duration)),
-            "damage_amp"    => StartCoroutine(DamageAmpEffect(value, duration)),
-            _               => null
+            "hp_regen"     => StartCoroutine(HpRegenEffect((int)value, duration)),
+            "resist_void"  => StartCoroutine(ResistEffect("void",  value, duration)),
+            "resist_blast" => StartCoroutine(ResistEffect("blast", value, duration)),
+            "speed"        => StartCoroutine(SpeedEffect(value, duration)),
+            "damage_amp"   => StartCoroutine(DamageAmpEffect(value, duration)),
+            _              => null
         };
     }
 
     // ── HP Regen ─────────────────────────────────────────────────────────────
     IEnumerator HpRegenEffect(int totalHeal, float duration)
     {
-        var hp   = GetComponent<HealthComponent>();
-        int ticks = Mathf.Max(1, Mathf.RoundToInt(duration / 2f));
+        var hp     = GetComponent<Health>();
+        int ticks  = Mathf.Max(1, Mathf.RoundToInt(duration / 2f));
         int perTick = Mathf.Max(1, totalHeal / ticks);
 
         for (int i = 0; i < ticks; i++)
@@ -85,8 +86,7 @@ public class ConsumableEffectRunner : MonoBehaviour
         _active.Remove("hp_regen");
     }
 
-    // ── Resist (void / blast) ─────────────────────────────────────────────────
-    // Registers with StatusEffectManager so boss damage calculations can read it
+    // ── Resist — uses Health.SetDamageReduction ───────────────────────────────
     IEnumerator ResistEffect(string damageType, float resistPct, float duration)
     {
         var sem = GetComponent<StatusEffectManager>();

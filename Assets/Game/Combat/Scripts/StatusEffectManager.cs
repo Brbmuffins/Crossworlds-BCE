@@ -142,6 +142,22 @@ public class StatusEffectManager : MonoBehaviour
 
     public List<StatusEffect> GetAll() => new List<StatusEffect>(_effects);
 
+    // Convenience wrappers used by boss controllers
+    public void ApplyRoot(float duration) =>
+        AddEffect(new StatusEffect(StatusEffectType.Bound, duration, 0f));
+
+    // Resist helpers: thin wrapper over Health.SetDamageReduction.
+    // Only one reduction value is active at a time (last write wins).
+    public void AddResist(string damageType, float fraction)
+    {
+        GetComponent<Health>()?.SetDamageReduction(fraction);
+    }
+
+    public void RemoveResist(string damageType, float fraction)
+    {
+        GetComponent<Health>()?.ClearDamageReduction();
+    }
+
     // Applies a slow (0–1 fraction) to attached PlayerMovement or EnemyAI.
     public float GetSlowFraction()
     {

@@ -40,6 +40,7 @@ public class ProfessionManager : MonoBehaviour
 
     private readonly Dictionary<int, ProfessionRecord> _professions = new();
     private bool _loaded = false;
+    public  bool IsLoaded => _loaded;
 
     // ─────────────────────────────────────────────────────────────────────────────
 
@@ -179,7 +180,7 @@ public class ProfessionManager : MonoBehaviour
                 onLevelUp?.Invoke(professionId, resp.data.skill_level);
                 string name = professionId < ProfessionNames.Length ? ProfessionNames[professionId] : $"Profession {professionId}";
                 RodChatManager.Instance?.AddSystemMessage(
-                    $"🎉 {name} reached level {resp.data.skill_level}!");
+                    $"{name} reached level {resp.data.skill_level}!");
                 Debug.Log($"[PROF] Level up! {name} → {resp.data.skill_level}");
             }
         }
