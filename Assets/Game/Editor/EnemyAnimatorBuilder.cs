@@ -32,9 +32,11 @@ public static class EnemyAnimatorBuilder
     const string OutDir   = "Assets/Game/Animations";
     const string CtrlPath = "Assets/Game/Animations/EnemyAnimController.controller";
 
-    // brbmuffins Sword Art — primary
+    // Tripo-generated clips (character-pipeline output) — highest priority
+    const string TripoGrunt = "Assets/Game/Characters/Enemies/Grunt";
+    // brbmuffins Sword Art — secondary
     const string Brb   = "Assets/brbmuffins Swords/brbmuffins Sword Art/Animations/Animations_Starter_Pack";
-    // Blink — fallback
+    // Blink — last fallback
     const string Blink = "Assets/Blink/Art/Animations";
 
     [MenuItem("BCE/Setup/4d ▶ Create Enemy AnimController", priority = 4)]
@@ -42,30 +44,36 @@ public static class EnemyAnimatorBuilder
     {
         EnsureDir(OutDir);
 
-        // ── Load clips: brbmuffins first, Blink fallback ──────────────────────────
-        AnimationClip idle     = Clip("Movement/Idle.fbx");
-        AnimationClip walk     = Clip("Movement/RunForward.fbx");   // reuse run at low speed blend
-        AnimationClip attack1H = Clip("Combat/MeleeAttack_OneHanded.fbx",
+        // ── Load clips: Tripo first, brbmuffins second, Blink fallback ───────────
+        AnimationClip idle     = TripoClip("idle")
+                              ?? Clip("Movement/Idle.fbx");
+        AnimationClip walk     = TripoClip("walk")
+                              ?? Clip("Movement/RunForward.fbx");
+        AnimationClip attack1H = TripoClip("slash")
+                              ?? Clip("Combat/MeleeAttack_OneHanded.fbx",
                                       "Combat/MeeleeAttack_OneHanded.fbx");
-        AnimationClip attack2H = Clip("Combat/MeleeAttack_TwoHanded.fbx",
-                                      "Combat/MeeleeAttack_TwoHanded.fbx");
-        AnimationClip getHit   = Clip("Combat/GetHit.fbx");
-        AnimationClip stunned  = Clip("Combat/StunnedLoop.fbx");
-        AnimationClip death    = Clip("Combat/Death.fbx");
+        AnimationClip attack2H = attack1H;    // same clip — controller just aliases it
+        AnimationClip getHit   = TripoClip("hurt")
+                              ?? Clip("Combat/GetHit.fbx");
+        AnimationClip stunned  = getHit
+                              ?? Clip("Combat/StunnedLoop.fbx");
+        AnimationClip death    = TripoClip("fall")
+                              ?? Clip("Combat/Death.fbx");
 
         if (idle == null)
         {
             Debug.LogError(
-                "[BCE] No Idle.fbx found for enemy controller.\n" +
-                "Check: " + Brb + "/Movement/Idle.fbx\n" +
-                "Or:    " + Blink + "/Movement/Idle.fbx");
+                "[BCE] No Idle clip found for enemy controller.\n" +
+                "Run BCE/Setup/4d after Tripo pipeline completes, or import:\n" +
+                "  " + Brb + "/Movement/Idle.fbx\n" +
+                "  " + Blink + "/Movement/Idle.fbx");
             return;
         }
 
         // Fallbacks
-        if (attack2H == null) attack2H = attack1H;
-        if (getHit   == null) getHit   = stunned ?? idle;
-        if (stunned  == null) stunned  = idle;
+        if (getHit == null) getHit  = idle;
+        if (stunned == null) stunned = idle;
+        if (death  == null) death   = getHit;
 
         // ── Create controller ─────────────────────────────────────────────────────
         var ctrl = AnimatorController.CreateAnimatorControllerAtPath(CtrlPath);
@@ -110,23 +118,53 @@ public static class EnemyAnimatorBuilder
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
 
-        string source = LoadClip($"{Brb}/Movement/Idle.fbx") != null ? "brbmuffins" : "Blink";
+        bool hasTripo = TripoClip("idle") != null;
+        string source = hasTripo ? "Tripo AI"
+                      : (LoadClip($"{Brb}/Movement/Idle.fbx") != null ? "brbmuffins" : "Blink");
         Debug.Log(
             $"[BCE] EnemyAnimController created ({source} clips) → {CtrlPath}\n" +
             "NEXT:\n" +
-            "1. Assign EnemyAnimController to Animator on Enemy_Grunt/Ranged/Elite prefabs.\n" +
-            "2. Set Animator → Avatar to match the enemy mesh skeleton.\n" +
-            "3. Nest enemy mesh as child of each enemy prefab.\n" +
-            "4. EnemyController already drives Speed/Attack/Death — no code changes needed.");
+            "1. Re-run BCE/Setup/4a–4c to attach Tripo meshes to enemy prefabs.\n" +
+            "2. Set Animator → Avatar to a Humanoid avatar on each enemy prefab.\n" +
+            "3. EnemyController already drives Speed/Attack/Death — no code changes needed.");
 
         EditorUtility.DisplayDialog("✅ Enemy AnimController Ready",
             $"EnemyAnimController.controller built ({source} clips).\n\n" +
             "States: Idle → Chase → Attack → GetHit → Dead\n\n" +
-            "NEXT: Assign to Enemy_Grunt / Ranged / Elite Animator components.",
+            (hasTripo
+                ? "Using Tripo AI generated animations ✅\nRe-run 4a/4b/4c to attach meshes."
+                : "Tripo clips not found — using " + source + " fallback.\nRun after Tripo pipeline completes for real animations."),
             "Done!");
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Looks for the first AnimationClip in the Tripo Grunt output subdirectory for
+    /// the given animation name (e.g. "walk", "slash"). Falls back through Ranged/Elite
+    /// in case Grunt clips haven't landed yet.
+    /// </summary>
+    static AnimationClip TripoClip(string animName)
+    {
+        string[] enemyDirs = { TripoGrunt,
+            "Assets/Game/Characters/Enemies/Ranged",
+            "Assets/Game/Characters/Enemies/Elite" };
+
+        foreach (string baseDir in enemyDirs)
+        {
+            string subDir = $"{baseDir}/{animName}";
+            if (!AssetDatabase.IsValidFolder(subDir)) continue;
+
+            string[] guids = AssetDatabase.FindAssets("t:Model", new[] { subDir });
+            foreach (string guid in guids)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                var clip = LoadClip(path);
+                if (clip != null) return clip;
+            }
+        }
+        return null;
+    }
 
     static AnimationClip Clip(string relativePath, string blinkOverridePath = null)
     {
