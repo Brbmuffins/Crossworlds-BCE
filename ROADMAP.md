@@ -33,7 +33,13 @@ conversation: it names its files, acceptance criteria, and dependencies. Tasks m
 > objects + geography/wisps both kept), headless Linux server build SUCCEEDS via
 > `tools/build-server.ps1` (Unity 6000.4.10f1, IL2CPP, 1.9GB) — this also
 > build-verified all C# changes. Deploy via `tools/deploy-server.sh`.
-> **Blocked on owner auth:** `git push` (16+ commits ahead) and `git lfs pull`
+> **2.1 ✅ / 2.2 ✅ / 2.3 ✅ (2026-07-03):** ServerConfig, SceneNames, ApiContractTests — all
+> IP literals and scene-name strings centralized; contract test menu item added.
+> **1.3 session wiring ✅ / 1.5 ✅ (2026-07-03):** WaveSpawner and HubReturnTrigger wired
+> to ArenaSessionController; GmConsole and all client-only UI/Systems scripts guarded with
+> `#if !UNITY_SERVER` (InventoryManager, FloatingDamageText, plus 8 UI files committed
+> earlier). AbilityCaster FloatingDamageText call-sites individually guarded.
+> **Blocked on owner auth:** `git push` (local main ~40+ commits ahead) and `git lfs pull`
 > (2 missing objects: Wisp_Mob.prefab, grass.png) need interactive GitHub auth —
 > push/fetch in GitHub Desktop, run `git lfs pull`, then rebuild for the real
 > deploy artifact.

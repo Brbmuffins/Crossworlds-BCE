@@ -1,3 +1,4 @@
+#if !UNITY_SERVER
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -154,4 +155,5 @@ public static class AuthManager
     public static string Token       { get; set; } = "";
     public static int    CharacterId { get; set; } = 0;
 }
+#endif
 #endif

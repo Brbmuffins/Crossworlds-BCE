@@ -1,3 +1,4 @@
+#if !UNITY_SERVER
 using System.Collections;
 using UnityEngine;
 
@@ -223,3 +224,4 @@ internal class DmgTextBillboard : MonoBehaviour
             cam.transform.up);
     }
 }
+#endif

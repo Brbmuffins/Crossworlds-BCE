@@ -872,8 +872,10 @@ public class AbilityCaster : NetworkBehaviour
                 StartCoroutine(OverdriveCDRBuff(cs, duration));
 
             // HYMN floating text on each ally
+#if !UNITY_SERVER
             FloatingDamageText.Spawn(col.transform.position + Vector3.up * 1.8f,
                 0f, FloatingDamageText.DamageType.Shield, "HYMN");
+#endif
 
             // Buff VFX on each ally
             if (ability.castVFX != null)
@@ -931,8 +933,10 @@ public class AbilityCaster : NetworkBehaviour
             Health h = col.GetComponent<Health>();
             if (h == null || h == _health) continue;
             h.Heal(healAmt);
+#if !UNITY_SERVER
             FloatingDamageText.Spawn(col.transform.position + Vector3.up * 1.5f,
                 healAmt, FloatingDamageText.DamageType.Heal);
+#endif
             col.GetComponent<StatusEffectManager>()?.RemoveAll();   // clears 1 debuff
             if (ability.hitVFX != null)
                 SpawnVFX(ability.hitVFX, col.transform.position + Vector3.up, Quaternion.identity);
@@ -1141,8 +1145,10 @@ public class AbilityCaster : NetworkBehaviour
             if (h != null && h.IsDowned)
             {
                 h.Revive(0.30f);
+#if !UNITY_SERVER
                 FloatingDamageText.Spawn(col.transform.position + Vector3.up * 1.5f,
                     0f, FloatingDamageText.DamageType.Heal, "REVIVED");
+#endif
                 if (ability.hitVFX != null)
                     SpawnVFX(ability.hitVFX, col.transform.position + Vector3.up, Quaternion.identity);
                 return;
@@ -1173,8 +1179,10 @@ public class AbilityCaster : NetworkBehaviour
             Health h = col.GetComponent<Health>();
             if (h == null) continue;
             h.ApplyShield(20f);
+#if !UNITY_SERVER
             FloatingDamageText.Spawn(col.transform.position + Vector3.up * 1.8f,
                 20f, FloatingDamageText.DamageType.Shield);
+#endif
             // Subscribe to grow shield on each hit for 8s
             StartCoroutine(AdaptiveShieldRoutine(h, 8f));
             return;
@@ -1188,8 +1196,10 @@ public class AbilityCaster : NetworkBehaviour
         {
             const float shieldGrowth = 10f;
             target.GrowShield(shieldGrowth);
+#if !UNITY_SERVER
             FloatingDamageText.Spawn(target.transform.position + Vector3.up * 1.8f,
                 shieldGrowth, FloatingDamageText.DamageType.Shield);
+#endif
         }
         target.onDamageTaken.AddListener(OnHit);
         while (Time.time < expiry) yield return null;
@@ -1203,8 +1213,10 @@ public class AbilityCaster : NetworkBehaviour
         {
             if (!col.CompareTag("Player")) continue;
             col.GetComponent<StatusEffectManager>()?.RemoveAll();
+#if !UNITY_SERVER
             FloatingDamageText.Spawn(col.transform.position + Vector3.up * 1.5f,
                 0f, FloatingDamageText.DamageType.TriageReturn, "CLEANSED");
+#endif
             return;
         }
     }
