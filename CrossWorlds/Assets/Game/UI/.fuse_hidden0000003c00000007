@@ -1,0 +1,686 @@
+// COPY TO: Assets/Game/UI/GuildPanelUI.cs
+#if !UNITY_SERVER
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UI;
+using UnityEngine.Networking;
+using TMPro;
+
+/// <summary>
+/// GuildPanelUI — G key toggle. Two views: No-Guild (create/search) and Guild (roster/MOTD).
+/// Self-bootstrapping, DontDestroyOnLoad.
+///
+/// Endpoints:
+///   GET  /api/guilds/my/:characterId         — { guildId, name, tag, motd, members:[] }
+///   POST /api/guilds/create                  — { characterId, name, tag }
+///   GET  /api/guilds/search?name=X           — [{ id, name, tag, memberCount }]
+///   POST /api/guilds/join                    — { characterId, guildId }
+///   POST /api/guilds/leave                   — { characterId }
+///   POST /api/guilds/motd                    — { characterId, motd }  (leader only)
+///   POST /api/guilds/kick                    — { characterId, targetCharacterId }
+/// </summary>
+public class GuildPanelUI : MonoBehaviour
+{
+    public static GuildPanelUI Instance { get; private set; }
+
+    // ── Bootstrap ─────────────────────────────────────────────────────────────
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+    static void Bootstrap()
+    {
+        if (Instance != null) return;
+        var go = new GameObject("[GuildPanelUI]");
+        DontDestroyOnLoad(go);
+        Instance = go.AddComponent<GuildPanelUI>();
+    }
+
+    // ── State ─────────────────────────────────────────────────────────────────
+    private bool       _open        = false;
+    private int        _characterId = 0;
+    private GuildData  _myGuild     = null; // null if not in a guild
+
+    // ── Views ─────────────────────────────────────────────────────────────────
+    private Canvas      _canvas;
+    private CanvasGroup _cg;
+
+    // No-guild view
+    private GameObject _noGuildView;
+    private TMP_InputField _createNameInput, _createTagInput, _searchInput;
+    private TextMeshProUGUI _createError, _searchError;
+    private Transform  _searchResults;
+
+    // Guild view
+    private GameObject _guildView;
+    private TextMeshProUGUI _guildTitle, _guildTag, _motdLabel;
+    private TMP_InputField  _motdInput;
+    private GameObject      _motdEdit; // only visible to leader
+    private Transform       _rosterContent;
+    private TextMeshProUGUI _guildViewError;
+
+    string ServerUrl => $"http://{PlayerPrefs.GetString("serverIP", "localhost")}:3000";
+    string Token     => PlayerPrefs.GetString("jwt_token", "");
+
+    // ── Lifecycle ─────────────────────────────────────────────────────────────
+    void Awake() => BuildUI();
+
+    void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.G) && !IsTypingInUI())
+            Toggle();
+    }
+
+    bool IsTypingInUI()
+    {
+        var sel = UnityEngine.EventSystems.EventSystem.current?.currentSelectedGameObject;
+        return sel != null && sel.GetComponent<TMP_InputField>() != null;
+    }
+
+    // ── Open / Close ──────────────────────────────────────────────────────────
+    void Toggle()
+    {
+        _open = !_open;
+        if (_open) OpenPanel();
+        else       ClosePanel();
+    }
+
+    void OpenPanel()
+    {
+        _characterId = PlayerPrefs.GetInt("SelectedCharacter", 0);
+        _cg.alpha = 1f; _cg.interactable = true; _cg.blocksRaycasts = true;
+        StartCoroutine(FetchMyGuild());
+    }
+
+    void ClosePanel()
+    {
+        _cg.alpha = 0f; _cg.interactable = false; _cg.blocksRaycasts = false;
+    }
+
+    // ── Fetch guild membership ────────────────────────────────────────────────
+    IEnumerator FetchMyGuild()
+    {
+        using var req = UnityWebRequest.Get($"{ServerUrl}/api/guilds/my/{_characterId}");
+        req.SetRequestHeader("Authorization", $"Bearer {Token}");
+        yield return req.SendWebRequest();
+
+        if (req.result != UnityWebRequest.Result.Success)
+        {
+            ShowNoGuildView();
+            yield break;
+        }
+
+        var resp = JsonUtility.FromJson<MyGuildResponse>(req.downloadHandler.text);
+        if (!resp.success || resp.data == null)
+        {
+            _myGuild = null;
+            ShowNoGuildView();
+        }
+        else
+        {
+            _myGuild = resp.data;
+            ShowGuildView();
+        }
+    }
+
+    // ── No-guild view ─────────────────────────────────────────────────────────
+    void ShowNoGuildView()
+    {
+        _noGuildView.SetActive(true);
+        _guildView.SetActive(false);
+        ClearSearchResults();
+    }
+
+    void ClearSearchResults()
+    {
+        foreach (Transform t in _searchResults) Destroy(t.gameObject);
+    }
+
+    IEnumerator CreateGuild()
+    {
+        string name = _createNameInput.text.Trim();
+        string tag  = _createTagInput.text.Trim().ToUpper();
+        if (string.IsNullOrEmpty(name) || string.IsNullOrEmpty(tag))
+        { _createError.text = "Name and tag required."; yield break; }
+        if (tag.Length > 5)
+        { _createError.text = "Tag max 5 characters."; yield break; }
+
+        _createError.text = "Creating...";
+        var body = JsonUtility.ToJson(new CreateGuildRequest { characterId = _characterId, name = name, tag = tag });
+        using var req = new UnityWebRequest($"{ServerUrl}/api/guilds/create", "POST");
+        req.uploadHandler   = new UploadHandlerRaw(System.Text.Encoding.UTF8.GetBytes(body));
+        req.downloadHandler = new DownloadHandlerBuffer();
+        req.SetRequestHeader("Content-Type", "application/json");
+        req.SetRequestHeader("Authorization", $"Bearer {Token}");
+        yield return req.SendWebRequest();
+
+        if (req.result != UnityWebRequest.Result.Success) { _createError.text = req.error; yield break; }
+        var resp = JsonUtility.FromJson<GenericResponse>(req.downloadHandler.text);
+        if (!resp.success) { _createError.text = resp.error; yield break; }
+
+        _createError.text = "";
+        yield return StartCoroutine(FetchMyGuild());
+    }
+
+    IEnumerator SearchGuilds()
+    {
+        string query = _searchInput.text.Trim();
+        if (string.IsNullOrEmpty(query)) { _searchError.text = "Enter a name to search."; yield break; }
+        _searchError.text = "Searching...";
+        ClearSearchResults();
+
+        using var req = UnityWebRequest.Get($"{ServerUrl}/api/guilds/search?name={UnityWebRequest.EscapeURL(query)}");
+        req.SetRequestHeader("Authorization", $"Bearer {Token}");
+        yield return req.SendWebRequest();
+
+        if (req.result != UnityWebRequest.Result.Success) { _searchError.text = req.error; yield break; }
+        var resp = JsonUtility.FromJson<SearchGuildsResponse>(req.downloadHandler.text);
+        if (!resp.success) { _searchError.text = resp.error; yield break; }
+        _searchError.text = "";
+
+        if (resp.data == null || resp.data.Length == 0)
+        { _searchError.text = "No guilds found."; yield break; }
+
+        foreach (var g in resp.data)
+            AddSearchResultRow(g);
+    }
+
+    void AddSearchResultRow(GuildSummary g)
+    {
+        var row = new GameObject($"Guild_{g.id}");
+        row.transform.SetParent(_searchResults, false);
+        var le = row.AddComponent<LayoutElement>(); le.minHeight = 40f;
+        row.AddComponent<Image>().color = new Color(0.08f, 0.1f, 0.14f);
+
+        var lbl = new GameObject("Label"); lbl.transform.SetParent(row.transform, false);
+        StretchFull(lbl);
+        var rr = lbl.GetComponent<RectTransform>();
+        rr.offsetMin = new Vector2(6f, 2f); rr.offsetMax = new Vector2(-80f, -2f);
+        var txt = lbl.AddComponent<TextMeshProUGUI>();
+        txt.text = $"[{g.tag}] {g.name}  ({g.memberCount} members)";
+        txt.fontSize = 11f; txt.color = Color.white;
+
+        var joinGO = new GameObject("Join"); joinGO.transform.SetParent(row.transform, false);
+        var jr = joinGO.AddComponent<RectTransform>();
+        jr.anchorMin = new Vector2(1f, 0.1f); jr.anchorMax = new Vector2(1f, 0.9f);
+        jr.pivot = new Vector2(1f, 0.5f);
+        jr.offsetMin = new Vector2(-74f, 0f); jr.offsetMax = new Vector2(-2f, 0f);
+        joinGO.AddComponent<Image>().color = new Color(0.15f, 0.35f, 0.5f);
+        var joinBtn = joinGO.AddComponent<Button>();
+        int capturedId = g.id;
+        joinBtn.onClick.AddListener(() => StartCoroutine(JoinGuild(capturedId)));
+        var jtGO = new GameObject("L"); jtGO.transform.SetParent(joinGO.transform, false);
+        StretchFull(jtGO);
+        var jt = jtGO.AddComponent<TextMeshProUGUI>();
+        jt.text = "Join"; jt.fontSize = 10f;
+        jt.color = Color.white; jt.alignment = TextAlignmentOptions.Center;
+    }
+
+    IEnumerator JoinGuild(int guildId)
+    {
+        var body = JsonUtility.ToJson(new JoinRequest { characterId = _characterId, guildId = guildId });
+        using var req = new UnityWebRequest($"{ServerUrl}/api/guilds/join", "POST");
+        req.uploadHandler   = new UploadHandlerRaw(System.Text.Encoding.UTF8.GetBytes(body));
+        req.downloadHandler = new DownloadHandlerBuffer();
+        req.SetRequestHeader("Content-Type", "application/json");
+        req.SetRequestHeader("Authorization", $"Bearer {Token}");
+        yield return req.SendWebRequest();
+
+        if (req.result != UnityWebRequest.Result.Success) { _searchError.text = req.error; yield break; }
+        var resp = JsonUtility.FromJson<GenericResponse>(req.downloadHandler.text);
+        if (!resp.success) { _searchError.text = resp.error; yield break; }
+
+        yield return StartCoroutine(FetchMyGuild());
+    }
+
+    // ── Guild view ────────────────────────────────────────────────────────────
+    void ShowGuildView()
+    {
+        _noGuildView.SetActive(false);
+        _guildView.SetActive(true);
+        _guildViewError.text = "";
+
+        _guildTitle.text = _myGuild.name;
+        _guildTag.text   = $"[{_myGuild.tag}]";
+        _motdLabel.text  = string.IsNullOrEmpty(_myGuild.motd) ? "No MOTD set." : _myGuild.motd;
+        _motdInput.text  = _myGuild.motd ?? "";
+
+        bool isLeader = _myGuild.myRole == "leader";
+        _motdEdit.SetActive(isLeader);
+
+        RebuildRoster();
+    }
+
+    void RebuildRoster()
+    {
+        foreach (Transform t in _rosterContent) Destroy(t.gameObject);
+        if (_myGuild.members == null) return;
+
+        bool isLeader = _myGuild.myRole == "leader";
+        foreach (var m in _myGuild.members)
+        {
+            var row = new GameObject($"Member_{m.characterId}");
+            row.transform.SetParent(_rosterContent, false);
+            var le = row.AddComponent<LayoutElement>(); le.minHeight = 34f;
+            row.AddComponent<Image>().color = new Color(0.07f, 0.09f, 0.12f);
+
+            var lbl = new GameObject("Label"); lbl.transform.SetParent(row.transform, false);
+            StretchFull(lbl);
+            var rr = lbl.GetComponent<RectTransform>();
+            rr.offsetMin = new Vector2(6f, 2f); rr.offsetMax = new Vector2(isLeader && m.role != "leader" ? -70f : -6f, -2f);
+            var txt = lbl.AddComponent<TextMeshProUGUI>();
+            string roleTag = m.role == "leader" ? " ★" : "";
+            txt.text = $"{m.characterName}{roleTag}  Lv{m.level}";
+            txt.fontSize = 11f;
+            txt.color = m.role == "leader" ? new Color(1f, 0.85f, 0.2f) : Color.white;
+
+            // Kick button (leader only, not on self)
+            if (isLeader && m.role != "leader")
+            {
+                var kickGO = new GameObject("Kick"); kickGO.transform.SetParent(row.transform, false);
+                var kr = kickGO.AddComponent<RectTransform>();
+                kr.anchorMin = new Vector2(1f, 0.1f); kr.anchorMax = new Vector2(1f, 0.9f);
+                kr.pivot = new Vector2(1f, 0.5f);
+                kr.offsetMin = new Vector2(-64f, 0f); kr.offsetMax = new Vector2(-2f, 0f);
+                kickGO.AddComponent<Image>().color = new Color(0.5f, 0.1f, 0.1f);
+                var kickBtn = kickGO.AddComponent<Button>();
+                int capturedId = m.characterId;
+                kickBtn.onClick.AddListener(() => StartCoroutine(KickMember(capturedId)));
+                var ktGO = new GameObject("L"); ktGO.transform.SetParent(kickGO.transform, false);
+                StretchFull(ktGO);
+                var kt = ktGO.AddComponent<TextMeshProUGUI>();
+                kt.text = "Kick"; kt.fontSize = 9f;
+                kt.color = Color.white; kt.alignment = TextAlignmentOptions.Center;
+            }
+        }
+    }
+
+    IEnumerator SaveMotd()
+    {
+        string motd = _motdInput.text.Trim();
+        var body = JsonUtility.ToJson(new MotdRequest { characterId = _characterId, motd = motd });
+        using var req = new UnityWebRequest($"{ServerUrl}/api/guilds/motd", "POST");
+        req.uploadHandler   = new UploadHandlerRaw(System.Text.Encoding.UTF8.GetBytes(body));
+        req.downloadHandler = new DownloadHandlerBuffer();
+        req.SetRequestHeader("Content-Type", "application/json");
+        req.SetRequestHeader("Authorization", $"Bearer {Token}");
+        yield return req.SendWebRequest();
+
+        if (req.result != UnityWebRequest.Result.Success) { _guildViewError.text = req.error; yield break; }
+        var resp = JsonUtility.FromJson<GenericResponse>(req.downloadHandler.text);
+        if (!resp.success) { _guildViewError.text = resp.error; yield break; }
+
+        _motdLabel.text = motd;
+        _guildViewError.text = "MOTD saved.";
+    }
+
+    IEnumerator LeaveGuild()
+    {
+        var body = JsonUtility.ToJson(new LeaveRequest { characterId = _characterId });
+        using var req = new UnityWebRequest($"{ServerUrl}/api/guilds/leave", "POST");
+        req.uploadHandler   = new UploadHandlerRaw(System.Text.Encoding.UTF8.GetBytes(body));
+        req.downloadHandler = new DownloadHandlerBuffer();
+        req.SetRequestHeader("Content-Type", "application/json");
+        req.SetRequestHeader("Authorization", $"Bearer {Token}");
+        yield return req.SendWebRequest();
+
+        if (req.result != UnityWebRequest.Result.Success) { _guildViewError.text = req.error; yield break; }
+        var resp = JsonUtility.FromJson<GenericResponse>(req.downloadHandler.text);
+        if (!resp.success) { _guildViewError.text = resp.error; yield break; }
+
+        _myGuild = null;
+        ShowNoGuildView();
+    }
+
+    IEnumerator KickMember(int targetId)
+    {
+        var body = JsonUtility.ToJson(new KickRequest { characterId = _characterId, targetCharacterId = targetId });
+        using var req = new UnityWebRequest($"{ServerUrl}/api/guilds/kick", "POST");
+        req.uploadHandler   = new UploadHandlerRaw(System.Text.Encoding.UTF8.GetBytes(body));
+        req.downloadHandler = new DownloadHandlerBuffer();
+        req.SetRequestHeader("Content-Type", "application/json");
+        req.SetRequestHeader("Authorization", $"Bearer {Token}");
+        yield return req.SendWebRequest();
+
+        if (req.result != UnityWebRequest.Result.Success) { _guildViewError.text = req.error; yield break; }
+        var resp = JsonUtility.FromJson<GenericResponse>(req.downloadHandler.text);
+        if (!resp.success) { _guildViewError.text = resp.error; yield break; }
+
+        yield return StartCoroutine(FetchMyGuild());
+    }
+
+    // ── UI builder ────────────────────────────────────────────────────────────
+    void BuildUI()
+    {
+        _canvas = gameObject.AddComponent<Canvas>();
+        _canvas.renderMode  = RenderMode.ScreenSpaceOverlay;
+        _canvas.sortingOrder = 115;
+        gameObject.AddComponent<CanvasScaler>().uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        gameObject.AddComponent<GraphicRaycaster>();
+
+        var root = new GameObject("GuildRoot");
+        root.transform.SetParent(transform, false);
+        var rootRect = root.AddComponent<RectTransform>();
+        rootRect.anchorMin = new Vector2(0.3f, 0.1f);
+        rootRect.anchorMax = new Vector2(0.7f, 0.92f);
+        rootRect.offsetMin = rootRect.offsetMax = Vector2.zero;
+
+        _cg = root.AddComponent<CanvasGroup>();
+        _cg.alpha = 0f; _cg.interactable = false; _cg.blocksRaycasts = false;
+        root.AddComponent<Image>().color = new Color(0.05f, 0.06f, 0.09f, 0.97f);
+
+        // Title bar
+        var titleGO = new GameObject("Title"); titleGO.transform.SetParent(root.transform, false);
+        var tRect = titleGO.AddComponent<RectTransform>();
+        tRect.anchorMin = new Vector2(0f, 0.93f); tRect.anchorMax = Vector2.one;
+        tRect.offsetMin = tRect.offsetMax = Vector2.zero;
+        var tTxt = titleGO.AddComponent<TextMeshProUGUI>();
+        tTxt.text = "GUILD"; tTxt.fontSize = 16f; tTxt.fontStyle = FontStyles.Bold;
+        tTxt.color = Color.white; tTxt.alignment = TextAlignmentOptions.Center;
+
+        // Build both sub-views
+        BuildNoGuildView(root.transform);
+        BuildGuildView(root.transform);
+
+        _noGuildView.SetActive(false);
+        _guildView.SetActive(false);
+    }
+
+    void BuildNoGuildView(Transform parent)
+    {
+        _noGuildView = new GameObject("NoGuildView");
+        _noGuildView.transform.SetParent(parent, false);
+        StretchInBounds(_noGuildView, 0f, 0f, 1f, 0.93f);
+
+        float y = 0.92f;
+
+        // ── Create section ────────────────────────────────────────────────────
+        AddSectionHeader(_noGuildView.transform, "Create a Guild", ref y, 0.06f);
+
+        _createNameInput = AddInputField(_noGuildView.transform, "Guild Name", ref y, 0.08f);
+        _createTagInput  = AddInputField(_noGuildView.transform, "Tag (3-5 chars)", ref y, 0.08f);
+
+        var createBtn = AddButton(_noGuildView.transform, "Create Guild", new Color(0.1f, 0.35f, 0.15f), ref y, 0.08f);
+        createBtn.onClick.AddListener(() => StartCoroutine(CreateGuild()));
+
+        _createError = AddErrorLabel(_noGuildView.transform, ref y, 0.05f);
+
+        y -= 0.04f;
+
+        // ── Search section ────────────────────────────────────────────────────
+        AddSectionHeader(_noGuildView.transform, "Find a Guild", ref y, 0.06f);
+
+        var searchRow = new GameObject("SearchRow"); searchRow.transform.SetParent(_noGuildView.transform, false);
+        StretchInBounds(searchRow, 0.02f, y - 0.08f, 0.98f, y);
+        y -= 0.09f;
+
+        var searchInputGO = new GameObject("SearchInput"); searchInputGO.transform.SetParent(searchRow.transform, false);
+        var siRect = searchInputGO.AddComponent<RectTransform>();
+        siRect.anchorMin = Vector2.zero; siRect.anchorMax = new Vector2(0.72f, 1f);
+        siRect.offsetMin = siRect.offsetMax = Vector2.zero;
+        searchInputGO.AddComponent<Image>().color = new Color(0.12f, 0.13f, 0.18f);
+        _searchInput = searchInputGO.AddComponent<TMP_InputField>();
+        var siPlaceholder = new GameObject("Placeholder"); siPlaceholder.transform.SetParent(searchInputGO.transform, false);
+        StretchFull(siPlaceholder); siPlaceholder.GetComponent<RectTransform>().offsetMin = new Vector2(4f, 2f);
+        var siPTxt = siPlaceholder.AddComponent<TextMeshProUGUI>();
+        siPTxt.text = "Guild name..."; siPTxt.fontSize = 11f; siPTxt.color = new Color(0.4f, 0.4f, 0.4f);
+        _searchInput.placeholder = siPTxt;
+        var siText = new GameObject("Text"); siText.transform.SetParent(searchInputGO.transform, false);
+        StretchFull(siText); siText.GetComponent<RectTransform>().offsetMin = new Vector2(4f, 2f);
+        var siTxt = siText.AddComponent<TextMeshProUGUI>();
+        siTxt.fontSize = 11f; siTxt.color = Color.white;
+        _searchInput.textComponent = siTxt;
+
+        var goBtn = new GameObject("GoBtn"); goBtn.transform.SetParent(searchRow.transform, false);
+        var gbRect = goBtn.AddComponent<RectTransform>();
+        gbRect.anchorMin = new Vector2(0.74f, 0f); gbRect.anchorMax = Vector2.one;
+        gbRect.offsetMin = gbRect.offsetMax = Vector2.zero;
+        goBtn.AddComponent<Image>().color = new Color(0.15f, 0.35f, 0.5f);
+        var goButton = goBtn.AddComponent<Button>();
+        goButton.onClick.AddListener(() => StartCoroutine(SearchGuilds()));
+        var goBtnLbl = new GameObject("L"); goBtnLbl.transform.SetParent(goBtn.transform, false);
+        StretchFull(goBtnLbl);
+        var goBtnTxt = goBtnLbl.AddComponent<TextMeshProUGUI>();
+        goBtnTxt.text = "Search"; goBtnTxt.fontSize = 10f;
+        goBtnTxt.color = Color.white; goBtnTxt.alignment = TextAlignmentOptions.Center;
+
+        _searchError = AddErrorLabel(_noGuildView.transform, ref y, 0.05f);
+
+        // Search results scroll area
+        var scrollGO = new GameObject("SearchScroll"); scrollGO.transform.SetParent(_noGuildView.transform, false);
+        StretchInBounds(scrollGO, 0.01f, 0f, 0.99f, y);
+
+        var scrollRect = scrollGO.AddComponent<ScrollRect>();
+        scrollRect.horizontal = false;
+        var vp = new GameObject("VP"); vp.transform.SetParent(scrollGO.transform, false);
+        StretchFull(vp); vp.AddComponent<Image>().color = Color.clear;
+        vp.AddComponent<Mask>().showMaskGraphic = false;
+        scrollRect.viewport = vp.GetComponent<RectTransform>();
+
+        var content = new GameObject("Content"); content.transform.SetParent(vp.transform, false);
+        var cRect = content.AddComponent<RectTransform>();
+        cRect.anchorMin = new Vector2(0f, 1f); cRect.anchorMax = Vector2.one;
+        cRect.pivot = new Vector2(0.5f, 1f); cRect.offsetMin = cRect.offsetMax = Vector2.zero;
+        var vlg = content.AddComponent<VerticalLayoutGroup>();
+        vlg.spacing = 3f; vlg.childControlWidth = true; vlg.childForceExpandWidth = true; vlg.childControlHeight = false;
+        content.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+        scrollRect.content = cRect;
+        _searchResults = content.transform;
+    }
+
+    void BuildGuildView(Transform parent)
+    {
+        _guildView = new GameObject("GuildView");
+        _guildView.transform.SetParent(parent, false);
+        StretchInBounds(_guildView, 0f, 0f, 1f, 0.93f);
+
+        // Header: [TAG] GuildName
+        var tagGO = new GameObject("Tag"); tagGO.transform.SetParent(_guildView.transform, false);
+        StretchInBounds(tagGO, 0.02f, 0.87f, 0.2f, 0.93f);
+        _guildTag = tagGO.AddComponent<TextMeshProUGUI>();
+        _guildTag.fontSize = 12f; _guildTag.color = new Color(0.8f, 0.75f, 0.3f);
+        _guildTag.fontStyle = FontStyles.Bold; _guildTag.alignment = TextAlignmentOptions.Center;
+
+        var nameGO = new GameObject("Name"); nameGO.transform.SetParent(_guildView.transform, false);
+        StretchInBounds(nameGO, 0.22f, 0.87f, 0.98f, 0.93f);
+        _guildTitle = nameGO.AddComponent<TextMeshProUGUI>();
+        _guildTitle.fontSize = 14f; _guildTitle.color = Color.white; _guildTitle.fontStyle = FontStyles.Bold;
+
+        // MOTD display
+        var motdBg = new GameObject("MotdBg"); motdBg.transform.SetParent(_guildView.transform, false);
+        StretchInBounds(motdBg, 0.02f, 0.77f, 0.98f, 0.87f);
+        motdBg.AddComponent<Image>().color = new Color(0.07f, 0.09f, 0.12f);
+        var motdLblGO = new GameObject("MotdLabel"); motdLblGO.transform.SetParent(motdBg.transform, false);
+        StretchFull(motdLblGO);
+        motdLblGO.GetComponent<RectTransform>().offsetMin = new Vector2(4f, 2f);
+        _motdLabel = motdLblGO.AddComponent<TextMeshProUGUI>();
+        _motdLabel.fontSize = 9f; _motdLabel.color = new Color(0.75f, 0.75f, 0.75f);
+        _motdLabel.fontStyle = FontStyles.Italic;
+
+        // MOTD edit (leader only)
+        _motdEdit = new GameObject("MotdEdit"); _motdEdit.transform.SetParent(_guildView.transform, false);
+        StretchInBounds(_motdEdit, 0.02f, 0.68f, 0.98f, 0.77f);
+
+        var motdInputGO = new GameObject("Input"); motdInputGO.transform.SetParent(_motdEdit.transform, false);
+        var miRect = motdInputGO.AddComponent<RectTransform>();
+        miRect.anchorMin = Vector2.zero; miRect.anchorMax = new Vector2(0.74f, 1f);
+        miRect.offsetMin = miRect.offsetMax = Vector2.zero;
+        motdInputGO.AddComponent<Image>().color = new Color(0.12f, 0.13f, 0.18f);
+        _motdInput = motdInputGO.AddComponent<TMP_InputField>();
+        var miPh = new GameObject("PH"); miPh.transform.SetParent(motdInputGO.transform, false);
+        StretchFull(miPh); miPh.GetComponent<RectTransform>().offsetMin = new Vector2(4f, 2f);
+        var miPhTxt = miPh.AddComponent<TextMeshProUGUI>();
+        miPhTxt.text = "Set MOTD..."; miPhTxt.fontSize = 10f; miPhTxt.color = new Color(0.4f, 0.4f, 0.4f);
+        _motdInput.placeholder = miPhTxt;
+        var miTxtGO = new GameObject("Text"); miTxtGO.transform.SetParent(motdInputGO.transform, false);
+        StretchFull(miTxtGO); miTxtGO.GetComponent<RectTransform>().offsetMin = new Vector2(4f, 2f);
+        var miTxt = miTxtGO.AddComponent<TextMeshProUGUI>();
+        miTxt.fontSize = 10f; miTxt.color = Color.white;
+        _motdInput.textComponent = miTxt;
+
+        var saveMotdGO = new GameObject("SaveMotd"); saveMotdGO.transform.SetParent(_motdEdit.transform, false);
+        var smRect = saveMotdGO.AddComponent<RectTransform>();
+        smRect.anchorMin = new Vector2(0.76f, 0f); smRect.anchorMax = Vector2.one;
+        smRect.offsetMin = smRect.offsetMax = Vector2.zero;
+        saveMotdGO.AddComponent<Image>().color = new Color(0.15f, 0.35f, 0.5f);
+        var smBtn = saveMotdGO.AddComponent<Button>();
+        smBtn.onClick.AddListener(() => StartCoroutine(SaveMotd()));
+        var smLbl = new GameObject("L"); smLbl.transform.SetParent(saveMotdGO.transform, false);
+        StretchFull(smLbl);
+        var smTxt = smLbl.AddComponent<TextMeshProUGUI>();
+        smTxt.text = "Set MOTD"; smTxt.fontSize = 9f;
+        smTxt.color = Color.white; smTxt.alignment = TextAlignmentOptions.Center;
+
+        // Roster header
+        var rosterHdrGO = new GameObject("RosterHdr"); rosterHdrGO.transform.SetParent(_guildView.transform, false);
+        StretchInBounds(rosterHdrGO, 0.02f, 0.62f, 0.98f, 0.67f);
+        var rhTxt = rosterHdrGO.AddComponent<TextMeshProUGUI>();
+        rhTxt.text = "MEMBERS"; rhTxt.fontSize = 11f; rhTxt.fontStyle = FontStyles.Bold;
+        rhTxt.color = new Color(0.6f, 0.6f, 0.6f);
+
+        // Roster scroll
+        var rosterScroll = new GameObject("RosterScroll"); rosterScroll.transform.SetParent(_guildView.transform, false);
+        StretchInBounds(rosterScroll, 0.02f, 0.12f, 0.98f, 0.62f);
+        var rsr = rosterScroll.AddComponent<ScrollRect>(); rsr.horizontal = false;
+        var rvp = new GameObject("VP"); rvp.transform.SetParent(rosterScroll.transform, false);
+        StretchFull(rvp); rvp.AddComponent<Image>().color = Color.clear;
+        rvp.AddComponent<Mask>().showMaskGraphic = false;
+        rsr.viewport = rvp.GetComponent<RectTransform>();
+        var rContent = new GameObject("Content"); rContent.transform.SetParent(rvp.transform, false);
+        var rcRect = rContent.AddComponent<RectTransform>();
+        rcRect.anchorMin = new Vector2(0f, 1f); rcRect.anchorMax = Vector2.one;
+        rcRect.pivot = new Vector2(0.5f, 1f); rcRect.offsetMin = rcRect.offsetMax = Vector2.zero;
+        var rvlg = rContent.AddComponent<VerticalLayoutGroup>();
+        rvlg.spacing = 2f; rvlg.childControlWidth = true; rvlg.childForceExpandWidth = true; rvlg.childControlHeight = false;
+        rContent.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+        rsr.content = rcRect;
+        _rosterContent = rContent.transform;
+
+        // Error label
+        var errGO = new GameObject("Error"); errGO.transform.SetParent(_guildView.transform, false);
+        StretchInBounds(errGO, 0.02f, 0.07f, 0.98f, 0.12f);
+        _guildViewError = errGO.AddComponent<TextMeshProUGUI>();
+        _guildViewError.fontSize = 9f; _guildViewError.color = new Color(1f, 0.4f, 0.4f);
+        _guildViewError.alignment = TextAlignmentOptions.Center;
+
+        // Leave button
+        var leaveGO = new GameObject("LeaveBtn"); leaveGO.transform.SetParent(_guildView.transform, false);
+        StretchInBounds(leaveGO, 0.3f, 0.01f, 0.7f, 0.07f);
+        leaveGO.AddComponent<Image>().color = new Color(0.45f, 0.1f, 0.1f);
+        var leaveBtn = leaveGO.AddComponent<Button>();
+        leaveBtn.onClick.AddListener(() => StartCoroutine(LeaveGuild()));
+        var leaveLblGO = new GameObject("L"); leaveLblGO.transform.SetParent(leaveGO.transform, false);
+        StretchFull(leaveLblGO);
+        var leaveLbl = leaveLblGO.AddComponent<TextMeshProUGUI>();
+        leaveLbl.text = "Leave Guild"; leaveLbl.fontSize = 10f;
+        leaveLbl.color = Color.white; leaveLbl.alignment = TextAlignmentOptions.Center;
+    }
+
+    // ── Layout helpers ────────────────────────────────────────────────────────
+    void StretchFull(GameObject go)
+    {
+        var r = go.GetComponent<RectTransform>() ?? go.AddComponent<RectTransform>();
+        r.anchorMin = Vector2.zero; r.anchorMax = Vector2.one;
+        r.offsetMin = r.offsetMax = Vector2.zero;
+    }
+
+    void StretchInBounds(GameObject go, float xMin, float yMin, float xMax, float yMax)
+    {
+        var r = go.GetComponent<RectTransform>() ?? go.AddComponent<RectTransform>();
+        r.anchorMin = new Vector2(xMin, yMin); r.anchorMax = new Vector2(xMax, yMax);
+        r.offsetMin = r.offsetMax = Vector2.zero;
+    }
+
+    void AddSectionHeader(Transform parent, string label, ref float y, float height)
+    {
+        var go = new GameObject("SectionHdr"); go.transform.SetParent(parent, false);
+        StretchInBounds(go, 0.02f, y - height, 0.98f, y);
+        y -= height + 0.01f;
+        var txt = go.AddComponent<TextMeshProUGUI>();
+        txt.text = label; txt.fontSize = 12f; txt.fontStyle = FontStyles.Bold;
+        txt.color = new Color(0.6f, 0.7f, 0.8f);
+    }
+
+    TMP_InputField AddInputField(Transform parent, string placeholder, ref float y, float height)
+    {
+        var go = new GameObject("Input"); go.transform.SetParent(parent, false);
+        StretchInBounds(go, 0.02f, y - height, 0.98f, y);
+        y -= height + 0.01f;
+        go.AddComponent<Image>().color = new Color(0.12f, 0.13f, 0.18f);
+        var input = go.AddComponent<TMP_InputField>();
+        var ph = new GameObject("PH"); ph.transform.SetParent(go.transform, false);
+        StretchFull(ph); ph.GetComponent<RectTransform>().offsetMin = new Vector2(4f, 2f);
+        var phTxt = ph.AddComponent<TextMeshProUGUI>();
+        phTxt.text = placeholder; phTxt.fontSize = 11f; phTxt.color = new Color(0.4f, 0.4f, 0.4f);
+        input.placeholder = phTxt;
+        var txt = new GameObject("Text"); txt.transform.SetParent(go.transform, false);
+        StretchFull(txt); txt.GetComponent<RectTransform>().offsetMin = new Vector2(4f, 2f);
+        var t = txt.AddComponent<TextMeshProUGUI>(); t.fontSize = 11f; t.color = Color.white;
+        input.textComponent = t;
+        return input;
+    }
+
+    Button AddButton(Transform parent, string label, Color color, ref float y, float height)
+    {
+        var go = new GameObject("Btn"); go.transform.SetParent(parent, false);
+        StretchInBounds(go, 0.1f, y - height, 0.9f, y);
+        y -= height + 0.01f;
+        go.AddComponent<Image>().color = color;
+        var btn = go.AddComponent<Button>();
+        var lbl = new GameObject("L"); lbl.transform.SetParent(go.transform, false);
+        StretchFull(lbl);
+        var txt = lbl.AddComponent<TextMeshProUGUI>();
+        txt.text = label; txt.fontSize = 11f;
+        txt.color = Color.white; txt.alignment = TextAlignmentOptions.Center;
+        return btn;
+    }
+
+    TextMeshProUGUI AddErrorLabel(Transform parent, ref float y, float height)
+    {
+        var go = new GameObject("Err"); go.transform.SetParent(parent, false);
+        StretchInBounds(go, 0.02f, y - height, 0.98f, y);
+        y -= height;
+        var txt = go.AddComponent<TextMeshProUGUI>();
+        txt.fontSize = 9f; txt.color = new Color(1f, 0.4f, 0.4f);
+        txt.alignment = TextAlignmentOptions.Center;
+        return txt;
+    }
+
+    // ── JSON types ────────────────────────────────────────────────────────────
+    [System.Serializable] class MyGuildResponse     { public bool success; public string error; public GuildData data; }
+    [System.Serializable] class SearchGuildsResponse{ public bool success; public string error; public GuildSummary[] data; }
+    [System.Serializable] class GenericResponse     { public bool success; public string error; }
+    [System.Serializable] class CreateGuildRequest  { public int characterId; public string name; public string tag; }
+    [System.Serializable] class JoinRequest         { public int characterId; public int guildId; }
+    [System.Serializable] class LeaveRequest        { public int characterId; }
+    [System.Serializable] class MotdRequest         { public int characterId; public string motd; }
+    [System.Serializable] class KickRequest         { public int characterId; public int targetCharacterId; }
+
+    [System.Serializable]
+    class GuildData
+    {
+        public int          guildId;
+        public string       name;
+        public string       tag;
+        public string       motd;
+        public string       myRole;   // "leader" | "member"
+        public GuildMember[] members;
+    }
+
+    [System.Serializable]
+    class GuildMember
+    {
+        public int    characterId;
+        public string characterName;
+        public int    level;
+        public string role;  // "leader" | "member"
+    }
+
+    [System.Serializable]
+    class GuildSummary
+    {
+        public int    id;
+        public string name;
+        public string tag;
+        public int    memberCount;
+    }
+}
+#endif

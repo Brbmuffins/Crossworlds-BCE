@@ -1,0 +1,147 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.Networking;
+using System.Text;
+
+/// <summary>
+/// CombatSessionTracker — Singleton. Tracks damage, healing, kills, and deaths
+/// during an arena session. Posts summary to POST /api/combat/session/end on exit.
+///
+/// Self-bootstrapping — no Inspector setup required.
+/// Use CombatSessionTracker.Local to access the instance.
+///
+/// Wire-up required (no Inspector needed, just code):
+///   WaveSpawner.SpawnEnemy()      → call CombatSessionTracker.Local?.NotifyEnemySpawned(go)
+///   RodNetworkManager spawn path  → call CombatSessionTracker.Local?.NotifyAllySpawned(go)
+///
+/// API: POST /api/combat/session/end
+///      Body: {characterId, damageDealt, healingDone, killCount, deaths, wavesCompleted}
+/// </summary>
+public class CombatSessionTracker : MonoBehaviour
+{
+    public static CombatSessionTracker Local { get; private set; }
+
+    // ─── Session State ────────────────────────────────────────────────────────
+    public bool IsInSession  { get; private set; }
+    public float DamageDealt { get; private set; }
+    public float HealingDone { get; private set; }
+    public int   KillCount   { get; private set; }
+    public int   Deaths      { get; private set; }
+    public int   WavesCompleted { get; private set; }
+
+    private float _sessionStartTime;
+    private readonly List<Health> _trackedEnemies = new List<Health>();
+    private readonly List<Health> _trackedAllies  = new List<Health>();
+
+    // ─── Bootstrap ────────────────────────────────────────────────────────────
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+    static void Bootstrap()
+    {
+        if (Local != null) return;
+        var go = new GameObject("[CombatSessionTracker]");
+        DontDestroyOnLoad(go);
+        go.AddComponent<CombatSessionTracker>();
+    }
+
+    void Awake()
+    {
+        if (Local != null && Local != this) { Destroy(gameObject); return; }
+        Local = this;
+        DontDestroyOnLoad(gameObject);
+    }
+
+    void OnDestroy() { if (Local == this) Local = null; }
+
+    // ─── Public API ───────────────────────────────────────────────────────────
+    public void BeginSession()
+    {
+        IsInSession      = true;
+        DamageDealt      = 0f;
+        HealingDone      = 0f;
+        KillCount        = 0;
+        Deaths           = 0;
+        WavesCompleted   = 0;
+        _sessionStartTime = Time.time;
+        _trackedEnemies.Clear();
+        _trackedAllies.Clear();
+        Debug.Log("[COMBAT] Session started");
+    }
+
+    public void EndSession()
+    {
+        if (!IsInSession) return;
+        IsInSession = false;
+
+        int charId = PlayerPrefs.GetInt("CharacterId", 0);
+        if (charId > 0)
+            StartCoroutine(PostSessionEnd(charId));
+        else
+            Debug.LogWarning("[COMBAT] EndSession: CharacterId not set — session stats not saved");
+    }
+
+    /// <summary>Call this whenever WaveSpawner spawns an enemy.</summary>
+    public void NotifyEnemySpawned(GameObject enemy)
+    {
+        if (!IsInSession || enemy == null) return;
+        var health = enemy.GetComponent<Health>();
+        if (health == null) return;
+
+        _trackedEnemies.Add(health);
+        health.onDeath.AddListener(() =>
+        {
+            KillCount++;
+            _trackedEnemies.Remove(health);
+        });
+        health.onDamageReceived.AddListener((dmg, src) =>
+        {
+            // Only count damage from local player
+            if (src != null && src.CompareTag("Player"))
+                DamageDealt += dmg;
+        });
+    }
+
+    /// <summary>Call this whenever a player ally spawns in the arena.</summary>
+    public void NotifyAllySpawned(GameObject ally)
+    {
+        if (!IsInSession || ally == null) return;
+        var health = ally.GetComponent<Health>();
+        if (health == null) return;
+
+        _trackedAllies.Add(health);
+        health.onHealApplied?.AddListener(amount => HealingDone += amount);
+        health.onDeath.AddListener(() =>
+        {
+            Deaths++;
+            _trackedAllies.Remove(health);
+        });
+    }
+
+    public void NotifyWaveComplete() => WavesCompleted++;
+
+    // ─── POST session/end ─────────────────────────────────────────────────────
+    IEnumerator PostSessionEnd(int charId)
+    {
+        string ip    = PlayerPrefs.GetString("serverIP", "15.204.243.36");
+        string token = PlayerPrefs.GetString("jwt_token", "");
+
+        int durationSec = Mathf.RoundToInt(Time.time - _sessionStartTime);
+
+        string json = $"{{"characterId":{charId},"damageDealt":{DamageDealt:F0}," +
+                      $""healingDone":{HealingDone:F0},"killCount":{KillCount}," +
+                      $""deaths":{Deaths},"wavesCompleted":{WavesCompleted}," +
+                      $""sessionDurationSeconds":{durationSec}}}";
+
+        using var req = new UnityWebRequest($"http://{ip}:3000/api/combat/session/end", "POST");
+        req.uploadHandler   = new UploadHandlerRaw(Encoding.UTF8.GetBytes(json));
+        req.downloadHandler = new DownloadHandlerBuffer();
+        req.SetRequestHeader("Content-Type", "application/json");
+        req.SetRequestHeader("Authorization", $"Bearer {token}");
+        yield return req.SendWebRequest();
+
+        if (req.result != UnityWebRequest.Result.Success)
+            Debug.LogError($"[COMBAT] session/end failed: {req.error}");
+        else
+            Debug.Log($"[COMBAT] Session ended — {KillCount} kills, {DamageDealt:F0} dmg, {WavesCompleted} waves");
+    }
+}

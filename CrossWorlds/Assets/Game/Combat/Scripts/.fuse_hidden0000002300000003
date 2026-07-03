@@ -142,6 +142,9 @@ public class WaveSpawner : NetworkBehaviour
 
         NetworkServer.Spawn(enemy);
         enemiesAlive++;
+
+        // ── CombatSessionTracker hook ─────────────────────────────────────
+        CombatSessionTracker.Local?.NotifyEnemySpawned(enemy);
     }
 
     [Server]
@@ -150,7 +153,10 @@ public class WaveSpawner : NetworkBehaviour
         enemiesAlive = Mathf.Max(0, enemiesAlive - 1);
 
         if (enemiesAlive == 0 && waveActive)
+        {
             Debug.Log($"[WAVE] Wave {currentWave}: all enemies dead");
+            CombatSessionTracker.Local?.NotifyWaveComplete();
+        }
     }
 
     // ─── Helpers ──────────────────────────────────────────────────────────────

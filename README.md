@@ -15,12 +15,15 @@
 
 | | |
 |--|--|
-| Full Developer Reference | [`DEVDOC.md`](DEVDOC.md) |
-| GM Commands | [DEVDOC → Section 4](DEVDOC.md#4-gm-console) |
-| Controls | [DEVDOC → Section 3](DEVDOC.md#3-controls-reference) |
-| Architecture | [DEVDOC → Section 7](DEVDOC.md#7-technical-architecture) |
-| VPS & Server | [DEVDOC → Section 8](DEVDOC.md#8-vps--server-infrastructure) |
+| **Context Index** | [`_context/index.md`](_context/index.md) — start here |
+| Combat Spec (all abilities + synergies) | [`COMBAT_ATLAS.md`](../COMBAT_ATLAS.md) |
+| Roadmap | [`ROADMAP.md`](../ROADMAP.md) |
+| Phase 3 Design | [`_context/PHASE3_DESIGN.md`](_context/PHASE3_DESIGN.md) |
+| Retention & Daily Systems | [`_context/RETENTION_DESIGN.md`](_context/RETENTION_DESIGN.md) |
+| Healing Feel Design | [`_context/HEALING_DESIGN.md`](_context/HEALING_DESIGN.md) |
+| VPS & Server Ops | [`_context/VPS_SERVER.md`](_context/VPS_SERVER.md) |
 | Website / Download | https://playcrossworlds.com |
+| Combat Atlas (live) | https://playcrossworlds.com/combat — 5 classes · 32 abilities · 16 synergy pairs |
 | Server Manager | http://playcrossworlds.com:4000 |
 | GM Dashboard | http://playcrossworlds.com:4000/gm-dashboard |
 
@@ -203,11 +206,26 @@ Self-bootstrapping — no scene object needed. Toggle with `` ` `` or **F1**.
 
 Access gated by `GM_USERS` allowlist in `GmConsole.cs`. Command history: ↑/↓ arrows.
 
+### Crafting & Professions
+
+- **`ForgeNPC.cs`** — Hub NPC, proximity E-key trigger, opens `CraftingUI`. Billboard prompt "[E] Forge Master". Throttled player scan (0.5s). Gold point light for visual presence.
+- **`ResourceNode.cs`** — Mining node, F-key interaction, posts to `POST /api/inventory/add-item`. Awards profession XP via `PlayerProgressManager.Local.AwardXp()`. Depletes after N hits, respawns after 60s. Billboard "[F] Mine".
+- **`CraftingUI.cs`** — F key panel, scrollable recipe list fetched from `GET /api/recipes`, ingredient check display, `POST /api/craft`, auto-refreshes inventory bag.
+- **`HubSceneBuilder` step 8** — `BCE/Hub Setup/8 - Add Forge and Mining NPCs` automatically places ForgeNPC at (-12,0,-4) and 3 Copper Ore nodes in scene.
+
+### Progression HUD
+
+- **`XpBar.cs`** — bottom-centre XP bar, smooth fill animation, gold flash + label punch on level-up
+- **`CharacterSheetUI.cs`** — C key panel: level, XP, gold, str/agi/int/vit stat block
+- **`LevelUpScreen.cs`** — full-screen class-coloured burst + "LEVEL UP!" punch-scale animation
+- **`AbilityHUD.cs`** — self-bootstrapping 4+1 bottom-right ability strip with radial cooldown overlay + CD timer text
+- **`ArenaClearUI.cs`** — wave-complete banner + loot summary overlay
+
 ### VFX
 - brbmuffins Technologies particle pack (ElectricalSparks, EnergyExplosion, SmallExplosion, FireFlies, HeatDistortion)
 - brbmuffins Dark Arts fantasy pack (Magic circle, Death magic circle, Lightning strike, Mana wall, Ground spikes, Fireball)
 - `RodBillboard` — zone label text always faces camera
-- `EnemyDeathVFX` — spawns death particles via `Health.onDeath`
+- `EnemyDeathVFX` — spawns crimson particle burst via `Health.onDeath`; procedural fallback when no VFX prefab assigned (40 particles, 2.5s lifetime)
 - `LoginScreenVFX` — ambient atmosphere on login screen
 
 ---
@@ -216,10 +234,10 @@ Access gated by `GM_USERS` allowlist in `GmConsole.cs`. Command history: ↑/↓
 
 - **Harder = more reward** — wave difficulty multiplier feeds loot score; higher cycles = rarer drops
 - **Shared common goal** — one enemy pool, one boss HP bar; every player's damage contributes
-- **Multiple paths** — Guardian tanks, Engineer builds, Medic sustains, Wraith pressures — all valid, all needed
-- **Zone in and battle** — no lobby meta, no mandatory prep; pick class, enter arena, fight
-- **Community crafting** — server hub (max-player zone) has trainers, shared loot pool, community-built upgrades *(planned)*
-- **DoT class complete** — Wraith is fully playable with the corruption → stack → detonate loop
+- **Multiple paths** — Ironclad tanks, Warden controls, Cleric sustains, Shadowblade pressures, Arcanist bursts — all valid, all needed
+- **Zone in and battle** — no lobby meta, no mandatory prep; pick hero, enter arena, fight
+- **Community crafting** — server hub has Forge Master NPC, mining nodes, and CraftingUI; shared progression systems
+- **DoT class complete** — Shadowblade is fully playable with the veil → dark mark → harvest loop
 
 ---
 
@@ -259,16 +277,19 @@ localized and behavior-preserving for existing working paths.
 
 | Priority | Item |
 |----------|------|
-| High | `GmConsole.cs` — needs `#if !UNITY_SERVER` guard (crashes server every frame) |
-| Medium | Arena scene — needs NavMesh baked + WaveSpawner wired; portals in Hub are decorative (no scene transition yet) |
-| Medium | Inventory bag UI — `InventoryBagUI.cs` not written; calls `GET /api/inventory/:characterId`, renders slots |
-| Medium | Equip flow — slot click → `POST /api/inventory/equip` not wired |
-| Medium | Portal transition — `OnTriggerEnter` in Hub portals → `NetworkManager.singleton.ServerChangeScene(arenaScene)` not wired |
-| Medium | Clean up stale prefabs — `Engineer.prefab`, `Guardian.prefab`, `Wraith.prefab`, `Medic.prefab`, `PlayerPrefab.prefab` still in `Assets/Game/Prefabs/` |
-| Medium | Add Arcanist to CharacterSelect scene preview |
-| Low | `orientation:F3` — Unity sending float as formatted string in `PATCH /character/position` |
-| Low | `CmdSendChat` — missing `[CHAT]` log line server-side |
-| Low | Position save on scene exit (currently only on disconnect/quit) |
+| High | Arena scene — needs NavMesh baked + WaveSpawner wired in scene file |
+| High | `NetworkManager.spawnPrefabs` — Enemy_Grunt, Enemy_Ranged, Enemy_Elite, WorldItem must be manually added in Inspector |
+| High | Class abilities — `AbilityCaster.cs` has all 32 abilities defined but per-hero wiring incomplete |
+| Medium | `orientation:F3` — Unity sending float as formatted string in `PATCH /character/position` (server-side fix applied; client still sends wrong format) |
+| Medium | Enemy prefabs — capsule placeholders; real meshes not assigned |
+| Medium | Ability icons — color-coded placeholder squares; real sprite atlas needed |
+| Medium | Mining portal — dedicated sub-zone with ore cluster; ResourceNode currently only placed in Hub |
+| Medium | Profession XP — crafting/mining XP not yet persisted to `professions` table |
+| Medium | Stale prefabs — `Engineer.prefab`, `Guardian.prefab`, `Wraith.prefab`, `Medic.prefab` still in `Assets/Game/Prefabs/` |
+| ~~Low~~ | ~~`GmConsole.cs` — `#if !UNITY_SERVER` guard needed~~ — ✅ **Fixed 2026-06-29** |
+| Low | Arcanist missing from CharacterSelect 3D preview |
+| Low | Hit VFX — no impact sparks on melee connect yet |
+| Low | SFX — footsteps, ability sounds, hit sounds, death sounds all placeholder/silent |
 
 ---
 
