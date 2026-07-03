@@ -41,11 +41,13 @@ public static class EnemyBuilder
         var go = MakeEnemyBase("Enemy_Grunt", 60f, false, 4.5f, 1.5f, 1.5f, 12f, 8f, 1.2f);
         go.GetComponent<Renderer>().sharedMaterial.color = new Color(0.55f, 0.25f, 0.1f);
         var gruntCtrl = go.GetComponent<EnemyController>();
-        gruntCtrl.dropTable       = dt;
-        gruntCtrl.enemyTemplateId = "goblin_grunt";
+        gruntCtrl.dropTable        = dt;
+        gruntCtrl.enemyTemplateId  = "goblin_grunt";
+        gruntCtrl.worldItemPrefab  = TryLoadWorldItem();
         SavePrefab(go, $"{PrefabDir}/Enemy_Grunt.prefab");
         Object.DestroyImmediate(go);
-        Debug.Log("[BCE] Enemy_Grunt.prefab → Assets/Game/Prefabs/\nNEXT: WaveSpawner.enemyPrefabs[0], assign WorldItem prefab");
+        string wiNote = gruntCtrl.worldItemPrefab != null ? "" : "\nNEXT: Assign WorldItem.prefab to EnemyController.worldItemPrefab (run 4d first)";
+        Debug.Log($"[BCE] Enemy_Grunt.prefab → Assets/Game/Prefabs/{wiNote}");
     }
 
     // ── 4b Ranged ─────────────────────────────────────────────────────────────
@@ -64,6 +66,7 @@ public static class EnemyBuilder
         ctrl.preferredRange   = 5f;
         ctrl.tooCloseDistance = 3f;
         ctrl.enemyTemplateId  = "skeleton_ranged";
+        ctrl.worldItemPrefab  = TryLoadWorldItem();
         SavePrefab(go, $"{PrefabDir}/Enemy_Ranged.prefab");
         Object.DestroyImmediate(go);
         Debug.Log("[BCE] Enemy_Ranged.prefab → Assets/Game/Prefabs/\nNEXT: WaveSpawner.enemyPrefabs[1], assign EnemyProjectile prefab");
@@ -94,6 +97,7 @@ public static class EnemyBuilder
         var eliteCtrl = go.GetComponent<EnemyController>();
         eliteCtrl.dropTable       = dt;
         eliteCtrl.enemyTemplateId = "troll_elite";
+        eliteCtrl.worldItemPrefab = TryLoadWorldItem();
         SavePrefab(go, $"{PrefabDir}/Enemy_Elite.prefab");
         Object.DestroyImmediate(go);
         Debug.Log("[BCE] Enemy_Elite.prefab → Assets/Game/Prefabs/\nNEXT: WaveSpawner.elitePrefab, add to NetworkManager.spawnPrefabs");
@@ -174,6 +178,9 @@ public static class EnemyBuilder
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
+
+    static GameObject TryLoadWorldItem()
+        => AssetDatabase.LoadAssetAtPath<GameObject>($"{PrefabDir}/WorldItem.prefab");
 
     static GameObject MakeEnemyBase(string name, float hp, bool isRanged,
         float speed, float attackRange, float attackInterval, float damage,
