@@ -287,6 +287,7 @@ public class AbilityBar : MonoBehaviour
             btn.onClick.AddListener(() => OnSpellCardClicked(capturedIndex));
 
             // ── Hover → tooltip ───────────────────────────────────────────
+#if !UNITY_SERVER
             var trigger = cardGO.AddComponent<EventTrigger>();
             var enterEntry = new EventTrigger.Entry { eventID = EventTriggerType.PointerEnter };
             enterEntry.callback.AddListener(data =>
@@ -299,6 +300,7 @@ public class AbilityBar : MonoBehaviour
             var exitEntry = new EventTrigger.Entry { eventID = EventTriggerType.PointerExit };
             exitEntry.callback.AddListener(_ => AbilityTooltipUI.Instance?.Hide());
             trigger.triggers.Add(exitEntry);
+#endif
         }
     }
 
