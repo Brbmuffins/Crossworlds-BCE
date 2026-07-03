@@ -19,16 +19,20 @@
 
 name: Build and Deploy
 
+# DISABLED — secrets not yet configured (UNITY_LICENSE, UNITY_EMAIL, UNITY_PASSWORD,
+# VPS_HOST, VPS_SSH_KEY). Add them in GitHub → Settings → Secrets → Actions, then
+# switch the trigger below to:
+#   push:
+#     branches: [main]
+#
+# Until then, build locally: powershell -File tools\build-server.ps1
+# and deploy via: scp + tools\deploy-server.sh on the VPS.
 on:
-  workflow_dispatch:   # manual trigger only — auto-push disabled until secrets are configured
-  # push:
-  #   branches: [main]
-  # Uncomment push above and add these secrets in GitHub → Settings → Secrets → Actions:
-  #   UNITY_LICENSE   — contents of your .ulf license file (run Unity → Help → Manage License → Export)
-  #   UNITY_EMAIL     — your Unity account email
-  #   UNITY_PASSWORD  — your Unity account password
-  #   VPS_HOST        — 15.204.243.36
-  #   VPS_SSH_KEY     — private SSH key for ubuntu@VPS_HOST
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: "Type YES to confirm secrets are configured before running"
+        required: true
 
 jobs:
 
@@ -36,6 +40,7 @@ jobs:
   build-server:
     name: Server → VPS
     runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.confirm == 'YES' }}
 
     steps:
       - name: Checkout
@@ -99,6 +104,7 @@ jobs:
   build-client:
     name: Client → GitHub Release
     runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.confirm == 'YES' }}
 
     steps:
       - name: Checkout
