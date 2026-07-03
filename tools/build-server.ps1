@@ -42,6 +42,7 @@ if (Test-Path "$out\Crossworlds.x86_64") {
 
 $tar = "$repo\build\crossworlds-server.tar.gz"
 if (Test-Path $tar) { Remove-Item $tar }
-tar -czf $tar -C $out .
+# Exclude Unity's IL2CPP symbol/backup folders — huge and must not ship
+tar -czf $tar -C $out --exclude "*_BackUpThisFolder_ButDontShipItWithYourGame" --exclude "*_BurstDebugInformation_DoNotShip" .
 Write-Host "OK -> $tar"
 Write-Host "Next: scp $tar and tools/deploy-server.sh to the VPS, then run: sudo bash deploy-server.sh"
