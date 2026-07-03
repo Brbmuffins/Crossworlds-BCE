@@ -399,6 +399,16 @@ public class CharacterSelectManager : MonoBehaviour
             yield break;
         }
 
+        // Pre-populate AuthManager so HeroMasteryManager / HeroCosmeticApplier
+        // don't have to poll for PlayerIdentity to get the character ID.
+        try
+        {
+            var resp = JsonUtility.FromJson<CharSelectResponse>(req.downloadHandler.text);
+            if (resp != null && resp.id > 0)
+                AuthManager.CharacterId = resp.id;
+        }
+        catch { }
+
         // Apply whichever server IP the player entered on the login screen
         NetworkManager.singleton.networkAddress = serverIP;
         Debug.Log($"[CharSel] Connecting to game server at {serverIP}...");
@@ -713,4 +723,8 @@ public class CharacterSelectManager : MonoBehaviour
         go.layer = layer;
         foreach (Transform c in go.transform) SetLayer(c.gameObject, layer);
     }
+
+    // ── Response shape for POST /character ───────────────────────────────────
+    [Serializable]
+    class CharSelectResponse { public int id; }
 }

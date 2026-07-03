@@ -643,6 +643,7 @@ public class LoginManager : MonoBehaviour
         PlayerPrefs.SetString("jwt_token", res.token);
         PlayerPrefs.SetString("username",  username);
         PlayerPrefs.Save();
+        AuthManager.Token = res.token;
 
         SetStatus(_statusText, "Authenticated. Loading character select...", true);
         if (sceneVFX != null) sceneVFX.OnLoginSuccess();
