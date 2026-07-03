@@ -98,20 +98,6 @@ public class CombatSessionTracker : MonoBehaviour
         _trackedEnemies.Clear();
         _trackedAllies.Clear();
 
-        // Hook WaveSpawner wave-count event after a short delay (scene still loading)
-        StartCoroutine(LateBindWaveSpawner());
-    }
-
-    IEnumerator LateBindWaveSpawner()
-    {
-        yield return new WaitForSeconds(1f);
-        var ws = FindFirstObjectByType<WaveSpawner>();
-        if (ws != null)
-        {
-            // Hook wave completed callback if available
-            // WaveSpawner fires onWaveComplete if it exposes it — check and wire
-            // (if not available, we track via EnemyDeath count)
-        }
     }
 
     // ── Public: wire into WaveSpawner / spawn flow ────────────────────────────

@@ -117,14 +117,11 @@ Highest-value phase: every piece exists, only glue is missing.
   calls `EndSession()`. *Accept:* two clients warp together, waves run, both return to hub.
   *Deps:* 1.1, 1.2. **READY**
 
-- **1.4 — Wire CombatSessionTracker (session-log leftovers).** Files:
-  `Assets/Game/Combat/Scripts/WaveSpawner.cs` (add
-  `CombatSessionTracker.Local?.NotifyEnemySpawned(enemy)` in SpawnEnemy),
-  `Assets/Game/Networking/RodNetworkManager.cs` (NotifyAllySpawned — note
-  `PlayerIdentity.OnStartLocalPlayer` already notifies client-side; verify no double count),
-  portal path calls `BeginSession()`. *Accept:* session-end POST fires with non-zero counts.
-  *Deps:* 1.3; see Q3 — if `/api/combat/session/end` doesn't exist server-side, guard the POST
-  behind a config flag instead. **READY**
+- **1.4 — Wire CombatSessionTracker (session-log leftovers).** ✅ code-side (2026-07-03)
+  WaveSpawner.RpcNotifyEnemySpawned + RpcNotifyWaveComplete already call CombatSessionTracker.
+  PlayerIdentity.OnStartLocalPlayer calls NotifyAllySpawned. ArenaAutoStarter calls BeginSession().
+  CombatSessionTracker.PostSessionStats posts to /api/combat/session/end (guarded — logs warning on
+  404 but doesn't crash). All hooks verified via grep.
 
 - **1.5 — GmConsole server guard.** Files: `Assets/Game/UI/GmConsole.cs`. Wrap class body in
   `#if !UNITY_SERVER … #endif` (pattern already in `PlayerIdentity.cs:33`). This bug is listed
