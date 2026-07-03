@@ -1,3 +1,4 @@
+#if !UNITY_SERVER
 using UnityEngine;
 using UnityEngine.EventSystems;
 
@@ -47,3 +48,4 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler, IPointerEnterH
         transform.localScale = Vector3.one;
     }
 }
+#endif

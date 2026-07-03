@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -125,7 +125,7 @@ public class StealthHandler : MonoBehaviour
 
     ShadowRelayDeployable FindNearestRelay()
     {
-        ShadowRelayDeployable[] relays = FindObjectsByType<ShadowRelayDeployable>(FindObjectsSortMode.None);
+        ShadowRelayDeployable[] relays = FindObjectsByType<ShadowRelayDeployable>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
         foreach (var r in relays)
             if (r.ownerTransform == transform) return r;
         return null;

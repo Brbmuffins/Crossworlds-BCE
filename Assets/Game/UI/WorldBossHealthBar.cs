@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 using Mirror;
 using TMPro;
@@ -40,7 +40,7 @@ public class WorldBossHealthBar : MonoBehaviour
     {
         if (_trackedBoss == null)
         {
-            _trackedBoss = FindObjectOfType<WorldBossController>();
+            _trackedBoss = FindFirstObjectByType<WorldBossController>();
             if (_trackedBoss != null &&
                 _trackedBoss.currentPhase != WorldBossController.BossPhase.Idle &&
                 _trackedBoss.currentPhase != WorldBossController.BossPhase.Dead)

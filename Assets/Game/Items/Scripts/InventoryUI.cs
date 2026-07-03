@@ -1,3 +1,4 @@
+#if !UNITY_SERVER
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.InputSystem;
@@ -79,3 +80,4 @@ public class InventoryUI : MonoBehaviour
         }
     }
 }
+#endif

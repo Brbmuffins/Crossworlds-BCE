@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Mirror;
 using TMPro;
 using UnityEngine;
@@ -147,13 +147,13 @@ public class PlayerListUI : MonoBehaviour
         // Name label
         var nameLbl = MakeLabel(rowRt, "Name",
             new Vector2(0.04f, 0f), new Vector2(0.62f, 1f),
-            $"<color={nameColor}>{name}</color>", 11f, TextAlignmentOptions.MidlineLeft);
+            $"<color={nameColor}>{name}</color>", 11f, TextAlignmentOptions.Left);
 
         // Class label
         if (!string.IsNullOrEmpty(className))
             MakeLabel(rowRt, "Class",
                 new Vector2(0.64f, 0f), new Vector2(0.98f, 1f),
-                $"<color={classColor}>{className}</color>", 10f, TextAlignmentOptions.MidlineRight);
+                $"<color={classColor}>{className}</color>", 10f, TextAlignmentOptions.Right);
     }
 
     // ── UI helpers ────────────────────────────────────────────────────────
@@ -228,7 +228,7 @@ public class PlayerListUI : MonoBehaviour
         _headerText.color     = new Color(0.5f, 0.75f, 1f);
         _headerText.fontStyle = FontStyles.Bold;
         _headerText.richText  = true;
-        _headerText.alignment = TextAlignmentOptions.MidlineLeft;
+        _headerText.alignment = TextAlignmentOptions.Left;
 
         // Thin divider
         var divGO = new GameObject("Divider", typeof(RectTransform), typeof(Image), typeof(LayoutElement));
@@ -262,7 +262,7 @@ public class PlayerListUI : MonoBehaviour
         hint.text      = "<color=#334155>[P] toggle</color>";
         hint.fontSize  = 9f;
         hint.color     = new Color(0.4f, 0.4f, 0.5f);
-        hint.alignment = TextAlignmentOptions.MidlineRight;
+        hint.alignment = TextAlignmentOptions.Right;
         hint.richText  = true;
     }
 

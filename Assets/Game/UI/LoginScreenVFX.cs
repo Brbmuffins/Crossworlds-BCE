@@ -147,6 +147,16 @@ public class LoginScreenVFX : MonoBehaviour
         if (prefab == null) return null;
         GameObject go = Instantiate(prefab, pos, Quaternion.identity, transform);
         go.transform.localScale = scale;
+
+        // Force every particle system in this prefab to loop continuously.
+        // brbmuffins effects default to one-shot — without this they play once and stop.
+        foreach (var ps in go.GetComponentsInChildren<ParticleSystem>(true))
+        {
+            var main = ps.main;
+            main.loop       = true;
+            main.stopAction = ParticleSystemStopAction.None;
+        }
+
         return go;
     }
 

@@ -122,7 +122,7 @@ public static class EnemyBuilder
         root.AddComponent<Mirror.NetworkIdentity>();
 
         var wi = root.AddComponent<WorldItem>();
-        wi.glowLight = glow;
+        // glowLight is auto-created in WorldItem.Start() — no assignment needed
 
         SavePrefab(root, $"{PrefabDir}/WorldItem.prefab");
         Object.DestroyImmediate(root);
@@ -204,6 +204,8 @@ public static class EnemyBuilder
         ctrl.attackInterval = attackInterval;
         ctrl.damage         = damage;
         ctrl.isRanged       = isRanged;
+        // XP scales with HP — grunt≈20, ranged≈15, elite≈80
+        ctrl.xpReward       = Mathf.RoundToInt(hp * 0.3f);
 
         return go;
     }

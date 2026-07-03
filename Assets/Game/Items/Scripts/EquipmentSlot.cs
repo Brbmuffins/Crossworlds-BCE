@@ -1,3 +1,4 @@
+#if !UNITY_SERVER
 using UnityEngine;
 using UnityEngine.EventSystems;
 
@@ -33,3 +34,4 @@ public class EquipmentSlot : MonoBehaviour, IPointerClickHandler, IPointerEnterH
         transform.localScale = Vector3.one;
     }
 }
+#endif

@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 // Phaser deployable — Phase Relay
 // Passive field: extends Singularity pull duration and increases AoE radius
@@ -38,7 +38,7 @@ public class PhaseRelayDeployable : MonoBehaviour
     // Called by SingularityBehaviour at spawn to check for bonus.
     public static float GetBonusNearPoint(Vector3 point, int ownerID)
     {
-        PhaseRelayDeployable[] relays = FindObjectsByType<PhaseRelayDeployable>(FindObjectsSortMode.None);
+        PhaseRelayDeployable[] relays = FindObjectsByType<PhaseRelayDeployable>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
         foreach (var r in relays)
         {
             if (r.ownerID != ownerID) continue;

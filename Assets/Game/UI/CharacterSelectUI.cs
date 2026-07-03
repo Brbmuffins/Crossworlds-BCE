@@ -1,4 +1,4 @@
-using Mirror;
+﻿using Mirror;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
@@ -353,7 +353,7 @@ public class CharacterSelectUI : MonoBehaviour
         tmp.fontSize  = 10f;
         tmp.color     = accent;
         tmp.fontStyle = FontStyles.Bold;
-        tmp.alignment = TextAlignmentOptions.MidlineLeft;
+        tmp.alignment = TextAlignmentOptions.Left;
         var lle = labelGO.GetComponent<LayoutElement>();
         lle.flexibleWidth = 1f;
     }
@@ -377,7 +377,7 @@ public class CharacterSelectUI : MonoBehaviour
         tmp.text     = stat.label.ToUpper();
         tmp.fontSize = 10f;
         tmp.color    = TextDim;
-        tmp.alignment = TextAlignmentOptions.MidlineLeft;
+        tmp.alignment = TextAlignmentOptions.Left;
         var lle = labelGO.GetComponent<LayoutElement>();
         lle.preferredWidth = 90f;
 

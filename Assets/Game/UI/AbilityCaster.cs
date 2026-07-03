@@ -1,4 +1,4 @@
-using Mirror;
+﻿using Mirror;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Controls;
@@ -752,6 +752,10 @@ public class AbilityCaster : MonoBehaviour
             if (cs != null)
                 StartCoroutine(OverdriveCDRBuff(cs, duration));
 
+            // HYMN floating text on each ally
+            FloatingDamageText.Spawn(col.transform.position + Vector3.up * 1.8f,
+                0f, FloatingDamageText.DamageType.Shield, "HYMN");
+
             // Buff VFX on each ally
             if (ability.castVFX != null)
             {
@@ -788,7 +792,7 @@ public class AbilityCaster : MonoBehaviour
         // Find this player's deployed turrets and set their focus target.
         if (DeployableManager.Instance != null)
         {
-            foreach (var dep in DeployableManager.Instance.GetAll(gameObject.GetInstanceID()))
+            foreach (var dep in DeployableManager.Instance.GetAll(gameObject.GetEntityId()))
             {
                 if (dep == null) continue;
                 var tc = dep.GetComponent<TurretController>();
@@ -808,6 +812,8 @@ public class AbilityCaster : MonoBehaviour
             Health h = col.GetComponent<Health>();
             if (h == null || h == _health) continue;
             h.Heal(healAmt);
+            FloatingDamageText.Spawn(col.transform.position + Vector3.up * 1.5f,
+                healAmt, FloatingDamageText.DamageType.Heal);
             col.GetComponent<StatusEffectManager>()?.RemoveAll();   // clears 1 debuff
             if (ability.hitVFX != null)
                 SpawnVFX(ability.hitVFX, col.transform.position + Vector3.up, Quaternion.identity);
@@ -818,10 +824,10 @@ public class AbilityCaster : MonoBehaviour
     void CastSystemOverload()
     {
         if (DeployableManager.Instance == null) return;
-        DeployableManager.Instance.SystemOverload(gameObject.GetInstanceID(), 8f);
+        DeployableManager.Instance.SystemOverload(gameObject.GetEntityId(), 8f);
 
         // Force all turrets to rapid-fire mode for 8 seconds
-        foreach (var dep in DeployableManager.Instance.GetAll(gameObject.GetInstanceID()))
+        foreach (var dep in DeployableManager.Instance.GetAll(gameObject.GetEntityId()))
         {
             if (dep == null) continue;
             var tc = dep.GetComponent<TurretController>();
@@ -888,7 +894,7 @@ public class AbilityCaster : MonoBehaviour
             s.applyExposed     = isEventHorizon;
             s.owner            = gameObject;
             // Check for Phase Relay bonus
-            float bonus = PhaseRelayDeployable.GetBonusNearPoint(castPoint, gameObject.GetInstanceID());
+            float bonus = PhaseRelayDeployable.GetBonusNearPoint(castPoint, gameObject.GetEntityId());
             s.pullDurationBonus = bonus;
         });
     }
@@ -1016,6 +1022,8 @@ public class AbilityCaster : MonoBehaviour
             if (h != null && h.IsDowned)
             {
                 h.Revive(0.30f);
+                FloatingDamageText.Spawn(col.transform.position + Vector3.up * 1.5f,
+                    0f, FloatingDamageText.DamageType.Heal, "REVIVED");
                 if (ability.hitVFX != null)
                     SpawnVFX(ability.hitVFX, col.transform.position + Vector3.up, Quaternion.identity);
                 return;
@@ -1046,6 +1054,8 @@ public class AbilityCaster : MonoBehaviour
             Health h = col.GetComponent<Health>();
             if (h == null) continue;
             h.ApplyShield(20f);
+            FloatingDamageText.Spawn(col.transform.position + Vector3.up * 1.8f,
+                20f, FloatingDamageText.DamageType.Shield);
             // Subscribe to grow shield on each hit for 8s
             StartCoroutine(AdaptiveShieldRoutine(h, 8f));
             return;
@@ -1055,7 +1065,13 @@ public class AbilityCaster : MonoBehaviour
     System.Collections.IEnumerator AdaptiveShieldRoutine(Health target, float duration)
     {
         float expiry = Time.time + duration;
-        void OnHit(float _) { target.GrowShield(10f); }
+        void OnHit(float _)
+        {
+            const float shieldGrowth = 10f;
+            target.GrowShield(shieldGrowth);
+            FloatingDamageText.Spawn(target.transform.position + Vector3.up * 1.8f,
+                shieldGrowth, FloatingDamageText.DamageType.Shield);
+        }
         target.onDamageTaken.AddListener(OnHit);
         while (Time.time < expiry) yield return null;
         target.onDamageTaken.RemoveListener(OnHit);
@@ -1068,6 +1084,8 @@ public class AbilityCaster : MonoBehaviour
         {
             if (!col.CompareTag("Player")) continue;
             col.GetComponent<StatusEffectManager>()?.RemoveAll();
+            FloatingDamageText.Spawn(col.transform.position + Vector3.up * 1.5f,
+                0f, FloatingDamageText.DamageType.TriageReturn, "CLEANSED");
             return;
         }
     }
@@ -1101,7 +1119,7 @@ public class AbilityCaster : MonoBehaviour
         if (prefab == null) return;
         GameObject go = Instantiate(prefab, pos, rot ?? Quaternion.identity);
         init?.Invoke(go);
-        DeployableManager.Instance?.Register(go, gameObject.GetInstanceID(),
+        DeployableManager.Instance?.Register(go, gameObject.GetEntityId(),
             classPool != null ? GetClassDeployableLimit() : 1);
     }
 

@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.InputSystem;
 using TMPro;
@@ -261,7 +261,7 @@ public class AbilityBar : MonoBehaviour
             tmp.text                 = ab.abilityName;
             tmp.fontSize             = 11f;
             tmp.color                = Color.white;
-            tmp.alignment            = TextAlignmentOptions.MidlineLeft;
+            tmp.alignment            = TextAlignmentOptions.Left;
             spellbookLabels[i]       = tmp;
 
             // Category sub-label
@@ -276,7 +276,7 @@ public class AbilityBar : MonoBehaviour
             subTmp.text            = ab.category.ToString();
             subTmp.fontSize        = 9f;
             subTmp.color           = new Color(1f, 1f, 1f, 0.5f);
-            subTmp.alignment       = TextAlignmentOptions.MidlineLeft;
+            subTmp.alignment       = TextAlignmentOptions.Left;
 
             // Click handler
             Button btn = cardGO.GetComponent<Button>();

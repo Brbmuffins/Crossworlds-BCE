@@ -1,3 +1,4 @@
+#if !UNITY_SERVER
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -35,3 +36,4 @@ public class EquipmentUI : MonoBehaviour
         }
     }
 }
+#endif

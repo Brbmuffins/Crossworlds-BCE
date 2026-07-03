@@ -96,7 +96,16 @@ public class CharacterSelectManager : MonoBehaviour
 
     // ── Constants ────────────────────────────────────────────────────────────
 
-    const string MODEL_PATH = "Assets/Game/Characters/Engineer/Model/Idle.fbx";
+    // Per-class preview model paths — index matches Classes[] order
+    static readonly string[] MODEL_PATHS =
+    {
+        "Assets/Game/Characters/Engineer/Model/Idle.fbx",   // 0 Warden
+        "Assets/Game/Characters/Engineer/Model/Idle.fbx",   // 1 Ironclad
+        "Assets/Game/Characters/Engineer/Model/Idle.fbx",   // 2 Shadowblade
+        "Assets/Game/Characters/Engineer/Model/Idle.fbx",   // 3 Cleric
+        "Assets/Game/Heroes/Brandalf/Brandalf.fbx",          // 4 Arcanist — Brandalf
+    };
+
     const int    PREV_LAYER = 31;       // "CharacterPreview" — no layer name needed
     const float  LEFT_W     = 280f;
     const float  RIGHT_W    = 430f;
@@ -209,24 +218,7 @@ public class CharacterSelectManager : MonoBehaviour
         _previewRoot = new GameObject("_PreviewRoot");
         _previewRoot.transform.position = Vector3.zero;
 
-#if UNITY_EDITOR
-        var asset = AssetDatabase.LoadAssetAtPath<GameObject>(MODEL_PATH);
-        if (asset != null)
-        {
-            var model = Instantiate(asset, _previewRoot.transform);
-            model.name = "Model";
-            model.transform.localPosition = Vector3.zero;
-            model.transform.localRotation = Quaternion.identity;
-            model.transform.localScale    = Vector3.one;
-            SetLayer(model, PREV_LAYER);
-        }
-        else
-        {
-            FallbackCapsule();
-        }
-#else
-        FallbackCapsule();
-#endif
+        // Model is loaded/swapped per class in SwapModel() — nothing to do here
     }
 
     void FallbackCapsule()
@@ -314,6 +306,44 @@ public class CharacterSelectManager : MonoBehaviour
             _enterLabel.text = "ENTER WORLD";
 
         SwapVFX(d);
+        SwapModel(idx);
+    }
+
+    // ── Model Swap ─────────────────────────────────────────────────────────────
+
+    int _loadedModelIdx = -1;
+
+    void SwapModel(int idx)
+    {
+        if (idx == _loadedModelIdx) return;
+        _loadedModelIdx = idx;
+
+        // Destroy old model child
+        if (_previewRoot != null)
+        {
+            var old = _previewRoot.transform.Find("Model");
+            if (old != null) Destroy(old.gameObject);
+        }
+
+#if UNITY_EDITOR
+        string path  = (idx >= 0 && idx < MODEL_PATHS.Length) ? MODEL_PATHS[idx] : MODEL_PATHS[0];
+        var    asset = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+        if (asset != null && _previewRoot != null)
+        {
+            var model = Instantiate(asset, _previewRoot.transform);
+            model.name = "Model";
+            model.transform.localPosition = Vector3.zero;
+            model.transform.localRotation = Quaternion.identity;
+            model.transform.localScale    = Vector3.one;
+            SetLayer(model, PREV_LAYER);
+        }
+        else
+        {
+            FallbackCapsule();
+        }
+#else
+        FallbackCapsule();
+#endif
     }
 
     // ── Enter World ───────────────────────────────────────────────────────────
