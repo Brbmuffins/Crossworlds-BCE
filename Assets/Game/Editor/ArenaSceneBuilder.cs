@@ -150,6 +150,11 @@ public static class ArenaSceneBuilder
             Object.DestroyImmediate(marker.GetComponent<SphereCollider>());
         }
 
+        // ── ArenaSessionController ────────────────────────────────────────────
+        var sessionGO = new GameObject("ArenaSessionController");
+        sessionGO.AddComponent<Mirror.NetworkIdentity>();
+        sessionGO.AddComponent<ArenaSessionController>();
+
         // ── WaveSpawner ────────────────────────────────────────────────────────
         var wsGO = new GameObject("WaveSpawner");
         wsGO.AddComponent<Mirror.NetworkIdentity>();
@@ -172,6 +177,12 @@ public static class ArenaSceneBuilder
 
         if (gruntPrefab == null || rangedPrefab == null)
             Debug.LogWarning("[Arena] Enemy prefabs not found — run BCE/Setup/4a–4c first, then re-run this.");
+
+        // ArenaAutoStarter: calls WaveSpawner.StartWaves() server-side on scene load.
+        // This is the bridge between scene activation and wave begin.
+        var starterGO = new GameObject("ArenaAutoStarter");
+        starterGO.AddComponent<Mirror.NetworkIdentity>();
+        starterGO.AddComponent<ArenaAutoStarter>();
 
         // ── Return portal (back to Hub) ────────────────────────────────────────
         var returnPortal = new GameObject("ReturnPortal_Hub");
@@ -200,9 +211,8 @@ public static class ArenaSceneBuilder
         rl.type = LightType.Point; rl.color = new Color(0.2f, 0.9f, 0.4f); rl.intensity = 3f; rl.range = 10f;
 
         returnPortal.AddComponent<Mirror.NetworkIdentity>();
-        var rpt = returnPortal.AddComponent<PortalTransition>();
-        rpt.arenaSceneName    = SceneNames.Hub;
-        rpt.portalDisplayName = "Return to Hub";
+        var hrt = returnPortal.AddComponent<HubReturnTrigger>();
+        hrt.hubSceneName = SceneNames.Hub;
 
         // ── RodChatManager ────────────────────────────────────────────────────
         if (Object.FindAnyObjectByType<RodChatManager>() == null)
@@ -222,15 +232,27 @@ public static class ArenaSceneBuilder
         // ── Save ──────────────────────────────────────────────────────────────
         string savePath = SceneNames.ArenaCopperPath;
         EditorSceneManager.SaveScene(arenaScene, savePath);
-        EditorSceneManager.MarkSceneDirty(arenaScene);
+
+        // ── Register in Build Settings ────────────────────────────────────────
+        var scenes = new System.Collections.Generic.List<EditorBuildSettingsScene>(EditorBuildSettings.scenes);
+        bool alreadyIn = scenes.Exists(s => s.path == savePath);
+        if (!alreadyIn)
+        {
+            scenes.Add(new EditorBuildSettingsScene(savePath, true));
+            EditorBuildSettings.scenes = scenes.ToArray();
+            Debug.Log("[BCE] Arena_Copper added to Build Settings.");
+        }
 
         Debug.Log("[BCE] Arena_Copper scene created at " + savePath + "\n" +
                   "NEXT:\n" +
-                  "1. Window → AI → Navigation → Bake (NavMesh)\n" +
-                  "2. File → Build Settings → Add Arena_Copper scene\n" +
-                  "3. NetworkManager → spawnPrefabs: add Enemy_Grunt, Enemy_Ranged, Enemy_Elite, WorldItem\n" +
-                  "4. On a Hub portal: set arenaSceneName = \"Arena_Copper\"\n" +
-                  "5. Ctrl+S");
+                  "1. Window → AI → Navigation → Bake NavMesh on ArenaGround\n" +
+                  "2. NetworkManager (LoginScene) → spawnPrefabs: add Enemy_Grunt, Enemy_Ranged, Enemy_Elite, WorldItem\n" +
+                  "3. Ctrl+S to save scene\n" +
+                  "4. Play-mode checklist:\n" +
+                  "   a. Hub portal → arena loads\n" +
+                  "   b. Wave 1 enemies spawn after introDelay (4 s)\n" +
+                  "   c. Kill all enemies → wave 2 begins\n" +
+                  "   d. Return portal → player back in Hub");
 
         Selection.activeGameObject = wsGO;
     }

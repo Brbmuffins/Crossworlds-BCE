@@ -18,6 +18,7 @@ public static class BuildScript
         SceneNames.LoginPath,
         SceneNames.CharacterSelectPath,
         SceneNames.HubPath,
+        SceneNames.ArenaCopperPath,
     };
 
     // ── Dedicated Server (Linux) ─────────────────────────────────────────
