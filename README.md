@@ -4,10 +4,10 @@
 
 # Crossworlds BCE
 
-**Genre:** 4-10 player co-op combat MMO  
-**Engine:** Unity 6 LTS · Universal Render Pipeline  
+**Genre:** 4–10 player co-op combat MMO  
+**Engine:** Unity 6 (6000.4.10f1) · Universal Render Pipeline  
 **Networking:** Mirror (KCP transport, port 7777) · Server-authoritative  
-**Backend:** Node.js / Express 5 · MySQL · VPS auth server
+**Backend:** Node.js / Express 5 · MySQL · VPS auth server at `playcrossworlds.com`
 
 ---
 
@@ -15,15 +15,11 @@
 
 | | |
 |--|--|
-| **Context Index** | [`_context/index.md`](_context/index.md) — start here |
-| Combat Spec (all abilities + synergies) | [`COMBAT_ATLAS.md`](../COMBAT_ATLAS.md) |
-| Roadmap | [`ROADMAP.md`](../ROADMAP.md) |
-| Phase 3 Design | [`_context/PHASE3_DESIGN.md`](_context/PHASE3_DESIGN.md) |
-| Retention & Daily Systems | [`_context/RETENTION_DESIGN.md`](_context/RETENTION_DESIGN.md) |
-| Healing Feel Design | [`_context/HEALING_DESIGN.md`](_context/HEALING_DESIGN.md) |
-| VPS & Server Ops | [`_context/VPS_SERVER.md`](_context/VPS_SERVER.md) |
+| **ROADMAP.md** | Current task list and status |
+| **SNAPSHOT.md** | Architecture map, what's implemented vs stubbed |
+| **`_CONTEXT/CLAUDE.md`** | DB schema, API endpoints, server conventions |
+| **`_CONTEXT/VPS_SERVER.md`** | SSH, service commands, deploy, logs |
 | Website / Download | https://playcrossworlds.com |
-| Combat Atlas (live) | https://playcrossworlds.com/combat — 5 classes · 32 abilities · 16 synergy pairs |
 | Server Manager | http://playcrossworlds.com:4000 |
 | GM Dashboard | http://playcrossworlds.com:4000/gm-dashboard |
 
@@ -31,269 +27,282 @@
 
 ## Classes
 
-| Class | Role | Identity |
-|-------|------|----------|
-| **Warden** | Tank / Nature CC | Runic Snare, Battle Hymn, summon spirits — controls space and outlasts the fight |
-| **Ironclad** | Tank / CC | Shieldwall Charge, Iron Rampart, Counter Blow — the anvil the team fights around |
-| **Shadowblade** | DoT / Assassin | Shadow Veil, Dark Mark, Dark Harvest — stealth pressure and burst detonation |
-| **Cleric** | Support / Heal | Soul Bond, Divine Spark, Temporal Grace — keeps the team alive under fire |
-| **Arcanist** | Burst / Control | Arcane Step, Void Maw, Collapsing Void — spatial repositioning and burst payoff |
+| # | Class | Role | Identity |
+|---|-------|------|----------|
+| 0 | **Warden** | Tank / Nature CC | Runic Snare, Battle Hymn, summon spirits — controls space and outlasts the fight |
+| 1 | **Ironclad** | Tank / CC | Shieldwall Charge, Iron Rampart, Counter Blow — the anvil the team fights around |
+| 2 | **Shadowblade** | DoT / Assassin | Shadow Veil, Dark Mark, Dark Harvest — stealth pressure and burst detonation |
+| 3 | **Cleric** | Support / Heal | Soul Bond, Divine Spark, Temporal Grace — keeps the team alive under fire |
+| 4 | **Arcanist** | Burst / Control | Arcane Step, Void Maw, Collapsing Void — spatial repositioning and burst payoff |
 
-Each class has 4 equipped abilities + 1 ultimate. See [`COMBAT.md`](COMBAT.md) for full ability tables, combos, and design intent.
+Each class has 4 equipped abilities + 1 ultimate. Class index positions are fixed — never renumber.
 
 ---
 
-## Systems Built
+## Systems
 
 ### Networking
-- Mirror host/client live end-to-end (KCP transport, port 7777)
-- `RodNetworkAuthenticator` — JWT verify → server-side GET /character → stores class + spawn position in `conn.authenticationData`
-- `RodNetworkManager` — server-authoritative class selection; reads DB class in production, client message in dev mode. Class prefabs are dual-registered: added to Mirror's `spawnPrefabs` (so `base.OnStartClient()` handles them) and directly via `NetworkClient.RegisterPrefab()` for belt-and-suspenders reliability in player builds
-- `RodNetworkAuthenticator` dev mode — bypasses JWT for local HOST testing with one click
-
-### Server Manager & Account Management
-
-**Manager Dashboard** — `http://playcrossworlds.com:4000` · HTTP Basic Auth (admin credentials in private notes)
-- Player account overview
-- Service health and controls
-- Built on Node.js / Express at `/opt/rod-dashboard/` · systemd managed
-
-**GM Server Dashboard** — `http://playcrossworlds.com:4000/gm-dashboard` · token auth (in `.env` on VPS)
-- Live crossworlds status (green/red pill)
-- Spawn events pulled from server log
-- Last 50 log lines, color-coded by type
-- Restart game server button (auto-reloads after 8s)
-- Download full server log
-- Link to Uptime Kuma monitoring
-
-**Auth Server** — `http://playcrossworlds.com:3000` (internal — Unity connects here directly, not through Nginx)
-- `POST /register` — create account
-- `POST /login` — returns JWT
-- `GET /health` — service check
-- `POST /character` — create/confirm character, returns full loadout
-- `GET /character` — used at spawn: returns class index, last position, gear
-- `PATCH /character/position` — saves position on disconnect
-- `POST /character/gear/equip` · `GET /items`
-
-### Authentication & Characters (VPS)
-- Node.js / Express 5 auth server at `/opt/rod-auth/` · port 3000 · systemd service `rod-auth`
-- Admin dashboard at `/opt/rod-dashboard/` · port 4000 · HTTP Basic auth
-- `POST /register` · `POST /login` · `GET /health`
-- `POST /character` — idempotent create/confirm, returns full character + 6-slot gear
-- `GET /character` — spawn-path critical: class index + last saved position + equipped gear
-- `PATCH /character/position` — saves X/Y/Z/map/orientation on disconnect
-- `POST /character/gear/equip` · `GET /items`
-
-### Database (rod_online · MySQL)
-- `characters` — account FK, class_index, level, XP, position, online flag, last_logout
-- `item_template` — static gear definitions, 12 seeded rows, 6 slots, per-stat ranges
-- `item_instance` — per-player items with rolled stats
-- `character_gear` — equipped loadout (one row per slot per character)
-- `loot_tables` — exists, wired for future drop system
+- Mirror host/client live end-to-end (KCP, UDP 7777)
+- `RodNetworkAuthenticator` — JWT verify → `GET /character` → class + spawn position in `conn.authenticationData`
+- `RodNetworkManager` — server-authoritative class selection; class prefabs dual-registered in `spawnPrefabs` and `NetworkClient.RegisterPrefab()`
+- Dev mode bypass — one-click HOST without JWT for local testing
+- `AuthManager` — session credential cache (Token + CharacterId) shared across LoginManager, CharacterSelectManager, PlayerIdentity, InventoryManager. Compiles in all build targets including Dedicated Server.
 
 ### Scene Flow
 ```
-LoginScene → CharacterSelect → GameWorld
+LoginScene(0) → CharacterSelect(1) → Hub(2) → [Arena_Copper via portal]
 ```
-- `LoginManager` — full MMO login UI built in code; username/password auth, register panel, server IP field (saves to PlayerPrefs), animated title, dev HOST button
-- `CharacterSelectManager` — 3D character preview via RenderTexture on layer 31; class list, ability readout, ENTER WORLD; reads server IP from PlayerPrefs before StartClient()
-- `RodPositionSaver` — attached at runtime to server-side player objects; PATCH /character/position on disconnect or app quit via temporary coroutine host
+- `LoginManager` — MMO login UI, register panel, server IP field, animated title, dev HOST button
+- `CharacterSelectManager` — 3D character preview via RenderTexture on layer 31; class list, ability readout, ENTER WORLD
+- `RodPositionSaver` — server-side; `PATCH /character/position` on disconnect
 
-### Combat
+### Combat Core (`Assets/Game/Combat/Scripts/`)
 
-All combat scripts live in `Assets/Game/Combat/Scripts/`.
+| Script | Purpose |
+|---|---|
+| `Health.cs` | Server-authoritative HP. Events: `onDeath`, `onDamageTaken`, `onHealthChanged`, `onKilledBy`, `onHealApplied`, `onDownedChanged` |
+| `StatusEffectManager.cs` | Applies/ticks/expires Slow, Stagger, Silenced, Cursed, Weakened, Bound |
+| `DropTable.cs` | ScriptableObject — `RollDrops()` → items + gold. Configurable weights |
+| `WorldItem.cs` | NetworkBehaviour floor loot — floats + rotates, server-despawns after 90s |
+| `CombatAudio.cs` | 7-slot AudioSource component: meleeHit, rangedHit, deathSFX, shieldSFX, waveAlert, abilityCast, healSFX. Clips auto-assigned from Retro Sci-Fi Pack via BCE editor menu |
+| `ResourceNode.cs` | Mining node — F-key, POSTs to `/api/inventory/add-item`, awards profession XP, depletes + respawns |
 
-**Core systems**
-
-| Script | Type | Purpose |
-|---|---|---|
-| `Health.cs` | MonoBehaviour | Server-authoritative HP — `maxHealth`, `currentHealth`, `IsAlive`, `Fraction`, `IsDowned`. Events: `onDeath`, `onDamageTaken(float)`, `onHealthChanged(float,float)`, `onKilledBy(GameObject)`, `onHealApplied(float)`, `onDownedChanged(bool)` |
-| `StatusEffect.cs` | Plain C# | Single effect instance — type, duration, magnitude, source |
-| `StatusEffectManager.cs` | MonoBehaviour | Applies / ticks / expires effects. Queries: `IsStaggered`, `IsBound`, `IsSilenced`, `GetSlowFraction()`. Types: Slow, Stagger, Silenced, Cursed, Weakened, Bound |
-| `DropTable.cs` | ScriptableObject | `RollDrops()` → `(List<(itemId, qty)> items, int gold)`. Configurable weights, gold range, nothing-weight. Create via BCE/DropTable asset menu |
-| `WorldItem.cs` | NetworkBehaviour | Floor loot — floats + rotates, collected on player trigger, server-despawns after 90s |
-
-**Enemy AI**
+### Enemy AI
 
 `EnemyController.cs` — server-authoritative state machine:
 ```
-Idle ──(player enters aggroRadius)──► Chase ──(in attackRange)──► Attack
-  ▲                                      │
-  └── leash: returns to spawn if too far ┘
+Idle ──(aggroRadius)──► Chase ──(attackRange)──► Attack
+  ▲                         │
+  └── leash to spawn ───────┘
 Dead ◄── Health.onDeath
 ```
-- Stagger: skips attack tick
-- Bound: NavMeshAgent.isStopped = true
-- Slow: `agent.speed *= (1 - GetSlowFraction())`
-- Ranged variant: fires `EnemyProjectile` (server-spawned), backs off if target too close
-- Death: logs `[LOOT]`, spawns WorldItem at death position, drops gold
+- Stagger skips attack tick; Bound stops NavMeshAgent; Slow scales agent speed
+- Ranged variant fires `EnemyProjectile`, backs off if too close
+- Death: spawns WorldItem at death position, drops gold
 
-**Wave system**
+### Enemy Models (Tripo AI)
+
+3 character models generated via Tripo text-to-3D pipeline and committed as LFS assets:
+
+| Enemy | Model | Template ID |
+|---|---|---|
+| Grunt | Goblin warrior | `goblin_grunt` |
+| Ranged | Skeleton archer | `skeleton_ranged` |
+| Elite | Orc berserker | `troll_elite` |
+
+Each has a clean v1.0-20240301 biped rig (16 paired L/R anatomical bones) and 6 FBX animation clips: `idle / walk / run / slash / hurt / fall`.
+
+Assets at: `Assets/Game/Characters/Enemies/{Grunt,Ranged,Elite}/`
+
+When you run `BCE/Setup/4a–4c`, `EnemyBuilder` automatically attaches the rigged GLB as a `Model` child and wires `EnemyAnimController` onto its `Animator`.
+
+### Wave System
 
 `WaveSpawner.cs` — NetworkBehaviour, server-driven:
-- `StartWaves()` / `StopWaves()` called from portal arrival trigger
-- Escalates: `baseEnemiesPerWave + (wave-1) × enemiesAddedPerWave`
-- 67% grunt / 33% ranged split; elite every `eliteEveryNWaves` waves
+- `StartWaves()` / `StopWaves()` called from portal trigger
+- Escalates: `baseEnemiesPerWave + (wave−1) × enemiesAddedPerWave`
+- 67% grunt / 33% ranged split; elite every N waves
 - Waits for `enemiesAlive == 0` before advancing
-- Announcements via `RodChatManager.Instance?.AddSystemMessage()`
+- Announcements via `RodChatManager`
 
-**World Boss — Null Architect**
+### World Boss — Null Architect
 
-`WorldBossController.cs` — 4-phase NetworkBehaviour boss:
+`WorldBossController.cs` — 4-phase NetworkBehaviour:
 
-| Phase | Trigger | Key Mechanics |
+| Phase | Trigger | Mechanics |
 |---|---|---|
-| Phase 1 | Fight start | Melee + reflect pulse AoE every 18s (players still deal damage) |
-| Transition | HP ≤ 60% | Immunity window (4s) → NullShard fracture spawns |
-| Phase 2 | After transition | Tether web (pairs players, snap damage if they drift > 6u) + void drain AoE |
-| Phase 3 | HP ≤ 30% | Boss gains Weakened (takes +25% damage); void drain doubles |
+| 1 | Fight start | Melee + reflect pulse AoE every 18s |
+| Transition | HP ≤ 60% | 4s immunity → NullShard fracture spawns |
+| 2 | Post-transition | Tether web (pair snap damage) + void drain AoE |
+| 3 | HP ≤ 30% | Boss gains Weakened (+25% damage taken); void drain doubles |
 | Final Surge | HP ≤ 10% | 3× speed + 3× attack for 15s |
-| Dead | HP = 0 | Guaranteed drops + rare roll + chat announcement |
 
-SyncVars: `currentPhase`, `isImmune`, `isReflecting`, `isDraining`
-UI: `WorldBossHealthBar` — self-bootstrapping ScreenSpaceOverlay, phase colour shifts, marker lines at 60% and 30%
+`WorldBossHealthBar` — self-bootstrapping ScreenSpaceOverlay, phase colour shifts, marker lines at 60% and 30%.
 
-### Editor Automation (`BCE →` menu)
+### Inventory & Loot
+- `InventoryManager` — self-bootstrapping singleton; 32-slot in-memory cache; POSTs to `/api/inventory/save` on pickup
+- Gold pickups routed directly to `PlayerProgressManager.AwardGold()`
+- Equipment slot sync via `POST /api/inventory/equip`
 
-Run in order from scratch:
+### Progression
+- `PlayerProgressManager` — XP, gold, level; syncs to `/api/progress`
+- `XpBar.cs` — bottom-centre XP bar, smooth fill, gold flash on level-up
+- `CharacterSheetUI.cs` — C key: level, XP, gold, stat block
+- `LevelUpScreen.cs` — full-screen class-coloured level-up burst animation
 
-| Step | Menu Item | Output |
-|---|---|---|
-| 0 | `Setup/0 ▶ Create Character Select Scene` | CharacterSelect.unity — 3D preview, layer 31, EventSystem |
-| 1 | `Setup/1 ▶ Create Login Scene` | LoginScene.unity — NetworkManager, authenticator, KCP, UI |
-| 2 | `Setup/2 ▶ Clean GameWorld` | Removes stray NetworkManager components |
-| 3 | `Setup/3 ▶ Fix Build Settings` | Enforces Login(0) → CharSelect(1) → Hub(2) |
-| 4 | `Setup/4 ▶ Create Class Prefabs (5 Classes)` | Warden / Ironclad / Shadowblade / Cleric / Arcanist prefabs, assetId baked, registered in NetworkManager |
-| 4a | `Setup/4a ▶ Create Grunt Enemy Prefab` | `Assets/Game/Prefabs/Enemy_Grunt.prefab` + Grunt_DropTable.asset |
-| 4b | `Setup/4b ▶ Create Ranged Enemy Prefab` | `Assets/Game/Prefabs/Enemy_Ranged.prefab` + Ranged_DropTable.asset |
-| 4c | `Setup/4c ▶ Create Elite Enemy Prefab` | `Assets/Game/Prefabs/Enemy_Elite.prefab` + Elite_DropTable.asset |
-| 4d | `Setup/4d ▶ Create WorldItem Prefab` | `Assets/Game/Prefabs/WorldItem.prefab` |
-| 4e | `Setup/4e ▶ Create Wave Spawner (Arena)` | WaveSpawner + 4 cardinal spawn points in active scene |
-| 5 | `Setup/5 ▶ Fix Animator Controllers` | Re-assigns AnimatorControllers to class prefabs |
-| 6 | `Setup/6 ▶ Create World Boss (Null Architect)` | NullArchitect_Boss + NullShard.prefab in active arena scene |
-| — | `Build Hub Scene` | Full Hub.unity rebuild from scratch |
-
-**After 4a–4d and 6:** manually add all 5 combat prefabs to **NetworkManager → Registered Spawnable Prefabs**.  
-**After step 4 or any prefab change:** rebuild the client — assetIds bake at build time.  
-**After step 6:** bake NavMesh (Window → AI → Navigation → Bake), then Ctrl+S.
+### Hub Systems
+- `ForgeNPC.cs` — proximity E-key, opens `CraftingUI`, billboard prompt, gold point light
+- `CraftingUI.cs` — scrollable recipes from `GET /api/recipes`, ingredient check, `POST /api/craft`
+- `HangmanNPC.cs` — auto-placed in Hub by `BCE/Hub Setup/9`
 
 ### UI Systems
-- **ESC Menu** (`EscMenu.cs`) — Escape key → Resume / Logout / Quit. Self-bootstrapping, persists across scenes.
-- **Chat** (`RodChatManager.cs`) — Enter or T to open. Mirror-networked, all clients see all messages.
-- **Who's Online** (`PlayerListUI.cs`) — P to toggle. Top-right panel, shows all connected players with class color. Updates instantly on join/leave.
-- **Nameplates** (`PlayerNameplate.cs`) — Floating billboard above each player. Shows name + class. Hides on local player. Fades 20–40u from camera.
-
-![Multiplayer chat working](Docs/multiplayer-chat-working.png)
+- **ESC Menu** — Resume / Logout / Quit; self-bootstrapping
+- **Chat** (`RodChatManager`) — Enter/T; Mirror-networked
+- **Who's Online** (`PlayerListUI`) — P key; class colour per player
+- **Nameplates** — floating billboard, hides on local player, fades 20–40u
+- **Ability Bar** — 4+1 strip, radial cooldown overlay + CD timer text
+- **Arena Clear UI** — wave-complete banner + loot summary
 
 ### GM Console (`GmConsole.cs`)
-Self-bootstrapping — no scene object needed. Toggle with `` ` `` or **F1**.
+Toggle with `` ` `` or **F1**. Access gated by `GM_USERS` allowlist.
 
 | Command | Effect |
 |---------|--------|
-| `speed <n>` | Multiply move + sprint speed by n |
-| `fly` | Toggle fly mode (gravity off, Space/Ctrl for vertical) |
-| `god` | Toggle `Health.isInvulnerable` |
+| `speed <n>` | Multiply move + sprint speed |
+| `fly` | Toggle fly mode |
+| `god` | Toggle invulnerability |
 | `heal` | Full heal self |
-| `kill` | Kill all `"Enemy"`-tagged objects |
-| `spawn [n]` | Spawn n red capsule enemies near player |
-| `wave [n]` | Start WaveManager or jump to wave n |
-| `tp <x> <y> <z>` | Teleport player to world coords |
-| `pos` | Print current world position (useful for level building) |
-| `players` | List all connected players + class + position |
-| `goto <name>` | Teleport to another player |
-| `noclip` | Toggle player colliders off |
-| `clear` / `help` | Clear log / list commands |
+| `kill` | Kill all enemies |
+| `spawn [n]` | Spawn n test enemies |
+| `wave [n]` | Start waves or jump to wave n |
+| `tp <x> <y> <z>` | Teleport to coords |
+| `pos` | Print world position |
+| `players` | List all connected players |
+| `goto <name>` | Teleport to player |
+| `noclip` | Toggle colliders off |
 
-Access gated by `GM_USERS` allowlist in `GmConsole.cs`. Command history: ↑/↓ arrows.
-
-### Crafting & Professions
-
-- **`ForgeNPC.cs`** — Hub NPC, proximity E-key trigger, opens `CraftingUI`. Billboard prompt "[E] Forge Master". Throttled player scan (0.5s). Gold point light for visual presence.
-- **`ResourceNode.cs`** — Mining node, F-key interaction, posts to `POST /api/inventory/add-item`. Awards profession XP via `PlayerProgressManager.Local.AwardXp()`. Depletes after N hits, respawns after 60s. Billboard "[F] Mine".
-- **`CraftingUI.cs`** — F key panel, scrollable recipe list fetched from `GET /api/recipes`, ingredient check display, `POST /api/craft`, auto-refreshes inventory bag.
-- **`HubSceneBuilder` step 8** — `BCE/Hub Setup/8 - Add Forge and Mining NPCs` automatically places ForgeNPC at (-12,0,-4) and 3 Copper Ore nodes in scene.
-
-### Progression HUD
-
-- **`XpBar.cs`** — bottom-centre XP bar, smooth fill animation, gold flash + label punch on level-up
-- **`CharacterSheetUI.cs`** — C key panel: level, XP, gold, str/agi/int/vit stat block
-- **`LevelUpScreen.cs`** — full-screen class-coloured burst + "LEVEL UP!" punch-scale animation
-- **`AbilityHUD.cs`** — self-bootstrapping 4+1 bottom-right ability strip with radial cooldown overlay + CD timer text
-- **`ArenaClearUI.cs`** — wave-complete banner + loot summary overlay
-
-### VFX
-- brbmuffins Technologies particle pack (ElectricalSparks, EnergyExplosion, SmallExplosion, FireFlies, HeatDistortion)
-- brbmuffins Dark Arts fantasy pack (Magic circle, Death magic circle, Lightning strike, Mana wall, Ground spikes, Fireball)
-- `RodBillboard` — zone label text always faces camera
-- `EnemyDeathVFX` — spawns crimson particle burst via `Health.onDeath`; procedural fallback when no VFX prefab assigned (40 particles, 2.5s lifetime)
-- `LoginScreenVFX` — ambient atmosphere on login screen
+### VFX & Audio
+- brbmuffins Technologies particle pack (sparks, explosions, fire)
+- brbmuffins Dark Arts fantasy pack (magic circles, lightning, fireballs)
+- `EnemyDeathVFX` — crimson burst on death; procedural fallback if no prefab
+- `LoginScreenVFX` — ambient login atmosphere
+- `CombatAudio` — 7 Retro Sci-Fi Pack clips auto-assigned via `BCE/Hub World/Wire Combat Assets`
 
 ---
 
-## Design Pillars
+## Editor Automation (`BCE →` menu)
 
-- **Harder = more reward** — wave difficulty multiplier feeds loot score; higher cycles = rarer drops
-- **Shared common goal** — one enemy pool, one boss HP bar; every player's damage contributes
-- **Multiple paths** — Ironclad tanks, Warden controls, Cleric sustains, Shadowblade pressures, Arcanist bursts — all valid, all needed
-- **Zone in and battle** — no lobby meta, no mandatory prep; pick hero, enter arena, fight
-- **Community crafting** — server hub has Forge Master NPC, mining nodes, and CraftingUI; shared progression systems
-- **DoT class complete** — Shadowblade is fully playable with the veil → dark mark → harvest loop
+### Setup (run in order from scratch)
+
+| Step | Menu Item | Output |
+|---|---|---|
+| 0 | `Setup/0 ▶ Create Character Select Scene` | CharacterSelect.unity |
+| 1 | `Setup/1 ▶ Create Login Scene` | LoginScene.unity |
+| 2 | `Setup/2 ▶ Clean GameWorld` | Removes stray NetworkManager components |
+| 3 | `Setup/3 ▶ Fix Build Settings` | Login(0) → CharSelect(1) → Hub(2) |
+| 4 | `Setup/4 ▶ Create Class Prefabs` | 5 hero prefabs, registered in NetworkManager |
+| 4a | `Setup/4a ▶ Create Grunt Enemy Prefab` | Enemy_Grunt.prefab + Grunt_DropTable + Tripo mesh |
+| 4b | `Setup/4b ▶ Create Ranged Enemy Prefab` | Enemy_Ranged.prefab + Ranged_DropTable + Tripo mesh |
+| 4c | `Setup/4c ▶ Create Elite Enemy Prefab` | Enemy_Elite.prefab + Elite_DropTable + Tripo mesh |
+| 4d | `Setup/4d ▶ Create WorldItem Prefab` | WorldItem.prefab |
+| 4d | `Setup/4d ▶ Create Enemy AnimController` | EnemyAnimController.controller (uses Tripo clips) |
+| 4e | `Setup/4e ▶ Create Wave Spawner (Arena)` | WaveSpawner + 4 spawn points in active scene |
+| 5 | `Setup/5 ▶ Fix Animator Controllers` | Re-assigns AnimatorControllers to class prefabs |
+| 6 | `Setup/6 ▶ Create World Boss (Null Architect)` | NullArchitect_Boss + NullShard.prefab |
+| 7 | `Setup/7 ▶ Create Arena Scene` | Arena_Copper.unity |
+
+### Hub Setup
+
+| Step | Menu Item | Effect |
+|---|---|---|
+| 8 | `Hub Setup/8 - Add Forge and Mining NPCs` | ForgeNPC at (−12,0,−4) + 3 Copper Ore nodes |
+| 9 | `Hub Setup/9 - Place HangmanNPC` | HangmanNPC in Hub scene |
+| — | `Hub World/Wire Combat Assets` | Wires VFX prefabs, CombatAudio (7 clips), WaveSpawner enemy refs |
+| — | `Hub World/Build Hub Scene` | Full Hub.unity rebuild from scratch |
+
+**After 4a–4d:** set the **Avatar** field on each enemy prefab's Animator (Inspector — cannot be automated).  
+**After any prefab change:** add new prefabs to **NetworkManager → Registered Spawnable Prefabs**.
+
+---
+
+## Server / API
+
+Ports are frozen: **3000** auth · **4000** dashboard · **7777/UDP** game · **3001** Kuma
+
+| Endpoint | Purpose |
+|---|---|
+| `POST /login` | Returns JWT |
+| `POST /register` | Create account |
+| `GET /character` | Spawn-path critical: class index + position + gear |
+| `POST /character` | Create/confirm character |
+| `PATCH /character/position` | Save position on disconnect |
+| `POST /character/gear/equip` | Equip item |
+| `GET /api/inventory/:id` | Load inventory slots |
+| `POST /api/inventory/save` | Save all slots |
+| `POST /api/inventory/equip` | Mark slot equipped |
+| `GET /api/recipes` | Crafting recipe list |
+| `POST /api/craft` | Attempt craft |
+| `GET /api/progress/:id` | XP, level, gold |
+| `POST /api/progress/award-xp` | Grant XP |
+
+Old gear endpoints (`/character`, `/character/gear/equip`, `item_template`, `character_gear`) are **sacred** — Unity calls them on every spawn. Never modify.
+
+---
+
+## Build & Deploy
+
+```
+1. git lfs pull          (GitHub Desktop — CLI has no auth token)
+2. powershell -ExecutionPolicy Bypass -File tools\build-server.ps1
+3. scp build\crossworlds-server.tar.gz tools\deploy-server.sh ubuntu@playcrossworlds.com:~
+4. ssh ubuntu@playcrossworlds.com "sudo bash deploy-server.sh"
+```
+
+Auto-backup, restart, verify, and auto-rollback on failure. Manual rollback: `--rollback`.
 
 ---
 
 ## Changelog
 
+### 2026-07-03 — Enemy models, CombatAudio automation, compilation fixes
+
+- **Tripo AI enemy models** — 3 unique character models (goblin grunt, skeleton archer, orc berserker) generated via text-to-3D with v1.0 biped rigs and 6 FBX animation clips each (idle/walk/run/slash/hurt/fall). Committed as LFS assets under `Assets/Game/Characters/Enemies/`.
+- **EnemyBuilder auto-attach** — `BCE/Setup/4a–4c` now automatically finds the rigged GLB in the enemy's `rig/` subdir and attaches it as a `Model` child, disabling the placeholder capsule renderer.
+- **EnemyAnimatorBuilder** — clip loading prefers Tripo animation subdirs over brbmuffins/Blink pack; falls back gracefully if clips absent.
+- **CombatAudio auto-assignment** — `BCE/Hub World/Wire Combat Assets` now runs `PatchCombatAudio()` (Step 6), finding or creating a CombatAudio component and assigning all 7 Retro Sci-Fi Pack clips. Idempotent — only assigns null slots.
+- **AuthManager compilation fix** — `AuthManager` stub moved outside `#if !UNITY_SERVER` in `InventoryManager.cs` so it compiles when Build Target is Dedicated Server. Resolves CS0103 across RodNetworkAuthenticator, LoginManager, CharacterSelectManager, PlayerProgressManager.
+- **Editor builder guards** — `HubPlayableBuilder`, `HubSceneBuilder`, `RodPrefabBuilder`, `EnemyBuilder` updated to guard client-only type references (`CombatAudio`, `ResourceNode`, `PlayerAnimator`) with `#if !UNITY_SERVER` so they compile under Dedicated Server build target. Fixed `MeshFilter.enabled` CS1061 (MeshFilter has no `.enabled`).
+- **Credential safety** — `.gitignore` now blocks `.env`, `*.local`, `*secret*`, `*api-key*` patterns.
+
 ### 2026-06-28 — Stability & networking bug-fix pass
 
-Audit pass across combat, networking, abilities, and status systems. All fixes are
-localized and behavior-preserving for existing working paths.
-
-- **Abilities** (`AbilityCaster.cs`) — added an `isLocalPlayer` guard so remote player
-  clones no longer process local keyboard/mouse input. Previously pressing an ability key
-  fired the ability on *every* player object on the client at once (and each grabbed the cursor).
-- **Position save** (`RodPositionSaver.cs`) — floats now serialize with `InvariantCulture`.
-  On OS locales that use a `,` decimal separator the old JSON was malformed (`"x":1,234`)
-  and the `PATCH /character/position` save silently failed.
-- **Spawning** (`RodNetworkManager.cs`) — `OnCreatePlayer` now rejects a duplicate
-  `CreatePlayerMessage` (`conn.identity != null`), preventing orphaned player objects on the server.
-- **Waves** (`WaveManager.cs`) — GM `wave <n>` (`JumpToWave`) now despawns current enemies
-  instead of orphaning them alive and untracked.
-- **Enemy AI** (`EnemyAI.cs`) — enemies drop dead/downed targets and ignore them when
-  acquiring, instead of swinging forever at a corpse.
-- **Status effects** (`StatusEffectManager.cs`) — re-applying an effect now refreshes its
-  magnitude/source, so a stronger slow or curse actually takes effect.
-- **Damage redirect** (`Health.cs`) — added a self-guard and re-entrancy guard to the
-  Transfer Protocol redirect, eliminating an infinite loop when two targets redirect to each other.
-- **Chat** (`RodChatManager.cs`) — server now logs `[CHAT] <user>: <msg>` so messages are
-  visible in `crossworlds.log`.
-
-> **Not yet addressed (architectural — tracked separately):** enemies are not
-> `NetworkServer.Spawn`'d and combat damage is client-local; the GM allowlist is client-side.
-> These require the server-authoritative combat build-out, not a point fix.
+- **Abilities** — `isLocalPlayer` guard prevents remote clones processing local input
+- **Position save** — floats use `InvariantCulture`; fixes silent failure on `,` decimal locales
+- **Spawning** — `OnCreatePlayer` rejects duplicate `CreatePlayerMessage`
+- **Enemy AI** — drops dead/downed targets on acquire
+- **Status effects** — re-applying refreshes magnitude/source
+- **Damage redirect** — self-guard + re-entrancy guard eliminates infinite redirect loop
+- **Chat** — server logs `[CHAT] <user>: <msg>`
 
 ---
 
-## Known TODOs / Open Bugs
+## Known TODOs
 
 | Priority | Item |
 |----------|------|
-| High | Arena scene — needs NavMesh baked + WaveSpawner wired in scene file |
-| High | `NetworkManager.spawnPrefabs` — Enemy_Grunt, Enemy_Ranged, Enemy_Elite, WorldItem must be manually added in Inspector |
-| High | Class abilities — `AbilityCaster.cs` has all 32 abilities defined but per-hero wiring incomplete |
-| Medium | `orientation:F3` — Unity sending float as formatted string in `PATCH /character/position` (server-side fix applied; client still sends wrong format) |
-| Medium | Enemy prefabs — capsule placeholders; real meshes not assigned |
-| Medium | Ability icons — color-coded placeholder squares; real sprite atlas needed |
-| Medium | Mining portal — dedicated sub-zone with ore cluster; ResourceNode currently only placed in Hub |
-| Medium | Profession XP — crafting/mining XP not yet persisted to `professions` table |
-| Medium | Stale prefabs — `Engineer.prefab`, `Guardian.prefab`, `Wraith.prefab`, `Medic.prefab` still in `Assets/Game/Prefabs/` |
-| ~~Low~~ | ~~`GmConsole.cs` — `#if !UNITY_SERVER` guard needed~~ — ✅ **Fixed 2026-06-29** |
+| High | Arena scene — NavMesh not yet baked; WaveSpawner needs enemy prefabs wired in Inspector |
+| High | Enemy Animator Avatar — must be set manually in Inspector after running `4a–4c` |
+| High | `NetworkManager.spawnPrefabs` — Enemy_Grunt, Ranged, Elite, WorldItem must be added manually |
+| Medium | Class abilities — `AbilityCaster.cs` has all 32 defined but per-hero wiring incomplete |
+| Medium | `orientation:F3` — client still sends float as formatted string in `PATCH /character/position` |
+| Medium | Ability icons — colour-coded placeholder squares; real sprite atlas needed |
+| Medium | Profession XP — not yet persisted to `professions` table |
+| Medium | Stale prefabs — `Engineer.prefab`, `Guardian.prefab`, `Wraith.prefab`, `Medic.prefab` in Prefabs/ |
 | Low | Arcanist missing from CharacterSelect 3D preview |
-| Low | Hit VFX — no impact sparks on melee connect yet |
-| Low | SFX — footsteps, ability sounds, hit sounds, death sounds all placeholder/silent |
+| Low | Hit VFX — no impact sparks on melee connect |
+| Low | Footstep SFX — silent |
+| Low | Brandalf (6th hero model in `Assets/Game/Heroes/Brandalf/`) — DECISION PENDING: new class vs skin |
 
 ---
 
 ## Project Structure
 
 ```
-Rate 
+Assets/Game/
+  Abilities/Scripts/     deployables + ability behaviours
+  Characters/Scripts/    class passives, NPC controller, ability pools
+  Characters/Enemies/    Tripo AI models — Grunt / Ranged / Elite (rig + 6 FBX clips each)
+  Combat/Scripts/        Health, EnemyController, WaveSpawner, WorldBossController,
+                         StatusEffectManager, DropTable, WorldItem, CombatAudio, ResourceNode
+  Networking/            RodNetworkManager, RodNetworkAuthenticator, PlayerIdentity,
+                         PortalTransition, RodChatManager, ForgeNPC
+  Systems/               InventoryManager, ItemCatalog, HeroMastery, AuthManager stub
+  UI/                    HUDs, panels, GmConsole, LoginManager, PlayerProgressManager
+  Editor/                BCE menu builders — EnemyBuilder, HubPlayableBuilder,
+                         HubSceneBuilder, RodPrefabBuilder, EnemyAnimatorBuilder
+  Scenes/                LoginScene(0), CharacterSelect(1), Hub(2)
+  Prefabs/               5 hero prefabs + Enemy_Grunt/Ranged/Elite + WorldItem
+  Heroes/Brandalf/       6th-hero model — DECISION PENDING
+_CONTEXT/                server/API docs, VPS ops
+tools/                   build-server.ps1, deploy-server.sh
+```
