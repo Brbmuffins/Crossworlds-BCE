@@ -311,14 +311,13 @@ sudo systemctl restart crossworlds
 |---|---|
 | Database | `crossworlds` |
 | User | `crossworlds` |
-| Password | `CW$3cure2025!` |
+| Password | see `DB_PASS` in `/opt/crossworlds-auth/.env` on the VPS |
 | Host | `localhost` |
 
 **Dashboard Admin (HTTP Basic Auth)**
-| What | Value |
-|---|---|
-| Username | `admin` |
-| Password | `hambone` |
+Credentials live only on the VPS (dashboard `.env` / nginx config) — never in this repo.
+NOTE: previous versions of this file committed both passwords to git history — rotate
+them on the VPS if not already done.
 
 **Admin API Token** (header: `x-admin-token`)
 See `ADMIN_TOKEN` in `/opt/crossworlds-auth/.env` and `/opt/crossworlds-dashboard/.env`
