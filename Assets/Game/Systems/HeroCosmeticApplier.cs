@@ -137,7 +137,7 @@ public class HeroCosmeticApplier : MonoBehaviour
     // API
     int    _characterId = -1;
     string _jwt         = "";
-    string _serverIP    = "localhost";
+    string _serverIP    = ServerConfig.DefaultServerIP;
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
     void Awake()
@@ -162,7 +162,7 @@ public class HeroCosmeticApplier : MonoBehaviour
             {
                 _characterId = id.characterId;
                 _jwt         = PlayerPrefs.GetString("jwt_token", "");
-                _serverIP    = PlayerPrefs.GetString("serverIP", "localhost");
+                _serverIP    = ServerConfig.ServerIP;
                 _playerRoot  = id.gameObject;
                 StartCoroutine(FetchCosmetics());
                 yield break;

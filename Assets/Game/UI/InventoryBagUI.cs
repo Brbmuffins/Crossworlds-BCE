@@ -89,8 +89,7 @@ public class InventoryBagUI : MonoBehaviour
         if (string.IsNullOrEmpty(charId)) { SetStatus("No character loaded."); _loading = false; yield break; }
 
         string token  = PlayerPrefs.GetString("jwt_token", "");
-        string ip     = PlayerPrefs.GetString("serverIP", "localhost");
-        string url    = $"http://{ip}:3000/api/inventory/{charId}";
+        string url    = $"{ServerConfig.AuthBaseUrl}/api/inventory/{charId}";
 
         using var req = UnityWebRequest.Get(url);
         req.SetRequestHeader("Authorization", $"Bearer {token}");
@@ -135,8 +134,7 @@ public class InventoryBagUI : MonoBehaviour
         if (string.IsNullOrEmpty(charId)) yield break;
 
         string token = PlayerPrefs.GetString("jwt_token", "");
-        string ip    = PlayerPrefs.GetString("serverIP", "localhost");
-        string url   = $"http://{ip}:3000/api/inventory/equip";
+        string url   = $"{ServerConfig.AuthBaseUrl}/api/inventory/equip";
 
         string body = $"{{\"characterId\":{charId},\"slot_index\":{slotIndex},\"equipped\":{(equip ? 1 : 0)}}}";
         using var req = new UnityWebRequest(url, "POST");

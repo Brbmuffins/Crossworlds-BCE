@@ -130,7 +130,7 @@ public class ResourceNode : MonoBehaviour
     {
         string characterId = PlayerPrefs.GetString("SelectedCharacter", "");
         string jwt         = PlayerPrefs.GetString("jwt_token", "");
-        string serverIp    = PlayerPrefs.GetString("serverIP", "127.0.0.1");
+        string serverIp    = ServerConfig.ServerIP;
 
         if (string.IsNullOrEmpty(characterId) || string.IsNullOrEmpty(jwt))
         {

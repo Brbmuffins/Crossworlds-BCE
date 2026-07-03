@@ -204,7 +204,7 @@ public class CombatSessionTracker : MonoBehaviour
             heroClass     = heroClass
         });
 
-        string serverUrl = $"http://{PlayerPrefs.GetString("serverIP", "localhost")}:3000";
+        string serverUrl = ServerConfig.AuthBaseUrl;
         string token     = PlayerPrefs.GetString("jwt_token", "");
 
         using var req = new UnityWebRequest($"{serverUrl}/api/combat/session/end", "POST");

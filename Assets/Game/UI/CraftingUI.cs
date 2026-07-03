@@ -83,9 +83,8 @@ public class CraftingUI : MonoBehaviour
         SetStatus("Loading recipes...");
         ClearRecipeList();
 
-        string ip    = PlayerPrefs.GetString("serverIP", "localhost");
         string token = PlayerPrefs.GetString("jwt_token", "");
-        string url   = $"http://{ip}:3000/api/recipes?profession={_currentProfession}";
+        string url   = $"{ServerConfig.AuthBaseUrl}/api/recipes?profession={_currentProfession}";
 
         using var req = UnityWebRequest.Get(url);
         req.SetRequestHeader("Authorization", $"Bearer {token}");
@@ -120,9 +119,8 @@ public class CraftingUI : MonoBehaviour
         string charId = GetCharacterId();
         if (string.IsNullOrEmpty(charId)) { SetResult("No character loaded."); yield break; }
 
-        string ip    = PlayerPrefs.GetString("serverIP", "localhost");
         string token = PlayerPrefs.GetString("jwt_token", "");
-        string url   = $"http://{ip}:3000/api/craft";
+        string url   = $"{ServerConfig.AuthBaseUrl}/api/craft";
         string body  = $"{{\"characterId\":{charId},\"recipeId\":{recipeId}}}";
 
         _craftBtn.interactable = false;

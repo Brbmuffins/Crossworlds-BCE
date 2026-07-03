@@ -60,7 +60,7 @@ public class HeroMasteryManager : MonoBehaviour
     // ── Private state ─────────────────────────────────────────────────────────
     int    _characterId = -1;
     string _jwt         = "";
-    string _serverIP    = "localhost";
+    string _serverIP    = ServerConfig.DefaultServerIP;
     bool   _loaded      = false;
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
@@ -79,7 +79,7 @@ public class HeroMasteryManager : MonoBehaviour
             {
                 _characterId = id.characterId;
                 _jwt         = PlayerPrefs.GetString("jwt_token", "");
-                _serverIP    = PlayerPrefs.GetString("serverIP", "localhost");
+                _serverIP    = ServerConfig.ServerIP;
                 StartCoroutine(FetchMastery());
                 yield break;
             }

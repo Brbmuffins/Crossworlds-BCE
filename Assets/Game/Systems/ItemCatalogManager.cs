@@ -92,8 +92,7 @@ public class ItemCatalogManager : MonoBehaviour
     // ── Fetch ─────────────────────────────────────────────────────────────────
     IEnumerator FetchCatalog()
     {
-        string ip  = PlayerPrefs.GetString("serverIP", "localhost");
-        string url = $"http://{ip}:3000/items";
+        string url = $"{ServerConfig.AuthBaseUrl}/items";
 
         using var req = UnityWebRequest.Get(url);
         req.timeout = 10;

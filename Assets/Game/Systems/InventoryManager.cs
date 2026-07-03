@@ -91,8 +91,7 @@ public class InventoryManager : MonoBehaviour
         string token = AuthManager.Token;
         if (charId <= 0 || string.IsNullOrEmpty(token)) { Debug.LogWarning("[LOOT] LoadInventory: auth not ready"); yield break; }
 
-        string ip  = PlayerPrefs.GetString("serverIP", "localhost");
-        string url = $"http://{ip}:3000/api/inventory/{charId}";
+        string url = $"{ServerConfig.AuthBaseUrl}/api/inventory/{charId}";
         using var req = UnityWebRequest.Get(url);
         req.SetRequestHeader("Authorization", $"Bearer {token}");
         yield return req.SendWebRequest();
@@ -116,8 +115,7 @@ public class InventoryManager : MonoBehaviour
         string token = AuthManager.Token;
         if (charId <= 0 || string.IsNullOrEmpty(token)) { Debug.LogWarning("[LOOT] SaveInventory: auth not ready"); yield break; }
 
-        string ip   = PlayerPrefs.GetString("serverIP", "localhost");
-        string url  = $"http://{ip}:3000/api/inventory/save";
+        string url  = $"{ServerConfig.AuthBaseUrl}/api/inventory/save";
         string json = JsonUtility.ToJson(new InventorySavePayload { characterId = charId, slots = _slots });
 
         using var req = new UnityWebRequest(url, "POST");
