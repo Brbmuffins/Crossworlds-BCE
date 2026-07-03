@@ -180,6 +180,8 @@ public static class HubPlayableBuilder
         var worldItem      = AssetDatabase.LoadAssetAtPath<GameObject>($"{PrefabDir}/WorldItem.prefab");
         var metalImpactVFX = AssetDatabase.LoadAssetAtPath<GameObject>(MetalImpactsPath);
         var smallExplosion = AssetDatabase.LoadAssetAtPath<GameObject>(SmallExplosionPath);
+        var enemyAnimCtrl  = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(
+            "Assets/Game/Animations/EnemyAnimController.controller");
 
         if (worldItem == null)
         {
@@ -229,6 +231,15 @@ public static class HubPlayableBuilder
 
                 if (smallExplosion != null && ctrl.deathVFX == null)
                     ctrl.deathVFX = smallExplosion;
+
+                // Assign EnemyAnimController if built (run BCE/Setup/4d first)
+                if (enemyAnimCtrl != null)
+                {
+                    var anim = root.GetComponentInChildren<Animator>(true)
+                            ?? root.AddComponent<Animator>();
+                    if (anim.runtimeAnimatorController == null)
+                        anim.runtimeAnimatorController = enemyAnimCtrl;
+                }
             }
 
             AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
@@ -338,47 +349,54 @@ public static class HubPlayableBuilder
 
     static int PatchWaveSpawner()
     {
-        // The WaveSpawner lives in the Hub scene — it must be loaded
-        var hubScene = EditorSceneManager.GetSceneByPath(HubScene);
-        bool hubIsOpen = hubScene.isLoaded;
+        // WaveSpawner lives in Arena_Copper (built by ArenaSceneBuilder).
+        // Fall back to Hub in case user placed it there.
+        const string ArenaScene = SceneNames.ArenaCopperPath;
+        string targetScene = File.Exists(ArenaScene) ? ArenaScene : HubScene;
 
-        if (!hubIsOpen)
-        {
-            // Try to open it additively so we don't destroy the user's current scene
-            if (File.Exists(HubScene))
-            {
-                hubScene = EditorSceneManager.OpenScene(HubScene, OpenSceneMode.Additive);
-                hubIsOpen = hubScene.isLoaded;
-            }
-        }
+        var scene = EditorSceneManager.GetSceneByPath(targetScene);
+        if (!scene.isLoaded && File.Exists(targetScene))
+            scene = EditorSceneManager.OpenScene(targetScene, OpenSceneMode.Additive);
 
-        if (!hubIsOpen)
+        if (!scene.isLoaded)
         {
-            Debug.LogWarning("[HubPlayable] Hub.unity not found or couldn't be loaded — " +
-                             "open it and re-run to set WaveSpawner.introDelay.");
+            Debug.LogWarning("[HubPlayable] Arena_Copper.unity not found — " +
+                             "run BCE/Setup/7 ▶ Create Arena Scene first, then re-run.");
             return 1;
         }
 
         WaveSpawner spawner = null;
-        foreach (var root in hubScene.GetRootGameObjects())
+        foreach (var root in scene.GetRootGameObjects())
         {
-            spawner = root.GetComponent<WaveSpawner>();
-            if (spawner == null)
-                spawner = root.GetComponentInChildren<WaveSpawner>();
+            spawner = root.GetComponent<WaveSpawner>()
+                   ?? root.GetComponentInChildren<WaveSpawner>();
             if (spawner != null) break;
         }
 
         if (spawner == null)
         {
-            Debug.LogWarning("[HubPlayable] No WaveSpawner in Hub — " +
-                             "run BCE/Hub World/Make Hub a Combat World first.");
+            Debug.LogWarning("[HubPlayable] No WaveSpawner in Arena_Copper — " +
+                             "run BCE/Setup/7 ▶ Create Arena Scene to add one.");
             return 1;
         }
 
         spawner.introDelay = 3f;
+
+        // Wire enemyPrefabs[0..2] and elitePrefab if they exist and aren't set
+        var grunt  = AssetDatabase.LoadAssetAtPath<GameObject>($"{PrefabDir}/Enemy_Grunt.prefab");
+        var ranged = AssetDatabase.LoadAssetAtPath<GameObject>($"{PrefabDir}/Enemy_Ranged.prefab");
+        var elite  = AssetDatabase.LoadAssetAtPath<GameObject>($"{PrefabDir}/Enemy_Elite.prefab");
+
+        if (spawner.enemyPrefabs == null)
+            spawner.enemyPrefabs = new System.Collections.Generic.List<GameObject>();
+
+        if (grunt  != null && !spawner.enemyPrefabs.Contains(grunt))  spawner.enemyPrefabs.Add(grunt);
+        if (ranged != null && !spawner.enemyPrefabs.Contains(ranged)) spawner.enemyPrefabs.Add(ranged);
+        if (elite  != null && spawner.elitePrefab == null)            spawner.elitePrefab = elite;
+
         EditorUtility.SetDirty(spawner);
-        EditorSceneManager.MarkSceneDirty(hubScene);
-        Debug.Log("[HubPlayable] WaveSpawner.introDelay → 3s");
+        EditorSceneManager.MarkSceneDirty(scene);
+        Debug.Log("[HubPlayable] WaveSpawner: introDelay=3s + enemyPrefabs + elitePrefab wired");
         return 0;
     }
 
