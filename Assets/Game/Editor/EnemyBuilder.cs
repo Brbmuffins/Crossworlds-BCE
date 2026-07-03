@@ -182,6 +182,10 @@ public static class EnemyBuilder
     static GameObject TryLoadWorldItem()
         => AssetDatabase.LoadAssetAtPath<GameObject>($"{PrefabDir}/WorldItem.prefab");
 
+    static RuntimeAnimatorController TryLoadEnemyAnimController()
+        => AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(
+            "Assets/Game/Animations/EnemyAnimController.controller");
+
     static GameObject MakeEnemyBase(string name, float hp, bool isRanged,
         float speed, float attackRange, float attackInterval, float damage,
         float aggroRadius, float stoppingDist)
@@ -197,6 +201,11 @@ public static class EnemyBuilder
         go.GetComponent<Renderer>().sharedMaterial = new Material(Shader.Find("Universal Render Pipeline/Lit"));
 
         go.AddComponent<Mirror.NetworkIdentity>();
+
+        // Animator — auto-assign EnemyAnimController if it exists; Avatar must be set in Inspector.
+        var anim = go.AddComponent<Animator>();
+        var enemyCtrl = TryLoadEnemyAnimController();
+        if (enemyCtrl != null) anim.runtimeAnimatorController = enemyCtrl;
 
         var agent              = go.AddComponent<NavMeshAgent>();
         agent.speed            = speed;

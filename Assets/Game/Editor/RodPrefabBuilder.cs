@@ -14,7 +14,9 @@ public static class RodPrefabBuilder
     const string FBX_PATH      = "Assets/Game/Characters/Engineer/Model/Idle.fbx";
     const string PREFABS_DIR   = "Assets/Game/Prefabs";
     const string LOGIN_SCENE   = SceneNames.LoginPath;
-    const string ANIM_CTRL     = "Assets/Game/Characters/Engineer/Animations/AnimationController.controller";
+    // Prefer the unified PlayerAnimController (built by BCE/Setup/5a); fall back to Engineer-specific.
+    const string ANIM_CTRL_PRIMARY  = "Assets/Game/Animations/PlayerAnimController.controller";
+    const string ANIM_CTRL_FALLBACK = "Assets/Game/Characters/Engineer/Animations/AnimationController.controller";
 
     static readonly string[] ClassNames = { "Warden", "Ironclad", "Shadowblade", "Cleric", "Arcanist" };
     static readonly string[] ExistingCombatPrefabNames =
@@ -36,10 +38,11 @@ public static class RodPrefabBuilder
         }
 
         // ── Load AnimatorController (non-fatal if missing) ────────────────────
-        var animCtrl = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(ANIM_CTRL);
+        var animCtrl = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(ANIM_CTRL_PRIMARY)
+                    ?? AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(ANIM_CTRL_FALLBACK);
         if (animCtrl == null)
-            Debug.LogWarning("[BCE] AnimatorController not found at " + ANIM_CTRL +
-                             " — prefabs will have no animations. Run BCE/Setup/5 to fix.");
+            Debug.LogWarning("[BCE] No AnimatorController found — prefabs will have no animations.\n" +
+                             "Run BCE/Setup/5a ▶ Create Player AnimController first.");
 
         Directory.CreateDirectory(PREFABS_DIR);
 
@@ -197,6 +200,11 @@ public static class RodPrefabBuilder
 
         if (root.GetComponent<AbilityCaster>() == null)
             root.AddComponent<AbilityCaster>();
+
+        // PlayerAnimator bridges Health events to animation triggers (GetHit, Death).
+        // Guard: only compile on non-server (it's in an Editor script so this is safe).
+        if (root.GetComponent<PlayerAnimator>() == null)
+            root.AddComponent<PlayerAnimator>();
     }
 
     // ── Step 5: Fix AnimatorController on existing prefabs ────────────────────
@@ -204,11 +212,12 @@ public static class RodPrefabBuilder
     [MenuItem("BCE/Setup/5 ▶ Fix Animator Controllers", priority = 5)]
     static void FixAnimators()
     {
-        var ctrl = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(ANIM_CTRL);
+        var ctrl = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(ANIM_CTRL_PRIMARY)
+                ?? AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(ANIM_CTRL_FALLBACK);
         if (ctrl == null)
         {
             EditorUtility.DisplayDialog("Controller Not Found",
-                "Could not find:\n" + ANIM_CTRL + "\n\nCheck the path.", "OK");
+                "No AnimatorController found.\n\nRun BCE/Setup/5a ▶ Create Player AnimController first.", "OK");
             return;
         }
 

@@ -72,6 +72,9 @@ public class EnemyController : NetworkBehaviour
     private Transform            _target;
     private Vector3              _spawnPos;
     private float                _attackTimer;
+#if !UNITY_SERVER
+    private Animator             _anim;     // cached on OnStartClient; null if no mesh yet
+#endif
 
     // ─────────────────────────────────────────────────────────────────────────────
 
@@ -95,7 +98,9 @@ public class EnemyController : NetworkBehaviour
     public override void OnStartClient()
     {
         base.OnStartClient();
-        // Show floating damage numbers client-side on every hit.
+        // Cache animator from child mesh (assigned by EnemyBuilder or Inspector).
+        _anim = GetComponentInChildren<Animator>();
+        // Show floating damage numbers + play GetHit anim on every hit (client-local).
         _health.onDamageTaken.AddListener(OnClientDamageTaken);
         // Attach world-space health bar (self-builds its Canvas in Awake).
         if (GetComponent<EnemyHealthBar>() == null)
@@ -111,11 +116,11 @@ public class EnemyController : NetworkBehaviour
     void OnClientDamageTaken(float amount)
     {
         Vector3 spawnPos = transform.position + Vector3.up * 1.8f;
-        // Flag as critical if the hit is 30%+ above the enemy's base damage value
         var type = amount >= damage * 1.3f
             ? FloatingDamageText.DamageType.Critical
             : FloatingDamageText.DamageType.Normal;
         FloatingDamageText.Spawn(spawnPos, amount, type);
+        _anim?.SetTrigger("GetHit");
     }
 #endif
 
@@ -370,15 +375,14 @@ public class EnemyController : NetworkBehaviour
     void OnStateChanged(EnemyState _, EnemyState newState)
     {
 #if !UNITY_SERVER
-        var anim = GetComponentInChildren<Animator>();
-        if (anim == null) return;
+        if (_anim == null) _anim = GetComponentInChildren<Animator>(); // late-bind if mesh added after spawn
+        if (_anim == null) return;
 
-        // Speed float: moving when chasing or attacking
         bool isMoving = newState == EnemyState.Chase || newState == EnemyState.Attack;
-        anim.SetFloat("Speed", isMoving ? 1f : 0f);
+        _anim.SetFloat("Speed", isMoving ? 1f : 0f);
 
         if (newState == EnemyState.Dead)
-            anim.SetTrigger("Death");
+            _anim.SetTrigger("Death");
 #endif
     }
 
@@ -390,7 +394,7 @@ public class EnemyController : NetworkBehaviour
     void RpcMeleeSwing()
     {
 #if !UNITY_SERVER
-        GetComponentInChildren<Animator>()?.SetTrigger("Attack");
+        _anim?.SetTrigger("Attack");
         CombatAudio.Instance?.PlayMeleeHit();
 
         if (meleeImpactVFX != null)
@@ -406,7 +410,7 @@ public class EnemyController : NetworkBehaviour
     void RpcRangedShot()
     {
 #if !UNITY_SERVER
-        GetComponentInChildren<Animator>()?.SetTrigger("Attack");
+        _anim?.SetTrigger("Attack");
         CombatAudio.Instance?.PlayRangedHit();
 #endif
     }
@@ -415,7 +419,7 @@ public class EnemyController : NetworkBehaviour
     void RpcPlayDeathEffect()
     {
 #if !UNITY_SERVER
-        GetComponentInChildren<Animator>()?.SetTrigger("Death");
+        _anim?.SetTrigger("Death");
         CombatAudio.Instance?.PlayDeath();
 
         if (deathVFX != null)

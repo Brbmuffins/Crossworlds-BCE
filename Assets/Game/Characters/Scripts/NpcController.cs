@@ -45,11 +45,18 @@ public class NpcController : MonoBehaviour
     private bool     _moving;
     private float    _pauseTimer;
     private float    _bobT;
+    private Animator _anim;
+    private bool     _hasSpeedParam;
 
     void Start()
     {
         _spawnPos = transform.position;
         _waypoint = _spawnPos;
+
+        _anim = GetComponentInChildren<Animator>();
+        if (_anim != null && _anim.runtimeAnimatorController != null)
+            foreach (var p in _anim.parameters)
+                if (p.name == "Speed") { _hasSpeedParam = true; break; }
 
         SpawnVFX();
 
@@ -59,17 +66,19 @@ public class NpcController : MonoBehaviour
 
     void Update()
     {
-        // Idle bob — always active
-        _bobT += Time.deltaTime * bobSpeed;
-        float bobOffset = Mathf.Sin(_bobT) * bobHeight;
-
-        Vector3 pos = transform.position;
-        pos.y = _spawnPos.y + bobOffset;
-        transform.position = pos;
-
-        // Rotate slowly when standing still
-        if (!_moving)
-            transform.Rotate(Vector3.up, idleRotateSpeed * Time.deltaTime);
+        // Drive animator Speed (0=idle, 1=walking) if controller has the parameter.
+        if (_hasSpeedParam)
+            _anim.SetFloat("Speed", _moving ? 1f : 0f);
+        else
+        {
+            // Fallback procedural animation: bob + idle rotate when no Animator assigned.
+            _bobT += Time.deltaTime * bobSpeed;
+            Vector3 pos = transform.position;
+            pos.y = _spawnPos.y + Mathf.Sin(_bobT) * bobHeight;
+            transform.position = pos;
+            if (!_moving)
+                transform.Rotate(Vector3.up, idleRotateSpeed * Time.deltaTime);
+        }
     }
 
     // ── Patrol ────────────────────────────────────────────────────────────────

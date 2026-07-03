@@ -170,7 +170,10 @@ public static class RodNpcBuilder
         col.radius = 0.4f;
         col.center = new Vector3(0f, 0.9f, 0f);
 
-        // ── Model ─────────────────────────────────────────────────────────────
+        // ── Model + Animator ──────────────────────────────────────────────────
+        var npcCtrl = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(
+            "Assets/Game/Animations/NpcAnimController.controller");
+
         var modelAsset = AssetDatabase.LoadAssetAtPath<GameObject>(modelPath);
         if (modelAsset != null)
         {
@@ -179,6 +182,11 @@ public static class RodNpcBuilder
             model.transform.localPosition = Vector3.zero;
             model.transform.localRotation = Quaternion.identity;
             model.transform.localScale    = Vector3.one;
+
+            // Wire animator on the model if it has one; otherwise add one to root.
+            var anim = model.GetComponent<Animator>() ?? root.AddComponent<Animator>();
+            if (npcCtrl != null)
+                anim.runtimeAnimatorController = npcCtrl;
         }
         else
         {
@@ -189,9 +197,16 @@ public static class RodNpcBuilder
             cap.transform.localPosition = new Vector3(0f, 1f, 0f);
             cap.name = "Model_Placeholder";
             Object.DestroyImmediate(cap.GetComponent<CapsuleCollider>());
+
+            // Add Animator to root even on placeholder so NpcController can drive it.
+            var anim = root.AddComponent<Animator>();
+            if (npcCtrl != null)
+                anim.runtimeAnimatorController = npcCtrl;
         }
 
         EditorUtility.SetDirty(root);
-        Debug.Log($"[BCE] Placed NPC: {npcName} at {pos}");
+        Debug.Log($"[BCE] Placed NPC: {npcName} at {pos}" +
+                  (npcCtrl != null ? " (NpcAnimController assigned)" : " (run BCE/Setup/5b first for NPC animations)"));
     }
 }
+
