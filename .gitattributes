@@ -1,6 +1,15 @@
 # Auto detect text files and perform LF normalization
 * text=auto
 
+# Pin source/text files to LF and Unity YAML to no-conversion so diffs stop
+# churning between LF and CRLF on Windows checkouts.
+*.cs   text eol=lf
+*.md   text eol=lf
+*.json text eol=lf
+*.unity -text
+*.meta  -text
+*.controller -text
+
 # ── Git LFS — large binary assets ────────────────────────────────────────────
 # Models
 *.fbx filter=lfs diff=lfs merge=lfs -text
