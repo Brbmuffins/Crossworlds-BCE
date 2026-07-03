@@ -46,6 +46,7 @@ public static class HubPlayableBuilder
     const string PrefabDir   = "Assets/Game/Prefabs";
     const string LoginScene  = SceneNames.LoginPath;
     const string HubScene    = SceneNames.HubPath;
+    const string SfxDir      = "Assets/Retro Sci-Fi Pack/Compressed";
 
     const string MetalImpactsPath   =
         "Assets/brbmuffins Technologies/brbmuffins Particle Pack/EffectExamples/Weapon Effects/Prefabs/MetalImpacts.prefab";
@@ -77,6 +78,9 @@ public static class HubPlayableBuilder
         // ── Step 5: Bake NavMesh ───────────────────────────────────────────────
         BakeNavMesh();
 
+        // ── Step 6: CombatAudio clips ──────────────────────────────────────────
+        issues += PatchCombatAudio();
+
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
 
@@ -85,7 +89,8 @@ public static class HubPlayableBuilder
             "Class prefabs → Health + CharacterStats + AbilityCaster + CastAnimator + PlayerAnimator + tag=\"Player\"\n" +
             "Enemy prefabs → worldItemPrefab + meleeImpactVFX + deathVFX\n" +
             "NetworkManager.spawnPrefabs → enemies + WorldItem registered\n" +
-            "WaveSpawner.introDelay = 3s\n" +
+            "WaveSpawner.introDelay = 3s + enemyPrefabs wired\n" +
+            "CombatAudio → 7 Retro Sci-Fi Pack clips auto-assigned\n" +
             "NavMesh baked (if Hub was open)\n\n" +
             (issues == 0
                 ? "Everything wired cleanly. Press Play!"
@@ -398,6 +403,77 @@ public static class HubPlayableBuilder
         EditorSceneManager.MarkSceneDirty(scene);
         Debug.Log("[HubPlayable] WaveSpawner: introDelay=3s + enemyPrefabs + elitePrefab wired");
         return 0;
+    }
+
+    // ── Step 6: CombatAudio clips ────────────────────────────────────────────────
+
+    static int PatchCombatAudio()
+    {
+        // CombatAudio sits on the WaveSpawner GO in Arena_Copper (or Hub as fallback).
+        const string ArenaScene = SceneNames.ArenaCopperPath;
+        string targetScene = File.Exists(ArenaScene) ? ArenaScene : HubScene;
+
+        var scene = EditorSceneManager.GetSceneByPath(targetScene);
+        if (!scene.isLoaded && File.Exists(targetScene))
+            scene = EditorSceneManager.OpenScene(targetScene, OpenSceneMode.Additive);
+
+        if (!scene.isLoaded)
+        {
+            Debug.LogWarning("[HubPlayable] Arena_Copper scene not open — CombatAudio skipped. " +
+                             "Run BCE/Setup/7 ▶ Create Arena Scene first.");
+            return 1;
+        }
+
+        // Find or create the CombatAudio host (piggyback on WaveSpawner GameObject)
+        WaveSpawner spawner = null;
+        foreach (var root in scene.GetRootGameObjects())
+        {
+            spawner = root.GetComponent<WaveSpawner>()
+                   ?? root.GetComponentInChildren<WaveSpawner>();
+            if (spawner != null) break;
+        }
+
+        GameObject host = spawner != null ? spawner.gameObject : null;
+        if (host == null)
+        {
+            // Fallback: look for an existing CombatAudio GO, or create one
+            foreach (var root in scene.GetRootGameObjects())
+            {
+                if (root.GetComponent<CombatAudio>() != null) { host = root; break; }
+            }
+            if (host == null)
+            {
+                host = new GameObject("CombatAudio");
+                UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(host, scene);
+            }
+        }
+
+        var audio = host.GetComponent<CombatAudio>() ?? host.AddComponent<CombatAudio>();
+
+        AudioClip Load(string filename)
+            => AssetDatabase.LoadAssetAtPath<AudioClip>($"{SfxDir}/{filename}");
+
+        if (audio.meleeHit    == null) audio.meleeHit    = Load("Medium swell 02.ogg");
+        if (audio.rangedHit   == null) audio.rangedHit   = Load("Notification 01.ogg");
+        if (audio.deathSFX    == null) audio.deathSFX    = Load("Deep swell 01.ogg");
+        if (audio.shieldSFX   == null) audio.shieldSFX   = Load("Loops/Shield energy [loop] 01.ogg");
+        if (audio.waveAlert   == null) audio.waveAlert   = Load("Notification 02.ogg");
+        if (audio.abilityCast == null) audio.abilityCast = Load("Medium swell 01.ogg");
+        if (audio.healSFX     == null) audio.healSFX     = Load("Notification 03 slow.ogg");
+
+        int missing = 0;
+        if (audio.meleeHit    == null) { Debug.LogWarning("[HubPlayable] CombatAudio: meleeHit clip not found.");    missing++; }
+        if (audio.rangedHit   == null) { Debug.LogWarning("[HubPlayable] CombatAudio: rangedHit clip not found.");   missing++; }
+        if (audio.deathSFX    == null) { Debug.LogWarning("[HubPlayable] CombatAudio: deathSFX clip not found.");    missing++; }
+        if (audio.shieldSFX   == null) { Debug.LogWarning("[HubPlayable] CombatAudio: shieldSFX clip not found.");   missing++; }
+        if (audio.waveAlert   == null) { Debug.LogWarning("[HubPlayable] CombatAudio: waveAlert clip not found.");   missing++; }
+        if (audio.abilityCast == null) { Debug.LogWarning("[HubPlayable] CombatAudio: abilityCast clip not found."); missing++; }
+        if (audio.healSFX     == null) { Debug.LogWarning("[HubPlayable] CombatAudio: healSFX clip not found.");     missing++; }
+
+        EditorUtility.SetDirty(host);
+        EditorSceneManager.MarkSceneDirty(scene);
+        Debug.Log($"[HubPlayable] CombatAudio: {7 - missing}/7 clips assigned on '{host.name}' in {System.IO.Path.GetFileName(targetScene)}");
+        return missing > 0 ? 1 : 0;
     }
 
     // ── Step 5: Bake NavMesh ──────────────────────────────────────────────────────
