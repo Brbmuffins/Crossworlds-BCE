@@ -58,9 +58,10 @@ public class HeroMasteryManager : MonoBehaviour
     public event Action<int, int> OnHeroLevelUp;
 
     // ── Private state ─────────────────────────────────────────────────────────
-    int    _characterId = -1;
-    string _jwt         = "";
-    bool   _loaded      = false;
+    int    _characterId   = -1;
+    string _jwt           = "";
+    bool   _loaded        = false;
+    bool   _bonusesPending = false;  // bonuses fetched but player not yet spawned
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
     void Start()
@@ -73,14 +74,30 @@ public class HeroMasteryManager : MonoBehaviour
         float waited = 0f;
         while (waited < 15f)
         {
-            var id = FindLocalIdentity();
-            if (id != null && id.characterId > 0)
+            // Accept auth from CharacterSelectManager pre-population (before spawn)
+            // or from PlayerIdentity SyncVar (after spawn) — whichever arrives first.
+            int  charId = AuthManager.CharacterId > 0 ? AuthManager.CharacterId : 0;
+            string jwt  = !string.IsNullOrEmpty(AuthManager.Token) ? AuthManager.Token : "";
+
+            if (charId <= 0)
             {
-                _characterId = AuthManager.CharacterId > 0 ? AuthManager.CharacterId : id.characterId;
-                _jwt         = !string.IsNullOrEmpty(AuthManager.Token) ? AuthManager.Token : PlayerPrefs.GetString("jwt_token", "");
+                // Fallback: poll PlayerIdentity
+                var id = FindLocalIdentity();
+                if (id != null && id.characterId > 0)
+                {
+                    charId = id.characterId;
+                    jwt    = !string.IsNullOrEmpty(jwt) ? jwt : PlayerPrefs.GetString("jwt_token", "");
+                }
+            }
+
+            if (charId > 0 && !string.IsNullOrEmpty(jwt))
+            {
+                _characterId = charId;
+                _jwt         = jwt;
                 StartCoroutine(FetchMastery());
                 yield break;
             }
+
             waited += 0.5f;
             yield return new WaitForSeconds(0.5f);
         }
@@ -226,10 +243,36 @@ public class HeroMasteryManager : MonoBehaviour
             if (lv >= 10) { dmg += d10; heal += h10; cdr += c10; maxHp += hp10; }
         }
 
-        // Find the local player's CharacterStats component and push bonuses
+        // Find the local player's CharacterStats component and push bonuses.
+        // If the player hasn't spawned yet, mark pending and retry once they do.
         var localStats = FindLocalCharacterStats();
         if (localStats != null)
+        {
             localStats.SetMasteryBonuses(dmg, heal, cdr, maxHp);
+            _bonusesPending = false;
+        }
+        else
+        {
+            _bonusesPending = true;
+            StartCoroutine(RetryApplyBonuses());
+        }
+    }
+
+    IEnumerator RetryApplyBonuses()
+    {
+        float waited = 0f;
+        while (waited < 30f)
+        {
+            yield return new WaitForSeconds(0.5f);
+            waited += 0.5f;
+            var localStats = FindLocalCharacterStats();
+            if (localStats != null)
+            {
+                ApplyBonuses();
+                yield break;
+            }
+        }
+        Debug.LogWarning("[MASTERY] Timed out waiting for CharacterStats — mastery bonuses not applied.");
     }
 
     // ── Per-hero bonus definitions ────────────────────────────────────────────
