@@ -71,7 +71,24 @@ Assets/Game/
   Heroes/Brandalf/     6th-hero model — DECISION PENDING (skin vs class), don't wire
 CrossWorlds/           legacy staging tree + design docs — read-only reference
 _CONTEXT/              server/API docs
+tools/                 build-server.ps1 (headless Linux server build + package),
+                       deploy-server.sh (VPS-side deploy with backup/rollback)
 ```
+
+## Build & deploy (dedicated server)
+
+Unity version comes from `ProjectSettings/ProjectVersion.txt` (6000.4.10f1 as of
+2026-07-03 — older docs saying 6000.0.77f1 are stale). Pipeline:
+
+1. `git lfs pull` (interactive shell or GitHub Desktop — LFS/push auth is NOT
+   available to CLI agent sessions; wincred has no git token, only Desktop's).
+2. `powershell -ExecutionPolicy Bypass -File tools\build-server.ps1`
+   — refuses to build if LFS pointer files remain; renames output to the
+   `CrossworldsBCE.x86_64` / `CrossworldsBCE_Data` pair the systemd unit expects;
+   produces `build\crossworlds-server.tar.gz`.
+3. `scp build\crossworlds-server.tar.gz tools\deploy-server.sh ubuntu@playcrossworlds.com:~`
+4. On the VPS: `sudo bash deploy-server.sh` (auto-backup, restart, verify,
+   auto-rollback on failure; manual rollback: `--rollback`).
 
 ## Verification bar for code changes
 
