@@ -189,7 +189,9 @@ public class CombatSessionTracker : MonoBehaviour
     {
         _posted = true;
 
-        int charId    = PlayerPrefs.GetInt("SelectedCharacter", 0);
+        int charId    = AuthManager.CharacterId > 0
+            ? AuthManager.CharacterId
+            : PlayerPrefs.GetInt("SelectedCharacter", 0);   // fallback (class index, not ideal)
         int heroClass = PlayerProgressManager.Local?.ClassIndex ?? 0;
         float duration = Time.time - sessionStartTime;
 
@@ -205,7 +207,9 @@ public class CombatSessionTracker : MonoBehaviour
         });
 
         string serverUrl = ServerConfig.AuthBaseUrl;
-        string token     = PlayerPrefs.GetString("jwt_token", "");
+        string token     = !string.IsNullOrEmpty(AuthManager.Token)
+            ? AuthManager.Token
+            : PlayerPrefs.GetString("jwt_token", "");
 
         using var req = new UnityWebRequest($"{serverUrl}/api/combat/session/end", "POST");
         req.uploadHandler   = new UploadHandlerRaw(System.Text.Encoding.UTF8.GetBytes(body));
