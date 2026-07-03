@@ -47,6 +47,12 @@ conversation: it names its files, acceptance criteria, and dependencies. Tasks m
 > InventoryManager: added `OnItemEquipped` + `PostEquip` coroutine (POST /api/inventory/equip).
 > ItemData: added `id` field for DB item_id bridge. InventorySlot/EquipmentSlot wired.
 > **Editor steps needed:** assign `enemyTemplateId` on enemy prefabs; assign `id` on ItemData SOs.
+> **URL / AuthManager sweep (2026-07-03):** HeroMasteryManager, HeroCosmeticApplier,
+> PlayerProgressManager, CharacterSelectManager — replaced `http://{_serverIP}:3000/...`
+> with `ServerConfig.AuthBaseUrl`; prefer `AuthManager.CharacterId/Token` over PlayerIdentity
+> poll loop. Zero remaining hardcoded URL literals in Game/ scripts.
+> XpBar (3.1) and LevelUpScreen code-complete and confirmed wired to PlayerProgressManager.
+> 3.1 ✅ code-side. 3.2 code-side complete (stat recalc chain verified). 3.4 code-side complete.
 > **Blocked on owner auth:** `git push` (~46 commits ahead) and `git lfs pull`
 > (2 missing LFS objects: Wisp_Mob.prefab, grass.png) need GitHub Desktop auth.
 
