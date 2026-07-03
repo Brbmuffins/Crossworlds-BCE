@@ -132,9 +132,9 @@ WantedBy=multi-user.target
 
 | URL | Access |
 |-----|--------|
-| `http://15.204.243.36` | Public download page |
-| `http://15.204.243.36:4000` | Manager dashboard (HTTP Basic Auth) |
-| `http://15.204.243.36:4000/gm-dashboard?token=<TOKEN>` | GM dashboard (token in VPS .env) |
+| `https://playcrossworlds.com/` | Public download page |
+| `http://playcrossworlds.com:4000` | Manager dashboard (HTTP Basic Auth) |
+| `http://playcrossworlds.com:4000/gm-dashboard?token=<TOKEN>` | GM dashboard (token in VPS .env) |
 
 GM Dashboard: server status, spawn events, last 50 log lines, restart button, log download.
 

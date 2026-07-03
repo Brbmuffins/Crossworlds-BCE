@@ -4,7 +4,7 @@
 
 ![Crossworlds BCE](Docs/logo.png)
 
-**[▶ Play Now](http://15.204.243.36) · [GM Dashboard](http://15.204.243.36:4000)**
+**[🌐 playcrossworlds.com](https://playcrossworlds.com/) · [▶ Play in Browser](https://playcrossworlds.com/play/) · [⚔ Combat Reference](https://playcrossworlds.com/combat/) · [GM Dashboard](http://playcrossworlds.com:4000)**
 
 ---
 
@@ -413,9 +413,9 @@ systemctl daemon-reload && systemctl restart crossworlds
 
 | URL | Access |
 |-----|--------|
-| `http://15.204.243.36` | Public download page |
-| `http://15.204.243.36:4000` | Manager dashboard (HTTP Basic Auth) |
-| `http://15.204.243.36:4000/gm-dashboard?token=<TOKEN>` | GM dashboard (token in VPS .env) |
+| `https://playcrossworlds.com/` | Public download page |
+| `http://playcrossworlds.com:4000` | Manager dashboard (HTTP Basic Auth) |
+| `http://playcrossworlds.com:4000/gm-dashboard?token=<TOKEN>` | GM dashboard (token in VPS .env) |
 
 GM Dashboard: server status, spawn events, last 50 log lines (color-coded), restart button, log download.
 
@@ -701,7 +701,7 @@ ssh ubuntu@playcrossworlds.com "sudo bash deploy-server.sh"
 
 1. Unity → File → Build Settings → Windows x86_64
 2. Zip output to `/var/www/crossworlds/downloads/CrossworldsBCE.zip`
-3. Upload via FileZilla: Host `15.204.243.36`, Port 22, Protocol SFTP
+3. Upload via FileZilla: Host `playcrossworlds.com`, Port 22, Protocol SFTP
 
 ---
 
@@ -798,4 +798,4 @@ web/                     Three.js browser client submodule (separate project)
 
 ---
 
-*Unity 6 (6000.4.10f1) · Mirror/KCP · Node.js/Express · MySQL 8 · VPS: 15.204.243.36*
+*Unity 6 (6000.4.10f1) · Mirror/KCP · Node.js/Express · MySQL 8 · VPS: playcrossworlds.com*
