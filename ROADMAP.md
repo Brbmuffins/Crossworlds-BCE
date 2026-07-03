@@ -20,6 +20,13 @@ conversation: it names its files, acceptance criteria, and dependencies. Tasks m
 *Why first:* ~4,000 lines of uncommitted work is the single biggest data-loss and
 "which version is real?" risk. Everything later assumes a trustworthy tree.
 
+> **Status 2026-07-03:** 0.1 ✅ (11 topical commits; local main is ahead of origin and
+> 1 behind — pull/merge then push). 0.2 ✅ working tree (VPS rotation still owner action).
+> 0.3 ✅ (52 `.bak` diff-verified as pre-Unity-6-migration snapshots, tombstones +
+> fuse_hidden artifacts removed). 1.2 ✅ code side (`networkedPrefabs` array — Inspector
+> assignment still an editor step). 1.4 ✅ (hooks moved to client-side `OnStartClient`,
+> which also covers dedicated-server clients). 1.5 ✅. `.gitattributes` LF rules added.
+
 - **0.1 — Commit the working tree in reviewable slices.** Files: everything in `git status`.
   Group commits by system (prefabs+scenes / combat scripts / UI / networking / docs); do not
   squash into one blob. Add `.gitattributes` with `*.cs text eol=lf`, `*.unity -text`,
