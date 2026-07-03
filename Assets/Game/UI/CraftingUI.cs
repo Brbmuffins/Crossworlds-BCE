@@ -148,11 +148,11 @@ public class CraftingUI : MonoBehaviour
             var resp = JsonUtility.FromJson<CraftResponse>(req.downloadHandler.text);
             if (resp.success)
             {
-                SetResult($"✓ Crafted {resp.data?.result_item_id ?? "item"}!");
+                SetResult($"Crafted {resp.data?.result_item_id ?? "item"}!");
                 // Refresh inventory so the new item shows up
                 InventoryBagUI.Refresh();
             }
-            else SetResult($"✗ {resp.error}");
+            else SetResult(resp.error);
         }
         catch (Exception e) { SetResult($"Parse error: {e.Message}"); }
     }

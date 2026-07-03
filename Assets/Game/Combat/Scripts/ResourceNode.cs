@@ -11,8 +11,8 @@ using UnityEngine.Networking;
 ///
 /// Upgraded from legacy Inventory.AddItem() system:
 /// - Finds local player via Mirror NetworkIdentity.isLocalPlayer
-/// - Awards item via POST /api/inventory/save to server API
-/// - Awards profession XP via PlayerProgressManager.Local
+/// - Awards item via POST /api/inventory/add-item to server API
+/// - Awards profession XP via ProfessionManager.Local (professionId)
 /// - Refreshes InventoryBagUI.Instance if open
 ///
 /// Depletes after hitsToDeplete harvests, respawns after respawnTime seconds.
@@ -110,8 +110,8 @@ public class ResourceNode : MonoBehaviour
         // Award item via API
         StartCoroutine(PostInventoryItem());
 
-        // Award profession XP
-        PlayerProgressManager.Local?.AwardXp(professionXpPerHit);
+        // Award profession XP (not character XP — mining should not level combat)
+        ProfessionManager.Local?.AwardXp(professionId, professionXpPerHit);
 
         // Refresh inventory UI
         InventoryBagUI.Refresh();
