@@ -39,13 +39,13 @@ Crossworlds BCE is a server-authoritative co-op action RPG built on Unity 6 and 
 
 Five hero classes, each with a distinct role and playstyle. Class indices are fixed — never renumber.
 
-| # | Class | Role | Identity |
-|---|-------|------|----------|
-| 0 | **Warden** | Battlemage / Utility | Deploys construct turrets, buffs allies, traps and controls space |
-| 1 | **Ironclad** | Tank / Disruptor | Absorbs damage, counters attacks, pulls enemies into the team |
-| 2 | **Shadowblade** | Assassin / Disruptor | Stealth burst, debuff stacking, silence zones, harvests stacks for big AoE |
-| 3 | **Cleric** | Support / Healer | Heals, shields, revives, soul bonds, and in extremis rewinds time |
-| 4 | **Arcanist** | Mage / Control | Phase-shifts across terrain, chain lightning, singularity pulls, event horizons |
+| # | Class | Hero | Role | Identity |
+|---|-------|------|------|----------|
+| 0 | **Warden** | | Battlemage / Utility | Deploys construct turrets, buffs allies, traps and controls space |
+| 1 | **Ironclad** | | Tank / Disruptor | Absorbs damage, counters attacks, pulls enemies into the team |
+| 2 | **Shadowblade** | **Bo-gar** | Assassin / Disruptor | Stealth burst, debuff stacking, silence zones, harvests stacks for big AoE |
+| 3 | **Cleric** | **Brandolf** | Support / Healer | Heals, shields, revives, soul bonds, and in extremis rewinds time |
+| 4 | **Arcanist** | | Mage / Control | Phase-shifts across terrain, chain lightning, singularity pulls, event horizons |
 
 ### Warden
 *"Hold the line. The constructs will do the rest."*
@@ -65,7 +65,10 @@ The Ironclad defines the frontline. Counter Blow turns incoming damage into a co
 **Playstyle:** Initiate with Shieldwall Charge, Gravity Slam to bunch, hold Counter Blow stance while the team burns, Iron Rampart to split ranged encounters.  
 **Synergies:** Shadowblade silences enemies in Gravity Slam's kill zone; Arcanist's chain lightning bounces between the bunched mob; Warden's sentinel fires into a clump.
 
-### Shadowblade
+### Shadowblade — Bo-gar
+
+<img src="Inspiration ART/Hero Bo-Gar.png" alt="Bo-gar" width="180"/>
+
 *"They can't hit what they can't see. Or silence."*
 
 The Shadowblade is a precision assassin and soft CC specialist. Shadow Veil into a stealth-boosted Mind Spike is the signature opener. Silence Ward drops a fog field that stops all enemy abilities. Dark Harvest consumes all active debuff stacks on nearby enemies for massive AoE — ideally after Ironclad has applied Threat stacks and Cleric has applied Cursed.
@@ -74,7 +77,10 @@ The Shadowblade is a precision assassin and soft CC specialist. Shadow Veil into
 **Playstyle:** Stealth → Mind Spike burst, plant Silence Ward on the caster mob, rotate AoE into Binding Wave to root, harvest stacks for the finisher.  
 **Synergies:** Ironclad applies Threat stacks (debuffs), Silence Ward stacks Cursed; Shadowblade Dark Harvest converts all of it to damage.
 
-### Cleric
+### Cleric — Brandolf
+
+<img src="Inspiration ART/Hero Brandolf.png" alt="Brandolf" width="180"/>
+
 *"The fight ends when I say it ends."*
 
 The Cleric is the team's life insurance. Spirit Wisps drift and seek allies. Sacred Aegis grows stronger as the target takes hits. Soul Bond reroutes incoming damage onto the Cleric themselves as a sacrifice. Divine Spark revives a downed teammate — or detonates holy energy on undead. Temporal Grace is the most powerful ability in the game: full-team time rewind.
