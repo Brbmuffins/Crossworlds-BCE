@@ -129,18 +129,19 @@ public class ResourceNode : MonoBehaviour
 
     IEnumerator PostInventoryItem()
     {
-        string characterId = PlayerPrefs.GetString("SelectedCharacter", "");
-        string jwt         = PlayerPrefs.GetString("jwt_token", "");
-        string serverIp    = ServerConfig.ServerIP;
+        int    charId = AuthManager.CharacterId;
+        string jwt    = !string.IsNullOrEmpty(AuthManager.Token)
+            ? AuthManager.Token
+            : PlayerPrefs.GetString("jwt_token", "");
 
-        if (string.IsNullOrEmpty(characterId) || string.IsNullOrEmpty(jwt))
+        if (charId <= 0 || string.IsNullOrEmpty(jwt))
         {
-            Debug.LogWarning("[ResourceNode] Cannot save item — no character or JWT in PlayerPrefs");
+            Debug.LogWarning("[ResourceNode] Cannot save item — auth not ready");
             yield break;
         }
 
-        string url  = $"http://{serverIp}:3000/api/inventory/add-item";
-        string json = $"{{\"characterId\":\"{characterId}\",\"itemId\":\"{yieldItemId}\",\"quantity\":{yieldQuantity}}}";
+        string url  = $"{ServerConfig.AuthBaseUrl}/api/inventory/add-item";
+        string json = $"{{\"characterId\":{charId},\"itemId\":\"{yieldItemId}\",\"quantity\":{yieldQuantity}}}";
 
         using var req = new UnityWebRequest(url, "POST");
         req.uploadHandler   = new UploadHandlerRaw(System.Text.Encoding.UTF8.GetBytes(json));
