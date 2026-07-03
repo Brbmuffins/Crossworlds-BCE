@@ -200,7 +200,14 @@ public static class EnemyBuilder
     {
         if (!AssetDatabase.IsValidFolder(modelDir)) return false;
 
-        string[] guids = AssetDatabase.FindAssets("t:Model", new[] { modelDir });
+        // Prefer the rigged model (rig/ subdir has bones) over base/idle/walk etc.
+        string rigDir  = modelDir + "/rig";
+        string baseDir = modelDir + "/base";
+        string[] searchDirs = AssetDatabase.IsValidFolder(rigDir)  ? new[] { rigDir }
+                            : AssetDatabase.IsValidFolder(baseDir) ? new[] { baseDir }
+                            : new[] { modelDir };
+
+        string[] guids = AssetDatabase.FindAssets("t:Model", searchDirs);
         if (guids.Length == 0) return false;
 
         string fbxPath = AssetDatabase.GUIDToAssetPath(guids[0]);
