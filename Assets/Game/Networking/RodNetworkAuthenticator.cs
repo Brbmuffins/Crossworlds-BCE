@@ -22,7 +22,7 @@ using UnityEngine.Networking;
 public class RodNetworkAuthenticator : NetworkAuthenticator
 {
     [Header("Auth Server")]
-    public string authServerURL = "http://15.204.243.36:3000";
+    public string authServerURL = "http://" + ServerConfig.DefaultServerIP + ":3000";
 
     [Header("Dev Mode")]
     [Tooltip("Bypasses JWT + DB lookup. Editor-only local testing.")]

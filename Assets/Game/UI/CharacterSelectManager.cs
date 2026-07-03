@@ -378,7 +378,7 @@ public class CharacterSelectManager : MonoBehaviour
     IEnumerator PostCharacterThenConnect(int classIndex)
     {
         string jwt      = PlayerPrefs.GetString("jwt_token", "");
-        string serverIP = PlayerPrefs.GetString("game_server_ip", "15.204.243.36");
+        string serverIP = PlayerPrefs.GetString("game_server_ip", ServerConfig.DefaultServerIP);
         string url      = $"http://{serverIP}:3000/character";
         string json = $"{{\"class_index\":{classIndex}}}";
 

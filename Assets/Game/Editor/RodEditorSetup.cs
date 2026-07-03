@@ -67,7 +67,7 @@ public static class RodEditorSetup
     const string CHAR_SELECT_SCENE_PATH = "Assets/Game/Scenes/CharacterSelect.unity";
     const string HUB_SCENE_PATH         = "Assets/Game/Scenes/Hub.unity";
     const string GAME_WORLD_PATH        = "Assets/brbmuffins Skybox/Scenes/GameWorld.unity"; // legacy ref
-    const string SERVER_ADDRESS         = "15.204.243.36";
+    const string SERVER_ADDRESS         = ServerConfig.DefaultServerIP;
     const string ENGINEER_FBX_PATH      = "Assets/Game/Characters/Engineer/Model/Idle.fbx";
     const string PREFABS_DIR            = "Assets/Game/Prefabs";
 

@@ -31,7 +31,7 @@ using TMPro;
 public class LoginManager : MonoBehaviour
 {
     [Header("Server")]
-    public string authServerURL  = "http://15.204.243.36:3000";
+    public string authServerURL  = "http://" + ServerConfig.DefaultServerIP + ":3000";
     public string gameScene      = "GameWorld"; // fallback only — Mirror loads this via NetworkManager.Online Scene
 
     [Header("Optional — wire if you want button-click VFX")]
@@ -79,7 +79,7 @@ public class LoginManager : MonoBehaviour
         // Set defaults after the canvas is fully initialized.
         // Awake builds the fields; Start is the earliest safe time to assign text values.
         if (_serverInput != null)
-            _serverInput.text = PlayerPrefs.GetString("game_server_ip", "15.204.243.36");
+            _serverInput.text = PlayerPrefs.GetString("game_server_ip", ServerConfig.DefaultServerIP);
 
         // Auto-focus username so the player can start typing immediately
         if (_userInput != null)
@@ -556,8 +556,8 @@ public class LoginManager : MonoBehaviour
         }
 
         // Save the chosen server IP so CharacterSelectManager can apply it before StartClient()
-        string ip = _serverInput != null ? _serverInput.text.Trim() : "15.204.243.36";
-        if (string.IsNullOrEmpty(ip)) ip = "15.204.243.36";
+        string ip = _serverInput != null ? _serverInput.text.Trim() : ServerConfig.DefaultServerIP;
+        if (string.IsNullOrEmpty(ip)) ip = ServerConfig.DefaultServerIP;
         PlayerPrefs.SetString("game_server_ip", ip);
         PlayerPrefs.Save();
 

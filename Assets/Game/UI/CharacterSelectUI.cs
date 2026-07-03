@@ -17,7 +17,7 @@ public class CharacterSelectUI : MonoBehaviour
 
     [Header("Server")]
     [Tooltip("Game server address — must match NetworkManager.networkAddress")]
-    public string serverAddress = "15.204.243.36";
+    public string serverAddress = ServerConfig.DefaultServerIP;
 
     [Header("3D Preview")]
     public Camera previewCamera;

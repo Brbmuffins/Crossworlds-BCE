@@ -11,7 +11,7 @@ using UnityEngine;
 //    • classPrefabs[3] = Cleric prefab
 //    • classPrefabs[4] = Arcanist prefab
 //    • Authenticator   = RodNetworkAuthenticator (same GameObject)
-//    • Network Address = 15.204.243.36
+//    • Network Address = ServerConfig.DefaultServerIP (set in Awake if needed)
 //
 //  offlineScene / onlineScene are set in Awake() — do NOT set in Inspector.
 //
@@ -38,7 +38,7 @@ public class RodNetworkManager : NetworkManager
 
     [Header("Auth Server")]
     [Tooltip("Must match RodNetworkAuthenticator.authServerURL")]
-    public string authServerURL = "http://15.204.243.36:3000";
+    public string authServerURL = "http://" + ServerConfig.DefaultServerIP + ":3000";
 
     // ── Self-configure ────────────────────────────────────────────────────────
 
