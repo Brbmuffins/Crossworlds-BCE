@@ -1,0 +1,37 @@
+{
+  "task_id": "0d17a115-5143-4a26-8964-dcbd68a29ce6",
+  "type": "text_to_model",
+  "status": "success",
+  "input": {
+    "prompt": "The Iron Warden colossus boss, massive towering iron and stone fortress golem, angular siege-engine body with rotating cannon shoulders, glowing orange forge-fire eyes, heavy mechanical legs with grinding gears, imposing armored war machine, dark fantasy game boss, T-pose, full body, game-ready",
+    "model_version": "v3.1-20260211",
+    "texture": true,
+    "pbr": true,
+    "texture_quality": "detailed",
+    "texture_alignment": "geometry",
+    "export_uv": true,
+    "geometry_quality": "detailed"
+  },
+  "output": {
+    "pbr_model": "https://tripo-data.rg1.data.tripo3d.com/tcli_2efb6ab9cf694c6eab16a3e8dc01d3bf/20260703/0d17a115-5143-4a26-8964-dcbd68a29ce6/tripo_pbr_model_0d17a115-5143-4a26-8964-dcbd68a29ce6.glb?Key-Pair-Id=K1676C64NMVM2J&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly90cmlwby1kYXRhLnJnMS5kYXRhLnRyaXBvM2QuY29tL3RjbGlfMmVmYjZhYjljZjY5NGM2ZWFiMTZhM2U4ZGMwMWQzYmYvMjAyNjA3MDMvMGQxN2ExMTUtNTE0My00YTI2LTg5NjQtZGNiZDY4YTI5Y2U2L3RyaXBvX3Bicl9tb2RlbF8wZDE3YTExNS01MTQzLTRhMjYtODk2NC1kY2JkNjhhMjljZTYuZ2xiIiwiQ29uZGl0aW9uIjp7IkRhdGVMZXNzVGhhbiI6eyJBV1M6RXBvY2hUaW1lIjoxNzgzMTIzMjAwfX19XX0_&Signature=FDFQ0dfizIT2JFGDYLTpGg3dLn73F9JJz0QBy-izLZqVq095s-R1uNAsocdIzoL7L78U02smnoPKHV8R6BX96f9q~h3H97fWZui9MwFLyXQ7bFyMuxd3FEn6iTo6mQ5Y14KFp1XcujpKOeRXsMVX0B6dtzQEI2FLPj6yASsMiZ1tgd1Wscfn4Vg13rT6bRByRJw11iJbvxghqOx5z42lvyWO4fVi3RXOK9mIHaOUdBvuOyWEEUNSaBG2vTtQ3Z-HI-jXJsfkTjYjqjYPml2U1EkbDflVIMthxBDHkF05ASWWvWvj9iydi6jRBLJxZBBKMHkqMFJVTigakUft6~-iDw__",
+    "generated_image": "https://tripo-data.rg1.data.tripo3d.com/tcli_2efb6ab9cf694c6eab16a3e8dc01d3bf/20260703/0d17a115-5143-4a26-8964-dcbd68a29ce6/text2image_0d17a115-5143-4a26-8964-dcbd68a29ce6.jpeg?Key-Pair-Id=K1676C64NMVM2J&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly90cmlwby1kYXRhLnJnMS5kYXRhLnRyaXBvM2QuY29tL3RjbGlfMmVmYjZhYjljZjY5NGM2ZWFiMTZhM2U4ZGMwMWQzYmYvMjAyNjA3MDMvMGQxN2ExMTUtNTE0My00YTI2LTg5NjQtZGNiZDY4YTI5Y2U2L3RleHQyaW1hZ2VfMGQxN2ExMTUtNTE0My00YTI2LTg5NjQtZGNiZDY4YTI5Y2U2LmpwZWciLCJDb25kaXRpb24iOnsiRGF0ZUxlc3NUaGFuIjp7IkFXUzpFcG9jaFRpbWUiOjE3ODMxMjMyMDB9fX1dfQ__&Signature=LwRpb9VPt7tgUA-2sjT3ifEKmf9PCBoDwvkCn7aJ94AzU~E73KmCLvnj54-OdpedfJsutWGUDfQdZnXdHMXnz8yfQd69Od-6aATyOEvwWe5yh8~1oLTthzbNdbPxiu7h749qkIoMdWHhui0b8KhpXa0Z7bnbCzNLB4jdo3RfcVnGU00Xds7xo6st72OuYlGr0QNeSFEZpAvu6I2ImCyHnzciKwGJeUgXMioJMfPOxAPOJJl4jtJqkjHbJyzIGjwP5~189xG3rz8Ne8OsSnYDvkQVuzKDR8p~-bqNSz1XyfbuATXT~dvD4NBGWNEmqZ94erAI5RkdnN0oVfCD7WCBWg__",
+    "rendered_image": "https://tripo-data.rg1.data.tripo3d.com/tcli_2efb6ab9cf694c6eab16a3e8dc01d3bf/20260703/0d17a115-5143-4a26-8964-dcbd68a29ce6/legacy_mesh.webp?Key-Pair-Id=K1676C64NMVM2J&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly90cmlwby1kYXRhLnJnMS5kYXRhLnRyaXBvM2QuY29tL3RjbGlfMmVmYjZhYjljZjY5NGM2ZWFiMTZhM2U4ZGMwMWQzYmYvMjAyNjA3MDMvMGQxN2ExMTUtNTE0My00YTI2LTg5NjQtZGNiZDY4YTI5Y2U2L2xlZ2FjeV9tZXNoLndlYnAiLCJDb25kaXRpb24iOnsiRGF0ZUxlc3NUaGFuIjp7IkFXUzpFcG9jaFRpbWUiOjE3ODMxMjMyMDB9fX1dfQ__&Signature=hkWJ6QePUckhAGJPMNDRZnfxBuEcEnDjuGXlOwu0ZcVc15q0H3UHiImTdplBIkWwhNldKlJTS9ztC50~gP-fuD~MjNVR~jmrFo9RpjAaqA00F8~izf3PU7ck00kUfTcJxHqx8lTOXK0srX19MAIr6MWklSWq9EFXcEO4P6Y4wIpJsYGxYZZedkfzyCu2OT7c82a~6dXW1r7sx3PGCY7wdRs2a0Ii-kq65lYXYSarrx1NwQX2YJ2mRBoKjTseYeOfrAjzBXquD2gG0KlDA6WaK2OwjogWvQhvOjdZ~zDkHbzl8HXAOT~ap6Hev8wDZdegin66gDLEiSfCZ~VqzEo-XA__"
+  },
+  "progress": 100,
+  "create_time": 1783117751,
+  "consumed_credit": 50,
+  "prompt": "The Iron Warden colossus boss, massive towering iron and stone fortress golem, angular siege-engine body with rotating cannon shoulders, glowing orange forge-fire eyes, heavy mechanical legs with grinding gears, imposing armored war machine, dark fantasy game boss, T-pose, full body, game-ready",
+  "thumbnail": "https://tripo-data.rg1.data.tripo3d.com/tcli_2efb6ab9cf694c6eab16a3e8dc01d3bf/20260703/0d17a115-5143-4a26-8964-dcbd68a29ce6/legacy_mesh.webp?Key-Pair-Id=K1676C64NMVM2J&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly90cmlwby1kYXRhLnJnMS5kYXRhLnRyaXBvM2QuY29tL3RjbGlfMmVmYjZhYjljZjY5NGM2ZWFiMTZhM2U4ZGMwMWQzYmYvMjAyNjA3MDMvMGQxN2ExMTUtNTE0My00YTI2LTg5NjQtZGNiZDY4YTI5Y2U2L2xlZ2FjeV9tZXNoLndlYnAiLCJDb25kaXRpb24iOnsiRGF0ZUxlc3NUaGFuIjp7IkFXUzpFcG9jaFRpbWUiOjE3ODMxMjMyMDB9fX1dfQ__&Signature=hkWJ6QePUckhAGJPMNDRZnfxBuEcEnDjuGXlOwu0ZcVc15q0H3UHiImTdplBIkWwhNldKlJTS9ztC50~gP-fuD~MjNVR~jmrFo9RpjAaqA00F8~izf3PU7ck00kUfTcJxHqx8lTOXK0srX19MAIr6MWklSWq9EFXcEO4P6Y4wIpJsYGxYZZedkfzyCu2OT7c82a~6dXW1r7sx3PGCY7wdRs2a0Ii-kq65lYXYSarrx1NwQX2YJ2mRBoKjTseYeOfrAjzBXquD2gG0KlDA6WaK2OwjogWvQhvOjdZ~zDkHbzl8HXAOT~ap6Hev8wDZdegin66gDLEiSfCZ~VqzEo-XA__",
+  "queuing_num": -1,
+  "running_left_time": -1,
+  "result": {
+    "pbr_model": {
+      "type": "glb",
+      "url": "https://tripo-data.rg1.data.tripo3d.com/tcli_2efb6ab9cf694c6eab16a3e8dc01d3bf/20260703/0d17a115-5143-4a26-8964-dcbd68a29ce6/tripo_pbr_model_0d17a115-5143-4a26-8964-dcbd68a29ce6.glb?Key-Pair-Id=K1676C64NMVM2J&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly90cmlwby1kYXRhLnJnMS5kYXRhLnRyaXBvM2QuY29tL3RjbGlfMmVmYjZhYjljZjY5NGM2ZWFiMTZhM2U4ZGMwMWQzYmYvMjAyNjA3MDMvMGQxN2ExMTUtNTE0My00YTI2LTg5NjQtZGNiZDY4YTI5Y2U2L3RyaXBvX3Bicl9tb2RlbF8wZDE3YTExNS01MTQzLTRhMjYtODk2NC1kY2JkNjhhMjljZTYuZ2xiIiwiQ29uZGl0aW9uIjp7IkRhdGVMZXNzVGhhbiI6eyJBV1M6RXBvY2hUaW1lIjoxNzgzMTIzMjAwfX19XX0_&Signature=FDFQ0dfizIT2JFGDYLTpGg3dLn73F9JJz0QBy-izLZqVq095s-R1uNAsocdIzoL7L78U02smnoPKHV8R6BX96f9q~h3H97fWZui9MwFLyXQ7bFyMuxd3FEn6iTo6mQ5Y14KFp1XcujpKOeRXsMVX0B6dtzQEI2FLPj6yASsMiZ1tgd1Wscfn4Vg13rT6bRByRJw11iJbvxghqOx5z42lvyWO4fVi3RXOK9mIHaOUdBvuOyWEEUNSaBG2vTtQ3Z-HI-jXJsfkTjYjqjYPml2U1EkbDflVIMthxBDHkF05ASWWvWvj9iydi6jRBLJxZBBKMHkqMFJVTigakUft6~-iDw__"
+    },
+    "rendered_image": {
+      "type": "webp",
+      "url": "https://tripo-data.rg1.data.tripo3d.com/tcli_2efb6ab9cf694c6eab16a3e8dc01d3bf/20260703/0d17a115-5143-4a26-8964-dcbd68a29ce6/legacy_mesh.webp?Key-Pair-Id=K1676C64NMVM2J&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly90cmlwby1kYXRhLnJnMS5kYXRhLnRyaXBvM2QuY29tL3RjbGlfMmVmYjZhYjljZjY5NGM2ZWFiMTZhM2U4ZGMwMWQzYmYvMjAyNjA3MDMvMGQxN2ExMTUtNTE0My00YTI2LTg5NjQtZGNiZDY4YTI5Y2U2L2xlZ2FjeV9tZXNoLndlYnAiLCJDb25kaXRpb24iOnsiRGF0ZUxlc3NUaGFuIjp7IkFXUzpFcG9jaFRpbWUiOjE3ODMxMjMyMDB9fX1dfQ__&Signature=hkWJ6QePUckhAGJPMNDRZnfxBuEcEnDjuGXlOwu0ZcVc15q0H3UHiImTdplBIkWwhNldKlJTS9ztC50~gP-fuD~MjNVR~jmrFo9RpjAaqA00F8~izf3PU7ck00kUfTcJxHqx8lTOXK0srX19MAIr6MWklSWq9EFXcEO4P6Y4wIpJsYGxYZZedkfzyCu2OT7c82a~6dXW1r7sx3PGCY7wdRs2a0Ii-kq65lYXYSarrx1NwQX2YJ2mRBoKjTseYeOfrAjzBXquD2gG0KlDA6WaK2OwjogWvQhvOjdZ~zDkHbzl8HXAOT~ap6Hev8wDZdegin66gDLEiSfCZ~VqzEo-XA__"
+    }
+  }
+}

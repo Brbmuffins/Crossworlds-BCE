@@ -26,6 +26,7 @@ Crossworlds BCE is a server-authoritative co-op action RPG built on Unity 6 and 
   - [NPCs — Hub World](#npcs--hub-world)
   - [Enemy Roster](#enemy-roster)
   - [Boss Encounter — The Null Architect](#boss-encounter--the-null-architect)
+  - [Boss Encounter — The Iron Warden](#boss-encounter--the-iron-warden)
 - [Features Status](#features-status)
 - [Developer Reference](#developer-reference)
   - [VPS Operations](#vps-operations)
@@ -733,6 +734,135 @@ Loot:               sword_iron + plate_iron (guaranteed)
 | [`Assets/Game/UI/WorldBossHealthBar.cs`](Assets/Game/UI/WorldBossHealthBar.cs) | Client phase-aware HP bar |
 | [`Assets/Game/Editor/WorldBossBuilder.cs`](Assets/Game/Editor/WorldBossBuilder.cs) | One-click boss prefab builder |
 | [`Assets/Game/Editor/ArenaSceneBuilder.cs`](Assets/Game/Editor/ArenaSceneBuilder.cs) | One-click arena scene builder |
+
+---
+
+### Boss Encounter — The Iron Warden
+
+<img src="Docs/icons/characters/iron-warden-arena.png" width="100%"/>
+
+<table>
+<tr>
+<td width="340" valign="top">
+<img src="Docs/models/iron-warden/iron-warden.webp" width="320"/>
+<br/><sub><a href="Docs/models/iron-warden/iron-warden.glb">⬇ Download 3D model (.glb)</a></sub>
+</td>
+<td valign="top">
+
+**The Iron Warden** is a siege-engine colossus — a fortress golem built to outlast anything thrown at it. Where the Null Architect punishes aggression with phase reactions, the Iron Warden punishes passivity: it layers mechanical systems that force the party to make active decisions under pressure, or get ground to dust.
+
+The encounter is implemented in `IronWardenController.cs` following the same server-authoritative pattern as the Null Architect. Phase transitions, ability timing, turret spawns, and Magnet Pulls are all computed on the dedicated server. Clients receive `[ClientRpc]` announcements and VFX triggers; no game-state decisions run client-side.
+
+**Entry:** A `BossArenaTrigger` collider (placed via **BCE/Setup/9b**) fires `IronWardenController.Activate()` the moment any player enters. The encounter cannot be reset once started.
+
+</td>
+</tr>
+</table>
+
+> *"The Iron Warden was forged to hold. It does not attack you. It simply makes sure you can never leave."*
+
+---
+
+#### Phase 1 — Siege Protocol (100–60% HP)
+
+<img src="Docs/icons/characters/iron-warden-phase1.png" width="260" align="right"/>
+
+The Warden opens in full fortress mode. Its rotating Barrier Wall forces positional discipline while Mortar Strikes punish clustering.
+
+| Timing | Event |
+|--------|-------|
+| Every 12 s | **Barrier Wall** — a ring of iron shields rotates around the boss. Players in the wrong arc receive 10 dmg/s push-back and reduced damage output. Players on the correct arc deal full damage. |
+| Every 20 s | **Mortar Strike** — five red AoE circles appear in sequence across the arena, each detonating 1 second after the previous (30 dmg per blast). Spread out. |
+
+The Barrier Wall arc indicator is a client-side VFX (`RpcSpawnBarrierWall`). Pay attention to it — damage output is halved for anyone on the wrong side.
+
+**Phase transition at 60% HP:**
+- 3-second stagger animation
+- Chat: *"[BOSS] Shield Matrix online — destroy BOTH turrets simultaneously!"*
+- All Phase 1 coroutines stopped cleanly
+
+---
+
+#### Phase 2 — Shield Matrix (60–25% HP)
+
+<img src="Docs/icons/characters/iron-warden-phase2.png" width="260" align="right"/>
+
+The Warden opens its chest cavity and deploys two **Siege Turrets** at opposite flanks. Until both are destroyed at the same time, the boss is completely immune to damage.
+
+| Timing | Event |
+|--------|-------|
+| Immediate | Two **Siege Turrets** (300 HP each) spawn at ±8u on the X axis. Fire orange bolts at nearby players (10 dmg, every 3 s). |
+| If only one turret dies | The surviving turret **auto-repairs** to full HP after 10 seconds. Both must die within seconds of each other. |
+| Every 20 s | **Magnet Pull** — all players are yanked toward the boss centre, then a 60-dmg AoE stomp drops in a 8u radius. |
+
+The immunity mechanic demands coordination: split the party, burst both turrets simultaneously, then immediately pivot to the boss before the next Magnet Pull. `SiegeTurretBehaviour.cs` handles turret combat and calls `warden.OnTurretDestroyed()` — the boss tracks count and restores immunity if only one fell.
+
+**Phase transition at 25% HP:**
+- Chat: *"[BOSS] The Iron Warden's core is exposed — RAMPAGE!"*
+- Boss NavMeshAgent speed multiplied by 1.5×
+
+---
+
+#### Phase 3 — Rampage (25–0% HP)
+
+<img src="Docs/icons/characters/iron-warden-phase3.png" width="260" align="right"/>
+
+Armor cracked open to reveal the forge-fire core. The Warden stops playing defence and tries to physically destroy the party.
+
+| Timing | Event |
+|--------|-------|
+| Every 4 s | **Ground Slam** — 35 dmg in 6u radius. 0.45s telegraph cylinder before impact. |
+| At ≤15% HP | **Lockdown** — all players rooted for 5 seconds while the Warden charges a Devastation Slam (60 dmg, 10u radius). |
+
+The Lockdown fires only once. It is telegraphed with a 1.5-second warning circle. Healers need to pre-stack healing before the root drops — you cannot move during the charge. After Devastation fires, the Warden is at its most vulnerable: this is the burn window.
+
+> **Lockdown sequence:** `LockdownSequence()` applies `StatusEffectManager.ApplyRoot()` to all `PlayerIdentity` objects via server-side `FindObjectsByType`, waits 5 seconds, shows a 1.5s `RpcShowWarningCircle`, then calls `DealAoeDamage()` — all server-side, no client prediction.
+
+---
+
+#### Class Synergies (Iron Warden)
+
+Each class has a specific role this fight pressures:
+
+| Class | Role |
+|-------|------|
+| **Warden** | Runic Snare + Iron Rampart to hold turret aggro while the ranged party bursts |
+| **Ironclad** | Shieldwall Charge through Barrier Wall arc — can maintain damage in wrong-arc zones briefly |
+| **Cleric** | Mending Circle pre-staged for Magnet Pull landing zone; Dispel on Magnetized status |
+| **Arcanist** | Void Maw + Forked Lightning for simultaneous turret burst — the key to breaking Shield Matrix |
+| **Shadowblade** | Shadow Veil to dodge Mortar Strike; silence turrets during repair window |
+
+---
+
+#### Boss Quick Reference Card
+
+```
+The Iron Warden — 3000 HP · 3 Phases · Server-Authoritative
+
+Phase 1 (100–60%)  Barrier Wall every 12s — position on correct arc for full damage
+                   Mortar Strike every 20s — 5 staggered blasts, spread out
+                   Transition: turret deploy announcement
+
+Phase 2 (60–25%)  IMMUNE until both Siege Turrets (300 HP each) die simultaneously
+                   One turret alone → surviving turret repairs after 10s
+                   Magnet Pull every 20s → yank to centre + 60 AoE stomp
+                   Transition: NavMesh speed ×1.5
+
+Phase 3 (25–0%)   Ground Slam every 4s — 35 dmg, 6u radius, 0.45s telegraph
+                   At 15% HP: Lockdown (root 5s) → Devastation (60 AoE, one-shot)
+
+Kill:             ArenaSessionController.OnBossKilled() → chest + XP
+```
+
+#### Implementation Files
+
+| File | Purpose |
+|------|---------|
+| [`Assets/Game/Combat/Scripts/IronWardenController.cs`](Assets/Game/Combat/Scripts/IronWardenController.cs) | Boss controller — phases, abilities, SyncVar |
+| [`Assets/Game/Combat/Scripts/SiegeTurretBehaviour.cs`](Assets/Game/Combat/Scripts/SiegeTurretBehaviour.cs) | Phase 2 turret — fire loop, death, warden callback |
+| [`Assets/Game/Editor/IronWardenBuilder.cs`](Assets/Game/Editor/IronWardenBuilder.cs) | One-click boss + turret + trigger builder |
+
+> **Editor steps:** Run **BCE/Setup/9a** to place the boss, **9b** for the arena trigger, **9c** for turret placeholders. Assign `warningCirclePrefab` in the `IronWardenController` Inspector field. Bake NavMesh for the arena scene before playtesting.
 
 ---
 
