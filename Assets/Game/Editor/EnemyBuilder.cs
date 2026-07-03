@@ -40,7 +40,9 @@ public static class EnemyBuilder
         });
         var go = MakeEnemyBase("Enemy_Grunt", 60f, false, 4.5f, 1.5f, 1.5f, 12f, 8f, 1.2f);
         go.GetComponent<Renderer>().sharedMaterial.color = new Color(0.55f, 0.25f, 0.1f);
-        go.GetComponent<EnemyController>().dropTable = dt;
+        var gruntCtrl = go.GetComponent<EnemyController>();
+        gruntCtrl.dropTable       = dt;
+        gruntCtrl.enemyTemplateId = "goblin_grunt";
         SavePrefab(go, $"{PrefabDir}/Enemy_Grunt.prefab");
         Object.DestroyImmediate(go);
         Debug.Log("[BCE] Enemy_Grunt.prefab → Assets/Game/Prefabs/\nNEXT: WaveSpawner.enemyPrefabs[0], assign WorldItem prefab");
@@ -61,6 +63,7 @@ public static class EnemyBuilder
         ctrl.dropTable        = dt;
         ctrl.preferredRange   = 5f;
         ctrl.tooCloseDistance = 3f;
+        ctrl.enemyTemplateId  = "skeleton_ranged";
         SavePrefab(go, $"{PrefabDir}/Enemy_Ranged.prefab");
         Object.DestroyImmediate(go);
         Debug.Log("[BCE] Enemy_Ranged.prefab → Assets/Game/Prefabs/\nNEXT: WaveSpawner.enemyPrefabs[1], assign EnemyProjectile prefab");
@@ -88,7 +91,9 @@ public static class EnemyBuilder
         var l = lightObj.AddComponent<Light>();
         l.type = LightType.Point; l.color = new Color(1f, 0.2f, 0.1f); l.intensity = 2.5f; l.range = 10f;
 
-        go.GetComponent<EnemyController>().dropTable = dt;
+        var eliteCtrl = go.GetComponent<EnemyController>();
+        eliteCtrl.dropTable       = dt;
+        eliteCtrl.enemyTemplateId = "troll_elite";
         SavePrefab(go, $"{PrefabDir}/Enemy_Elite.prefab");
         Object.DestroyImmediate(go);
         Debug.Log("[BCE] Enemy_Elite.prefab → Assets/Game/Prefabs/\nNEXT: WaveSpawner.elitePrefab, add to NetworkManager.spawnPrefabs");
