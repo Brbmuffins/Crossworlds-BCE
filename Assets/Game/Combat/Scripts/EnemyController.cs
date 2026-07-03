@@ -96,6 +96,9 @@ public class EnemyController : NetworkBehaviour
         // Attach world-space health bar (self-builds its Canvas in Awake).
         if (GetComponent<EnemyHealthBar>() == null)
             gameObject.AddComponent<EnemyHealthBar>();
+        // Death VFX — procedural burst fallback when no prefab is assigned.
+        if (GetComponent<EnemyDeathVFX>() == null)
+            gameObject.AddComponent<EnemyDeathVFX>();
         // Session stats: OnStartClient fires on every client for every spawned
         // enemy (host or dedicated server), unlike WaveSpawner's server-only path.
         CombatSessionTracker.Local?.NotifyEnemySpawned(gameObject);

@@ -7,13 +7,14 @@ using Mirror;
 /// Auto-disables in the hub (buildIndex == 2) so it never fires outside arenas.
 ///
 /// Flow:
-///   Local player enters trigger → saves progress → disconnects → loads hub scene.
+///   Local player enters trigger → saves progress → server ends arena session
+///   → client disconnects → NetworkManager returns to hub via offlineScene.
 ///
 /// The save-then-disconnect order ensures progress is not lost on scene change.
 /// NetworkManager.singleton.StopClient() is used rather than hard disconnect so
 /// Mirror can clean up SyncVars and NetworkIdentities properly.
 /// </summary>
-public class HubReturnTrigger : MonoBehaviour
+public class HubReturnTrigger : NetworkBehaviour
 {
     [Header("Hub Scene")]
     [Tooltip("Build-settings name of the hub scene. Must match your build order.")]
@@ -57,20 +58,24 @@ public class HubReturnTrigger : MonoBehaviour
 #if !UNITY_SERVER
         Debug.Log("[HUB] Player returning to hub — saving progress...");
 
-        // Save progress before disconnecting
         PlayerProgressManager.Local?.SaveProgress();
 
-        // Disconnect from the game server; NetworkManager will handle cleanup
+        // Tell server to end the arena session before we disconnect
+        if (isClient) CmdEndArenaSession();
+
         if (NetworkManager.singleton != null)
-        {
             NetworkManager.singleton.StopClient();
-        }
         else
-        {
-            // Fallback if no NetworkManager in scene
             SceneManager.LoadScene(hubSceneName);
-        }
 #endif
+    }
+
+    [Command(requiresAuthority = false)]
+    void CmdEndArenaSession()
+    {
+        ArenaSessionController.Instance?.EndSession();
+        var spawner = FindAnyObjectByType<WaveSpawner>();
+        spawner?.StopWaves();
     }
 
 #if UNITY_EDITOR

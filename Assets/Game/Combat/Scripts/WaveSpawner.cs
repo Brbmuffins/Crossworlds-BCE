@@ -69,6 +69,7 @@ public class WaveSpawner : NetworkBehaviour
         while (_running)
         {
             currentWave++;
+            ArenaSessionController.Instance?.AdvanceWave(currentWave);
             yield return StartCoroutine(RunWave(currentWave));
             RpcNotifyWaveComplete();
             RpcAwardWaveMasteryXp(currentWave);   // mastery XP scales with wave number
@@ -80,6 +81,7 @@ public class WaveSpawner : NetworkBehaviour
             {
                 _running      = false;
                 arenaComplete = true;
+                ArenaSessionController.Instance?.EndSession();
                 RpcAnnounce("⭐ ARENA CLEAR! All waves defeated!");
                 RpcAwardArenaCompletionXp();       // bonus mastery XP for finishing all waves
                 RpcOnArenaComplete();
@@ -156,7 +158,11 @@ public class WaveSpawner : NetworkBehaviour
     }
 
     [Server]
-    void OnEnemyDied() => enemiesAlive = Mathf.Max(0, enemiesAlive - 1);
+    void OnEnemyDied()
+    {
+        enemiesAlive = Mathf.Max(0, enemiesAlive - 1);
+        ArenaSessionController.Instance?.RegisterKill(0); // xpReward tracked per-kill in EnemyController.RpcAwardProgress
+    }
 
     GameObject PickEnemyPrefab()
     {
