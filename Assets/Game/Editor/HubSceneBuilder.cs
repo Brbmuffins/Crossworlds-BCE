@@ -281,10 +281,8 @@ public static class HubSceneBuilder
         UnityEditor.Selection.activeGameObject = go;
 
         Debug.Log("[HubSceneBuilder] ✓ HangmanNPC placed at (0, 0, 14).\n" +
-                  "NEXT:\n" +
-                  "1. Add HangmanNPC to NetworkManager.spawnPrefabs (or register by code in RodNetworkManager)\n" +
-                  "2. Place HangmanDialogueUI prefab in scene (it is NOT self-bootstrapping)\n" +
-                  "3. Ctrl+S");
+                  "HangmanDialogueUI is self-bootstrapping — no scene object needed.\n" +
+                  "NEXT: Ctrl+S to save Hub.unity");
     }
 }
 #endif
