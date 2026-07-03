@@ -65,10 +65,21 @@ LoginScene(0) → CharacterSelect(1) → Hub(2) → [Arena_Copper via portal]
 |---|---|
 | `Health.cs` | Server-authoritative HP. Events: `onDeath`, `onDamageTaken`, `onHealthChanged`, `onKilledBy`, `onHealApplied`, `onDownedChanged` |
 | `StatusEffectManager.cs` | Applies/ticks/expires Slow, Stagger, Silenced, Cursed, Weakened, Bound |
+| `PlayerProjectile.cs` | Traveling skill-shot projectile fired by players. Hits Enemy tag, server-spawned. Configure `speed` and `maxRange` per ability. |
+| `EnemyProjectile.cs` | Linear ranged enemy projectile. Hits Player tag. Self-destructs on hit or timeout. |
 | `DropTable.cs` | ScriptableObject — `RollDrops()` → items + gold. Configurable weights |
 | `WorldItem.cs` | NetworkBehaviour floor loot — floats + rotates, server-despawns after 90s |
 | `CombatAudio.cs` | 7-slot AudioSource component: meleeHit, rangedHit, deathSFX, shieldSFX, waveAlert, abilityCast, healSFX. Clips auto-assigned from Retro Sci-Fi Pack via BCE editor menu |
 | `ResourceNode.cs` | Mining node — F-key, POSTs to `/api/inventory/add-item`, awards profession XP, depletes + respawns |
+
+### Smite-Style Combat
+
+Combat has been redesigned toward directional, skill-shot gameplay:
+
+- **Skill shots** — `AbilityShape.SkillShot` fires a `PlayerProjectile` in the aimed direction. The aim indicator is a thin beam; the bolt travels through space and hits the first enemy it touches. Void Bolt is the reference implementation.
+- **Dodge roll** — **Left Alt** or **V** rolls in the current move direction (or backward if stationary). 2 charges, 5-second recharge each. Full i-frames during the 0.35s roll window. Stamina pips exposed via `DodgeCharges` / `DodgeMaxCharges` on `PlayerMovement`.
+- **Enemy telegraphs** — Enemies show a red AoE indicator on the ground `telegraphDuration` seconds (default 0.45s) before their attack lands, giving players time to dodge. Melee telegraphs appear at the target's feet; ranged telegraphs appear at projected landing position.
+- **Existing AoE shapes** remain: Circle, Cone, Line — all still work alongside skill shots.
 
 ### Enemy AI
 
@@ -145,6 +156,7 @@ When you run `BCE/Setup/4a–4c`, `EnemyBuilder` automatically attaches the rigg
 - **Nameplates** — floating billboard, hides on local player, fades 20–40u
 - **Ability Bar** — 4+1 strip, radial cooldown overlay + CD timer text
 - **Arena Clear UI** — wave-complete banner + loot summary
+- **Spellbook / Ability Directory** — **Tab** opens a full grid of all 32 abilities. Each card shows ability name, type badge (Skill Shot / Cone / Line / AoE), damage range, cooldown, and category color. Hover any card for a tooltip with the full description, stat block, and range. Click a card then press **1–4** to equip it into a slot. `AbilityTooltipUI` — self-bootstrapping singleton, canvas sort order 201.
 
 ### GM Console (`GmConsole.cs`)
 Toggle with `` ` `` or **F1**. Access gated by `GM_USERS` allowlist.
@@ -246,6 +258,14 @@ Auto-backup, restart, verify, and auto-rollback on failure. Manual rollback: `--
 ---
 
 ## Changelog
+
+### 2026-07-03 — Smite-style combat, skill shots, spellbook directory
+
+- **Skill shots** (`PlayerProjectile.cs`) — new `AbilityShape.SkillShot` shape fires a traveling `PlayerProjectile` in aim direction. Aim indicator is a beam; projectile hits first enemy, server-authoritative. Void Bolt converted to skill shot (range 14, speed 20, 15–45 charged dmg).
+- **Enemy telegraphs** — `EnemyController` now runs `AttackSequence()` coroutine: shows a red `RpcShowTelegraph` AoE indicator 0.45s before attack lands, giving players time to dodge. `telegraphDuration` field exposes timing per enemy type.
+- **Spellbook / Ability Directory** — Tab opens a full 32-ability grid. Cards show icon (if set), ability name, type badge, damage range, cooldown. Hover shows `AbilityTooltipUI` with full description, shape, range, and CD. Click + 1–4 to equip.
+- **Ability descriptions** — all 32 `AbilityDef` entries now have `description` field filled in. `[TextArea]` attribute for easy editing in Inspector.
+- **Dodge roll** — already implemented in `PlayerMovement` (Left Alt / V, 2 charges, i-frames); documented above.
 
 ### 2026-07-03 — Enemy models, CombatAudio automation, compilation fixes
 
