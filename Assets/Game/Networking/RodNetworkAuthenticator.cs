@@ -177,7 +177,7 @@ public class RodNetworkAuthenticator : NetworkAuthenticator
         // Only JWT and username are needed for identity.
         NetworkClient.Send(new AuthRequestMessage
         {
-            jwt      = devMode ? "dev" : PlayerPrefs.GetString("jwt_token", ""),
+            jwt      = devMode ? "dev" : (!string.IsNullOrEmpty(AuthManager.Token) ? AuthManager.Token : PlayerPrefs.GetString("jwt_token", "")),
             username = PlayerPrefs.GetString("username", "DevPlayer"),
         });
     }
