@@ -189,11 +189,16 @@ Highest-value phase: every piece exists, only glue is missing.
   Verify equip → `POST /api/inventory/equip` → stat recalc from `stat_bonus` JSON. *Accept:*
   equipping a seeded item changes displayed stats and persists across relog. *Deps:* 1.6. **READY**
 
-- **3.3 — Crafting loop client.** Files: `UI/CraftingUI.cs`, `Networking/ForgeNPC.cs`,
-  `Combat/Scripts/ResourceNode.cs`; plus `CraftingManager.cs` pulled from the VPS if 0.5 lands
-  that way. Forge NPC in Hub → `GET /api/recipes?profession=mining` + `GET /api/professions/:id`
-  → `POST /api/craft` → refresh inventory; show server `error` strings verbatim (project
-  convention). *Accept:* craft copper_bar from 3 shards in-game; failure shows server message.
+- **3.3 — Crafting loop client.** ✅ code-side (2026-07-03 profession session)
+  `ForgeCraftingPanel.cs` — Smelt + Craft tabs, progress bar, ingredient shortage highlight in red.
+  `ConsumableEffect.cs` — hp_regen, resist_void, resist_blast, speed, damage_amp with duration.
+  VPS: `POST /api/professions/award-xp`, `GET /api/professions/recipes/:charId`, `POST /api/craft`
+  (extended: XP award, transaction, level-up loop, smelt support). SQL: 5 raw materials, 5 refined,
+  6 consumables (Void Resist Flask, Iron Warden Blast Kit, etc.), 8 crafted gear items, 19 recipes.
+  Server patched and live (2026-07-03).
+  *Editor steps remaining:* wire ForgeNPC → `ForgeCraftingPanel.Open()`; build RecipeRowPrefab UI
+  prefab; add `GetItemCount(itemId)` to `InventoryManager`.
+  *Accept:* craft copper ingot from 3 ore in-game; Void Resist Flask reduces boss void damage 25%.
   *Deps:* 0.5, 1.6.
 
 - **3.4 — Combat feedback polish.** Files:
