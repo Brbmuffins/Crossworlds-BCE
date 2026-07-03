@@ -32,7 +32,7 @@ public class HangmanNPC : NetworkBehaviour, INPCInteractable
     public float interactRadius = 3f;
 
     [Header("Arena")]
-    public string arenaSceneName = "Arena";
+    public string arenaSceneName = SceneNames.ArenaCopper;
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
     void Awake()
