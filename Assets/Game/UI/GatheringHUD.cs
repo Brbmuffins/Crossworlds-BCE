@@ -217,6 +217,11 @@ public class GatheringHUD : MonoBehaviour
         return t;
     }
 
+    static void SetRect(GameObject go, float x, float y, float w, float h)
+    {
+        SetRect(go.GetComponent<RectTransform>(), x, y, w, h);
+    }
+
     static void SetRect(Component c, float x, float y, float w, float h)
     {
         var rt              = c.GetComponent<RectTransform>();

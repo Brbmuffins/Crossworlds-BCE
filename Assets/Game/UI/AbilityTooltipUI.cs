@@ -2,6 +2,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using System.Linq;
 
 /// <summary>
 /// AbilityTooltipUI — self-bootstrapping singleton tooltip for spellbook cards.
@@ -73,9 +74,7 @@ public class AbilityTooltipUI : MonoBehaviour
             .Where(s => !string.IsNullOrEmpty(s)));
         _statTxt.text = stats;
 
-        _descTxt.text = string.IsNullOrEmpty(ability.description)
-            ? "No description."
-            : ability.description;
+        _descTxt.text = BuildDescription(ability);
 
         Position(screenPos);
         _panel.gameObject.SetActive(true);
@@ -110,11 +109,25 @@ public class AbilityTooltipUI : MonoBehaviour
     {
         switch (shape)
         {
-            case AbilityShape.SkillShot:  return "Skill Shot";
             case AbilityShape.Cone:       return "Cone";
             case AbilityShape.Rectangle:  return "Line";
             default:                      return "AoE";
         }
+    }
+
+    static string BuildDescription(AbilityDef ability)
+    {
+        if (ability == null) return "No description.";
+        if (ability.healAmount > 0f) return $"Restores {ability.healAmount:0} health.";
+        if (ability.shieldAbsorb > 0f) return $"Grants a {ability.shieldAbsorb:0} shield for {ability.shieldDuration:0}s.";
+        if (ability.damage > 0f) return $"Deals {ability.damage:0} damage to valid targets.";
+        if (ability.spawnTurret) return "Deploys a combat support turret.";
+        if (ability.abilityName.IndexOf("Step", System.StringComparison.OrdinalIgnoreCase) >= 0) return "Teleports to the targeted location.";
+        if (ability.abilityName.IndexOf("Veil", System.StringComparison.OrdinalIgnoreCase) >= 0) return "Enters stealth for a short duration.";
+        if (ability.abilityName.IndexOf("Stance", System.StringComparison.OrdinalIgnoreCase) >= 0) return "Raises your defensive presence for a short duration.";
+        if (ability.abilityName.IndexOf("Snare", System.StringComparison.OrdinalIgnoreCase) >= 0) return "Slows enemies caught in the effect.";
+        if (ability.abilityName.IndexOf("Slam", System.StringComparison.OrdinalIgnoreCase) >= 0) return "Disrupts enemies caught in the effect.";
+        return "Support ability.";
     }
 
     // ── Build UI ──────────────────────────────────────────────────────────────

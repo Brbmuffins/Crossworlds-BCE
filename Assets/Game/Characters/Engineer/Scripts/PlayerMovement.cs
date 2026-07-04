@@ -13,6 +13,11 @@ public class PlayerMovement : MonoBehaviour
     public float rotationSpeed = 12f;
     public Camera cam;
 
+    [Header("Rotation Lock")]
+    public bool lockCharacterRotation = false;
+    public bool captureStartRotationAsLock = true;
+    public Vector3 lockedRotationEuler = Vector3.zero;
+
     // ── Dodge Roll ────────────────────────────────────────────────
     [Header("Dodge Roll")]
     public float dodgeForce       = 14f;   // burst speed during dodge
@@ -75,7 +80,12 @@ public class PlayerMovement : MonoBehaviour
             follow.target = transform; // setter calls SnapToTarget() automatically
         }
 
-        targetRotation = transform.rotation;
+        if (lockCharacterRotation && captureStartRotationAsLock)
+            lockedRotationEuler = transform.rotation.eulerAngles;
+
+        targetRotation = lockCharacterRotation
+            ? Quaternion.Euler(lockedRotationEuler)
+            : transform.rotation;
         currentSpeed   = moveSpeed;
         _dodgeCharges  = dodgeMaxCharges;
 
@@ -129,15 +139,9 @@ public class PlayerMovement : MonoBehaviour
         if (pressingA) input.x -= 1;
         if (pressingD) input.x += 1;
 
-        bool bothMouseHeld = Mouse.current.leftButton.isPressed && Mouse.current.rightButton.isPressed;
-        if (bothMouseHeld && input.sqrMagnitude == 0)
-        {
-            input.y = 1;
-        }
-
         bool isSprinting = Keyboard.current.leftShiftKey.isPressed && input.sqrMagnitude > 0 && !pressingS;
         bool isMoving = input.sqrMagnitude > 0;
-        bool isBackwards = pressingS && !bothMouseHeld;
+        bool isBackwards = pressingS;
 
         SetAnimBool("isMoving", isMoving);
         SetAnimBool("isSprinting", isSprinting);
@@ -182,11 +186,11 @@ public class PlayerMovement : MonoBehaviour
             {
                 moveDirection = (camForward * input.y + camRight * input.x).normalized;
 
-                Vector3 faceDir = pressingS && !bothMouseHeld
+                Vector3 faceDir = pressingS
                     ? -moveDirection
                     : moveDirection;
 
-                if (faceDir.sqrMagnitude > 0.001f)
+                if (!lockCharacterRotation && faceDir.sqrMagnitude > 0.001f)
                     targetRotation = Quaternion.LookRotation(faceDir);
             }
         }
@@ -210,7 +214,15 @@ public class PlayerMovement : MonoBehaviour
             rb.MovePosition(targetPosition);
         }
 
-        rb.MoveRotation(Quaternion.Slerp(rb.rotation, targetRotation, rotationSpeed * Time.fixedDeltaTime));
+        if (lockCharacterRotation)
+        {
+            targetRotation = Quaternion.Euler(lockedRotationEuler);
+            rb.MoveRotation(targetRotation);
+        }
+        else
+        {
+            rb.MoveRotation(Quaternion.Slerp(rb.rotation, targetRotation, rotationSpeed * Time.fixedDeltaTime));
+        }
     }
 
     // ── Dodge Roll ────────────────────────────────────────────────

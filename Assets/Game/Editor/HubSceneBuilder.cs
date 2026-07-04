@@ -153,7 +153,7 @@ public static class HubSceneBuilder
     //  Step 8: Add Forge NPC + Mining Nodes
     //  Run AFTER BCE/Build Hub Scene. Adds:
     //    • 1 Forge Master NPC (ForgeNPC, opens ForgeCraftingPanel)
-    //    • 3 Copper Ore nodes (ResourceNode, yieldItemId=ore_copper, respawn=60s)
+    //    • 3 Copper Ore nodes (ResourceNode, yieldItem=Copper Ore, respawn=60s)
     //  Mining nodes are scattered at radius 14 from center.
     // ─────────────────────────────────────────────────────────────────────────────
     [MenuItem("BCE/Hub Setup/8 - Add Forge and Mining NPCs")]
@@ -206,6 +206,8 @@ public static class HubSceneBuilder
             new Vector3( 10f, 0f, 10f),
         };
 
+        ItemData copperOre = GetOrCreateCopperOreItem();
+
         for (int i = 0; i < minePositions.Length; i++)
         {
             var mineGO = new GameObject($"OreNode_Copper_{i}");
@@ -230,18 +232,54 @@ public static class HubSceneBuilder
             // ResourceNode script (client-only component — guard against server build target)
 #if !UNITY_SERVER
             var rn = mineGO.AddComponent<ResourceNode>();
-            rn.yieldItemId       = "ore_copper";
-            rn.yieldQuantity     = 1;
-            rn.hitsToDeplete     = 3;
-            rn.respawnTime       = 60f;
-            rn.interactRange     = 3f;
-            rn.professionId      = 2;
-            rn.professionXpPerHit = 15;
+            rn.yieldItem     = copperOre;
+            rn.hitsToDeplete = 3;
+            rn.respawnTime   = 60f;
+            rn.interactRange = 3f;
 #endif
         }
 
         Debug.Log("[HubSceneBuilder] ✓ Added 3 Copper Ore nodes. Press Ctrl+S to save scene.");
         EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
+    }
+
+    static ItemData GetOrCreateCopperOreItem()
+    {
+        const string itemDir = "Assets/Game/Data/Items";
+        const string itemPath = itemDir + "/Ore_Copper.asset";
+
+        var existing = AssetDatabase.LoadAssetAtPath<ItemData>(itemPath);
+        if (existing != null)
+            return existing;
+
+        EnsureAssetFolder(itemDir);
+
+        var item = ScriptableObject.CreateInstance<ItemData>();
+        item.itemName = "Copper Ore";
+        item.description = "Raw copper ore gathered from mining nodes.";
+        item.stackable = true;
+        item.maxStackSize = 99;
+        item.itemType = ItemType.Generic;
+        item.rarity = ItemRarity.Common;
+
+        AssetDatabase.CreateAsset(item, itemPath);
+        AssetDatabase.SaveAssets();
+        AssetDatabase.Refresh();
+        return item;
+    }
+
+    static void EnsureAssetFolder(string path)
+    {
+        if (AssetDatabase.IsValidFolder(path))
+            return;
+
+        string parent = System.IO.Path.GetDirectoryName(path)?.Replace('\\', '/');
+        string folder = System.IO.Path.GetFileName(path);
+
+        if (!string.IsNullOrEmpty(parent))
+            EnsureAssetFolder(parent);
+
+        AssetDatabase.CreateFolder(string.IsNullOrEmpty(parent) ? "Assets" : parent, folder);
     }
 
     //  Step 9: Place HangmanNPC (arena entrance challenge NPC)

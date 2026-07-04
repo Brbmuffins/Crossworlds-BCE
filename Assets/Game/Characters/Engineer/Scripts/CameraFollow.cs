@@ -6,10 +6,9 @@ using UnityEngine.InputSystem;
 //  CameraFollow — WoW-style 3rd-person camera
 //
 //  Right mouse held   → lock cursor, orbit camera
-//  Left mouse held    → lock cursor, orbit camera (character faces cam on move)
+//  Left mouse held    -> no camera/movement action
 //  Either released    → unlock cursor (can click UI)
 //  Scroll wheel       → zoom in / out
-//  Both mouse held    → auto-walk forward (handled in PlayerMovement)
 //
 //  Setting Target snaps the camera behind the character immediately —
 //  no lerp from world origin on zone-in.
@@ -32,6 +31,13 @@ public class CameraFollow : MonoBehaviour
     [Header("Follow")]
     public float heightOffset = 1.6f;
 
+    [Header("Collision")]
+    public bool cameraCollision = true;
+    public LayerMask collisionMask = ~0;
+    public float collisionRadius = 0.28f;
+    public float collisionBuffer = 0.15f;
+    public float collisionSmoothSpeed = 18f;
+
     // ── Target property — snaps camera immediately on assign ──────────────
     Transform _target;
     public Transform target
@@ -51,11 +57,10 @@ public class CameraFollow : MonoBehaviour
     float   _yaw;
     float   _pitch = 18f;
     bool    _rightHeld;
-    bool    _leftHeld;
     bool    _typingInUI;
     bool    _prevLookActive;   // detect first frame of look to discard stale delta
-    bool    _leftStartedOnUI;  // true if left-click began over a UI element — skip cursor lock
     Vector3 _smoothPos;
+    float   _currentCollisionDistance;
 
     // ── Lifecycle ─────────────────────────────────────────────────────────
 
@@ -76,27 +81,13 @@ public class CameraFollow : MonoBehaviour
         if (mouse == null) return;
 
         _rightHeld = mouse.rightButton.isPressed;
-        _leftHeld  = mouse.leftButton.isPressed;
-
-        // Track whether this left-click started on a UI element.
-        // We check IsPointerOverGameObject() only on the press frame to avoid the
-        // "invisible canvas always returns true" problem — checking per-frame would
-        // permanently kill camera rotation.
-        if (mouse.leftButton.wasPressedThisFrame)
-            _leftStartedOnUI = EventSystem.current != null
-                               && EventSystem.current.IsPointerOverGameObject();
-        if (!_leftHeld)
-            _leftStartedOnUI = false;
 
         // Block orbit when typing OR when chat is open — the second check covers the
         // one-frame gap between ActivateInputField() and currentSelectedGameObject being set.
         var selGO = EventSystem.current?.currentSelectedGameObject;
         _typingInUI = (selGO != null && selGO.GetComponent<TMPro.TMP_InputField>() != null)
                    || (RodChatManager.Instance != null && RodChatManager.Instance.IsOpen);
-
-        // Left-click only activates camera orbit if it didn't start on UI (e.g. chat box).
-        // Right-click always orbits (it has no UI use outside the game world).
-        bool lookActive = (_rightHeld || (_leftHeld && !_leftStartedOnUI)) && !_typingInUI;
+        bool lookActive = _rightHeld && !_typingInUI;
 
         // ── Cursor lock / unlock ──────────────────────────────────────────
         if (lookActive && Cursor.lockState != CursorLockMode.Locked)
@@ -143,7 +134,8 @@ public class CameraFollow : MonoBehaviour
         Vector3    offset = rot * new Vector3(0f, 0f, -distance);
         Vector3    lookAt = _smoothPos + Vector3.up * heightOffset;
 
-        transform.position = lookAt + offset;
+        Vector3 desiredPosition = lookAt + offset;
+        transform.position = ResolveCameraPosition(lookAt, desiredPosition);
         transform.LookAt(lookAt);
     }
 
@@ -161,7 +153,57 @@ public class CameraFollow : MonoBehaviour
         Vector3    offset = rot * new Vector3(0f, 0f, -distance);
         Vector3    lookAt = _smoothPos + Vector3.up * heightOffset;
 
-        transform.position = lookAt + offset;
+        Vector3 desiredPosition = lookAt + offset;
+        _currentCollisionDistance = distance;
+        transform.position = ResolveCameraPosition(lookAt, desiredPosition, true);
         transform.LookAt(lookAt);
+    }
+
+    Vector3 ResolveCameraPosition(Vector3 lookAt, Vector3 desiredPosition, bool snap = false)
+    {
+        if (!cameraCollision)
+            return desiredPosition;
+
+        Vector3 toCamera = desiredPosition - lookAt;
+        float desiredDistance = toCamera.magnitude;
+        if (desiredDistance <= 0.001f)
+            return desiredPosition;
+
+        Vector3 direction = toCamera / desiredDistance;
+        float clearDistance = desiredDistance;
+
+        RaycastHit[] hits = Physics.SphereCastAll(
+            lookAt,
+            collisionRadius,
+            direction,
+            desiredDistance,
+            collisionMask,
+            QueryTriggerInteraction.Ignore);
+
+        if (hits != null && hits.Length > 0)
+        {
+            System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+            foreach (RaycastHit hit in hits)
+            {
+                if (hit.collider == null)
+                    continue;
+
+                if (_target != null && hit.collider.transform.IsChildOf(_target))
+                    continue;
+
+                clearDistance = Mathf.Max(0.05f, hit.distance - collisionBuffer);
+                break;
+            }
+        }
+
+        float targetDistance = Mathf.Clamp(clearDistance, 0.05f, desiredDistance);
+        _currentCollisionDistance = snap
+            ? targetDistance
+            : Mathf.Lerp(
+                _currentCollisionDistance <= 0f ? targetDistance : _currentCollisionDistance,
+                targetDistance,
+                1f - Mathf.Exp(-collisionSmoothSpeed * Time.deltaTime));
+
+        return lookAt + direction * _currentCollisionDistance;
     }
 }
