@@ -217,7 +217,7 @@ public class CharacterSelectUI : MonoBehaviour
 
         // Left/Right arrows
         leftArrow  = MakeArrowButton(leftPanel, "ArrowLeft",  "◀", new Vector2(0f,   0.45f), new Vector2(0.12f, 0.55f), Previous);
-        rightArrow = MakeArrowButton(leftPanel, "ArrowRight", "▶", new Vector2(0.88f, 0.45f), new Vector2(1f,   0.55f), Next);
+        rightArrow = MakeArrowButton(leftPanel, "ArrowRight", ">", new Vector2(0.88f, 0.45f), new Vector2(1f,   0.55f), Next);
 
         // ── Right panel (58%) — details ──
         RectTransform rightPanel = MakePanel(root, "RightPanel", PanelMid,

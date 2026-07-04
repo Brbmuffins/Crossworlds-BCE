@@ -283,7 +283,7 @@ public class LoginManager : MonoBehaviour
 
 #if UNITY_EDITOR
         // Dev HOST button — editor only, bypasses auth for local testing
-        BuildButton(panelRt, "▶ HOST (DEV)", new Color(0.08f, 0.35f, 0.12f, 1f),
+        BuildButton(panelRt, "> HOST (DEV)", new Color(0.08f, 0.35f, 0.12f, 1f),
             new Vector2(0.05f, -0.22f), new Vector2(0.95f, -0.07f), OnHostClicked);
 #endif
 
