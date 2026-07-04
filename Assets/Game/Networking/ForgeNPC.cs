@@ -2,7 +2,7 @@
 using UnityEngine.InputSystem;
 
 /// <summary>
-/// ForgeNPC — proximity trigger that opens CraftingUI when the local player presses E.
+/// ForgeNPC — proximity trigger that opens the ForgeCraftingPanel when the local player presses E.
 ///
 /// Place on any NPC GameObject in the Hub. Requires a Collider (set as trigger).
 /// Shows a world-space "Press E to Craft" billboard prompt when the player is in range.
@@ -10,7 +10,7 @@ using UnityEngine.InputSystem;
 /// profession_id defaults to 1 (Smithing). Can be changed in Inspector for Mining (2), etc.
 ///
 /// No Mirror NetworkBehaviour — ForgeNPC is a purely client-side interaction.
-/// The NPC visual is just a scene object; crafting API calls happen in CraftingUI.
+/// The NPC visual is just a scene object; crafting API calls happen in ForgeCraftingPanel.
 /// </summary>
 public class ForgeNPC : MonoBehaviour
 {
@@ -79,10 +79,13 @@ public class ForgeNPC : MonoBehaviour
     void OpenCrafting()
     {
 #if !UNITY_SERVER
-        if (CraftingUI.Instance != null)
-            CraftingUI.Instance.Open(professionId);
+        // Canonical crafting UI is ForgeCraftingPanel (Smelt + Craft tabs,
+        // /api/professions/recipes). It loads all of the character's recipes, so
+        // professionId isn't passed here.
+        if (ForgeCraftingPanel.Instance != null)
+            ForgeCraftingPanel.Instance.Open();
         else
-            Debug.LogWarning($"[ForgeNPC] CraftingUI.Instance is null — make sure it's in the scene or self-bootstrapping.");
+            Debug.LogWarning("[ForgeNPC] ForgeCraftingPanel.Instance is null — add the ForgeCraftingPanel to the Hub scene and wire its Inspector fields.");
 #endif
     }
 

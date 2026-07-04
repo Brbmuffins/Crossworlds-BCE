@@ -46,16 +46,23 @@ public class ForgeCraftingPanel : MonoBehaviour
     [Header("Navigation")]
     public Button closeButton;
 
+    public static ForgeCraftingPanel Instance { get; private set; }
+
     bool _smeltTabActive = true;
     bool _crafting       = false;
 
     void Awake()
     {
-        smeltTabButton.onClick.AddListener(() => ShowTab(true));
-        craftTabButton.onClick.AddListener(() => ShowTab(false));
-        closeButton.onClick.AddListener(Close);
-        progressOverlay.SetActive(false);
+        Instance = this;
+        // Null-guarded so a partially-wired panel still registers Instance rather
+        // than throwing in Awake (its Inspector fields are an editor step).
+        if (smeltTabButton  != null) smeltTabButton.onClick.AddListener(() => ShowTab(true));
+        if (craftTabButton  != null) craftTabButton.onClick.AddListener(() => ShowTab(false));
+        if (closeButton     != null) closeButton.onClick.AddListener(Close);
+        if (progressOverlay != null) progressOverlay.SetActive(false);
     }
+
+    void OnDestroy() { if (Instance == this) Instance = null; }
 
     public void Open()
     {

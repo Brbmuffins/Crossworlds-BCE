@@ -107,11 +107,11 @@ public static class AfkStationBuilder
             return;
         }
 
-        var go = new GameObject("ProfessionManager");
-        go.AddComponent<ProfessionManager>();
-        Undo.RegisterCreatedObjectUndo(go, "Create ProfessionManager");
-        Selection.activeGameObject = go;
-        Debug.Log("[BCE] ProfessionManager added to scene. It calls Load() on enable — wire that to your hub OnStartClient flow.");
+        // No manual placement needed: ProfessionManager self-bootstraps at runtime
+        // (RuntimeInitializeOnLoadMethod) and Load() is auto-triggered from
+        // PlayerIdentity.OnStartLocalPlayer once auth is ready. Creating one here
+        // would just be destroyed by the singleton guard. This menu item is a no-op.
+        Debug.Log("[BCE] ProfessionManager self-bootstraps at runtime — no scene object required. Nothing to place.");
     }
 
     // ─────────────────────────────────────────────────────────────────────────────

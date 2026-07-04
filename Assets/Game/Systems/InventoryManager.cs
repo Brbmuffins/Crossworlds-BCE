@@ -20,7 +20,9 @@ public class InventoryManager : MonoBehaviour
 {
     public static InventoryManager Instance { get; private set; }
 
-    private const int MaxSlots = 32;
+    // Must match InventoryBagUI (4x6 grid) and the server-side add-item/craft caps.
+    // Items placed beyond this are invisible in the bag UI, so keep all three in sync.
+    private const int MaxSlots = 24;
 
     [System.Serializable]
     public class InventorySlot

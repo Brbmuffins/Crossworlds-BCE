@@ -152,7 +152,7 @@ public static class HubSceneBuilder
     // ─────────────────────────────────────────────────────────────────────────────
     //  Step 8: Add Forge NPC + Mining Nodes
     //  Run AFTER BCE/Build Hub Scene. Adds:
-    //    • 1 Forge Master NPC (ForgeNPC, opens smithing CraftingUI)
+    //    • 1 Forge Master NPC (ForgeNPC, opens ForgeCraftingPanel)
     //    • 3 Copper Ore nodes (ResourceNode, yieldItemId=ore_copper, respawn=60s)
     //  Mining nodes are scattered at radius 14 from center.
     // ─────────────────────────────────────────────────────────────────────────────
