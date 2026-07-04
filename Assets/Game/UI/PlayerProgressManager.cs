@@ -12,6 +12,13 @@ using UnityEngine.Networking;
 /// Save path: call SaveProgress() any time (level-up, scene exit, periodic).
 /// API: GET /character (reuses existing endpoint — returns level, xp, gold, stats)
 ///      POST /api/character/save-progress
+///
+/// PROGRESSION CANON (read before wiring power to this): character level/xp here is
+/// a SEPARATE track from combat power. Per CharacterStats' design pillar ("no
+/// leveling — every bonus comes from equipped gear"), combat power comes from GEAR +
+/// HERO MASTERY only. Do NOT feed this level into CharacterStats or ability scaling.
+/// Whether character level should stay cosmetic, be repurposed, or be retired is an
+/// open design decision (see Docs/reviews/code-review-2026-07-04.md, finding #4).
 /// </summary>
 public class PlayerProgressManager : MonoBehaviour
 {

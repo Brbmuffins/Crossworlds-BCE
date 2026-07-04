@@ -40,7 +40,7 @@ public class PassiveThreatProtocol : ClassPassive
         if (_drActive && Time.time >= _drExpiry)
         {
             _drActive = false;
-            health?.ClearDamageReduction();
+            health?.ClearDamageReduction("threat_protocol");
         }
     }
 
@@ -54,7 +54,7 @@ public class PassiveThreatProtocol : ClassPassive
     {
         _stacks = 0;
         _drActive = false;
-        health?.ClearDamageReduction();
+        health?.ClearDamageReduction("threat_protocol");
     }
 
     void CheckActivation()
@@ -76,7 +76,7 @@ public class PassiveThreatProtocol : ClassPassive
         }
 
         // Apply DR
-        health?.SetDamageReduction(damageReduction);
+        health?.SetDamageReduction("threat_protocol", damageReduction);
         _drActive = true;
         _drExpiry = Time.time + drDuration;
     }

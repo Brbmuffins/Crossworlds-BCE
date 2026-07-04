@@ -167,14 +167,14 @@ public class IronWardenController : NetworkBehaviour
             case WardenPhase.ShieldMatrix:
                 RpcAnnounce("[BOSS] Shield Matrix online — destroy BOTH turrets simultaneously!");
                 _turretsAlive = 2;
-                _health.SetDamageReduction(1f);   // immune while turrets stand
+                _health.SetDamageReduction("warden_immunity", 1f);   // immune while turrets stand
                 SpawnSiegeTurrets();
                 _magnetRoutine = StartCoroutine(MagnetPullLoop());
                 break;
 
             case WardenPhase.Rampage:
                 RpcAnnounce("[BOSS] The Iron Warden's core is exposed — RAMPAGE!");
-                _health.ClearDamageReduction();
+                _health.ClearDamageReduction("warden_immunity");
                 DespawnTurrets();
                 if (_agent != null) _agent.speed = _baseSpeed * rampageSpeedMult;
                 _slamRoutine = StartCoroutine(GroundSlamLoop());
@@ -284,7 +284,7 @@ public class IronWardenController : NetworkBehaviour
         {
             // Both down inside the repair window — drop immunity, cancel any pending repair
             if (_repairRoutine != null) { StopCoroutine(_repairRoutine); _repairRoutine = null; }
-            _health.ClearDamageReduction();
+            _health.ClearDamageReduction("warden_immunity");
             RpcAnnounce("[BOSS] Both turrets destroyed — the Warden is vulnerable!");
             return;
         }
@@ -301,7 +301,7 @@ public class IronWardenController : NetworkBehaviour
 
         DespawnTurrets();               // remove the survivor, spawn a fresh pair
         _turretsAlive = 2;
-        _health.SetDamageReduction(1f); // re-immune in case it lapsed
+        _health.SetDamageReduction("warden_immunity", 1f); // re-immune in case it lapsed
         SpawnSiegeTurrets();
         RpcAnnounce("[BOSS] Turret repaired — destroy BOTH simultaneously!");
     }

@@ -68,6 +68,13 @@ stays legible." Every idea cites real files. Nothing here was implemented.
 
 ---
 
+## Resolution status (updated after fixes)
+- **#1 done** — `ForgeCraftingPanel` made canonical (static `Instance` + repointed `ForgeNPC`); legacy `CraftingUI` deleted. Remaining: wire the panel's Inspector fields (editor step).
+- **#2 done** — `InventoryManager.MaxSlots` → 24, aligned with bag UI + server.
+- **#3 done** — `Health` damage-reduction is now source-keyed (`SetDamageReduction(source, f)` / `ClearDamageReduction(source)`, combined multiplicatively); Threat Protocol, Siege Mode, resist flasks, and Warden immunity no longer clobber each other. Consumables are now usable: bag UI click on a consumable calls `ConsumableEffect.Apply`, decrements, and persists. **Caveat:** Health-mutating effects (hp_regen, resist) only take hold server/host-side until a `[Command]` bridge is added — speed/damage buffs work client-side now.
+- **#4 open (design decision)** — code note added at `PlayerProgressManager` clarifying character level is a separate, non-power track; the retire/cosmetic/repurpose call is still owner's.
+- **#5 done** — `AfkStationBuilder` no longer creates a redundant `ProfessionManager`.
+
 ## Known-tracked (not re-reported)
 - Damage-reduction single shared scalar (needs ref-counted refactor — see Bigger Bets).
 - Existing enemy/boss `.glb` committed as raw blobs before `*.glb` LFS pin (needs history migration).

@@ -175,8 +175,71 @@ public class InventoryBagUI : MonoBehaviour
     {
         var d = _data[index];
         if (d == null || string.IsNullOrEmpty(d.item_id)) return;
+
+        // Consumables are used, not equipped.
+        if (ConsumableEffect.IsConsumable(d.item_id))
+        {
+            StartCoroutine(UseConsumable(index));
+            return;
+        }
+
         bool nowEquip = d.equipped == 0;
         StartCoroutine(PostEquip(index, nowEquip));
+    }
+
+    // ── Use a consumable ────────────────────────────────────────────────────────
+    // Applies the item's effect to the local player, decrements one from the stack,
+    // and persists the change. NOTE: effects that mutate Health (hp_regen, resist)
+    // only take hold on the server/host — a pure remote client needs a [Command]
+    // bridge to apply them server-side; speed/damage buffs work client-side today.
+    IEnumerator UseConsumable(int index)
+    {
+        var d = _data[index];
+        if (d == null || string.IsNullOrEmpty(d.item_id)) yield break;
+
+        var player = NetworkClient.localPlayer != null ? NetworkClient.localPlayer.gameObject : null;
+        if (player == null) { SetStatus("No player to use item on."); yield break; }
+
+        if (!ConsumableEffect.Apply(d.item_id, player))
+        {
+            SetStatus("That item can't be used.");
+            yield break;
+        }
+
+        // Decrement one; clear the slot if depleted.
+        d.quantity -= 1;
+        if (d.quantity <= 0) _data[index] = null;
+        RenderSlots();
+
+        yield return StartCoroutine(PostSaveAll());
+        StartCoroutine(FetchInventory()); // re-sync with server
+    }
+
+    // Full-inventory save (used after consuming an item). The server treats this as
+    // an authoritative replace, matching InventoryManager.SaveInventory.
+    IEnumerator PostSaveAll()
+    {
+        string charId = GetCharacterId();
+        if (string.IsNullOrEmpty(charId) || !int.TryParse(charId, out int cid)) yield break;
+
+        string token = !string.IsNullOrEmpty(AuthManager.Token) ? AuthManager.Token : PlayerPrefs.GetString("jwt_token", "");
+
+        var slots = new List<InventorySlotData>();
+        for (int i = 0; i < TOTAL_SLOTS; i++)
+            if (_data[i] != null && !string.IsNullOrEmpty(_data[i].item_id))
+                slots.Add(_data[i]);
+
+        string body = JsonUtility.ToJson(new SavePayload { characterId = cid, slots = slots });
+
+        using var req = new UnityWebRequest($"{ServerConfig.AuthBaseUrl}/api/inventory/save", "POST");
+        req.uploadHandler   = new UploadHandlerRaw(System.Text.Encoding.UTF8.GetBytes(body));
+        req.downloadHandler = new DownloadHandlerBuffer();
+        req.SetRequestHeader("Content-Type", "application/json");
+        req.SetRequestHeader("Authorization", $"Bearer {token}");
+        yield return req.SendWebRequest();
+
+        if (req.result != UnityWebRequest.Result.Success)
+            SetStatus($"Save failed: {req.error}");
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -239,7 +302,7 @@ public class InventoryBagUI : MonoBehaviour
         var titleGO = new GameObject("Title", typeof(RectTransform), typeof(TextMeshProUGUI));
         titleGO.transform.SetParent(titleBar.transform, false);
         _titleText = titleGO.GetComponent<TextMeshProUGUI>();
-        _titleText.text      = "INVENTORY  <size=9><color=#475569>B to close · click to equip</color></size>";
+        _titleText.text      = "INVENTORY  <size=9><color=#475569>B to close · click to equip · consumables to use</color></size>";
         _titleText.fontSize  = 12f;
         _titleText.color     = new Color(0.7f, 0.6f, 1f);
         _titleText.fontStyle = FontStyles.Bold;
@@ -424,6 +487,12 @@ public class InventoryBagUI : MonoBehaviour
         public string item_id;
         public int    quantity;
         public int    equipped;   // 0 or 1
+    }
+
+    [Serializable] class SavePayload
+    {
+        public int                     characterId;
+        public List<InventorySlotData> slots;
     }
 }
 #endif

@@ -146,16 +146,16 @@ public class StatusEffectManager : MonoBehaviour
     public void ApplyRoot(float duration) =>
         AddEffect(new StatusEffect(StatusEffectType.Bound, duration, 0f));
 
-    // Resist helpers: thin wrapper over Health.SetDamageReduction.
-    // Only one reduction value is active at a time (last write wins).
+    // Resist helpers: each damage type is its own DR source, so multiple resist
+    // flasks (and Siege Mode / Threat Protocol) coexist without clobbering.
     public void AddResist(string damageType, float fraction)
     {
-        GetComponent<Health>()?.SetDamageReduction(fraction);
+        GetComponent<Health>()?.SetDamageReduction("resist_" + damageType, fraction);
     }
 
     public void RemoveResist(string damageType, float fraction)
     {
-        GetComponent<Health>()?.ClearDamageReduction();
+        GetComponent<Health>()?.ClearDamageReduction("resist_" + damageType);
     }
 
     // Applies a slow (0–1 fraction) to attached PlayerMovement or EnemyAI.

@@ -45,6 +45,10 @@ public static class ConsumableEffect
         { "flask_damage",      new EffectDef("damage_amp",   0.15f, 45f) },
     };
 
+    /// True if this item id is a usable consumable (drives "use" vs "equip" in the bag UI).
+    public static bool IsConsumable(string itemId) =>
+        !string.IsNullOrEmpty(itemId) && Effects.ContainsKey(itemId);
+
     /// Returns true if the item is a known consumable and its effect was started.
     public static bool Apply(string itemId, GameObject target)
     {
