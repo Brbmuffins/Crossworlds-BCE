@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 using Mirror;
@@ -48,9 +49,22 @@ public class Health : NetworkBehaviour
     private float _absorbedAmount   = 0f;
     public  float AbsorbedAmount    => _absorbedAmount;
 
-    // ── DR modifier (Siege Mode, Threat Protocol) ─────────────────
-    private float _damageReductionBonus = 0f; // 0.4 = 40% reduction
-    public  float DamageReductionBonus  => _damageReductionBonus;
+    // ── DR modifier (source-keyed) ────────────────────────────────
+    // Siege Mode, Threat Protocol, resist flasks, and boss immunity each own a
+    // named key so overlapping reductions coexist instead of clobbering the
+    // single scalar they used to share.
+    private readonly Dictionary<string, float> _drSources = new Dictionary<string, float>();
+    // Combined multiplicatively so stacked sources are independent and never
+    // exceed 100%:  eff = 1 - Π(1 - fᵢ).
+    public float DamageReductionBonus
+    {
+        get
+        {
+            float remaining = 1f;
+            foreach (var f in _drSources.Values) remaining *= (1f - Mathf.Clamp01(f));
+            return Mathf.Clamp01(1f - remaining);
+        }
+    }
 
     // ── Gear / Attunement channels (driven by CharacterStats) ─────
     private float _baseMaxHealth       = 0f;   // captured at Awake, before gear
@@ -122,8 +136,8 @@ public class Health : NetworkBehaviour
         if (_statusEffects != null && _statusEffects.IsWeakened)
             amount *= 1.25f;
 
-        // Damage reduction (Siege Mode, Threat Protocol)
-        amount *= (1f - Mathf.Clamp01(_damageReductionBonus));
+        // Damage reduction (source-keyed: Siege Mode, Threat Protocol, resist flasks, immunity)
+        amount *= (1f - DamageReductionBonus);
 
         // Gear damage reduction (attunement system) — stacks multiplicatively
         amount *= (1f - _gearDamageReduction);
@@ -222,17 +236,20 @@ public class Health : NetworkBehaviour
         _absorbing = false;
     }
 
-    // ── Siege Mode / Threat Protocol ─────────────────────────────
-    public void SetDamageReduction(float fraction)
+    // ── DR sources ─────────────────────────────────────────────────
+    // Each caller owns a named key (e.g. "siege_mode", "threat_protocol",
+    // "resist_void", "warden_immunity"). Setting the same key again replaces
+    // that source's value; clearing removes only that source.
+    public void SetDamageReduction(string source, float fraction)
     {
         if (!CanMutateCombatState()) return;
-        _damageReductionBonus = Mathf.Clamp01(fraction);
+        _drSources[source] = Mathf.Clamp01(fraction);
     }
 
-    public void ClearDamageReduction()
+    public void ClearDamageReduction(string source)
     {
         if (!CanMutateCombatState()) return;
-        _damageReductionBonus = 0f;
+        _drSources.Remove(source);
     }
 
     // ── Gear / Attunement channels (called by CharacterStats) ─────

@@ -1,0 +1,24 @@
+{
+  "task_id": "c67d10a5-b0bc-4b6c-96b7-c04a488202d0",
+  "type": "animate_retarget",
+  "status": "success",
+  "input": {
+    "original_model_id": "6a527b5f-f576-4b77-be1f-86b4262ee750",
+    "out_format": "fbx",
+    "animation": "preset:biped:slash"
+  },
+  "output": {
+    "model": "https://tripo-data.rg1.data.tripo3d.com/tcli_2efb6ab9cf694c6eab16a3e8dc01d3bf/20260703/c67d10a5-b0bc-4b6c-96b7-c04a488202d0/tripo_retarget_c67d10a5-b0bc-4b6c-96b7-c04a488202d0.fbx?Key-Pair-Id=K1676C64NMVM2J&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly90cmlwby1kYXRhLnJnMS5kYXRhLnRyaXBvM2QuY29tL3RjbGlfMmVmYjZhYjljZjY5NGM2ZWFiMTZhM2U4ZGMwMWQzYmYvMjAyNjA3MDMvYzY3ZDEwYTUtYjBiYy00YjZjLTk2YjctYzA0YTQ4ODIwMmQwL3RyaXBvX3JldGFyZ2V0X2M2N2QxMGE1LWIwYmMtNGI2Yy05NmI3LWMwNGE0ODgyMDJkMC5mYngiLCJDb25kaXRpb24iOnsiRGF0ZUxlc3NUaGFuIjp7IkFXUzpFcG9jaFRpbWUiOjE3ODMxMjMyMDB9fX1dfQ__&Signature=RNkiuW6DD39mHThXpzLC~MYkoQ-NpHsyhRBVMORc9K10q6MP4zbcY3Rvcusr5DF9meI6hLn3kaXyH-MuaBlJ9UlUcsEYzonZupK7D9ZHhdNiXUAvT~AT6rT7gakXFr3A42rpBmZ9gnMy8dymzUhainmHyWT1cxtT2XaCxw46J5nNFYptMEw2f2cWqZ1Dck7l9exVBEiN9T07xgRti0QZ4KBeZpiPpgdSXH8JYxo~aB5Ol1aTEbyOxP3K6e810N~mie2-OZt~GLcFeP6Zpa~rqMlIs3vuUgIyrsy5owSNy-yeDwg-CdObKCYg3QCJP4UK9-grMVMQa-A~Gjapbx6ooQ__"
+  },
+  "progress": 100,
+  "create_time": 1783099328,
+  "consumed_credit": 10,
+  "queuing_num": -1,
+  "running_left_time": -1,
+  "result": {
+    "model": {
+      "type": "fbx",
+      "url": "https://tripo-data.rg1.data.tripo3d.com/tcli_2efb6ab9cf694c6eab16a3e8dc01d3bf/20260703/c67d10a5-b0bc-4b6c-96b7-c04a488202d0/tripo_retarget_c67d10a5-b0bc-4b6c-96b7-c04a488202d0.fbx?Key-Pair-Id=K1676C64NMVM2J&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly90cmlwby1kYXRhLnJnMS5kYXRhLnRyaXBvM2QuY29tL3RjbGlfMmVmYjZhYjljZjY5NGM2ZWFiMTZhM2U4ZGMwMWQzYmYvMjAyNjA3MDMvYzY3ZDEwYTUtYjBiYy00YjZjLTk2YjctYzA0YTQ4ODIwMmQwL3RyaXBvX3JldGFyZ2V0X2M2N2QxMGE1LWIwYmMtNGI2Yy05NmI3LWMwNGE0ODgyMDJkMC5mYngiLCJDb25kaXRpb24iOnsiRGF0ZUxlc3NUaGFuIjp7IkFXUzpFcG9jaFRpbWUiOjE3ODMxMjMyMDB9fX1dfQ__&Signature=RNkiuW6DD39mHThXpzLC~MYkoQ-NpHsyhRBVMORc9K10q6MP4zbcY3Rvcusr5DF9meI6hLn3kaXyH-MuaBlJ9UlUcsEYzonZupK7D9ZHhdNiXUAvT~AT6rT7gakXFr3A42rpBmZ9gnMy8dymzUhainmHyWT1cxtT2XaCxw46J5nNFYptMEw2f2cWqZ1Dck7l9exVBEiN9T07xgRti0QZ4KBeZpiPpgdSXH8JYxo~aB5Ol1aTEbyOxP3K6e810N~mie2-OZt~GLcFeP6Zpa~rqMlIs3vuUgIyrsy5owSNy-yeDwg-CdObKCYg3QCJP4UK9-grMVMQa-A~Gjapbx6ooQ__"
+    }
+  }
+}

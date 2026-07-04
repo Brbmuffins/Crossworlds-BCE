@@ -1,0 +1,24 @@
+{
+  "task_id": "db40a465-8848-4900-85a1-df7e91963709",
+  "type": "animate_retarget",
+  "status": "success",
+  "input": {
+    "original_model_id": "6a527b5f-f576-4b77-be1f-86b4262ee750",
+    "out_format": "fbx",
+    "animation": "preset:biped:run"
+  },
+  "output": {
+    "model": "https://tripo-data.rg1.data.tripo3d.com/tcli_2efb6ab9cf694c6eab16a3e8dc01d3bf/20260703/db40a465-8848-4900-85a1-df7e91963709/tripo_retarget_db40a465-8848-4900-85a1-df7e91963709.fbx?Key-Pair-Id=K1676C64NMVM2J&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly90cmlwby1kYXRhLnJnMS5kYXRhLnRyaXBvM2QuY29tL3RjbGlfMmVmYjZhYjljZjY5NGM2ZWFiMTZhM2U4ZGMwMWQzYmYvMjAyNjA3MDMvZGI0MGE0NjUtODg0OC00OTAwLTg1YTEtZGY3ZTkxOTYzNzA5L3RyaXBvX3JldGFyZ2V0X2RiNDBhNDY1LTg4NDgtNDkwMC04NWExLWRmN2U5MTk2MzcwOS5mYngiLCJDb25kaXRpb24iOnsiRGF0ZUxlc3NUaGFuIjp7IkFXUzpFcG9jaFRpbWUiOjE3ODMxMjMyMDB9fX1dfQ__&Signature=MwSg7zEAT-JZAARQ2ySPWJW9Clhqko7CYiXhIJsnT9OfdqDuzIC6YU9V5gIyhLaVcoPdIx~dMk9B3KiHuUDDUhpPc2tM3znxV41b5titnelFdTTtEvYgjlE0xIOuJHR874tOvHfnMZrRdLYmyfsHo8A-3kn~HGTfJ-1F9XWp8JGxItrtvnDxuHe9n04XVvTf4OxAKudqyZn14xanEzyT4sunjS-6g9pHK47UQa6vfZEdyE1iVaHkkC3ogyrW-yRkejiSazBsiWH4rkf4YkzuQQWD1su2JM8uEDfv-4my~zVsAiliLLBRw7h6p1ytKrrMC-96xM9zde3Ylh0-SRyDTQ__"
+  },
+  "progress": 100,
+  "create_time": 1783099329,
+  "consumed_credit": 10,
+  "queuing_num": -1,
+  "running_left_time": -1,
+  "result": {
+    "model": {
+      "type": "fbx",
+      "url": "https://tripo-data.rg1.data.tripo3d.com/tcli_2efb6ab9cf694c6eab16a3e8dc01d3bf/20260703/db40a465-8848-4900-85a1-df7e91963709/tripo_retarget_db40a465-8848-4900-85a1-df7e91963709.fbx?Key-Pair-Id=K1676C64NMVM2J&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly90cmlwby1kYXRhLnJnMS5kYXRhLnRyaXBvM2QuY29tL3RjbGlfMmVmYjZhYjljZjY5NGM2ZWFiMTZhM2U4ZGMwMWQzYmYvMjAyNjA3MDMvZGI0MGE0NjUtODg0OC00OTAwLTg1YTEtZGY3ZTkxOTYzNzA5L3RyaXBvX3JldGFyZ2V0X2RiNDBhNDY1LTg4NDgtNDkwMC04NWExLWRmN2U5MTk2MzcwOS5mYngiLCJDb25kaXRpb24iOnsiRGF0ZUxlc3NUaGFuIjp7IkFXUzpFcG9jaFRpbWUiOjE3ODMxMjMyMDB9fX1dfQ__&Signature=MwSg7zEAT-JZAARQ2ySPWJW9Clhqko7CYiXhIJsnT9OfdqDuzIC6YU9V5gIyhLaVcoPdIx~dMk9B3KiHuUDDUhpPc2tM3znxV41b5titnelFdTTtEvYgjlE0xIOuJHR874tOvHfnMZrRdLYmyfsHo8A-3kn~HGTfJ-1F9XWp8JGxItrtvnDxuHe9n04XVvTf4OxAKudqyZn14xanEzyT4sunjS-6g9pHK47UQa6vfZEdyE1iVaHkkC3ogyrW-yRkejiSazBsiWH4rkf4YkzuQQWD1su2JM8uEDfv-4my~zVsAiliLLBRw7h6p1ytKrrMC-96xM9zde3Ylh0-SRyDTQ__"
+    }
+  }
+}

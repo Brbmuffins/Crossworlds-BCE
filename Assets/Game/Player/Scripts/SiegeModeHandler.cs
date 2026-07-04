@@ -44,7 +44,7 @@ public class SiegeModeHandler : MonoBehaviour
         if (_movement != null) { savedSpeed = _movement.moveSpeed; _movement.moveSpeed = 0f; }
 
         // Apply DR
-        _health?.SetDamageReduction(damageReduction);
+        _health?.SetDamageReduction("siege_mode", damageReduction);
 
         // Threat gen is handled by ThreatProtocol's stack listener;
         // triple rate by adding extra stacks on each damage event.
@@ -70,7 +70,7 @@ public class SiegeModeHandler : MonoBehaviour
 
         // Restore
         if (_movement != null) _movement.moveSpeed = savedSpeed;
-        _health?.ClearDamageReduction();
+        _health?.ClearDamageReduction("siege_mode");
 
         if (anchor != null) Destroy(anchor);
         if (aura   != null) Destroy(aura);

@@ -1,0 +1,37 @@
+{
+  "task_id": "02c0ba52-b633-46e7-96f6-6c6321521d17",
+  "type": "text_to_model",
+  "status": "success",
+  "input": {
+    "prompt": "skeleton undead archer, thin bony frame, tattered robe, visible ribs and bones, skull head with glowing eyes, full-body T-pose arms horizontal and away from body, legs apart, front-facing, whole body visible head to feet, game-ready low-poly, PBR materials, no bow in hand, symmetric",
+    "model_version": "v3.1-20260211",
+    "texture": true,
+    "pbr": true,
+    "texture_quality": "detailed",
+    "texture_alignment": "geometry",
+    "export_uv": true,
+    "geometry_quality": "detailed"
+  },
+  "output": {
+    "pbr_model": "https://tripo-data.rg1.data.tripo3d.com/tcli_2efb6ab9cf694c6eab16a3e8dc01d3bf/20260703/02c0ba52-b633-46e7-96f6-6c6321521d17/tripo_pbr_model_02c0ba52-b633-46e7-96f6-6c6321521d17.glb?Key-Pair-Id=K1676C64NMVM2J&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly90cmlwby1kYXRhLnJnMS5kYXRhLnRyaXBvM2QuY29tL3RjbGlfMmVmYjZhYjljZjY5NGM2ZWFiMTZhM2U4ZGMwMWQzYmYvMjAyNjA3MDMvMDJjMGJhNTItYjYzMy00NmU3LTk2ZjYtNmM2MzIxNTIxZDE3L3RyaXBvX3Bicl9tb2RlbF8wMmMwYmE1Mi1iNjMzLTQ2ZTctOTZmNi02YzYzMjE1MjFkMTcuZ2xiIiwiQ29uZGl0aW9uIjp7IkRhdGVMZXNzVGhhbiI6eyJBV1M6RXBvY2hUaW1lIjoxNzgzMTIzMjAwfX19XX0_&Signature=MI4kGyLcFVRI2-4XF1MD0Z7TZrbYFS6kx43AWF5kamOZRVeay8P52v80YhFUgc~I6mY5ciSsaNGDOFtpFfP-A9lQ5OHtJqdmNVZ8lLAjgyolFR60CzdLFg~Nl5SUOVRz0WCWrafVIY5BqSRtZxz-LdzqY2NADcwMh5eFLlBRmb8rzc1cP06VnRrQn5ZkABqFuQ3ykK1BUH8BDmjlvmcn1Kw-KB15lG2nuOxTvim40uAX~0voqX56wgE8q55WoOge4bubKZRzoouFoQV8mxElRbA~hrQC3cIps5kD6E4girSr7zQhISKsEEq-me-~L1MwF4g~-SJKihwoAZJQo6isOg__",
+    "generated_image": "https://tripo-data.rg1.data.tripo3d.com/tcli_2efb6ab9cf694c6eab16a3e8dc01d3bf/20260703/02c0ba52-b633-46e7-96f6-6c6321521d17/text2image_02c0ba52-b633-46e7-96f6-6c6321521d17.jpeg?Key-Pair-Id=K1676C64NMVM2J&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly90cmlwby1kYXRhLnJnMS5kYXRhLnRyaXBvM2QuY29tL3RjbGlfMmVmYjZhYjljZjY5NGM2ZWFiMTZhM2U4ZGMwMWQzYmYvMjAyNjA3MDMvMDJjMGJhNTItYjYzMy00NmU3LTk2ZjYtNmM2MzIxNTIxZDE3L3RleHQyaW1hZ2VfMDJjMGJhNTItYjYzMy00NmU3LTk2ZjYtNmM2MzIxNTIxZDE3LmpwZWciLCJDb25kaXRpb24iOnsiRGF0ZUxlc3NUaGFuIjp7IkFXUzpFcG9jaFRpbWUiOjE3ODMxMjMyMDB9fX1dfQ__&Signature=MyGpWf5gG3H3KUzaZmfMYnpzFhxFHQQM3obKc2D1ChWMIy0IsyrVKhEeDIl6F7kEi3gUTa0EOOBuUuU5NlSkuWN1OrXqm5iiElyJWZ8e075IskwHfzz8X8emMhQ94cbIkbZ4lnNdiCeKbEs1-Pncq93qlquz5fucFUYYmPSddBS4O5AHvm~v3wSn5CrKjgGkqereaBzgJTot9LKWJVC7bIeyMgWIlLgS1tnMspthaY69kyZZZGmtMuyI~2J1HPiAQnRUQgIIlzu5r2I7sCpibWb0pgEgH51A43~np4adO~kgH-wT7mH9Y8mRjLJvBFirE~lps0RD8106QO1B2fd~eQ__",
+    "rendered_image": "https://tripo-data.rg1.data.tripo3d.com/tcli_2efb6ab9cf694c6eab16a3e8dc01d3bf/20260703/02c0ba52-b633-46e7-96f6-6c6321521d17/legacy_mesh.webp?Key-Pair-Id=K1676C64NMVM2J&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly90cmlwby1kYXRhLnJnMS5kYXRhLnRyaXBvM2QuY29tL3RjbGlfMmVmYjZhYjljZjY5NGM2ZWFiMTZhM2U4ZGMwMWQzYmYvMjAyNjA3MDMvMDJjMGJhNTItYjYzMy00NmU3LTk2ZjYtNmM2MzIxNTIxZDE3L2xlZ2FjeV9tZXNoLndlYnAiLCJDb25kaXRpb24iOnsiRGF0ZUxlc3NUaGFuIjp7IkFXUzpFcG9jaFRpbWUiOjE3ODMxMjMyMDB9fX1dfQ__&Signature=lFZK7RNvwQDNwpnRizD95LrxOJIKxcwnEBxnlRf79YDyiBpSy3QSrZwWNrH54GXNMUsdT2Uu2JycIV0LKqA0B80W6lbWt6w2GqKPasFuWhAARc~SjVlVuMumLTigUXpZPieaTHdh109rChCIBUIC~Pz0Wi-c8giJGC92qMR-NnRpV4PRxa8jtsR1uHmHIF7Iis3n41MN-z6KR1q6SnkgBxWX0dgBDm4YTd73U2hr9leMwWKa4Enr3NFkrDE-0Jw3OwQO-K-OPqBIZpU1QMCsoaKVNzspk-B8~BE~StxCoiHax090neD06QO9F1ALryHlZDxBlAse7gGaTAbbUFNlQA__"
+  },
+  "progress": 100,
+  "create_time": 1783098765,
+  "consumed_credit": 50,
+  "prompt": "skeleton undead archer, thin bony frame, tattered robe, visible ribs and bones, skull head with glowing eyes, full-body T-pose arms horizontal and away from body, legs apart, front-facing, whole body visible head to feet, game-ready low-poly, PBR materials, no bow in hand, symmetric",
+  "thumbnail": "https://tripo-data.rg1.data.tripo3d.com/tcli_2efb6ab9cf694c6eab16a3e8dc01d3bf/20260703/02c0ba52-b633-46e7-96f6-6c6321521d17/legacy_mesh.webp?Key-Pair-Id=K1676C64NMVM2J&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly90cmlwby1kYXRhLnJnMS5kYXRhLnRyaXBvM2QuY29tL3RjbGlfMmVmYjZhYjljZjY5NGM2ZWFiMTZhM2U4ZGMwMWQzYmYvMjAyNjA3MDMvMDJjMGJhNTItYjYzMy00NmU3LTk2ZjYtNmM2MzIxNTIxZDE3L2xlZ2FjeV9tZXNoLndlYnAiLCJDb25kaXRpb24iOnsiRGF0ZUxlc3NUaGFuIjp7IkFXUzpFcG9jaFRpbWUiOjE3ODMxMjMyMDB9fX1dfQ__&Signature=lFZK7RNvwQDNwpnRizD95LrxOJIKxcwnEBxnlRf79YDyiBpSy3QSrZwWNrH54GXNMUsdT2Uu2JycIV0LKqA0B80W6lbWt6w2GqKPasFuWhAARc~SjVlVuMumLTigUXpZPieaTHdh109rChCIBUIC~Pz0Wi-c8giJGC92qMR-NnRpV4PRxa8jtsR1uHmHIF7Iis3n41MN-z6KR1q6SnkgBxWX0dgBDm4YTd73U2hr9leMwWKa4Enr3NFkrDE-0Jw3OwQO-K-OPqBIZpU1QMCsoaKVNzspk-B8~BE~StxCoiHax090neD06QO9F1ALryHlZDxBlAse7gGaTAbbUFNlQA__",
+  "queuing_num": -1,
+  "running_left_time": -1,
+  "result": {
+    "pbr_model": {
+      "type": "glb",
+      "url": "https://tripo-data.rg1.data.tripo3d.com/tcli_2efb6ab9cf694c6eab16a3e8dc01d3bf/20260703/02c0ba52-b633-46e7-96f6-6c6321521d17/tripo_pbr_model_02c0ba52-b633-46e7-96f6-6c6321521d17.glb?Key-Pair-Id=K1676C64NMVM2J&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly90cmlwby1kYXRhLnJnMS5kYXRhLnRyaXBvM2QuY29tL3RjbGlfMmVmYjZhYjljZjY5NGM2ZWFiMTZhM2U4ZGMwMWQzYmYvMjAyNjA3MDMvMDJjMGJhNTItYjYzMy00NmU3LTk2ZjYtNmM2MzIxNTIxZDE3L3RyaXBvX3Bicl9tb2RlbF8wMmMwYmE1Mi1iNjMzLTQ2ZTctOTZmNi02YzYzMjE1MjFkMTcuZ2xiIiwiQ29uZGl0aW9uIjp7IkRhdGVMZXNzVGhhbiI6eyJBV1M6RXBvY2hUaW1lIjoxNzgzMTIzMjAwfX19XX0_&Signature=MI4kGyLcFVRI2-4XF1MD0Z7TZrbYFS6kx43AWF5kamOZRVeay8P52v80YhFUgc~I6mY5ciSsaNGDOFtpFfP-A9lQ5OHtJqdmNVZ8lLAjgyolFR60CzdLFg~Nl5SUOVRz0WCWrafVIY5BqSRtZxz-LdzqY2NADcwMh5eFLlBRmb8rzc1cP06VnRrQn5ZkABqFuQ3ykK1BUH8BDmjlvmcn1Kw-KB15lG2nuOxTvim40uAX~0voqX56wgE8q55WoOge4bubKZRzoouFoQV8mxElRbA~hrQC3cIps5kD6E4girSr7zQhISKsEEq-me-~L1MwF4g~-SJKihwoAZJQo6isOg__"
+    },
+    "rendered_image": {
+      "type": "webp",
+      "url": "https://tripo-data.rg1.data.tripo3d.com/tcli_2efb6ab9cf694c6eab16a3e8dc01d3bf/20260703/02c0ba52-b633-46e7-96f6-6c6321521d17/legacy_mesh.webp?Key-Pair-Id=K1676C64NMVM2J&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly90cmlwby1kYXRhLnJnMS5kYXRhLnRyaXBvM2QuY29tL3RjbGlfMmVmYjZhYjljZjY5NGM2ZWFiMTZhM2U4ZGMwMWQzYmYvMjAyNjA3MDMvMDJjMGJhNTItYjYzMy00NmU3LTk2ZjYtNmM2MzIxNTIxZDE3L2xlZ2FjeV9tZXNoLndlYnAiLCJDb25kaXRpb24iOnsiRGF0ZUxlc3NUaGFuIjp7IkFXUzpFcG9jaFRpbWUiOjE3ODMxMjMyMDB9fX1dfQ__&Signature=lFZK7RNvwQDNwpnRizD95LrxOJIKxcwnEBxnlRf79YDyiBpSy3QSrZwWNrH54GXNMUsdT2Uu2JycIV0LKqA0B80W6lbWt6w2GqKPasFuWhAARc~SjVlVuMumLTigUXpZPieaTHdh109rChCIBUIC~Pz0Wi-c8giJGC92qMR-NnRpV4PRxa8jtsR1uHmHIF7Iis3n41MN-z6KR1q6SnkgBxWX0dgBDm4YTd73U2hr9leMwWKa4Enr3NFkrDE-0Jw3OwQO-K-OPqBIZpU1QMCsoaKVNzspk-B8~BE~StxCoiHax090neD06QO9F1ALryHlZDxBlAse7gGaTAbbUFNlQA__"
+    }
+  }
+}

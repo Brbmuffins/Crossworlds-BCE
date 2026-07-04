@@ -9,7 +9,7 @@ using Mirror;
 ///   → InventoryManager.OnItemPickedUp → POST /api/inventory/save
 ///
 /// itemId "gold:N" awards gold instead of an inventory item.
-/// Prefab built by BCE/Setup/4d.
+/// Glow light auto-created in Start() — no Inspector assignment needed.
 /// </summary>
 public class WorldItem : NetworkBehaviour
 {
@@ -24,8 +24,8 @@ public class WorldItem : NetworkBehaviour
     public float floatAmplitude = 0.18f;
     public float rotateSpeed    = 55f;
 
-    [Header("Glow")]
-    public Light glowLight;
+    // Glow light — auto-created in Start(), no Inspector assignment required.
+    private Light _glowLight;
 
     private Vector3 _origin;
     private bool    _pickedUp = false;
@@ -39,15 +39,40 @@ public class WorldItem : NetworkBehaviour
     void Start()
     {
         _origin = transform.position;
+
+        // Auto-create glow light if not already present in hierarchy
+        _glowLight = GetComponentInChildren<Light>(includeInactive: false);
+        if (_glowLight == null)
+        {
+            var lg = new GameObject("GlowLight");
+            lg.transform.SetParent(transform, false);
+            lg.transform.localPosition = Vector3.zero;
+            _glowLight           = lg.AddComponent<Light>();
+            _glowLight.type      = LightType.Point;
+            _glowLight.range     = 1.8f;
+            _glowLight.intensity = 0.8f;
+            _glowLight.shadows   = LightShadows.None;
+        }
+
+        // Auto-add trigger collider for pickup if missing
+        if (GetComponent<Collider>() == null)
+        {
+            var sc      = gameObject.AddComponent<SphereCollider>();
+            sc.radius    = 0.6f;
+            sc.isTrigger = true;
+        }
+
         ApplyRarityGlow(itemId);
     }
 
+#if !UNITY_SERVER
     void Update()
     {
         float y = _origin.y + Mathf.Sin(Time.time * floatSpeed) * floatAmplitude;
         transform.position = new Vector3(transform.position.x, y, transform.position.z);
         transform.Rotate(Vector3.up, rotateSpeed * Time.deltaTime, Space.World);
     }
+#endif
 
     void OnTriggerEnter(Collider other)
     {
@@ -77,19 +102,32 @@ public class WorldItem : NetworkBehaviour
         var localNetId = localPlayer.GetComponent<NetworkIdentity>();
         if (localNetId == null || localNetId.netId != pickerNetId) return;
 
+        // Gold pickup — award directly to progress, don't add to inventory
+        if (pickedItemId.StartsWith("gold:"))
+        {
+            if (int.TryParse(pickedItemId.Substring(5), out int goldAmt))
+            {
+                PlayerProgressManager.Local?.AwardGold(goldAmt);
+                Debug.Log($"[LOOT] Picked up {goldAmt} gold");
+            }
+            return;
+        }
+
+#if !UNITY_SERVER
         var inv = InventoryManager.Instance;
         if (inv != null)
             inv.OnItemPickedUp(pickedItemId, qty);
         else
             Debug.LogWarning($"[LOOT] InventoryManager not found — {pickedItemId} x{qty} lost on client");
+#endif
     }
 
     void OnItemIdChanged(string _, string newVal) => ApplyRarityGlow(newVal);
 
     void ApplyRarityGlow(string id)
     {
-        if (glowLight == null) return;
-        glowLight.color = GetRarityColor(id);
+        if (_glowLight == null) return;
+        _glowLight.color = GetRarityColor(id);
     }
 
     public static Color GetRarityColor(string id)

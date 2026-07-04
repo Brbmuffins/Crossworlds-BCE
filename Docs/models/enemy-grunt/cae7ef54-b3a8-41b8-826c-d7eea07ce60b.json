@@ -1,0 +1,37 @@
+{
+  "task_id": "cae7ef54-b3a8-41b8-826c-d7eea07ce60b",
+  "type": "text_to_model",
+  "status": "success",
+  "input": {
+    "prompt": "Void Grunt enemy, stocky armored goblin melee warrior, crude sword and dark shield, teal void-energy armor, dark fantasy game enemy, T-pose, full body, game-ready",
+    "model_version": "v3.1-20260211",
+    "texture": true,
+    "pbr": true,
+    "texture_quality": "detailed",
+    "texture_alignment": "geometry",
+    "export_uv": true,
+    "geometry_quality": "detailed"
+  },
+  "output": {
+    "pbr_model": "https://tripo-data.rg1.data.tripo3d.com/tcli_2efb6ab9cf694c6eab16a3e8dc01d3bf/20260703/cae7ef54-b3a8-41b8-826c-d7eea07ce60b/tripo_pbr_model_cae7ef54-b3a8-41b8-826c-d7eea07ce60b.glb?Key-Pair-Id=K1676C64NMVM2J&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly90cmlwby1kYXRhLnJnMS5kYXRhLnRyaXBvM2QuY29tL3RjbGlfMmVmYjZhYjljZjY5NGM2ZWFiMTZhM2U4ZGMwMWQzYmYvMjAyNjA3MDMvY2FlN2VmNTQtYjNhOC00MWI4LTgyNmMtZDdlZWEwN2NlNjBiL3RyaXBvX3Bicl9tb2RlbF9jYWU3ZWY1NC1iM2E4LTQxYjgtODI2Yy1kN2VlYTA3Y2U2MGIuZ2xiIiwiQ29uZGl0aW9uIjp7IkRhdGVMZXNzVGhhbiI6eyJBV1M6RXBvY2hUaW1lIjoxNzgzMTIzMjAwfX19XX0_&Signature=DQ6CeaOWATbyPFjEInKG18-nkIoyAxTCny7A3leiRxEv9AGChhIdH9xXL6W-siG4sG0VHVTQkQoU37SYfyT~MNbN4u-T3z0sISGy~4Z5sq~FAbZ1Zh86RYPxPhRJqFJHxdXBLsf36A1eCAr2ipNzxB6riD8Lo0u~RyGMI~JER7yP8LN6OgHmEgJkViSFJL3Zp9x4uyEbOo5kUbZ90YRHHASXY7c20BBA551769NaTdhxhnNMsnLB9TYvDf4KlMc8NysDGd2jJVyPvdtIKLeKY~tfvbaz-FB3YCnRs8MRJewfplkLzsMgaz6ZZ1VbfOCc8lrspaw57ErDiIEZk~dhgQ__",
+    "generated_image": "https://tripo-data.rg1.data.tripo3d.com/tcli_2efb6ab9cf694c6eab16a3e8dc01d3bf/20260703/cae7ef54-b3a8-41b8-826c-d7eea07ce60b/text2image_cae7ef54-b3a8-41b8-826c-d7eea07ce60b.jpeg?Key-Pair-Id=K1676C64NMVM2J&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly90cmlwby1kYXRhLnJnMS5kYXRhLnRyaXBvM2QuY29tL3RjbGlfMmVmYjZhYjljZjY5NGM2ZWFiMTZhM2U4ZGMwMWQzYmYvMjAyNjA3MDMvY2FlN2VmNTQtYjNhOC00MWI4LTgyNmMtZDdlZWEwN2NlNjBiL3RleHQyaW1hZ2VfY2FlN2VmNTQtYjNhOC00MWI4LTgyNmMtZDdlZWEwN2NlNjBiLmpwZWciLCJDb25kaXRpb24iOnsiRGF0ZUxlc3NUaGFuIjp7IkFXUzpFcG9jaFRpbWUiOjE3ODMxMjMyMDB9fX1dfQ__&Signature=u8GFxAdYntPTyeQCZbSEaAKRJabIHEoWDjEs~UU8U0KLARzJr8oqy0LdMcnV~eNAndeqEkOD~Rdqw6PbyzrxKm0c4Pr3yXhNhqli7CVhYTlkE3DiNdj6N8x1tN5GT4lNbdT0lC0S0cWCHTLGhZmwjS3VNlax9Cr~WPjAab0TwmFwJaSEN9aiWVKivYNkVX1cUVxnc8DMeav4k3soFqH-KDeUQihd6HetEEVbBqSvaq6vgImKNbE2ez5wawUcqneAxYsXemeryZx-8HiptRN-Ltdrpl2S3IA-0mC542xJCX-hyuUnOJU5aI3jgK8PRNDh-AOF1G8Fi2lg6~OVDBzjeA__",
+    "rendered_image": "https://tripo-data.rg1.data.tripo3d.com/tcli_2efb6ab9cf694c6eab16a3e8dc01d3bf/20260703/cae7ef54-b3a8-41b8-826c-d7eea07ce60b/legacy_mesh.webp?Key-Pair-Id=K1676C64NMVM2J&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly90cmlwby1kYXRhLnJnMS5kYXRhLnRyaXBvM2QuY29tL3RjbGlfMmVmYjZhYjljZjY5NGM2ZWFiMTZhM2U4ZGMwMWQzYmYvMjAyNjA3MDMvY2FlN2VmNTQtYjNhOC00MWI4LTgyNmMtZDdlZWEwN2NlNjBiL2xlZ2FjeV9tZXNoLndlYnAiLCJDb25kaXRpb24iOnsiRGF0ZUxlc3NUaGFuIjp7IkFXUzpFcG9jaFRpbWUiOjE3ODMxMjMyMDB9fX1dfQ__&Signature=F2e43Lmm2RoD9EkgMiqHYLRCIeo7Dy~0wArmiHbMlmnQRiuB1SUeYbFOO1KEfuGzvdqeLQGR0R3f-ofVGClnZyyTYdUIW96Hx8km59tjL69dQkaMPc6Jkk9~8Eid2k8jabCI1-15GVrBmzSiDGo32mb6Fw4lAHas23cl0vcc4hf8xETLuhSXFO3hd8MMQddAT3wVgD3KMyC5sqh0S1yaby6bw~ysZYAKzWfhpP8RPa525~fQLwYDIAZhZSqCgP3raoX9QsBrXS2K4xM6~SKhB1LyjSI6fBlIvsjYSsOLe32FB~iJgjvqF1297Z~D6o5PqBYhOjm-gJvwRkkxJ0ik1A__"
+  },
+  "progress": 100,
+  "create_time": 1783116603,
+  "consumed_credit": 50,
+  "prompt": "Void Grunt enemy, stocky armored goblin melee warrior, crude sword and dark shield, teal void-energy armor, dark fantasy game enemy, T-pose, full body, game-ready",
+  "thumbnail": "https://tripo-data.rg1.data.tripo3d.com/tcli_2efb6ab9cf694c6eab16a3e8dc01d3bf/20260703/cae7ef54-b3a8-41b8-826c-d7eea07ce60b/legacy_mesh.webp?Key-Pair-Id=K1676C64NMVM2J&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly90cmlwby1kYXRhLnJnMS5kYXRhLnRyaXBvM2QuY29tL3RjbGlfMmVmYjZhYjljZjY5NGM2ZWFiMTZhM2U4ZGMwMWQzYmYvMjAyNjA3MDMvY2FlN2VmNTQtYjNhOC00MWI4LTgyNmMtZDdlZWEwN2NlNjBiL2xlZ2FjeV9tZXNoLndlYnAiLCJDb25kaXRpb24iOnsiRGF0ZUxlc3NUaGFuIjp7IkFXUzpFcG9jaFRpbWUiOjE3ODMxMjMyMDB9fX1dfQ__&Signature=F2e43Lmm2RoD9EkgMiqHYLRCIeo7Dy~0wArmiHbMlmnQRiuB1SUeYbFOO1KEfuGzvdqeLQGR0R3f-ofVGClnZyyTYdUIW96Hx8km59tjL69dQkaMPc6Jkk9~8Eid2k8jabCI1-15GVrBmzSiDGo32mb6Fw4lAHas23cl0vcc4hf8xETLuhSXFO3hd8MMQddAT3wVgD3KMyC5sqh0S1yaby6bw~ysZYAKzWfhpP8RPa525~fQLwYDIAZhZSqCgP3raoX9QsBrXS2K4xM6~SKhB1LyjSI6fBlIvsjYSsOLe32FB~iJgjvqF1297Z~D6o5PqBYhOjm-gJvwRkkxJ0ik1A__",
+  "queuing_num": -1,
+  "running_left_time": -1,
+  "result": {
+    "pbr_model": {
+      "url": "https://tripo-data.rg1.data.tripo3d.com/tcli_2efb6ab9cf694c6eab16a3e8dc01d3bf/20260703/cae7ef54-b3a8-41b8-826c-d7eea07ce60b/tripo_pbr_model_cae7ef54-b3a8-41b8-826c-d7eea07ce60b.glb?Key-Pair-Id=K1676C64NMVM2J&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly90cmlwby1kYXRhLnJnMS5kYXRhLnRyaXBvM2QuY29tL3RjbGlfMmVmYjZhYjljZjY5NGM2ZWFiMTZhM2U4ZGMwMWQzYmYvMjAyNjA3MDMvY2FlN2VmNTQtYjNhOC00MWI4LTgyNmMtZDdlZWEwN2NlNjBiL3RyaXBvX3Bicl9tb2RlbF9jYWU3ZWY1NC1iM2E4LTQxYjgtODI2Yy1kN2VlYTA3Y2U2MGIuZ2xiIiwiQ29uZGl0aW9uIjp7IkRhdGVMZXNzVGhhbiI6eyJBV1M6RXBvY2hUaW1lIjoxNzgzMTIzMjAwfX19XX0_&Signature=DQ6CeaOWATbyPFjEInKG18-nkIoyAxTCny7A3leiRxEv9AGChhIdH9xXL6W-siG4sG0VHVTQkQoU37SYfyT~MNbN4u-T3z0sISGy~4Z5sq~FAbZ1Zh86RYPxPhRJqFJHxdXBLsf36A1eCAr2ipNzxB6riD8Lo0u~RyGMI~JER7yP8LN6OgHmEgJkViSFJL3Zp9x4uyEbOo5kUbZ90YRHHASXY7c20BBA551769NaTdhxhnNMsnLB9TYvDf4KlMc8NysDGd2jJVyPvdtIKLeKY~tfvbaz-FB3YCnRs8MRJewfplkLzsMgaz6ZZ1VbfOCc8lrspaw57ErDiIEZk~dhgQ__",
+      "type": "glb"
+    },
+    "rendered_image": {
+      "type": "webp",
+      "url": "https://tripo-data.rg1.data.tripo3d.com/tcli_2efb6ab9cf694c6eab16a3e8dc01d3bf/20260703/cae7ef54-b3a8-41b8-826c-d7eea07ce60b/legacy_mesh.webp?Key-Pair-Id=K1676C64NMVM2J&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly90cmlwby1kYXRhLnJnMS5kYXRhLnRyaXBvM2QuY29tL3RjbGlfMmVmYjZhYjljZjY5NGM2ZWFiMTZhM2U4ZGMwMWQzYmYvMjAyNjA3MDMvY2FlN2VmNTQtYjNhOC00MWI4LTgyNmMtZDdlZWEwN2NlNjBiL2xlZ2FjeV9tZXNoLndlYnAiLCJDb25kaXRpb24iOnsiRGF0ZUxlc3NUaGFuIjp7IkFXUzpFcG9jaFRpbWUiOjE3ODMxMjMyMDB9fX1dfQ__&Signature=F2e43Lmm2RoD9EkgMiqHYLRCIeo7Dy~0wArmiHbMlmnQRiuB1SUeYbFOO1KEfuGzvdqeLQGR0R3f-ofVGClnZyyTYdUIW96Hx8km59tjL69dQkaMPc6Jkk9~8Eid2k8jabCI1-15GVrBmzSiDGo32mb6Fw4lAHas23cl0vcc4hf8xETLuhSXFO3hd8MMQddAT3wVgD3KMyC5sqh0S1yaby6bw~ysZYAKzWfhpP8RPa525~fQLwYDIAZhZSqCgP3raoX9QsBrXS2K4xM6~SKhB1LyjSI6fBlIvsjYSsOLe32FB~iJgjvqF1297Z~D6o5PqBYhOjm-gJvwRkkxJ0ik1A__"
+    }
+  }
+}

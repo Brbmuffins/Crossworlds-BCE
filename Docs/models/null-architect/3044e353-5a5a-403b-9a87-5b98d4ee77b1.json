@@ -1,0 +1,37 @@
+{
+  "task_id": "3044e353-5a5a-403b-9a87-5b98d4ee77b1",
+  "type": "text_to_model",
+  "status": "success",
+  "input": {
+    "prompt": "The Null Architect world boss, towering obsidian void entity, humanoid silhouette made of dark fractured glass and swirling void energy, glowing purple runes etched across body, imposing dark fantasy game boss, T-pose, full body, game-ready, centered pivot, dark background",
+    "model_version": "v3.1-20260211",
+    "texture": true,
+    "pbr": true,
+    "texture_quality": "detailed",
+    "texture_alignment": "geometry",
+    "export_uv": true,
+    "geometry_quality": "detailed"
+  },
+  "output": {
+    "pbr_model": "https://tripo-data.rg1.data.tripo3d.com/tcli_2efb6ab9cf694c6eab16a3e8dc01d3bf/20260703/3044e353-5a5a-403b-9a87-5b98d4ee77b1/tripo_pbr_model_3044e353-5a5a-403b-9a87-5b98d4ee77b1.glb?Key-Pair-Id=K1676C64NMVM2J&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly90cmlwby1kYXRhLnJnMS5kYXRhLnRyaXBvM2QuY29tL3RjbGlfMmVmYjZhYjljZjY5NGM2ZWFiMTZhM2U4ZGMwMWQzYmYvMjAyNjA3MDMvMzA0NGUzNTMtNWE1YS00MDNiLTlhODctNWI5OGQ0ZWU3N2IxL3RyaXBvX3Bicl9tb2RlbF8zMDQ0ZTM1My01YTVhLTQwM2ItOWE4Ny01Yjk4ZDRlZTc3YjEuZ2xiIiwiQ29uZGl0aW9uIjp7IkRhdGVMZXNzVGhhbiI6eyJBV1M6RXBvY2hUaW1lIjoxNzgzMTIzMjAwfX19XX0_&Signature=oZu3JRp~B93xx~3pnZ2BiGM8g7AjYlTeEWhRh0jMjFjJJIv9PXH08nKqPGFR9r-Co7kE2QBJaiLsW~Sv0umja45PfF0jX8L6okjJGORYm4RJJ8Id7069GgWH-s~xY47DMgbuGbkqDz4uvFx2azhu94-zV6mEHC-P4JN9q8OHSAVvcpN~yO4VeeCoZPbZZGTUl2ZK6l~0ASXUw-xhmR8v0jDJcYk1MeOyzJLHKh4QJdZseXqDMu-LGjGBlhNEc1RPt6zXQ98wtEfdWOL9XBkzZWsvMXd1vvZawuip1MBGDG8cyuNIwoa-YCpHq0mwoeNK2iuzGB6Nqw8Bv3~uri72Zg__",
+    "generated_image": "https://tripo-data.rg1.data.tripo3d.com/tcli_2efb6ab9cf694c6eab16a3e8dc01d3bf/20260703/3044e353-5a5a-403b-9a87-5b98d4ee77b1/text2image_3044e353-5a5a-403b-9a87-5b98d4ee77b1.jpeg?Key-Pair-Id=K1676C64NMVM2J&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly90cmlwby1kYXRhLnJnMS5kYXRhLnRyaXBvM2QuY29tL3RjbGlfMmVmYjZhYjljZjY5NGM2ZWFiMTZhM2U4ZGMwMWQzYmYvMjAyNjA3MDMvMzA0NGUzNTMtNWE1YS00MDNiLTlhODctNWI5OGQ0ZWU3N2IxL3RleHQyaW1hZ2VfMzA0NGUzNTMtNWE1YS00MDNiLTlhODctNWI5OGQ0ZWU3N2IxLmpwZWciLCJDb25kaXRpb24iOnsiRGF0ZUxlc3NUaGFuIjp7IkFXUzpFcG9jaFRpbWUiOjE3ODMxMjMyMDB9fX1dfQ__&Signature=Rq7e8kewW7VGgSN1b2TmvnjeRX6wjBZyoK4fnkApo6B4NONInhdZK1iUnuBw1aRPdM6oUSk97nIDxUiNPXc5K505DymlBawKdewZ96WYLtH6Wo0PlBbhQS3~yNb8qqqLriwXzHk~jgMV7M6l4JOVevFU8rwT2grfcQ39Jk8CpBjjjBToCCf9-ITw8YRa6~FP6QY-24DEubnK~~AHYRvN0a~lCLT6XbURucnHdadxbPwi8DeX6pjXG02wajh-nvND5kgRMMFkDeYHjFZVlhqJsf4wwt7Y4IMWRYJ9vOQ9pZNqnhdyZIDWdSf2WSMI8SeTD-EpQzWfpJ57-FJem6dwng__",
+    "rendered_image": "https://tripo-data.rg1.data.tripo3d.com/tcli_2efb6ab9cf694c6eab16a3e8dc01d3bf/20260703/3044e353-5a5a-403b-9a87-5b98d4ee77b1/legacy_mesh.webp?Key-Pair-Id=K1676C64NMVM2J&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly90cmlwby1kYXRhLnJnMS5kYXRhLnRyaXBvM2QuY29tL3RjbGlfMmVmYjZhYjljZjY5NGM2ZWFiMTZhM2U4ZGMwMWQzYmYvMjAyNjA3MDMvMzA0NGUzNTMtNWE1YS00MDNiLTlhODctNWI5OGQ0ZWU3N2IxL2xlZ2FjeV9tZXNoLndlYnAiLCJDb25kaXRpb24iOnsiRGF0ZUxlc3NUaGFuIjp7IkFXUzpFcG9jaFRpbWUiOjE3ODMxMjMyMDB9fX1dfQ__&Signature=ilevOFIyzwB2i3YrkwygpedgastWvf20CpghfoN~l~b2DbSUM1kS-Szq1AaIJ89epvaBly~-9v9r5Zc9SqZ2Nthy4uk-rPXejIkme3MFzRo0KbVF9Tu9R63zNTu-CGQXDZmtQw9KpYhZerJBfA-DFwilfwRQ6FtJkEgZ0crW7F4om6FoTmXxEfwTcaIaDAQZ~Xj2EztNJYdY9k0PbEzTKnkd83m3tRog4uQi1boD8CTJmY5epqiXYFtspG4MtrLUm8WdsrLl0Ch~6ADUI1xkN9JLlUq31zDp0bqTQhOMK0s6h6K-5BYODGLfYi6MvGs1NbvbFHvePsxV9JHFLm9iFA__"
+  },
+  "progress": 100,
+  "create_time": 1783116421,
+  "consumed_credit": 50,
+  "prompt": "The Null Architect world boss, towering obsidian void entity, humanoid silhouette made of dark fractured glass and swirling void energy, glowing purple runes etched across body, imposing dark fantasy game boss, T-pose, full body, game-ready, centered pivot, dark background",
+  "thumbnail": "https://tripo-data.rg1.data.tripo3d.com/tcli_2efb6ab9cf694c6eab16a3e8dc01d3bf/20260703/3044e353-5a5a-403b-9a87-5b98d4ee77b1/legacy_mesh.webp?Key-Pair-Id=K1676C64NMVM2J&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly90cmlwby1kYXRhLnJnMS5kYXRhLnRyaXBvM2QuY29tL3RjbGlfMmVmYjZhYjljZjY5NGM2ZWFiMTZhM2U4ZGMwMWQzYmYvMjAyNjA3MDMvMzA0NGUzNTMtNWE1YS00MDNiLTlhODctNWI5OGQ0ZWU3N2IxL2xlZ2FjeV9tZXNoLndlYnAiLCJDb25kaXRpb24iOnsiRGF0ZUxlc3NUaGFuIjp7IkFXUzpFcG9jaFRpbWUiOjE3ODMxMjMyMDB9fX1dfQ__&Signature=ilevOFIyzwB2i3YrkwygpedgastWvf20CpghfoN~l~b2DbSUM1kS-Szq1AaIJ89epvaBly~-9v9r5Zc9SqZ2Nthy4uk-rPXejIkme3MFzRo0KbVF9Tu9R63zNTu-CGQXDZmtQw9KpYhZerJBfA-DFwilfwRQ6FtJkEgZ0crW7F4om6FoTmXxEfwTcaIaDAQZ~Xj2EztNJYdY9k0PbEzTKnkd83m3tRog4uQi1boD8CTJmY5epqiXYFtspG4MtrLUm8WdsrLl0Ch~6ADUI1xkN9JLlUq31zDp0bqTQhOMK0s6h6K-5BYODGLfYi6MvGs1NbvbFHvePsxV9JHFLm9iFA__",
+  "queuing_num": -1,
+  "running_left_time": -1,
+  "result": {
+    "pbr_model": {
+      "type": "glb",
+      "url": "https://tripo-data.rg1.data.tripo3d.com/tcli_2efb6ab9cf694c6eab16a3e8dc01d3bf/20260703/3044e353-5a5a-403b-9a87-5b98d4ee77b1/tripo_pbr_model_3044e353-5a5a-403b-9a87-5b98d4ee77b1.glb?Key-Pair-Id=K1676C64NMVM2J&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly90cmlwby1kYXRhLnJnMS5kYXRhLnRyaXBvM2QuY29tL3RjbGlfMmVmYjZhYjljZjY5NGM2ZWFiMTZhM2U4ZGMwMWQzYmYvMjAyNjA3MDMvMzA0NGUzNTMtNWE1YS00MDNiLTlhODctNWI5OGQ0ZWU3N2IxL3RyaXBvX3Bicl9tb2RlbF8zMDQ0ZTM1My01YTVhLTQwM2ItOWE4Ny01Yjk4ZDRlZTc3YjEuZ2xiIiwiQ29uZGl0aW9uIjp7IkRhdGVMZXNzVGhhbiI6eyJBV1M6RXBvY2hUaW1lIjoxNzgzMTIzMjAwfX19XX0_&Signature=oZu3JRp~B93xx~3pnZ2BiGM8g7AjYlTeEWhRh0jMjFjJJIv9PXH08nKqPGFR9r-Co7kE2QBJaiLsW~Sv0umja45PfF0jX8L6okjJGORYm4RJJ8Id7069GgWH-s~xY47DMgbuGbkqDz4uvFx2azhu94-zV6mEHC-P4JN9q8OHSAVvcpN~yO4VeeCoZPbZZGTUl2ZK6l~0ASXUw-xhmR8v0jDJcYk1MeOyzJLHKh4QJdZseXqDMu-LGjGBlhNEc1RPt6zXQ98wtEfdWOL9XBkzZWsvMXd1vvZawuip1MBGDG8cyuNIwoa-YCpHq0mwoeNK2iuzGB6Nqw8Bv3~uri72Zg__"
+    },
+    "rendered_image": {
+      "type": "webp",
+      "url": "https://tripo-data.rg1.data.tripo3d.com/tcli_2efb6ab9cf694c6eab16a3e8dc01d3bf/20260703/3044e353-5a5a-403b-9a87-5b98d4ee77b1/legacy_mesh.webp?Key-Pair-Id=K1676C64NMVM2J&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly90cmlwby1kYXRhLnJnMS5kYXRhLnRyaXBvM2QuY29tL3RjbGlfMmVmYjZhYjljZjY5NGM2ZWFiMTZhM2U4ZGMwMWQzYmYvMjAyNjA3MDMvMzA0NGUzNTMtNWE1YS00MDNiLTlhODctNWI5OGQ0ZWU3N2IxL2xlZ2FjeV9tZXNoLndlYnAiLCJDb25kaXRpb24iOnsiRGF0ZUxlc3NUaGFuIjp7IkFXUzpFcG9jaFRpbWUiOjE3ODMxMjMyMDB9fX1dfQ__&Signature=ilevOFIyzwB2i3YrkwygpedgastWvf20CpghfoN~l~b2DbSUM1kS-Szq1AaIJ89epvaBly~-9v9r5Zc9SqZ2Nthy4uk-rPXejIkme3MFzRo0KbVF9Tu9R63zNTu-CGQXDZmtQw9KpYhZerJBfA-DFwilfwRQ6FtJkEgZ0crW7F4om6FoTmXxEfwTcaIaDAQZ~Xj2EztNJYdY9k0PbEzTKnkd83m3tRog4uQi1boD8CTJmY5epqiXYFtspG4MtrLUm8WdsrLl0Ch~6ADUI1xkN9JLlUq31zDp0bqTQhOMK0s6h6K-5BYODGLfYi6MvGs1NbvbFHvePsxV9JHFLm9iFA__"
+    }
+  }
+}

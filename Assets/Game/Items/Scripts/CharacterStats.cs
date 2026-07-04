@@ -26,6 +26,27 @@ public class CharacterStats : MonoBehaviour
     public float CooldownReduction   { get; private set; }        // 0..0.6 fraction
     public float HealMultiplier      { get; private set; } = 1f;  // ×healing dealt
 
+    // ── Mastery overlay (driven by HeroMasteryManager) ───────────
+    // Percentages, additive on top of gear values. Updated via SetMasteryBonuses().
+    private float _masteryDmgPct   = 0f;   // e.g. 0.08 = +8% damage
+    private float _masteryHealPct  = 0f;
+    private float _masteryCdrPct   = 0f;
+    private float _masteryMaxHpPct = 0f;   // fraction of BaseMaxHealth added as flat HP
+
+    /// <summary>
+    /// Called by HeroMasteryManager when mastery data loads or levels change.
+    /// All params are additive percentages (0.08 = 8%).
+    /// maxHpPct is applied as a fraction of Health.BaseMaxHealth.
+    /// </summary>
+    public void SetMasteryBonuses(float dmgPct, float healPct, float cdrPct, float maxHpPct)
+    {
+        _masteryDmgPct   = dmgPct;
+        _masteryHealPct  = healPct;
+        _masteryCdrPct   = cdrPct;
+        _masteryMaxHpPct = maxHpPct;
+        Recalculate();
+    }
+
     // ── Temporary CDR bonus (Overdrive ability) ────────────────────
     // Additive on top of gear CDR. Clamped alongside gear CDR to the 0.6 ceiling.
     // Call AddTemporaryCDR(+0.30f) to apply, AddTemporaryCDR(-0.30f) to remove.
@@ -36,6 +57,17 @@ public class CharacterStats : MonoBehaviour
     public void AddTemporaryCDR(float delta)
     {
         _temporaryCDR = Mathf.Clamp(_temporaryCDR + delta, -0.6f, 0.6f);
+    }
+
+    // ── Temporary damage bonus (consumable flasks) ─────────────────
+    // Additive percentage folded into DamageMultiplier on Recalculate.
+    // Call AddTemporaryDamagePct(+0.15f) to apply, AddTemporaryDamagePct(-0.15f) to remove.
+    private float _temporaryDmgPct = 0f;
+
+    public void AddTemporaryDamagePct(float delta)
+    {
+        _temporaryDmgPct = Mathf.Clamp(_temporaryDmgPct + delta, -1f, 2f);
+        Recalculate();
     }
 
     void Awake()
@@ -81,12 +113,13 @@ public class CharacterStats : MonoBehaviour
             }
         }
 
-        MaxHealthBonus      = flatHealth;
-        DamageMultiplier    = Mathf.Max(0f,   1f + pctDamage);
+        float masteryHpFlat = _health != null ? _health.BaseMaxHealth * _masteryMaxHpPct : 0f;
+        MaxHealthBonus      = flatHealth + masteryHpFlat;
+        DamageMultiplier    = Mathf.Max(0f,   1f + pctDamage + _masteryDmgPct + _temporaryDmgPct);
         DamageReduction     = Mathf.Clamp(pctDR,  0f, 0.8f);
         MoveSpeedMultiplier = Mathf.Max(0.1f, 1f + pctSpeed);
-        CooldownReduction   = Mathf.Clamp(pctCdr, 0f, 0.6f);
-        HealMultiplier      = Mathf.Max(0f,   1f + pctHeal);
+        CooldownReduction   = Mathf.Clamp(pctCdr + _masteryCdrPct, 0f, 0.6f);
+        HealMultiplier      = Mathf.Max(0f,   1f + pctHeal + _masteryHealPct);
 
         // Hand off the channels Health owns.
         if (_health != null)

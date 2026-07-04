@@ -1,3 +1,4 @@
+#if !UNITY_SERVER
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -5,11 +6,12 @@ using UnityEngine.Networking;
 using System.Text;
 
 /// <summary>
-/// InventoryManager — Singleton. Tracks local player's inventory in memory
-/// and syncs to auth server via POST /api/inventory/save.
+/// InventoryManager — self-bootstrapping singleton.
+/// Tracks local player's inventory in memory and syncs to auth server.
 ///
-/// Reads AuthManager.Token and AuthManager.CharacterId at runtime.
-/// Wire those to your existing auth class, or use the stub at the bottom of this file.
+/// Server URL: http://{PlayerPrefs serverIP}:3000
+/// Auth token: PlayerPrefs "jwt_token"
+/// Character ID: AuthManager.CharacterId (set by LoginManager on login)
 ///
 /// On scene load this auto-calls LoadInventory().
 /// WorldItem.RpcOnPickedUp calls OnItemPickedUp() which immediately POSTs a save.
@@ -18,11 +20,9 @@ public class InventoryManager : MonoBehaviour
 {
     public static InventoryManager Instance { get; private set; }
 
-    [Header("Server")]
-    public string authServerUrl = "http://15.204.243.36:3000";
-
-    [Header("Inventory Size")]
-    public int maxSlots = 32;
+    // Must match InventoryBagUI (4x6 grid) and the server-side add-item/craft caps.
+    // Items placed beyond this are invisible in the bag UI, so keep all three in sync.
+    private const int MaxSlots = 24;
 
     [System.Serializable]
     public class InventorySlot
@@ -35,6 +35,17 @@ public class InventoryManager : MonoBehaviour
 
     private List<InventorySlot> _slots = new List<InventorySlot>();
 
+    // ── Bootstrap ─────────────────────────────────────────────────────────────
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+    static void Bootstrap()
+    {
+        if (Instance != null) return;
+        var go = new GameObject("[InventoryManager]");
+        DontDestroyOnLoad(go);
+        Instance = go.AddComponent<InventoryManager>();
+    }
+
+    // ── Lifecycle ─────────────────────────────────────────────────────────────
     void Awake()
     {
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
@@ -46,14 +57,17 @@ public class InventoryManager : MonoBehaviour
 
     void OnDestroy() { if (Instance == this) Instance = null; }
 
-    // ─── Public API ───────────────────────────────────────────────────────────
+    // ── Public API ────────────────────────────────────────────────────────────
 
     public void OnItemPickedUp(string itemId, int qty)
     {
         if (itemId.StartsWith("gold:"))
         {
             if (int.TryParse(itemId.Substring(5), out int gold))
-                Debug.Log($"[LOOT] Picked up {gold} gold — sync via save-progress");
+            {
+                Debug.Log($"[LOOT] Picked up {gold} gold");
+                PlayerProgressManager.Local?.AwardGold(gold);
+            }
             return;
         }
 
@@ -75,15 +89,67 @@ public class InventoryManager : MonoBehaviour
 
     public List<InventorySlot> GetSlots() => new List<InventorySlot>(_slots);
 
-    // ─── Load ─────────────────────────────────────────────────────────────────
+    /// Total unequipped quantity of an item across all slots (recipe ingredient checks).
+    public int GetItemCount(string itemId)
+    {
+        int total = 0;
+        foreach (var s in _slots)
+            if (s.item_id == itemId && s.equipped == 0) total += s.quantity;
+        return total;
+    }
+
+    /// <summary>
+    /// Mark an item equipped/unequipped in local cache and POST to /api/inventory/equip.
+    /// Call after Equipment.EquipItem() / UnequipItem() succeeds.
+    /// </summary>
+    public void OnItemEquipped(string itemId, bool equipped)
+    {
+        if (string.IsNullOrEmpty(itemId)) return;
+
+        var slot = _slots.Find(s => s.item_id == itemId && (equipped ? s.equipped == 0 : s.equipped == 1));
+        if (slot == null)
+        {
+            Debug.LogWarning($"[LOOT] OnItemEquipped: no matching slot for {itemId} (equipped={equipped})");
+            return;
+        }
+
+        slot.equipped = equipped ? 1 : 0;
+        StartCoroutine(PostEquip(slot.slot_index, slot.equipped));
+    }
+
+    IEnumerator PostEquip(int slotIndex, int equippedFlag)
+    {
+        int charId   = AuthManager.CharacterId;
+        string token = AuthManager.Token;
+        if (charId <= 0 || string.IsNullOrEmpty(token)) yield break;
+
+        string url  = $"{ServerConfig.AuthBaseUrl}/api/inventory/equip";
+        string json = $"{{\"characterId\":{charId},\"slot_index\":{slotIndex},\"equipped\":{equippedFlag}}}";
+
+        using var req = new UnityWebRequest(url, "POST");
+        req.uploadHandler   = new UploadHandlerRaw(Encoding.UTF8.GetBytes(json));
+        req.downloadHandler = new DownloadHandlerBuffer();
+        req.SetRequestHeader("Content-Type", "application/json");
+        req.SetRequestHeader("Authorization", $"Bearer {token}");
+        req.timeout = 8;
+        yield return req.SendWebRequest();
+
+        if (req.result != UnityWebRequest.Result.Success)
+            Debug.LogWarning($"[LOOT] Equip POST failed: {req.error}");
+        else
+            Debug.Log($"[LOOT] Slot {slotIndex} equipped={equippedFlag} saved");
+    }
+
+    // ── Load ─────────────────────────────────────────────────────────────────
 
     public IEnumerator LoadInventory()
     {
-        int charId    = AuthManager.CharacterId;
-        string token  = AuthManager.Token;
+        int charId   = AuthManager.CharacterId;
+        string token = AuthManager.Token;
         if (charId <= 0 || string.IsNullOrEmpty(token)) { Debug.LogWarning("[LOOT] LoadInventory: auth not ready"); yield break; }
 
-        using var req = UnityWebRequest.Get($"{authServerUrl}/api/inventory/{charId}");
+        string url = $"{ServerConfig.AuthBaseUrl}/api/inventory/{charId}";
+        using var req = UnityWebRequest.Get(url);
         req.SetRequestHeader("Authorization", $"Bearer {token}");
         yield return req.SendWebRequest();
 
@@ -98,7 +164,7 @@ public class InventoryManager : MonoBehaviour
         }
     }
 
-    // ─── Save ─────────────────────────────────────────────────────────────────
+    // ── Save ─────────────────────────────────────────────────────────────────
 
     public IEnumerator SaveInventory()
     {
@@ -106,8 +172,10 @@ public class InventoryManager : MonoBehaviour
         string token = AuthManager.Token;
         if (charId <= 0 || string.IsNullOrEmpty(token)) { Debug.LogWarning("[LOOT] SaveInventory: auth not ready"); yield break; }
 
+        string url  = $"{ServerConfig.AuthBaseUrl}/api/inventory/save";
         string json = JsonUtility.ToJson(new InventorySavePayload { characterId = charId, slots = _slots });
-        using var req = new UnityWebRequest($"{authServerUrl}/api/inventory/save", "POST");
+
+        using var req = new UnityWebRequest(url, "POST");
         req.uploadHandler   = new UploadHandlerRaw(Encoding.UTF8.GetBytes(json));
         req.downloadHandler = new DownloadHandlerBuffer();
         req.SetRequestHeader("Content-Type", "application/json");
@@ -120,13 +188,13 @@ public class InventoryManager : MonoBehaviour
             Debug.Log($"[LOOT] Inventory saved — {_slots.Count} slots");
     }
 
-    // ─── Helpers ──────────────────────────────────────────────────────────────
+    // ── Helpers ──────────────────────────────────────────────────────────────
 
     int FindNextFreeSlot()
     {
         var used = new HashSet<int>();
         foreach (var s in _slots) used.Add(s.slot_index);
-        for (int i = 0; i < maxSlots; i++) if (!used.Contains(i)) return i;
+        for (int i = 0; i < MaxSlots; i++) if (!used.Contains(i)) return i;
         return -1;
     }
 
@@ -134,9 +202,11 @@ public class InventoryManager : MonoBehaviour
     [System.Serializable] class InventorySavePayload { public int characterId; public List<InventorySlot> slots; }
 }
 
-// ─── AuthManager stub ─────────────────────────────────────────────────────────
-// If you already have an AuthManager with Token + CharacterId, delete this block
-// and add AUTHMANAGER_EXISTS to Project Settings → Player → Scripting Define Symbols.
+#endif
+
+// ── AuthManager stub ──────────────────────────────────────────────────────────
+// Compiled in ALL build targets (client + server) so every script can reference it.
+// If you add a real AuthManager, define AUTHMANAGER_EXISTS in Player → Scripting Defines.
 #if !AUTHMANAGER_EXISTS
 public static class AuthManager
 {

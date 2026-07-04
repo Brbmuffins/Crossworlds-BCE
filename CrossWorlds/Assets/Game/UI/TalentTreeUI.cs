@@ -1,0 +1,533 @@
+// COPY TO: Assets/Game/UI/TalentTreeUI.cs
+#if !UNITY_SERVER
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UI;
+using TMPro;
+
+/// <summary>
+/// TalentTreeUI — T key toggle. 3 branch columns × 5 tier rows.
+/// Fetches tree definition from /api/talents/tree/:heroClass
+/// Fetches invested talents from /api/talents/:characterId
+/// Invest: POST /api/talents/invest
+/// Respec: POST /api/talents/respec (confirm dialog, costs 100g)
+///
+/// Self-bootstrapping — no scene object needed.
+/// </summary>
+public class TalentTreeUI : MonoBehaviour
+{
+    public static TalentTreeUI Instance { get; private set; }
+
+    // ── Events ────────────────────────────────────────────────────────────────
+    public static System.Action OnRespec;
+
+    // ── Bootstrap ─────────────────────────────────────────────────────────────
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+    static void Bootstrap()
+    {
+        if (Instance != null) return;
+        var go = new GameObject("[TalentTreeUI]");
+        DontDestroyOnLoad(go);
+        Instance = go.AddComponent<TalentTreeUI>();
+    }
+
+    // ── Config ────────────────────────────────────────────────────────────────
+    const int BRANCHES = 3;
+    const int TIERS    = 5;
+    const int RESPEC_COST = 100;
+
+    static readonly Color[] BranchColors =
+    {
+        new Color(0.4f, 0.7f, 1f),   // blue  — offensive
+        new Color(0.4f, 1f, 0.5f),   // green — defensive
+        new Color(1f, 0.7f, 0.3f),   // orange — utility
+    };
+    static readonly string[] BranchNames = { "Offense", "Defense", "Utility" };
+
+    // ── State ─────────────────────────────────────────────────────────────────
+    private bool _open = false;
+    private int  _characterId;
+    private int  _heroClass;
+
+    private TalentModifierApplier.TalentData[]  _tree;      // full tree definition
+    private HashSet<int>                         _invested = new HashSet<int>();
+    private int                                  _pointsSpent;
+    private const int MAX_POINTS = 15;
+
+    // ── UI refs ───────────────────────────────────────────────────────────────
+    private Canvas         _canvas;
+    private GameObject     _root;
+    private CanvasGroup    _cg;
+    private TextMeshProUGUI _pointsLabel;
+    private TextMeshProUGUI _errorLabel;
+    private Dictionary<int, TalentNodeButton> _nodes = new Dictionary<int, TalentNodeButton>();
+
+    private GameObject _confirmDialog;
+
+    string ServerUrl => $"http://{PlayerPrefs.GetString("serverIP", "localhost")}:3000";
+    string Token     => PlayerPrefs.GetString("jwt_token", "");
+
+    // ── Lifecycle ─────────────────────────────────────────────────────────────
+    void Awake() => BuildUI();
+
+    void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.T) && !IsTypingInUI())
+            Toggle();
+    }
+
+    bool IsTypingInUI()
+    {
+        var sel = UnityEngine.EventSystems.EventSystem.current?.currentSelectedGameObject;
+        return sel != null && sel.GetComponent<TMP_InputField>() != null;
+    }
+
+    // ── Open / Close ──────────────────────────────────────────────────────────
+    void Toggle()
+    {
+        _open = !_open;
+        if (_open) OpenPanel();
+        else       ClosePanel();
+    }
+
+    void OpenPanel()
+    {
+        _characterId = PlayerPrefs.GetInt("SelectedCharacter", 0);
+        _heroClass   = PlayerPrefs.GetInt("heroClass", 0);
+        _cg.alpha          = 1f;
+        _cg.interactable   = true;
+        _cg.blocksRaycasts = true;
+        StartCoroutine(FetchAndDraw());
+    }
+
+    void ClosePanel()
+    {
+        _cg.alpha          = 0f;
+        _cg.interactable   = false;
+        _cg.blocksRaycasts = false;
+        HideError();
+        if (_confirmDialog != null) _confirmDialog.SetActive(false);
+    }
+
+    // ── Fetch ─────────────────────────────────────────────────────────────────
+    IEnumerator FetchAndDraw()
+    {
+        // Fetch tree definition
+        using var treeReq = UnityWebRequest.Get($"{ServerUrl}/api/talents/tree/{_heroClass}");
+        treeReq.SetRequestHeader("Authorization", $"Bearer {Token}");
+        yield return treeReq.SendWebRequest();
+
+        if (treeReq.result != UnityWebRequest.Result.Success)
+        { ShowError($"Could not load talent tree: {treeReq.error}"); yield break; }
+
+        var treeResp = JsonUtility.FromJson<TalentTreeResponse>(treeReq.downloadHandler.text);
+        if (!treeResp.success) { ShowError(treeResp.error); yield break; }
+        _tree = treeResp.data;
+
+        // Fetch invested
+        using var invReq = UnityWebRequest.Get($"{ServerUrl}/api/talents/{_characterId}");
+        invReq.SetRequestHeader("Authorization", $"Bearer {Token}");
+        yield return invReq.SendWebRequest();
+
+        if (invReq.result != UnityWebRequest.Result.Success)
+        { ShowError($"Could not load invested talents: {invReq.error}"); yield break; }
+
+        var invResp = JsonUtility.FromJson<TalentListResponse>(invReq.downloadHandler.text);
+        if (!invResp.success) { ShowError(invResp.error); yield break; }
+
+        _invested.Clear();
+        _pointsSpent = 0;
+        foreach (var t in invResp.data)
+            if (t.invested) { _invested.Add(t.id); _pointsSpent++; }
+
+        DrawTree();
+    }
+
+    // ── Draw ──────────────────────────────────────────────────────────────────
+    void DrawTree()
+    {
+        // Clear old nodes
+        foreach (var n in _nodes.Values) Destroy(n.gameObject);
+        _nodes.Clear();
+
+        _pointsLabel.text = $"{_pointsSpent} / {MAX_POINTS} points spent";
+
+        if (_tree == null) return;
+
+        foreach (var talent in _tree)
+        {
+            int branch = Mathf.Clamp(talent.branch, 0, BRANCHES - 1);
+            int tier   = Mathf.Clamp(talent.tier,   1, TIERS);
+
+            // Find column panel
+            var colPanel = _root.transform.Find($"Branch_{branch}");
+            if (colPanel == null) continue;
+            var tierPanel = colPanel.Find($"Tier_{tier}");
+            if (tierPanel == null) continue;
+
+            bool isInvested = _invested.Contains(talent.id);
+            bool prereqMet  = talent.prerequisite_talent_id <= 0
+                              || _invested.Contains(talent.prerequisite_talent_id);
+            bool canInvest  = !isInvested && prereqMet && _pointsSpent < MAX_POINTS;
+
+            var node = CreateNodeButton(tierPanel, talent, isInvested, prereqMet, canInvest);
+            _nodes[talent.id] = node;
+        }
+    }
+
+    TalentNodeButton CreateNodeButton(Transform parent, TalentModifierApplier.TalentData talent,
+                                      bool invested, bool prereqMet, bool canInvest)
+    {
+        var go = new GameObject($"Node_{talent.id}");
+        go.transform.SetParent(parent, false);
+        var rect = go.AddComponent<RectTransform>();
+        rect.sizeDelta = new Vector2(100f, 70f);
+
+        var bg = go.AddComponent<Image>();
+        bg.color = invested ? new Color(0.2f, 0.6f, 0.2f) :
+                   prereqMet ? new Color(0.15f, 0.15f, 0.2f) :
+                   new Color(0.08f, 0.08f, 0.1f);
+
+        // Name label
+        var nameObj = new GameObject("Name");
+        nameObj.transform.SetParent(go.transform, false);
+        var nameRect = nameObj.AddComponent<RectTransform>();
+        nameRect.anchorMin = new Vector2(0f, 0.5f);
+        nameRect.anchorMax = new Vector2(1f, 1f);
+        nameRect.offsetMin = new Vector2(4f, 0f);
+        nameRect.offsetMax = new Vector2(-4f, -2f);
+        var nameTxt = nameObj.AddComponent<TextMeshProUGUI>();
+        nameTxt.text = talent.name;
+        nameTxt.fontSize = 9f;
+        nameTxt.fontStyle = invested ? FontStyles.Bold : FontStyles.Normal;
+        nameTxt.color = prereqMet ? Color.white : new Color(0.4f, 0.4f, 0.4f);
+        nameTxt.alignment = TextAlignmentOptions.Center;
+
+        // Modifier label
+        var modObj = new GameObject("Mod");
+        modObj.transform.SetParent(go.transform, false);
+        var modRect = modObj.AddComponent<RectTransform>();
+        modRect.anchorMin = Vector2.zero;
+        modRect.anchorMax = new Vector2(1f, 0.5f);
+        modRect.offsetMin = new Vector2(4f, 2f);
+        modRect.offsetMax = new Vector2(-4f, 0f);
+        var modTxt = modObj.AddComponent<TextMeshProUGUI>();
+        modTxt.text = FormatModifier(talent.modifier_type, talent.modifier_value);
+        modTxt.fontSize = 8f;
+        modTxt.color = new Color(0.7f, 0.9f, 0.7f);
+        modTxt.alignment = TextAlignmentOptions.Center;
+
+        // Button
+        var btn = go.AddComponent<Button>();
+        btn.interactable = canInvest;
+        var talentCopy = talent;
+        btn.onClick.AddListener(() => OnNodeClicked(talentCopy));
+
+        var node = go.AddComponent<TalentNodeButton>();
+        node.talentId = talent.id;
+        return node;
+    }
+
+    string FormatModifier(string type, float value)
+    {
+        return type switch
+        {
+            "damage_pct"       => $"+{value * 100:0}% damage",
+            "cdr_pct"          => $"+{value * 100:0}% CDR",
+            "heal_pct"         => $"+{value * 100:0}% healing",
+            "shield_pct"       => $"+{value * 100:0}% shields",
+            "cooldown_flat"    => $"-{value:0.0}s cooldowns",
+            "hp_flat"          => $"+{value:0} max HP",
+            "deployable_limit" => $"+{(int)value} deployable",
+            _                  => type
+        };
+    }
+
+    // ── Invest ────────────────────────────────────────────────────────────────
+    void OnNodeClicked(TalentModifierApplier.TalentData talent)
+    {
+        StartCoroutine(InvestTalent(talent));
+    }
+
+    IEnumerator InvestTalent(TalentModifierApplier.TalentData talent)
+    {
+        var body = JsonUtility.ToJson(new InvestRequest
+            { characterId = _characterId, talentId = talent.id });
+
+        using var req = new UnityWebRequest($"{ServerUrl}/api/talents/invest", "POST");
+        req.uploadHandler   = new UploadHandlerRaw(System.Text.Encoding.UTF8.GetBytes(body));
+        req.downloadHandler = new DownloadHandlerBuffer();
+        req.SetRequestHeader("Content-Type", "application/json");
+        req.SetRequestHeader("Authorization", $"Bearer {Token}");
+        yield return req.SendWebRequest();
+
+        if (req.result != UnityWebRequest.Result.Success)
+        { ShowError($"Invest failed: {req.error}"); yield break; }
+
+        var resp = JsonUtility.FromJson<GenericResponse>(req.downloadHandler.text);
+        if (!resp.success) { ShowError(resp.error); yield break; }
+
+        HideError();
+        // Re-apply modifiers with new talent included
+        TalentModifierApplier.Instance?.ReapplyTalents();
+        // Redraw
+        yield return StartCoroutine(FetchAndDraw());
+    }
+
+    // ── Respec ────────────────────────────────────────────────────────────────
+    void OnRespecClicked()
+    {
+        _confirmDialog.SetActive(true);
+    }
+
+    void OnRespecConfirmed()
+    {
+        _confirmDialog.SetActive(false);
+        StartCoroutine(DoRespec());
+    }
+
+    IEnumerator DoRespec()
+    {
+        var body = JsonUtility.ToJson(new RespecRequest { characterId = _characterId });
+        using var req = new UnityWebRequest($"{ServerUrl}/api/talents/respec", "POST");
+        req.uploadHandler   = new UploadHandlerRaw(System.Text.Encoding.UTF8.GetBytes(body));
+        req.downloadHandler = new DownloadHandlerBuffer();
+        req.SetRequestHeader("Content-Type", "application/json");
+        req.SetRequestHeader("Authorization", $"Bearer {Token}");
+        yield return req.SendWebRequest();
+
+        if (req.result != UnityWebRequest.Result.Success)
+        { ShowError($"Respec failed: {req.error}"); yield break; }
+
+        var resp = JsonUtility.FromJson<GenericResponse>(req.downloadHandler.text);
+        if (!resp.success) { ShowError(resp.error); yield break; }
+
+        HideError();
+        OnRespec?.Invoke();
+        TalentModifierApplier.Instance?.ReapplyTalents();
+        yield return StartCoroutine(FetchAndDraw());
+    }
+
+    // ── Error display ─────────────────────────────────────────────────────────
+    void ShowError(string msg)
+    {
+        _errorLabel.text = msg;
+        _errorLabel.gameObject.SetActive(true);
+    }
+    void HideError() => _errorLabel.gameObject.SetActive(false);
+
+    // ── Build UI ──────────────────────────────────────────────────────────────
+    void BuildUI()
+    {
+        _canvas = gameObject.AddComponent<Canvas>();
+        _canvas.renderMode  = RenderMode.ScreenSpaceOverlay;
+        _canvas.sortingOrder = 120;
+        gameObject.AddComponent<CanvasScaler>().uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        gameObject.AddComponent<GraphicRaycaster>();
+
+        // Root panel — center screen
+        _root = new GameObject("TalentTreeRoot");
+        _root.transform.SetParent(transform, false);
+        var rootRect = _root.AddComponent<RectTransform>();
+        rootRect.anchorMin = new Vector2(0.1f, 0.08f);
+        rootRect.anchorMax = new Vector2(0.9f, 0.95f);
+        rootRect.offsetMin = rootRect.offsetMax = Vector2.zero;
+
+        _cg = _root.AddComponent<CanvasGroup>();
+        _cg.alpha = 0f; _cg.interactable = false; _cg.blocksRaycasts = false;
+
+        // Dark background
+        var bg = _root.AddComponent<Image>();
+        bg.color = new Color(0.04f, 0.04f, 0.08f, 0.96f);
+
+        // Title
+        var titleObj = new GameObject("Title");
+        titleObj.transform.SetParent(_root.transform, false);
+        var titleRect = titleObj.AddComponent<RectTransform>();
+        titleRect.anchorMin = new Vector2(0f, 0.92f);
+        titleRect.anchorMax = new Vector2(1f, 1f);
+        titleRect.offsetMin = titleRect.offsetMax = Vector2.zero;
+        var titleTxt = titleObj.AddComponent<TextMeshProUGUI>();
+        titleTxt.text      = "TALENT TREE";
+        titleTxt.fontSize  = 18f;
+        titleTxt.fontStyle = FontStyles.Bold;
+        titleTxt.color     = Color.white;
+        titleTxt.alignment = TextAlignmentOptions.Center;
+
+        // Points label
+        var pointsObj = new GameObject("PointsLabel");
+        pointsObj.transform.SetParent(_root.transform, false);
+        var pointsRect = pointsObj.AddComponent<RectTransform>();
+        pointsRect.anchorMin = new Vector2(0f, 0.86f);
+        pointsRect.anchorMax = new Vector2(1f, 0.92f);
+        pointsRect.offsetMin = pointsRect.offsetMax = Vector2.zero;
+        _pointsLabel = pointsObj.AddComponent<TextMeshProUGUI>();
+        _pointsLabel.text      = "0 / 15 points spent";
+        _pointsLabel.fontSize  = 12f;
+        _pointsLabel.color     = new Color(0.8f, 0.8f, 0.5f);
+        _pointsLabel.alignment = TextAlignmentOptions.Center;
+
+        // Three branch columns
+        float colWidth = 1f / BRANCHES;
+        for (int b = 0; b < BRANCHES; b++)
+        {
+            var col = new GameObject($"Branch_{b}");
+            col.transform.SetParent(_root.transform, false);
+            var colRect = col.AddComponent<RectTransform>();
+            colRect.anchorMin = new Vector2(b * colWidth + 0.01f, 0.12f);
+            colRect.anchorMax = new Vector2((b + 1) * colWidth - 0.01f, 0.85f);
+            colRect.offsetMin = colRect.offsetMax = Vector2.zero;
+
+            // Branch header
+            var header = new GameObject("Header");
+            header.transform.SetParent(col.transform, false);
+            var hRect = header.AddComponent<RectTransform>();
+            hRect.anchorMin = new Vector2(0f, 0.94f);
+            hRect.anchorMax = Vector2.one;
+            hRect.offsetMin = hRect.offsetMax = Vector2.zero;
+            var hImg = header.AddComponent<Image>();
+            hImg.color = BranchColors[b] * 0.3f;
+            var hTxt = new GameObject("Label");
+            hTxt.transform.SetParent(header.transform, false);
+            var hTxtRect = hTxt.AddComponent<RectTransform>();
+            hTxtRect.anchorMin = Vector2.zero; hTxtRect.anchorMax = Vector2.one;
+            hTxtRect.offsetMin = hTxtRect.offsetMax = Vector2.zero;
+            var hTxtComp = hTxt.AddComponent<TextMeshProUGUI>();
+            hTxtComp.text = BranchNames[b].ToUpper();
+            hTxtComp.fontSize = 11f; hTxtComp.fontStyle = FontStyles.Bold;
+            hTxtComp.color = BranchColors[b];
+            hTxtComp.alignment = TextAlignmentOptions.Center;
+
+            // Five tier rows inside each branch
+            float tierHeight = 0.94f / TIERS;
+            for (int t = 1; t <= TIERS; t++)
+            {
+                var tier = new GameObject($"Tier_{t}");
+                tier.transform.SetParent(col.transform, false);
+                var tRect = tier.AddComponent<RectTransform>();
+                float yMin = (TIERS - t) * tierHeight;
+                tRect.anchorMin = new Vector2(0f, yMin);
+                tRect.anchorMax = new Vector2(1f, yMin + tierHeight - 0.005f);
+                tRect.offsetMin = tRect.offsetMax = Vector2.zero;
+                // Use HorizontalLayoutGroup to center the node button
+                var hlg = tier.AddComponent<HorizontalLayoutGroup>();
+                hlg.childAlignment = TextAnchor.MiddleCenter;
+                hlg.spacing = 4f;
+            }
+        }
+
+        // Error label
+        var errObj = new GameObject("ErrorLabel");
+        errObj.transform.SetParent(_root.transform, false);
+        var errRect = errObj.AddComponent<RectTransform>();
+        errRect.anchorMin = new Vector2(0.1f, 0.08f);
+        errRect.anchorMax = new Vector2(0.9f, 0.12f);
+        errRect.offsetMin = errRect.offsetMax = Vector2.zero;
+        _errorLabel = errObj.AddComponent<TextMeshProUGUI>();
+        _errorLabel.text      = "";
+        _errorLabel.fontSize  = 11f;
+        _errorLabel.color     = new Color(1f, 0.4f, 0.4f);
+        _errorLabel.alignment = TextAlignmentOptions.Center;
+        errObj.SetActive(false);
+
+        // Respec button
+        var respecGO = new GameObject("RespecButton");
+        respecGO.transform.SetParent(_root.transform, false);
+        var respecRect = respecGO.AddComponent<RectTransform>();
+        respecRect.anchorMin = new Vector2(0.35f, 0.01f);
+        respecRect.anchorMax = new Vector2(0.65f, 0.07f);
+        respecRect.offsetMin = respecRect.offsetMax = Vector2.zero;
+        var respecImg = respecGO.AddComponent<Image>();
+        respecImg.color = new Color(0.5f, 0.1f, 0.1f);
+        var respecBtn = respecGO.AddComponent<Button>();
+        respecBtn.onClick.AddListener(OnRespecClicked);
+        var respecTxt = new GameObject("Label");
+        respecTxt.transform.SetParent(respecGO.transform, false);
+        var rtr = respecTxt.AddComponent<RectTransform>();
+        rtr.anchorMin = Vector2.zero; rtr.anchorMax = Vector2.one;
+        rtr.offsetMin = rtr.offsetMax = Vector2.zero;
+        var rtxt = respecTxt.AddComponent<TextMeshProUGUI>();
+        rtxt.text = $"Respec (costs {RESPEC_COST}g)";
+        rtxt.fontSize = 11f; rtxt.color = Color.white;
+        rtxt.alignment = TextAlignmentOptions.Center;
+
+        // Confirm dialog (hidden by default)
+        _confirmDialog = BuildConfirmDialog();
+        _confirmDialog.SetActive(false);
+    }
+
+    GameObject BuildConfirmDialog()
+    {
+        var dlg = new GameObject("ConfirmDialog");
+        dlg.transform.SetParent(_root.transform, false);
+        var dRect = dlg.AddComponent<RectTransform>();
+        dRect.anchorMin = new Vector2(0.25f, 0.35f);
+        dRect.anchorMax = new Vector2(0.75f, 0.65f);
+        dRect.offsetMin = dRect.offsetMax = Vector2.zero;
+        var dImg = dlg.AddComponent<Image>();
+        dImg.color = new Color(0.1f, 0.05f, 0.05f, 0.98f);
+
+        var msg = new GameObject("Msg");
+        msg.transform.SetParent(dlg.transform, false);
+        var mRect = msg.AddComponent<RectTransform>();
+        mRect.anchorMin = new Vector2(0f, 0.5f); mRect.anchorMax = Vector2.one;
+        mRect.offsetMin = new Vector2(8f, 0f); mRect.offsetMax = new Vector2(-8f, -8f);
+        var mTxt = msg.AddComponent<TextMeshProUGUI>();
+        mTxt.text = $"Cost: {RESPEC_COST} gold.\nRefund all invested points?";
+        mTxt.fontSize = 13f; mTxt.color = Color.white;
+        mTxt.alignment = TextAlignmentOptions.Center;
+
+        // Yes button
+        var yes = new GameObject("Yes");
+        yes.transform.SetParent(dlg.transform, false);
+        var yRect = yes.AddComponent<RectTransform>();
+        yRect.anchorMin = new Vector2(0.05f, 0.05f); yRect.anchorMax = new Vector2(0.45f, 0.45f);
+        yRect.offsetMin = yRect.offsetMax = Vector2.zero;
+        yes.AddComponent<Image>().color = new Color(0.2f, 0.5f, 0.2f);
+        var yBtn = yes.AddComponent<Button>();
+        yBtn.onClick.AddListener(OnRespecConfirmed);
+        var yTxtGO = new GameObject("L"); yTxtGO.transform.SetParent(yes.transform, false);
+        StretchFull(yTxtGO);
+        var yTxt = yTxtGO.AddComponent<TextMeshProUGUI>();
+        yTxt.text = "Confirm"; yTxt.fontSize = 12f; yTxt.color = Color.white;
+        yTxt.alignment = TextAlignmentOptions.Center;
+
+        // No button
+        var no = new GameObject("No");
+        no.transform.SetParent(dlg.transform, false);
+        var nRect = no.AddComponent<RectTransform>();
+        nRect.anchorMin = new Vector2(0.55f, 0.05f); nRect.anchorMax = new Vector2(0.95f, 0.45f);
+        nRect.offsetMin = nRect.offsetMax = Vector2.zero;
+        no.AddComponent<Image>().color = new Color(0.5f, 0.15f, 0.15f);
+        var nBtn = no.AddComponent<Button>();
+        nBtn.onClick.AddListener(() => _confirmDialog.SetActive(false));
+        var nTxtGO = new GameObject("L"); nTxtGO.transform.SetParent(no.transform, false);
+        StretchFull(nTxtGO);
+        var nTxt = nTxtGO.AddComponent<TextMeshProUGUI>();
+        nTxt.text = "Cancel"; nTxt.fontSize = 12f; nTxt.color = Color.white;
+        nTxt.alignment = TextAlignmentOptions.Center;
+
+        return dlg;
+    }
+
+    void StretchFull(GameObject go)
+    {
+        var r = go.GetComponent<RectTransform>() ?? go.AddComponent<RectTransform>();
+        r.anchorMin = Vector2.zero; r.anchorMax = Vector2.one;
+        r.offsetMin = r.offsetMax = Vector2.zero;
+    }
+
+    // ── JSON types ────────────────────────────────────────────────────────────
+    [System.Serializable] class TalentTreeResponse { public bool success; public string error;
+                                                     public TalentModifierApplier.TalentData[] data; }
+    [System.Serializable] class TalentListResponse  { public bool success; public string error;
+                                                     public TalentModifierApplier.TalentData[] data; }
+    [System.Serializable] class InvestRequest       { public int characterId; public int talentId; }
+    [System.Serializable] class RespecRequest       { public int characterId; }
+    [System.Serializable] class GenericResponse     { public bool success; public string error; }
+}
+
+/// <summary>Tiny marker component on each talent node button.</summary>
+public class TalentNodeButton : MonoBehaviour { public int talentId; }
+#endif

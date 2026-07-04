@@ -121,8 +121,8 @@ public static class EnemyBuilder
 
         root.AddComponent<Mirror.NetworkIdentity>();
 
-        var wi = root.AddComponent<WorldItem>();
-        wi.glowLight = glow;
+        root.AddComponent<WorldItem>();
+        // glow Light is a child of the prefab; WorldItem has no glowLight field.
 
         SavePrefab(root, $"{PrefabDir}/WorldItem.prefab");
         Object.DestroyImmediate(root);

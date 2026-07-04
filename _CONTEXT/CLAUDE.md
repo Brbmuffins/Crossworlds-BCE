@@ -1,3 +1,7 @@
+> **Deferred:** the canonical agent context is the root `CLAUDE.md`. This file is kept
+> as the server/API reference (schema, endpoints, conventions, anti-exploit design).
+> Where they disagree, the root file wins.
+
 # Crossworlds BCE — Claude Code Agent
 
 You are the senior backend developer for Crossworlds BCE, a live multiplayer action RPG.
@@ -71,7 +75,8 @@ Unity still calls these on every spawn. Do not rename, remove, or alter:
 
 ### New system — use for all new features
 ```
-characters      — now has: level, xp, gold, stat_str, stat_agi, stat_int, stat_vit
+characters      — now has: level, experience, gold, stat_str, stat_agi, stat_int, stat_vit
+                  NOTE: column is "experience" not "xp" — verified 2026-07-03 audit
 items           — id VARCHAR(64), name, rarity, item_type, stat_bonus JSON, sell_value
 inventory       — character_id, slot_index, item_id, quantity, equipped
 professions     — character_id, profession_id, skill_level, skill_xp
@@ -96,7 +101,7 @@ gold_transactions, marketplace_listings, guilds, guild_members
 ```
 GET  /api/health
 GET  /api/items                          — all rows from items table (no auth); for Unity bag UI
-POST /api/character/save-progress        — {characterId, level, xp, gold, stat_str/agi/int/vit}
+POST /api/character/save-progress        — {characterId, level, experience, gold, stat_str/agi/int/vit}
 GET  /api/inventory/:characterId
 POST /api/inventory/save                 — {characterId, slots:[{slot_index, item_id, quantity, equipped}]}
 POST /api/inventory/equip                — {characterId, slot_index, equipped:0|1}
@@ -311,14 +316,13 @@ sudo systemctl restart crossworlds
 |---|---|
 | Database | `crossworlds` |
 | User | `crossworlds` |
-| Password | `CW$3cure2025!` |
+| Password | see `DB_PASS` in `/opt/crossworlds-auth/.env` on the VPS |
 | Host | `localhost` |
 
 **Dashboard Admin (HTTP Basic Auth)**
-| What | Value |
-|---|---|
-| Username | `admin` |
-| Password | `hambone` |
+Credentials live only on the VPS (dashboard `.env` / nginx config) — never in this repo.
+NOTE: previous versions of this file committed both passwords to git history — rotate
+them on the VPS if not already done.
 
 **Admin API Token** (header: `x-admin-token`)
 See `ADMIN_TOKEN` in `/opt/crossworlds-auth/.env` and `/opt/crossworlds-dashboard/.env`
@@ -391,6 +395,41 @@ See `README.md` in that directory for full integration order, Inspector wiring, 
 **Kill flow summary:** `EnemyAI` → `EnemyController.TakeDamage` → `ApiClient.KillEnemy` → server awards XP+gold+loot atomically → `OnKillRewarded` event → `ProgressionManager` handles XP/level-up → `OnItemDropped` event → `WorldItem.Spawn()` → player pickup → `InventoryManager.AddItem()` → `ApiClient.SaveInventory()`
 
 **Do not** call `POST /api/loot/drop` or `POST /api/character/save-progress` on kill — `/api/combat/kill` handles both server-side.
+
+---
+
+## VPS Audit Notes — 2026-07-03
+
+Audit run via `VPS_AUDIT_PROMPT.md`. Full report in `C:\new 6.txt` (local).
+
+### Confirmed live
+
+- All three Crossworlds services running (`crossworlds`, `crossworlds-auth`, `crossworlds-dashboard`)
+- All required API endpoints present in `server.js`
+- Combat anti-exploit maps (`recentHits`, `lastKillTime`) present and correct (lines 15–29)
+- All schema tables and columns present — no migrations needed
+- `StartLimitIntervalSec=0` fixed: moved from `[Service]` to `[Unit]` in `crossworlds.service` (was silently ignored before; systemd requires it in `[Unit]`)
+
+### Discovered
+
+- **`rod-realtime` service** — active on port 5000 (local), `/opt/rod-realtime/server.js`. Not previously documented. Investigate before modifying anything that might call it.
+- **Legacy unit files on disk** — `rod-server.service`, `rod-auth.service`, `rod-dashboard.service` point to non-existent paths. Harmless; can be removed with `sudo rm /etc/systemd/system/rod-{server,auth,dashboard}.service && sudo systemctl daemon-reload`.
+- **`characters.experience` not `xp`** — live column is `experience`. All references in this doc updated. Unity `ProgressionManager` and `ApiClient` must use `"experience"` in JSON payloads.
+
+### Pending decision — CLASS_NAMES
+
+Live `server.js` line 123:
+```js
+const CLASS_NAMES = ['Engineer', 'Guardian', 'Shadowblade', 'Cleric', 'Arcanist'];
+```
+Live characters in DB have `class_name = 'Engineer'` or `'Guardian'`. Validator is already `> 4` (correct for 5 classes).
+
+**To rename to current canonical names (`Warden`, `Ironclad`):** coordinate a Unity client + server deploy with a DB migration:
+```sql
+UPDATE characters SET class_name = 'Warden'   WHERE class_index = 0;
+UPDATE characters SET class_name = 'Ironclad' WHERE class_index = 1;
+```
+Then update `CLASS_NAMES` in `server.js` and restart `crossworlds-auth`. Do not do this mid-session without the Unity deploy.
 
 ---
 
