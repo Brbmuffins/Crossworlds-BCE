@@ -103,6 +103,8 @@ Five hero classes, each with a distinct role and playstyle. Class indices are fi
 
 <img src="Docs/icons/classes/class-warden.png" width="100%"/>
 
+<p align="center"><img src="Docs/models/class-warden/class-warden.webp" width="200"/><br/><sub><b>Warden — 3D model</b> · <a href="Docs/models/class-warden/class-warden.glb">⬇ GLB</a></sub></p>
+
 *"Hold the line. The constructs will do the rest."*
 
 The Warden is a battlefield engineer who wins through positioning and attrition. They deploy runic sentinel turrets, lay snare traps, redirect their constructs mid-fight, and pulse cooldowns for the whole team with Battle Hymn. Their ultimate, Conjurer's Surge, triggers every active construct simultaneously for burst rounds.
@@ -114,6 +116,8 @@ The Warden is a battlefield engineer who wins through positioning and attrition.
 ### Ironclad
 
 <img src="Docs/icons/classes/class-ironclad.png" width="100%"/>
+
+<p align="center"><img src="Docs/models/class-ironclad/class-ironclad.webp" width="200"/><br/><sub><b>Ironclad — 3D model</b> · <a href="Docs/models/class-ironclad/class-ironclad.glb">⬇ GLB</a></sub></p>
 
 *"Let them hit me. I'm building a debt they can't pay."*
 
@@ -129,6 +133,8 @@ The Ironclad defines the frontline. Counter Blow turns incoming damage into a co
 
 <img src="Docs/icons/classes/class-shadowblade.png" width="100%"/>
 
+<p align="center"><img src="Docs/models/class-shadowblade/class-shadowblade.webp" width="200"/><br/><sub><b>Bo-gar — 3D model</b> · <a href="Docs/models/class-shadowblade/class-shadowblade.glb">⬇ GLB</a></sub></p>
+
 *"They can't hit what they can't see. Or silence."*
 
 The Shadowblade is a precision assassin and soft CC specialist. Shadow Veil into a stealth-boosted Mind Spike is the signature opener. Silence Ward drops a fog field that stops all enemy abilities. Dark Harvest consumes all active debuff stacks on nearby enemies for massive AoE — ideally after Ironclad has applied Threat stacks and Cleric has applied Cursed.
@@ -143,6 +149,8 @@ The Shadowblade is a precision assassin and soft CC specialist. Shadow Veil into
 
 <img src="Docs/icons/classes/class-cleric.png" width="100%"/>
 
+<p align="center"><img src="Docs/models/class-cleric/class-cleric.webp" width="200"/><br/><sub><b>Brandolf — 3D model</b> · <a href="Docs/models/class-cleric/class-cleric.glb">⬇ GLB</a></sub></p>
+
 *"The fight ends when I say it ends."*
 
 The Cleric is the team's life insurance. Spirit Wisps drift and seek allies. Sacred Aegis grows stronger as the target takes hits. Soul Bond reroutes incoming damage onto the Cleric themselves as a sacrifice. Divine Spark revives a downed teammate — or detonates holy energy on undead. Temporal Grace is the most powerful ability in the game: full-team time rewind.
@@ -154,6 +162,8 @@ The Cleric is the team's life insurance. Spirit Wisps drift and seek allies. Sac
 ### Arcanist
 
 <img src="Docs/icons/classes/class-arcanist.png" width="100%"/>
+
+<p align="center"><img src="Docs/models/class-arcanist/class-arcanist.webp" width="200"/><br/><sub><b>Arcanist — 3D model</b> · <a href="Docs/models/class-arcanist/class-arcanist.glb">⬇ GLB</a></sub></p>
 
 *"Distance is an illusion. So is the concept of 'safe.'"*
 
