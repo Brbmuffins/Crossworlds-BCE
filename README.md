@@ -174,6 +174,10 @@ The Arcanist controls space. Arcane Step is a true blink — it bypasses terrain
 
 ## Combat System
 
+<img src="Docs/icons/combat/combat-directional.png" width="100%"/>
+
+> *Every shot is aimed. A charged Void Bolt streaks into a pack while the AoE indicator burns on the floor — no auto-attack, no tab-target, just placement and timing.*
+
 ### Smite-Style Directional Combat
 
 Every offensive action requires aim. There is no auto-attack or tab-targeting.
@@ -187,6 +191,10 @@ Every offensive action requires aim. There is no auto-attack or tab-targeting.
 | **Dodge Roll** | Left Alt or V — 2 charges, 0.35s roll, full invulnerability during the animation. |
 | **Enemy Telegraphs** | 0.45s before any enemy attack lands, a red cylinder indicator appears on the ground. Read it, dodge it. |
 
+<img src="Docs/icons/combat/combat-telegraph-dodge.png" width="100%"/>
+
+> *The red circle is the telegraph; the blue shimmer is dodge-roll i-frames. Read the tell, roll through it — the slam lands on empty ground.*
+
 ### Server Authority
 
 All game-state mutations run server-only (`[Server]` attribute). Clients receive visual feedback via `[ClientRpc]`. Client-only code (VFX, HUD, tooltips) is behind `#if !UNITY_SERVER`. Players are never trusted — damage is calculated server-side, kill rewards issued atomically.
@@ -198,6 +206,10 @@ All game-state mutations run server-only (`[Server]` attribute). Clients receive
 > **Design status:** full design is authored in `CrossWorlds/_context/COMBAT_PROPOSAL.md`. Mechanics below are the confirmed design — implementation follows the proposal's code notes. Nothing new in code yet.
 
 The base combat is burst-oriented (build resource → detonate → reset). The state layer adds a **persistent consequence plane** so players also track what states are active on enemies and allies simultaneously. Same 32 ability slots. No new buttons. All states are visible on `StatusEffectHUD`.
+
+<img src="Docs/icons/combat/combat-state-layer.png" width="100%"/>
+
+> *Two planes at once: enemies rotting under green Void Rot and orange Burning DoTs on the left, allies bathed in a violet Mending Circle HoT on the right. You manage both at the same time.*
 
 #### DoT States (applied to enemies)
 
