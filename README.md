@@ -1381,6 +1381,67 @@ SQL: parameterized queries only. No string interpolation. Ever.
 
 ---
 
+### Network-Controlled Objects & Making Mobs
+
+Crossworlds is **server-authoritative**. Anything that moves, deals damage, or has
+health — players, enemies, projectiles, deployables — is a *networked object*: it
+carries a `NetworkIdentity`, is **created only on the server**, and Mirror mirrors it
+down to every client. Clients never instantiate these directly.
+
+**How a mob actually gets into the world:**
+
+```
+Server: Instantiate(prefab) → NetworkServer.Spawn(enemy)
+                                      │
+                        Mirror replicates to every client
+                                      │
+Client: looks up the prefab in RodNetworkManager ▸ Registered Spawnable Prefabs,
+        instantiates its own copy, and keeps it in sync
+```
+
+`WaveSpawner.SpawnEnemy()` ([`WaveSpawner.cs:139`](Assets/Game/Combat/Scripts/WaveSpawner.cs))
+is the reference path — it runs under `[Server]`, `Instantiate`s the prefab, then calls
+`NetworkServer.Spawn`. It never places enemies in the scene by hand.
+
+**Checklist — adding a new mob:**
+
+1. Build the prefab with a **`NetworkIdentity`** + `Health` + `EnemyController` (or an
+   AI/animation driver). Model, colliders, and Animator go on/under it as normal.
+2. **Register it:** add the prefab to `RodNetworkManager` ▸ **Registered Spawnable
+   Prefabs**. If it isn't in this list, the server spawns it but **clients can't
+   instantiate it** — it's invisible to everyone but the host.
+3. **Spawn it from server code** — add it to a `WaveSpawner.enemyPrefabs` /
+   `WaveManager` roster, or `NetworkServer.Spawn` it from your own `[Server]` method.
+   Never drag it into the scene to make it appear.
+4. Bake NavMesh if it navigates, and set the Animator Avatar (see [Editor Steps](#editor-steps)).
+
+### ⚠ "My model disappears the moment I hit Play"
+
+This is the #1 confusion when adding or previewing character/enemy models. **Cause:**
+the model has a `NetworkIdentity` and was **dragged into the scene**. Mirror treats any
+scene object with a `NetworkIdentity` as an unspawned network object and **disables it on
+Play** until the server explicitly spawns it — so it vanishes.
+
+**How to avoid it:**
+
+- **Previewing a model?** Drag it into the scene to look at it, but **delete it before
+  pressing Play**, or work on it in **Prefab Mode** (double-click the prefab) instead of
+  the scene. Prefab Mode never triggers the disappear.
+- **Making a decorative prop** (statue, tree, fence, non-interactive NPC)? **Do not add a
+  `NetworkIdentity`.** Plain scene objects with no `NetworkIdentity` stay put on Play and
+  render for everyone — this is correct for anything purely cosmetic.
+- **Making an actual mob/enemy?** Keep the `NetworkIdentity`, but **don't place it in the
+  scene** — register it and let a spawner create it at runtime (checklist above). Seeing
+  it "disappear" in the scene is Mirror working as intended; it will appear in-game when
+  spawned.
+- **It spawns but only the host sees it?** The prefab isn't in **Registered Spawnable
+  Prefabs** on `RodNetworkManager`. Add it there.
+
+> Rule of thumb: **cosmetic = no NetworkIdentity, lives in the scene.
+> Gameplay = has NetworkIdentity, is spawned by the server, never hand-placed.**
+
+---
+
 ## Build & Deploy
 
 Unity version: **6000.4.10f1** (from `ProjectSettings/ProjectVersion.txt` — older docs saying `6000.0.77f1` are stale).
