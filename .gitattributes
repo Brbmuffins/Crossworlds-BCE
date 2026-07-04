@@ -6,6 +6,11 @@
 *.cs   text eol=lf
 *.md   text eol=lf
 *.json text eol=lf
+# Shell scripts + server JS/SQL run on the Linux VPS (and through ssh heredocs) —
+# CRLF here breaks bash with '\r' errors, so force LF regardless of platform.
+*.sh   text eol=lf
+*.js   text eol=lf
+*.sql  text eol=lf
 *.unity -text
 *.meta  -text
 *.controller -text
