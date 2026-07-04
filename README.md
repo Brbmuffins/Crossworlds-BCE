@@ -413,6 +413,10 @@ Each boss reads at least one active state from the party and reacts to it.
 
 ## AFK Professions
 
+<img src="Docs/icons/characters/forge-crafting.png" width="100%"/>
+
+> *Between runs, the real work: ore into ingots, ingots into gear, the anvil ringing under the rose window. Some of the strongest tools in the game are never dropped — only forged.*
+
 Press **F** once at a gathering station, then go make a coffee. The game rewards you while you're idle.
 
 Every `tickInterval` seconds the station awards one item directly to your inventory (via `/api/inventory/add-item`) and posts profession XP to the server (via `POST /api/professions/award-xp`). Moving more than 4 units away, pressing **F** again, or pressing **Escape** cancels the session. Level gates prevent high-tier nodes until you've earned them.
@@ -589,6 +593,10 @@ curl -s http://localhost:3000/api/professions/1   # verify endpoint responds
 ---
 
 ## Encounters & NPCs
+
+<img src="Docs/icons/characters/arena-entry.png" width="100%"/>
+
+> *The portal spits you onto cracked rune-stone, and the fog is already moving. No countdown, no safe first step — the arena starts the instant your boots land.*
 
 ### NPCs — Hub World
 
