@@ -12,6 +12,8 @@
 
 ---
 
+> *The worlds tore open, and where their edges meet the Void pours through — and it does not come mindlessly. It builds. It sieges. In a drowned cathedral-city at the seam of realities, a handful of heroes hold the last ground: an engineer of runic war-machines, an unbreakable knight, a shadow-walking monk, a muffin-headed healer who bends time itself, and a mage who treats distance as a suggestion. Step through the portal. Hold the line.*
+
 Crossworlds BCE is a server-authoritative co-op action RPG built on Unity 6 and Mirror networking. Players log in, choose from five hero classes, meet in a shared hub world, and enter combat arenas through portals. Every ability is a skill shot, AoE, or telegraphed cone — no auto-attack tab targeting. Dodge rolls, traveling projectiles, and enemy telegraph indicators make every fight readable and punishing to play recklessly.
 
 ---
@@ -361,6 +363,10 @@ Emergent states produced when two specific conditions are simultaneously true on
 
 ### Cross-Class Synergies (State Layer)
 
+<img src="Docs/icons/combat/party-synergy.png" width="100%"/>
+
+> *Alone, each hero is strong. Together, the seams between their kits become weapons: the Arcanist seeds decay the Shadowblade harvests, the Ironclad bunches the pack the Warden's turrets shred, and the Cleric makes every reckless play survivable. The best plays live in these overlaps.*
+
 | Combo | Mechanic |
 |-------|----------|
 | **Arcanist → Shadowblade** | Void Bolt builds Void Rot. Dark Harvest now consumes Void Rot stacks. 3 pre-built Void Rot stacks = 3 free Harvest stacks. |
@@ -576,6 +582,10 @@ curl -s http://localhost:3000/api/professions/1   # verify endpoint responds
 
 ### NPCs — Hub World
 
+<img src="Docs/icons/characters/hub-sanctuary.png" width="100%"/>
+
+> *Between runs, the arena falls silent and the city breathes again. Forge-fire and lantern-light push back the fog; adventurers trade rumours over the anvil while the portal turns, patient, at the far wall.*
+
 Two persistent NPCs live in the Hub world and drive the crafting and trading loop.
 
 | NPC | Script | Role |
@@ -599,6 +609,10 @@ Two persistent NPCs live in the Hub world and drive the crafting and trading loo
 ---
 
 ### Enemy Roster
+
+<img src="Docs/icons/characters/wave-assault.png" width="100%"/>
+
+> *The Void does not tire, and it never comes alone. Grunts crash in first, archers crackle behind them, and somewhere in the fog a Knight is already moving. Watch the red circles — everything that kills you announces itself first.*
 
 Three enemy variants spawn in arenas. All are server-authoritative via `EnemyController.cs`.
 
