@@ -128,7 +128,7 @@ public class PlayerListUI : MonoBehaviour
             int ci   = Mathf.Clamp(id.classIndex, 0, ClassColors.Length - 1);
             string nameCol  = id.isLocalPlayer ? "#FFFFFF" : "#CBD5E1";
             string classCol = ClassColors[ci];
-            string you      = id.isLocalPlayer ? " <color=#fbbf24>★</color>" : "";
+            string you      = id.isLocalPlayer ? " <color=#fbbf24>[you]</color>" : "";
 
             AddRow(id.playerName + you, nameCol, id.ClassName, classCol);
         }
