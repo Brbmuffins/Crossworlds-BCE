@@ -1,4 +1,3 @@
-#if !UNITY_SERVER
 using UnityEngine;
 using UnityEditor;
 
@@ -21,12 +20,12 @@ public static class CharacterSelectDataBuilder
     const string PortraitDir = "Assets/Game/UI/CharacterSelect/Portraits";
     const string IconDir     = "Assets/Game/UI/CharacterSelect/AbilityIcons";
 
-    [MenuItem("BCE/Setup/CharacterSelect ▶ Fix Sprite Import Settings")]
+    [MenuItem("BCE/Setup/CharacterSelect - Fix Sprite Import Settings")]
     public static void FixImportSettings()
     {
         // Set all PNGs in Portraits/ and AbilityIcons/ to Sprite (UI) texture type.
         // Run this ONCE after first import, before running Build Class Data.
-        int fixed = 0;
+        int count = 0;
         foreach (var guid in AssetDatabase.FindAssets("t:Texture2D", new[] { PortraitDir, IconDir }))
         {
             string path = AssetDatabase.GUIDToAssetPath(guid);
@@ -34,16 +33,16 @@ public static class CharacterSelectDataBuilder
             if (importer == null) continue;
             if (importer.textureType != TextureImporterType.Sprite)
             {
-                importer.textureType    = TextureImporterType.Sprite;
+                importer.textureType      = TextureImporterType.Sprite;
                 importer.spriteImportMode = SpriteImportMode.Single;
                 AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
-                fixed++;
+                count++;
             }
         }
-        Debug.Log($"[BCE] Fixed import settings on {fixed} textures. Now run Build Class Data.");
+        Debug.Log($"[BCE] Fixed import settings on {count} textures. Now run Build Class Data.");
     }
 
-    [MenuItem("BCE/Setup/CharacterSelect ▶ Build Class Data")]
+    [MenuItem("BCE/Setup/CharacterSelect - Build Class Data")]
     public static void Build()
     {
         if (!AssetDatabase.IsValidFolder(OutDir))
@@ -409,4 +408,3 @@ public static class CharacterSelectDataBuilder
         return spr;
     }
 }
-#endif
