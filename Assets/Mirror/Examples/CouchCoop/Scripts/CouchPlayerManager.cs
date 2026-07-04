@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using Mirror;
 
 namespace Mirror.Examples.CouchCoop
@@ -27,7 +27,7 @@ namespace Mirror.Examples.CouchCoop
             canvasScript = GameObject.FindAnyObjectByType<CanvasScript>();
 #else
             // Deprecated in Unity 2023.1
-            canvasScript = GameObject.FindFirstObjectByType<CanvasScript>();
+            canvasScript = GameObject.FindObjectOfType<CanvasScript>();
 #endif
             canvasScript.couchPlayerManager = this;
         }

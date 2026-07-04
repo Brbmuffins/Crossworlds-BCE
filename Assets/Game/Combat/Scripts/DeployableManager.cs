@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 
 // Singleton. Tracks all active deployables per player.
@@ -23,7 +23,7 @@ public class DeployableManager : MonoBehaviour
     }
 
     // Call this right after spawning a deployable.
-    // ownerID    = owner.GetEntityId()
+    // ownerID    = owner.GetInstanceID()
     // classLimit = max simultaneous deployables for this class (Engineer=3, others=1)
     public void Register(GameObject deployable, int ownerID, int classLimit = 1)
     {

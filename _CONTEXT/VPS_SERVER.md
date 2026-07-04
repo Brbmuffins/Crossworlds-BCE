@@ -1,6 +1,6 @@
-# VPS & Server — Operations Reference
+# VPS & Server — Troubleshooting Context
 
-**Last audited:** 2026-07-03 (Claude Code audit — see `VPS_AUDIT_PROMPT.md` for the prompt used)
+**When to load:** Deploying builds, server not starting, service crashes, log inspection, auth server issues, dashboard, upload process, binary name problems.
 
 ---
 
@@ -9,122 +9,104 @@
 | Item | Value |
 |------|-------|
 | Server IP | `15.204.243.36` |
-| Hostname | `playcrossworlds.com` |
-| SSH | `ssh ubuntu@playcrossworlds.com` |
+| SSH | root access, port 22 |
 | Game binary | `/game/Builds/CrossworldsBCE.x86_64` |
 | Game data dir | `/game/Builds/CrossworldsBCE_Data/` |
 | Game log | `/var/log/crossworlds.log` |
-| Auth server | `/opt/crossworlds-auth/server.js` |
-| Dashboard | `/opt/crossworlds-dashboard/server.js` |
-| Realtime server | `/opt/rod-realtime/server.js` |
-| Web root | `/var/www/crossworlds/` |
-| Client download | `/var/www/crossworlds/downloads/CrossworldsBCE.zip` |
+| Auth server path | `/opt/rod-auth/` |
+| Dashboard path | `/opt/rod-dashboard/` |
+| Download zip path | `/var/www/rod/downloads/RateOfDecayONLINE.zip` |
+| Credentials | `SERVER_REFERENCE.md` (PRIVATE — do not share) |
 
 ---
 
 ## Services
 
-| Service name | Port | State (2026-07-03) | What |
-|---|---|---|---|
-| `crossworlds` | 7777/UDP | active/running | Unity game server (Mirror/KCP) |
-| `crossworlds-auth` | 3000/TCP | active/running | Node.js auth + character + game API |
-| `crossworlds-dashboard` | 4000/TCP | active/running | GM/admin web dashboard + Socket.io |
-| `rod-realtime` | 5000/TCP (local) | active/running | Realtime relay — `/opt/rod-realtime/server.js` |
-| nginx | 80/443 | active | Public download page, SSL via Certbot |
-| Uptime Kuma | 3001 | active | Monitoring (web UI needs config) |
-
-> **Legacy unit files on disk** (point to non-existent paths — harmless, can be removed):
-> `rod-server.service` → `/game/Builds/Portalis.x86_64` (path gone)
-> `rod-auth.service` → `/opt/rod-auth` (path gone)
-> `rod-dashboard.service` → `/opt/rod-dashboard` (path gone)
+| Service name | Port | What it is |
+|-------------|------|------------|
+| `rod-server` | 7777 UDP | Unity game server (Mirror/KCP) |
+| `rod-auth` | 3000 | Node.js auth + character API |
+| `rod-dashboard` | 4000 | GM/admin web dashboard |
+| nginx | 80 | Public download page |
+| Uptime Kuma | 3001 | Monitoring |
 
 ---
 
 ## Essential Commands
 
 ```bash
-# Status
-sudo systemctl status crossworlds crossworlds-auth crossworlds-dashboard rod-realtime
+# Check all services
+systemctl status rod-server rod-auth rod-dashboard
 
-# Restart
-sudo systemctl restart crossworlds-auth
-sudo systemctl restart crossworlds-dashboard
-sudo systemctl restart crossworlds
-# rod-realtime: restart only if needed — not required for most deploys
-
-# Logs
-sudo journalctl -u crossworlds-auth -n 50 --no-pager
-sudo journalctl -u crossworlds -n 50 --no-pager
-sudo journalctl -u rod-realtime -n 50 --no-pager
+# Live game server log
 tail -f /var/log/crossworlds.log
 
-# Ports
-ss -ulnp | grep 7777    # game UDP
-ss -tlnp                # all TCP (3000, 4000, 5000, 80, 443)
+# Restart game server
+systemctl restart rod-server
 
-# Binary
+# Check UDP port 7777 is open
+ss -ulnp | grep 7777
+
+# Check binary exists and is executable
 ls -la /game/Builds/CrossworldsBCE.x86_64
 
-# Health check
-curl -s http://localhost:3000/api/health
-
-# Database
-mysql -u crossworlds -p crossworlds   # password in /opt/crossworlds-auth/.env → DB_PASS
+# Check what's listening
+ss -tlnp
 ```
 
 ---
 
 ## Deploying a New Build
 
+### Server Build (Linux x86_64 headless)
+1. Unity → **File → Build Settings** → Linux, Dedicated Server
+2. Output: zip the build folder
+3. Upload via FileZilla to `/game/Builds/` on VPS
+4. Ensure binary is named `CrossworldsBCE.x86_64` (must match systemd service `ExecStart`)
+5. `chmod +x /game/Builds/CrossworldsBCE.x86_64`
+6. `systemctl restart rod-server`
+
+### Client Build (Windows)
+1. Unity → **File → Build Settings** → Windows x86_64
+2. Upload `.exe` + `_Data/` folder to `/var/www/rod/downloads/` as a zip
+3. Zip name: `RateOfDecayONLINE.zip`
+
+### FileZilla Settings
+- Host: `15.204.243.36`, Port: 22, Protocol: SFTP
+
+---
+
+## Binary Name — Critical
+
+The systemd service `rod-server` must reference the exact binary name. Past incident: build was renamed from `Crossworlds.x86_64` to `CrossworldsBCE.x86_64` but the service file still pointed to the old name → server silently failed to start.
+
+**Check the service file:**
 ```bash
-# 1. Build locally (PowerShell)
-powershell -ExecutionPolicy Bypass -File tools\build-server.ps1
-# Output: build\crossworlds-server.tar.gz
-
-# 2. Upload
-scp build\crossworlds-server.tar.gz tools\deploy-server.sh ubuntu@playcrossworlds.com:~
-
-# 3. On VPS
-sudo bash deploy-server.sh             # auto-backup, restart, verify, auto-rollback on failure
-sudo bash deploy-server.sh --rollback  # manual rollback
+cat /etc/systemd/system/rod-server.service
+# Look for ExecStart= line
 ```
 
-**Binary name is critical.** The systemd service `ExecStart` must match exactly:
-
+If you ever rename the binary, update the service file and run:
 ```bash
-# Verify
-grep ExecStart /etc/systemd/system/crossworlds.service
-# Expected: /game/Builds/CrossworldsBCE.x86_64 -batchmode -nographics ...
-
-# If you rename the binary:
-systemctl daemon-reload && systemctl restart crossworlds
+systemctl daemon-reload
+systemctl restart rod-server
 ```
 
-### Current crossworlds.service (as of 2026-07-03 audit)
+---
 
-```ini
-[Unit]
-Description=Crossworlds (BCE) - Game Server (Mirror/KCP :7777)
-After=network.target crossworlds-auth.service
-StartLimitIntervalSec=0              # must be in [Unit], not [Service]
+## VPS Health Check (Claude Code Prompt)
 
-[Service]
-Type=simple
-User=ubuntu
-WorkingDirectory=/game/Builds
-ExecStart=/game/Builds/CrossworldsBCE.x86_64 -batchmode -nographics -logFile /var/log/crossworlds.log
-Restart=on-failure
-RestartSec=10
-StandardOutput=journal
-StandardError=journal
+Give this to Claude Code running on the VPS for a full health check:
 
-[Install]
-WantedBy=multi-user.target
 ```
-
-> `StartLimitIntervalSec=0` was previously in `[Service]` (silently ignored by systemd).
-> Fixed 2026-07-03 — moved to `[Unit]`. Without it, the game server could hit systemd's
-> burst restart limit after a crash and stop recovering.
+Check the Crossworlds BCE game server health:
+1. systemctl status rod-server rod-auth rod-dashboard
+2. ss -ulnp | grep 7777 (UDP port open?)
+3. tail -20 /var/log/crossworlds.log
+4. ls -la /game/Builds/CrossworldsBCE.x86_64
+5. curl -s http://localhost:3000/health
+6. Report any errors or unexpected state
+```
 
 ---
 
@@ -132,11 +114,20 @@ WantedBy=multi-user.target
 
 | URL | Access |
 |-----|--------|
-| `https://playcrossworlds.com/` | Public download page |
-| `http://playcrossworlds.com:4000` | Manager dashboard (HTTP Basic Auth) |
-| `http://playcrossworlds.com:4000/gm-dashboard?token=<TOKEN>` | GM dashboard (token in VPS .env) |
+| `http://15.204.243.36` | Public download page |
+| `http://15.204.243.36:4000` | Manager dashboard (HTTP Basic Auth) |
+| `http://15.204.243.36:4000/gm-dashboard?token=<TOKEN>` | GM dashboard (token in VPS .env) |
 
-GM Dashboard: server status, spawn events, last 50 log lines, restart button, log download.
+GM Dashboard shows: server status, spawn events, last 50 log lines (color-coded), restart button, log download, Uptime Kuma link.
+
+---
+
+## Auth Server Notes
+
+- **DO NOT restart `rod-auth` carelessly** — it handles all active JWTs and DB connections
+- Auth server auto-starts on VPS reboot via systemd
+- Logs: `journalctl -u rod-auth -f`
+- Config: `/opt/rod-auth/.env` (JWT secret, DB credentials — see `SERVER_REFERENCE.md`)
 
 ---
 
@@ -144,73 +135,16 @@ GM Dashboard: server status, spawn events, last 50 log lines, restart button, lo
 
 | Symptom | Cause | Fix |
 |---------|-------|-----|
-| Server starts then crashes | `UnityPlayer.so` version mismatch | Upload matching `UnityPlayer.so` from same build session |
-| `Could not spawn` in game | Old binary on VPS after prefab rebuild | Upload fresh server build |
-| Server not listening on 7777 | Wrong binary name in systemd or crash | Check `ExecStart`; check `/var/log/crossworlds.log` |
-| Players can't see each other | Client/server have different prefab assetIds | Rebuild BOTH client and server after any prefab change |
-| Auth server returns 500 | DB connection issue or bad .env | `journalctl -u crossworlds-auth`; verify MySQL running |
-| Game server won't restart after crash | `StartLimitIntervalSec` in wrong section | Must be in `[Unit]` not `[Service]`; `daemon-reload` after fix |
-| Port scanner noise in game log | External probes hitting UDP 7777 | Normal — `invalid channel header: 92` is expected background noise |
+| Server starts then crashes | UnityPlayer.so version mismatch | Upload matching `UnityPlayer.so` from build output |
+| `Could not spawn` errors in game | Old binary on VPS after prefab rebuild | Upload fresh server build |
+| Game server not listening on 7777 | Binary name wrong in systemd, or crash | Check binary name, check log for crash |
+| Players connect but see no other players | Client and server have different prefab assetIds | Rebuild BOTH client and server after any prefab changes |
+| Auth server returns 500 | DB connection issue or bad .env | Check `journalctl -u rod-auth`, verify MySQL is running |
 
 ---
 
-## Auth Server Notes
+## Active TODOs
 
-- **DO NOT restart `crossworlds-auth` carelessly** — it handles all active JWTs and DB connections
-- Auth server auto-starts on VPS reboot via systemd
-- Logs: `journalctl -u crossworlds-auth -f`
-- Config: `/opt/crossworlds-auth/.env` (JWT secret, DB credentials — never log or expose)
-
----
-
-## VPS Health Check (quick paste)
-
-```bash
-sudo systemctl status crossworlds crossworlds-auth crossworlds-dashboard --no-pager
-ss -ulnp | grep 7777
-curl -s http://localhost:3000/api/health
-curl -s http://localhost:3000/api/maintenance/status
-tail -20 /var/log/crossworlds.log
-```
-
----
-
-## Credentials
-
-| Secret | Location |
-|--------|----------|
-| MySQL password | `DB_PASS` in `/opt/crossworlds-auth/.env` |
-| JWT secret | `JWT_SECRET` in `/opt/crossworlds-auth/.env` |
-| Admin API token | `ADMIN_TOKEN` in `/opt/crossworlds-auth/.env` and `/opt/crossworlds-dashboard/.env` |
-| Dashboard HTTP Basic Auth | nginx config / dashboard `.env` |
-
-**Never commit credentials.** Previous versions of this file leaked both passwords into
-git history — rotate them on the VPS if not already done (ROADMAP Q7).
-
----
-
-## Active TODOs (post-audit 2026-07-03)
-
-| Priority | Item |
-|----------|------|
-| 🔴 | Rotate credentials (leaked into git history — ROADMAP Q7) |
-| 🟡 | **CLASS_NAMES decision** — live server still has `['Engineer','Guardian',...]` at indices 0–1; live characters in DB have those names. Changing to `['Warden','Ironclad',...]` requires coordinated Unity deploy + DB migration. See note below. |
-| 🟡 | Document `rod-realtime` (port 5000) — what does it do, who calls it, does it need monitoring? |
-| 🟡 | Remove stale legacy unit files: `rod-server.service`, `rod-auth.service`, `rod-dashboard.service` |
-| 🟢 | HTTPS / Cloudflare SSL — all traffic plain HTTP; JWT in transit unencrypted |
-| 🟢 | Configure Uptime Kuma web UI at `http://15.204.243.36:3001` |
-| 🟢 | CI/CD secrets (`.github/workflows/build-and-deploy.yml` exists, needs secrets) |
-
-### CLASS_NAMES Migration Plan (when ready)
-
-```bash
-# 1. Deploy Unity client with updated PlayerIdentity.ClassNames = ["Warden","Ironclad",...]
-# 2. Deploy Unity dedicated server with same array
-# 3. Run on VPS:
-#    UPDATE characters SET class_name = 'Warden'   WHERE class_index = 0;
-#    UPDATE characters SET class_name = 'Ironclad' WHERE class_index = 1;
-# 4. Update server.js CLASS_NAMES array:
-#    const CLASS_NAMES = ['Warden', 'Ironclad', 'Shadowblade', 'Cleric', 'Arcanist'];
-# 5. sudo systemctl restart crossworlds-auth
-# Validator is already correct: class_index > 4
-```
+- HTTPS / Cloudflare SSL — all traffic plain HTTP; JWT in transit is unencrypted
+- Domain name (currently IP-only)
+- CI/CD pipeline exists (`.github/workflows/build-and-deploy.yml`) but needs secrets configured — deferred

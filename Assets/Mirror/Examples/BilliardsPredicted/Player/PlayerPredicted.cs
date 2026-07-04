@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -30,7 +30,7 @@ namespace Mirror.Examples.BilliardsPredicted
             whiteBall = FindAnyObjectByType<WhiteBallPredicted>();
 #else
             // Deprecated in Unity 2023.1
-            whiteBall = FindFirstObjectByType<WhiteBallPredicted>();
+            whiteBall = FindObjectOfType<WhiteBallPredicted>();
 #endif
         }
 

@@ -16,7 +16,7 @@ namespace Mirror.Examples.Hex2D
 #if UNITY_2022_2_OR_NEWER
             checkMethod = FindAnyObjectByType<HexSpatialHash2DInterestManagement>().checkMethod;
 #else
-            checkMethod = FindFirstObjectByType<HexSpatialHash2DInterestManagement>().checkMethod;
+            checkMethod = FindObjectOfType<HexSpatialHash2DInterestManagement>().checkMethod;
 #endif
         }
 

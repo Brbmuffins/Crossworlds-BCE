@@ -97,7 +97,7 @@ namespace GravityBox.PreviewProvider
 		public void DisableSceneLights()
 		{
 			disabled = new List<Light>();
-			Light[] lights = FindObjectsByType<Light>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+			Light[] lights = FindObjectsOfType<Light>();
 			
 			foreach (Light l in lights)
 			{

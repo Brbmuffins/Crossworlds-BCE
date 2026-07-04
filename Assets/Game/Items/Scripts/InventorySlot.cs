@@ -1,4 +1,3 @@
-#if !UNITY_SERVER
 using UnityEngine;
 using UnityEngine.EventSystems;
 
@@ -20,12 +19,10 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler, IPointerEnterH
             if (equipment.EquipItem(item, out ItemData previousItem))
             {
                 inventory.RemoveItem(item);
-                InventoryManager.Instance?.OnItemEquipped(item.id, true);
 
                 if (previousItem != null)
                 {
                     inventory.AddItem(previousItem);
-                    InventoryManager.Instance?.OnItemEquipped(previousItem.id, false);
                 }
             }
         }
@@ -50,4 +47,3 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler, IPointerEnterH
         transform.localScale = Vector3.one;
     }
 }
-#endif

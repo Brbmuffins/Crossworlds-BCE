@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Mirror;
 using TMPro;
@@ -259,7 +259,7 @@ public class RodChatManager : NetworkBehaviour
 
     bool AnyOtherInputFocused()
     {
-        foreach (var f in FindObjectsByType<TMP_InputField>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+        foreach (var f in FindObjectsByType<TMP_InputField>(FindObjectsSortMode.None))
             if (f != _input && f.isFocused) return true;
         return false;
     }
@@ -319,7 +319,7 @@ public class RodChatManager : NetworkBehaviour
         titleLbl.fontSize  = 10f;
         titleLbl.color     = new Color(0.5f, 0.8f, 1f);
         titleLbl.fontStyle = FontStyles.Bold;
-        titleLbl.alignment = TextAlignmentOptions.Left;
+        titleLbl.alignment = TextAlignmentOptions.MidlineLeft;
 
         // ── Log text (plain fixed rect — no ScrollRect, no Mask/Viewport) ───
         var logGO = MakeRect("LogText", _panel.GetComponent<RectTransform>(),
@@ -343,7 +343,7 @@ public class RodChatManager : NetworkBehaviour
         promptLbl.text      = ">";
         promptLbl.fontSize  = 13f;
         promptLbl.color     = new Color(0.5f, 0.8f, 1f);
-        promptLbl.alignment = TextAlignmentOptions.Left;
+        promptLbl.alignment = TextAlignmentOptions.MidlineLeft;
 
         var inputGO = MakeRect("InputField", _inputArea.GetComponent<RectTransform>(),
             new Vector2(0.06f, 0f), new Vector2(1f, 1f));

@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using Mirror;
 
 namespace Mirror.Examples.CharacterSelection
@@ -14,7 +14,7 @@ namespace Mirror.Examples.CharacterSelection
             sceneReferencer = GameObject.FindAnyObjectByType<SceneReferencer>();
 #else
             // Deprecated in Unity 2023.1
-            sceneReferencer = GameObject.FindFirstObjectByType<SceneReferencer>();
+            sceneReferencer = GameObject.FindObjectOfType<SceneReferencer>();
 #endif
             sceneReferencer.GetComponent<Canvas>().enabled = true;
         }

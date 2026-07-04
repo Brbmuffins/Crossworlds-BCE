@@ -49,14 +49,6 @@ crashlytics-build.properties
 # ── Server build output (deploy separately via SCP) ──────────────────────────
 ServerBuild/
 
-# ── Credentials — never commit these ─────────────────────────────────────────
-.env
-.env.*
-*.local
-*api-key*
-*api_key*
-*secret*
-
 # ── Test zips / scratch ───────────────────────────────────────────────────────
 *.zip
 TestDemo*

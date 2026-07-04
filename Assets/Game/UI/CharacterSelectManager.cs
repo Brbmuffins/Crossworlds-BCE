@@ -96,16 +96,7 @@ public class CharacterSelectManager : MonoBehaviour
 
     // ── Constants ────────────────────────────────────────────────────────────
 
-    // Per-class preview model paths — index matches Classes[] order
-    static readonly string[] MODEL_PATHS =
-    {
-        "Assets/Game/Characters/Engineer/Model/Idle.fbx",   // 0 Warden
-        "Assets/Game/Characters/Engineer/Model/Idle.fbx",   // 1 Ironclad
-        "Assets/Game/Characters/Engineer/Model/Idle.fbx",   // 2 Shadowblade
-        "Assets/Game/Characters/Engineer/Model/Idle.fbx",   // 3 Cleric
-        "Assets/Game/Heroes/Brandalf/Brandalf.fbx",          // 4 Arcanist — Brandalf
-    };
-
+    const string MODEL_PATH = "Assets/Game/Characters/Engineer/Model/Idle.fbx";
     const int    PREV_LAYER = 31;       // "CharacterPreview" — no layer name needed
     const float  LEFT_W     = 280f;
     const float  RIGHT_W    = 430f;
@@ -218,7 +209,24 @@ public class CharacterSelectManager : MonoBehaviour
         _previewRoot = new GameObject("_PreviewRoot");
         _previewRoot.transform.position = Vector3.zero;
 
-        // Model is loaded/swapped per class in SwapModel() — nothing to do here
+#if UNITY_EDITOR
+        var asset = AssetDatabase.LoadAssetAtPath<GameObject>(MODEL_PATH);
+        if (asset != null)
+        {
+            var model = Instantiate(asset, _previewRoot.transform);
+            model.name = "Model";
+            model.transform.localPosition = Vector3.zero;
+            model.transform.localRotation = Quaternion.identity;
+            model.transform.localScale    = Vector3.one;
+            SetLayer(model, PREV_LAYER);
+        }
+        else
+        {
+            FallbackCapsule();
+        }
+#else
+        FallbackCapsule();
+#endif
     }
 
     void FallbackCapsule()
@@ -306,44 +314,6 @@ public class CharacterSelectManager : MonoBehaviour
             _enterLabel.text = "ENTER WORLD";
 
         SwapVFX(d);
-        SwapModel(idx);
-    }
-
-    // ── Model Swap ─────────────────────────────────────────────────────────────
-
-    int _loadedModelIdx = -1;
-
-    void SwapModel(int idx)
-    {
-        if (idx == _loadedModelIdx) return;
-        _loadedModelIdx = idx;
-
-        // Destroy old model child
-        if (_previewRoot != null)
-        {
-            var old = _previewRoot.transform.Find("Model");
-            if (old != null) Destroy(old.gameObject);
-        }
-
-#if UNITY_EDITOR
-        string path  = (idx >= 0 && idx < MODEL_PATHS.Length) ? MODEL_PATHS[idx] : MODEL_PATHS[0];
-        var    asset = AssetDatabase.LoadAssetAtPath<GameObject>(path);
-        if (asset != null && _previewRoot != null)
-        {
-            var model = Instantiate(asset, _previewRoot.transform);
-            model.name = "Model";
-            model.transform.localPosition = Vector3.zero;
-            model.transform.localRotation = Quaternion.identity;
-            model.transform.localScale    = Vector3.one;
-            SetLayer(model, PREV_LAYER);
-        }
-        else
-        {
-            FallbackCapsule();
-        }
-#else
-        FallbackCapsule();
-#endif
     }
 
     // ── Enter World ───────────────────────────────────────────────────────────
@@ -377,9 +347,9 @@ public class CharacterSelectManager : MonoBehaviour
 
     IEnumerator PostCharacterThenConnect(int classIndex)
     {
-        string jwt      = !string.IsNullOrEmpty(AuthManager.Token) ? AuthManager.Token : PlayerPrefs.GetString("jwt_token", "");
-        string serverIP = PlayerPrefs.GetString("game_server_ip", ServerConfig.DefaultServerIP);
-        string url      = $"{ServerConfig.AuthBaseUrl}/character";
+        string jwt      = PlayerPrefs.GetString("jwt_token", "");
+        string serverIP = PlayerPrefs.GetString("game_server_ip", "15.204.243.36");
+        string url      = $"http://{serverIP}:3000/character";
         string json = $"{{\"class_index\":{classIndex}}}";
 
         using var req = new UnityWebRequest(url, "POST");
@@ -398,16 +368,6 @@ public class CharacterSelectManager : MonoBehaviour
             if (_enterLabel != null) _enterLabel.text = "ENTER WORLD";
             yield break;
         }
-
-        // Pre-populate AuthManager so HeroMasteryManager / HeroCosmeticApplier
-        // don't have to poll for PlayerIdentity to get the character ID.
-        try
-        {
-            var resp = JsonUtility.FromJson<CharSelectResponse>(req.downloadHandler.text);
-            if (resp != null && resp.id > 0)
-                AuthManager.CharacterId = resp.id;
-        }
-        catch { }
 
         // Apply whichever server IP the player entered on the login screen
         NetworkManager.singleton.networkAddress = serverIP;
@@ -723,8 +683,4 @@ public class CharacterSelectManager : MonoBehaviour
         go.layer = layer;
         foreach (Transform c in go.transform) SetLayer(c.gameObject, layer);
     }
-
-    // ── Response shape for POST /character ───────────────────────────────────
-    [Serializable]
-    class CharSelectResponse { public int id; }
 }

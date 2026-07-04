@@ -1,5 +1,4 @@
-#if !UNITY_SERVER
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.UI;
 using Mirror;
 using TMPro;
@@ -41,7 +40,7 @@ public class WorldBossHealthBar : MonoBehaviour
     {
         if (_trackedBoss == null)
         {
-            _trackedBoss = FindFirstObjectByType<WorldBossController>();
+            _trackedBoss = FindObjectOfType<WorldBossController>();
             if (_trackedBoss != null &&
                 _trackedBoss.currentPhase != WorldBossController.BossPhase.Idle &&
                 _trackedBoss.currentPhase != WorldBossController.BossPhase.Dead)
@@ -181,4 +180,3 @@ public class WorldBossHealthBar : MonoBehaviour
         rect.offsetMin = rect.offsetMax = Vector2.zero;
     }
 }
-#endif

@@ -230,7 +230,7 @@ public class WorldBossController : NetworkBehaviour
     IEnumerator RunTetherWeb()
     {
         RpcAnnounce("⚠ TETHER WEB — Stay within 6 units of your partner!");
-        var players = FindObjectsByType<NetworkIdentity>(FindObjectsInactive.Exclude, FindObjectsSortMode.None); // filter to players only
+        var players = FindObjectsOfType<NetworkIdentity>(); // filter to players only
         var playerList = new List<NetworkIdentity>();
         foreach (var p in players)
         {
@@ -306,7 +306,7 @@ public class WorldBossController : NetworkBehaviour
             yield return new WaitForSeconds(1f);
             elapsed += 1f;
             // Damage players OUTSIDE the radius
-            var players = FindObjectsByType<Health>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+            var players = FindObjectsOfType<Health>();
             foreach (var p in players)
             {
                 if (!p.gameObject.CompareTag("Player")) continue;
@@ -412,7 +412,7 @@ public class WorldBossController : NetworkBehaviour
     void OnPhaseChanged(BossPhase oldPhase, BossPhase newPhase)
     {
         // Update boss health bar phase markers
-        var hpBar = FindFirstObjectByType<WorldBossHealthBar>();
+        var hpBar = FindObjectOfType<WorldBossHealthBar>();
         if (hpBar != null) hpBar.OnPhaseChanged(newPhase);
     }
 
@@ -422,7 +422,7 @@ public class WorldBossController : NetworkBehaviour
     {
         Debug.Log($"[BOSS] {message}");
         // Hook into your chat system to show boss announcements in-world
-        var chat = FindFirstObjectByType<RodChatManager>();
+        var chat = FindObjectOfType<RodChatManager>();
         if (chat != null) chat.ReceiveBossAnnouncement(message);
     }
 

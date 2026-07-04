@@ -11,7 +11,7 @@ using UnityEngine;
 //    • classPrefabs[3] = Cleric prefab
 //    • classPrefabs[4] = Arcanist prefab
 //    • Authenticator   = RodNetworkAuthenticator (same GameObject)
-//    • Network Address = ServerConfig.DefaultServerIP (set in Awake if needed)
+//    • Network Address = 15.204.243.36
 //
 //  offlineScene / onlineScene are set in Awake() — do NOT set in Inspector.
 //
@@ -32,13 +32,9 @@ public class RodNetworkManager : NetworkManager
     [Tooltip("0=Warden, 1=Ironclad, 2=Shadowblade, 3=Cleric, 4=Arcanist")]
     public GameObject[] classPrefabs;
 
-    [Header("Networked Prefabs")]
-    [Tooltip("Server-spawned non-player prefabs clients must know: Enemy_Grunt, Enemy_Ranged, Enemy_Elite, WorldItem, boss…")]
-    public GameObject[] networkedPrefabs;
-
     [Header("Auth Server")]
     [Tooltip("Must match RodNetworkAuthenticator.authServerURL")]
-    public string authServerURL = "http://" + ServerConfig.DefaultServerIP + ":3000";
+    public string authServerURL = "http://15.204.243.36:3000";
 
     // ── Self-configure ────────────────────────────────────────────────────────
 
@@ -50,8 +46,8 @@ public class RodNetworkManager : NetworkManager
         // Wire scenes in code so they're never mis-set in the Inspector.
         // Mirror uses offlineScene to auto-navigate back to login on disconnect —
         // this is what makes Logout and chat teardown work correctly.
-        offlineScene = SceneNames.LoginPath;
-        onlineScene  = SceneNames.HubPath;
+        offlineScene = "Assets/Game/Scenes/LoginScene.unity";
+        onlineScene  = "Assets/Game/Scenes/Hub.unity";
 
         if (transport == null)
             transport = GetComponent<Mirror.Transport>();
@@ -96,29 +92,17 @@ public class RodNetworkManager : NetworkManager
 
     public override void OnStartClient()
     {
-        AddToSpawnList(classPrefabs);
-        AddToSpawnList(networkedPrefabs);
+        if (classPrefabs != null)
+            foreach (var p in classPrefabs)
+                if (p != null && !spawnPrefabs.Contains(p))
+                    spawnPrefabs.Add(p);
 
-        base.OnStartClient(); // registers spawnPrefabs (now includes our prefabs)
+        base.OnStartClient(); // registers spawnPrefabs (now includes our class prefabs)
 
         // Direct registration as well — redundant but safe
-        RegisterDirect(classPrefabs);
-        RegisterDirect(networkedPrefabs);
-    }
-
-    void AddToSpawnList(GameObject[] prefabs)
-    {
-        if (prefabs == null) return;
-        foreach (var p in prefabs)
-            if (p != null && !spawnPrefabs.Contains(p))
-                spawnPrefabs.Add(p);
-    }
-
-    void RegisterDirect(GameObject[] prefabs)
-    {
-        if (prefabs == null) return;
-        foreach (var p in prefabs)
-            if (p != null) NetworkClient.RegisterPrefab(p);
+        if (classPrefabs != null)
+            foreach (var prefab in classPrefabs)
+                if (prefab != null) NetworkClient.RegisterPrefab(prefab);
     }
 
     // ── Client connected + authenticated ──────────────────────────────────────
@@ -216,7 +200,14 @@ public class RodNetworkManager : NetworkManager
         GameObject player = Instantiate(prefab, spawnPos, Quaternion.identity);
         player.name = username;
 
-        // Attach position saver BEFORE spawn (it's not a NetworkBehaviour — safe here)
+        var identity = player.GetComponent<PlayerIdentity>();
+        if (identity != null)
+        {
+            identity.playerName = username;
+            identity.classIndex = classIndex;
+        }
+
+        // Attach position saver — saves back to DB on disconnect or app quit
         if (auth != null && auth.characterId > 0)
         {
             var saver = player.AddComponent<RodPositionSaver>();
@@ -225,18 +216,7 @@ public class RodNetworkManager : NetworkManager
             saver.jwt           = auth.jwt;
         }
 
-        // Spawn first — SyncVars must be set AFTER AddPlayerForConnection so Mirror
-        // doesn't try to pack initial values into the spawn message (causes EndOfStreamException)
         NetworkServer.AddPlayerForConnection(conn, player);
-
-        // Now safe to set SyncVars — Mirror will sync them via the dirty system
-        var identity = player.GetComponent<PlayerIdentity>();
-        if (identity != null)
-        {
-            identity.playerName  = username;
-            identity.classIndex  = classIndex;
-            identity.characterId = auth?.characterId ?? -1;
-        }
         Debug.Log($"[RodNM] Spawned {username} as class {classIndex} at {spawnPos} " +
                   $"(fromDB={auth?.fromDB}, hasSavedPos={hasSavedPos})");
     }

@@ -142,9 +142,6 @@ public class WaveSpawner : NetworkBehaviour
 
         NetworkServer.Spawn(enemy);
         enemiesAlive++;
-
-        // ── CombatSessionTracker hook ─────────────────────────────────────
-        CombatSessionTracker.Local?.NotifyEnemySpawned(enemy);
     }
 
     [Server]
@@ -153,10 +150,7 @@ public class WaveSpawner : NetworkBehaviour
         enemiesAlive = Mathf.Max(0, enemiesAlive - 1);
 
         if (enemiesAlive == 0 && waveActive)
-        {
             Debug.Log($"[WAVE] Wave {currentWave}: all enemies dead");
-            CombatSessionTracker.Local?.NotifyWaveComplete();
-        }
     }
 
     // ─── Helpers ──────────────────────────────────────────────────────────────
@@ -183,7 +177,7 @@ public class WaveSpawner : NetworkBehaviour
     void OnWaveChanged(int oldVal, int newVal)
     {
         // Update ArenaHUD wave counter if it exists
-        // var hud = FindFirstObjectByType<ArenaHUD>();
+        // var hud = FindObjectOfType<ArenaHUD>();
         // if (hud != null) hud.UpdateWave(newVal);
     }
 
@@ -192,11 +186,20 @@ public class WaveSpawner : NetworkBehaviour
     void RpcAnnounce(string message)
     {
         Debug.Log($"[WAVE] {message}");
-        var chat = FindFirstObjectByType<RodChatManager>();
+        var chat = FindObjectOfType<RodChatManager>();
         if (chat != null) chat.ReceiveBossAnnouncement(message);
     }
 
     // ─── Gizmos ───────────────────────────────────────────────────────────────
     void OnDrawGizmosSelected()
     {
-        if (s
+        if (spawnPoints == null) return;
+        Gizmos.color = new Color(0f, 1f, 0.5f, 0.8f);
+        foreach (var sp in spawnPoints)
+        {
+            if (sp == null) continue;
+            Gizmos.DrawWireSphere(sp.position, 1f);
+            Gizmos.DrawLine(transform.position, sp.position);
+        }
+    }
+}

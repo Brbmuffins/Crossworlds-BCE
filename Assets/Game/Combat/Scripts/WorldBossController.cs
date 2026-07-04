@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Mirror;
@@ -68,8 +68,6 @@ public class WorldBossController : NetworkBehaviour
 
     // ── Loot ─────────────────────────────────────────────────────────────────────
     [Header("Drop Table")]
-    [Tooltip("WorldItem.prefab — must be registered in NetworkManager.spawnPrefabs")]
-    public GameObject worldItemPrefab;
     public List<string> guaranteedDropItemIds = new List<string> { "sword_iron", "plate_iron" };
     public List<string> rareDropItemIds       = new List<string> { "ring_copper", "material_copper_bar" };
     [Range(0f, 1f)] public float rareDropChance = 0.35f;
@@ -328,7 +326,7 @@ public class WorldBossController : NetworkBehaviour
         RpcAnnounce($"⚠ TETHER WEB — stay within {tetherWebLeashDistance}u of your partner or take {tetherWebSnapDamage} damage!");
 
         var players = new List<Health>();
-        foreach (var h in FindObjectsByType<Health>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+        foreach (var h in FindObjectsOfType<Health>())
             if (h.IsAlive && h.gameObject.CompareTag("Player")) players.Add(h);
 
         // Pair players; odd one out is safe
@@ -392,7 +390,7 @@ public class WorldBossController : NetworkBehaviour
         {
             yield return new WaitForSeconds(1f);
             elapsed += 1f;
-            foreach (var h in FindObjectsByType<Health>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+            foreach (var h in FindObjectsOfType<Health>())
             {
                 if (!h.IsAlive || !h.gameObject.CompareTag("Player")) continue;
                 if (Vector3.Distance(h.transform.position, transform.position) > voidDrainRadius)
@@ -436,7 +434,7 @@ public class WorldBossController : NetworkBehaviour
         isReflecting = false;
         isDraining   = false;
 
-        RpcAnnounce("BOSS DEFEATED — The Null Architect collapses!");
+        RpcAnnounce("💀 BOSS DEFEATED — The Null Architect collapses!");
         StartCoroutine(BossDeathSequence());
     }
 
@@ -454,10 +452,18 @@ public class WorldBossController : NetworkBehaviour
     void RollDrops()
     {
         foreach (var id in guaranteedDropItemIds)
-            SpawnLoot(id);
+        {
+            RpcSpawnLoot(id);
+            Debug.Log($"[LOOT] Boss dropped (guaranteed): {id}");
+        }
         foreach (var id in rareDropItemIds)
+        {
             if (Random.value <= rareDropChance)
-                SpawnLoot(id);
+            {
+                RpcSpawnLoot(id);
+                Debug.Log($"[LOOT] Boss dropped (rare): {id}");
+            }
+        }
     }
 
     // ─────────────────────────────────────────────────────────────────────────────
@@ -466,9 +472,7 @@ public class WorldBossController : NetworkBehaviour
 
     void OnPhaseSync(BossPhase _, BossPhase newPhase)
     {
-#if !UNITY_SERVER
-        FindAnyObjectByType<WorldBossHealthBar>()?.OnPhaseChanged(newPhase);
-#endif
+        FindObjectOfType<WorldBossHealthBar>()?.OnPhaseChanged(newPhase);
     }
 
     // ─────────────────────────────────────────────────────────────────────────────
@@ -501,21 +505,10 @@ public class WorldBossController : NetworkBehaviour
     [ClientRpc]
     void RpcPlayDeathVFX() { /* Wire death VFX here (Week 7) */ }
 
-    [Server]
-    void SpawnLoot(string itemId)
+    [ClientRpc]
+    void RpcSpawnLoot(string itemId)
     {
-        if (worldItemPrefab == null)
-        {
-            Debug.LogWarning($"[BOSS] worldItemPrefab not assigned — {itemId} lost");
-            return;
-        }
-        Vector3 pos = transform.position + Random.insideUnitSphere * 2f;
-        pos.y = transform.position.y + 0.5f;
-        var wi   = Instantiate(worldItemPrefab, pos, Quaternion.identity);
-        var comp = wi.GetComponent<WorldItem>();
-        if (comp != null) { comp.itemId = itemId; comp.quantity = 1; }
-        NetworkServer.Spawn(wi);
-        Debug.Log($"[BOSS] Dropped: {itemId}");
+        Debug.Log($"[BOSS] Loot dropped: {itemId}");
     }
 
     [ClientRpc]

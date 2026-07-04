@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.UI;
 using Mirror;
 
@@ -215,7 +215,7 @@ namespace Mirror.Examples.TopDownShooter
                 Debug.LogError("This component requires a NetworkManager component to be present in the scene. Please add!");
 #else
             // Deprecated in Unity 2023.1
-            if (!FindFirstObjectByType<NetworkManager>())
+            if (!FindObjectOfType<NetworkManager>())
                 Debug.LogError("This component requires a NetworkManager component to be present in the scene. Please add!");
 #endif
         }

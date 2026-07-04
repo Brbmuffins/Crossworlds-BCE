@@ -86,7 +86,7 @@ namespace GravityBox.PreviewProvider
 			{
 				//check if texture is runtime created texture 
 				//and not an asset (assets have instance ids > 0)
-				if (preview.Value.GetEntityId() < 0)
+				if (preview.Value.GetInstanceID() < 0)
 					Destroy(preview.Value);
 			}
 

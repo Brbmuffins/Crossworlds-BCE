@@ -46,29 +46,6 @@ public class EnemyController : NetworkBehaviour
     public DropTable  dropTable;
     public GameObject worldItemPrefab;
 
-    // ── Telegraph ────────────────────────────────────────────────────────────────
-    [Header("Attack Telegraph")]
-    [Tooltip("Seconds of red AoE preview shown before the attack lands. 0 = no telegraph.")]
-    public float telegraphDuration = 0.45f;
-
-    // ── VFX / Audio (client-side only) ───────────────────────────────────────────
-    [Header("VFX — assign from brbmuffins packs")]
-    [Tooltip("Impact spark on melee hit, e.g. Sparks red.prefab or MetalImpacts.prefab")]
-    public GameObject meleeImpactVFX;
-    [Tooltip("Explosion/smoke on death, e.g. SmallExplosion.prefab or Smoke puff.prefab")]
-    public GameObject deathVFX;
-
-    // ── XP / Gold reward (broadcast to all players on death) ─────────────────────
-    [Header("XP Reward")]
-    [Tooltip("XP awarded to every player in the scene on death")]
-    public int xpReward   = 20;
-    [Tooltip("Bonus gold awarded to every player (on top of drop table gold)")]
-    public int goldReward = 0;
-
-    [Header("API")]
-    [Tooltip("Matches enemy_templates.id in the DB (e.g. 'goblin_grunt'). When set, death calls /api/combat/hit + /api/combat/kill for server-authoritative XP/gold. Leave empty to use local xpReward/goldReward only.")]
-    public string enemyTemplateId = "";
-
     // ── Private ──────────────────────────────────────────────────────────────────
     private Health               _health;
     private NavMeshAgent         _agent;
@@ -77,9 +54,6 @@ public class EnemyController : NetworkBehaviour
     private Transform            _target;
     private Vector3              _spawnPos;
     private float                _attackTimer;
-#if !UNITY_SERVER
-    private Animator             _anim;     // cached on OnStartClient; null if no mesh yet
-#endif
 
     // ─────────────────────────────────────────────────────────────────────────────
 
@@ -98,36 +72,6 @@ public class EnemyController : NetworkBehaviour
         _health.onDeath.AddListener(OnDeath);
         StartCoroutine(BehaviorLoop());
     }
-
-#if !UNITY_SERVER
-    public override void OnStartClient()
-    {
-        base.OnStartClient();
-        // Cache animator from child mesh (assigned by EnemyBuilder or Inspector).
-        _anim = GetComponentInChildren<Animator>();
-        // Show floating damage numbers + play GetHit anim on every hit (client-local).
-        _health.onDamageTaken.AddListener(OnClientDamageTaken);
-        // Attach world-space health bar (self-builds its Canvas in Awake).
-        if (GetComponent<EnemyHealthBar>() == null)
-            gameObject.AddComponent<EnemyHealthBar>();
-        // Death VFX — procedural burst fallback when no prefab is assigned.
-        if (GetComponent<EnemyDeathVFX>() == null)
-            gameObject.AddComponent<EnemyDeathVFX>();
-        // Session stats: OnStartClient fires on every client for every spawned
-        // enemy (host or dedicated server), unlike WaveSpawner's server-only path.
-        CombatSessionTracker.Local?.NotifyEnemySpawned(gameObject);
-    }
-
-    void OnClientDamageTaken(float amount)
-    {
-        Vector3 spawnPos = transform.position + Vector3.up * 1.8f;
-        var type = amount >= damage * 1.3f
-            ? FloatingDamageText.DamageType.Critical
-            : FloatingDamageText.DamageType.Normal;
-        FloatingDamageText.Spawn(spawnPos, amount, type);
-        _anim?.SetTrigger("GetHit");
-    }
-#endif
 
     // ─────────────────────────────────────────────────────────────────────────────
     // Behavior loop
@@ -254,7 +198,7 @@ public class EnemyController : NetworkBehaviour
         if (_attackTimer > 0f) return;
         _attackTimer = attackInterval;
 
-        StartCoroutine(AttackSequence());
+        PerformAttack();
     }
 
     // ─────────────────────────────────────────────────────────────────────────────
@@ -298,48 +242,6 @@ public class EnemyController : NetworkBehaviour
     }
 
     // ─────────────────────────────────────────────────────────────────────────────
-    // Attack sequence with telegraph
-    // ─────────────────────────────────────────────────────────────────────────────
-
-    [Server]
-    IEnumerator AttackSequence()
-    {
-        if (telegraphDuration > 0f && _target != null)
-        {
-            // Show red indicator at attack landing zone before damage lands
-            Vector3 telegraphPos = isRanged
-                ? transform.position + transform.forward * preferredRange  // rough projectile landing
-                : _target.position;                                         // melee: target feet
-
-            float radius = isRanged ? 0.6f : attackRange;
-            RpcShowTelegraph(telegraphPos, radius, telegraphDuration);
-            yield return new WaitForSeconds(telegraphDuration);
-        }
-
-        PerformAttack();
-    }
-
-    [ClientRpc]
-    void RpcShowTelegraph(Vector3 center, float radius, float duration)
-    {
-#if !UNITY_SERVER
-        // Red flat cylinder on the ground — same technique as AbilityCaster indicators
-        var indicator = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-        indicator.transform.position = center + Vector3.up * 0.02f;
-        indicator.transform.localScale = new Vector3(radius * 2f, 0.02f, radius * 2f);
-
-        var col = indicator.GetComponent<Collider>();
-        if (col != null) Object.Destroy(col);
-
-        var mat = new Material(Shader.Find("Sprites/Default"));
-        mat.color = new Color(1f, 0.12f, 0.12f, 0.55f);
-        indicator.GetComponent<Renderer>().material = mat;
-
-        Object.Destroy(indicator, duration);
-#endif
-    }
-
-    // ─────────────────────────────────────────────────────────────────────────────
     // Death
     // ─────────────────────────────────────────────────────────────────────────────
 
@@ -377,10 +279,6 @@ public class EnemyController : NetworkBehaviour
                 Debug.Log($"[LOOT] {name} dropped {gold} gold");
             }
         }
-
-        // Award XP and gold to all clients
-        if (xpReward > 0 || goldReward > 0)
-            RpcAwardProgress(xpReward, goldReward);
 
         yield return new WaitForSeconds(2.6f);
         NetworkServer.Destroy(gameObject);
@@ -421,137 +319,17 @@ public class EnemyController : NetworkBehaviour
 
     void OnStateChanged(EnemyState _, EnemyState newState)
     {
-#if !UNITY_SERVER
-        if (_anim == null) _anim = GetComponentInChildren<Animator>(); // late-bind if mesh added after spawn
-        if (_anim == null) return;
-
-        bool isMoving = newState == EnemyState.Chase || newState == EnemyState.Attack;
-        _anim.SetFloat("Speed", isMoving ? 1f : 0f);
-
-        if (newState == EnemyState.Dead)
-            _anim.SetTrigger("Death");
-#endif
+        // Hook animator here when animation rig is ready (Week 7)
+        // GetComponent<Animator>()?.SetInteger("state", (int)newState);
     }
 
     // ─────────────────────────────────────────────────────────────────────────────
     // RPCs (Week 7: wire anim + SFX)
     // ─────────────────────────────────────────────────────────────────────────────
 
-    [ClientRpc]
-    void RpcMeleeSwing()
-    {
-#if !UNITY_SERVER
-        _anim?.SetTrigger("Attack");
-        CombatAudio.Instance?.PlayMeleeHit();
-
-        if (meleeImpactVFX != null)
-        {
-            Vector3 hitPos = transform.position + Vector3.up * 1f;
-            var fx = Instantiate(meleeImpactVFX, hitPos, Quaternion.identity);
-            Destroy(fx, 2f);
-        }
-#endif
-    }
-
-    [ClientRpc]
-    void RpcRangedShot()
-    {
-#if !UNITY_SERVER
-        _anim?.SetTrigger("Attack");
-        CombatAudio.Instance?.PlayRangedHit();
-#endif
-    }
-
-    [ClientRpc]
-    void RpcPlayDeathEffect()
-    {
-#if !UNITY_SERVER
-        _anim?.SetTrigger("Death");
-        CombatAudio.Instance?.PlayDeath();
-
-        if (deathVFX != null)
-        {
-            Vector3 pos = transform.position + Vector3.up * 0.5f;
-            var fx = Instantiate(deathVFX, pos, Quaternion.identity);
-            Destroy(fx, 3f);
-        }
-#endif
-    }
-
-    [ClientRpc]
-    void RpcAwardProgress(int xp, int gold)
-    {
-#if !UNITY_SERVER
-        if (!string.IsNullOrEmpty(enemyTemplateId))
-        {
-            // Server-authoritative path: hit + kill API awards XP/gold and logs loot.
-            // Fallback to local award if the API fails (network error, auth missing).
-            StartCoroutine(PostCombatKill(enemyTemplateId, xp, gold));
-        }
-        else
-        {
-            if (xp   > 0) PlayerProgressManager.Local?.AwardXp(xp);
-            if (gold > 0) PlayerProgressManager.Local?.AwardGold(gold);
-        }
-#endif
-    }
-
-#if !UNITY_SERVER
-    IEnumerator PostCombatKill(string templateId, int fallbackXp, int fallbackGold)
-    {
-        int charId    = AuthManager.CharacterId;
-        string jwt    = AuthManager.Token;
-        if (charId <= 0 || string.IsNullOrEmpty(jwt))
-        {
-            // No auth — fall back to local award so XP always registers
-            if (fallbackXp   > 0) PlayerProgressManager.Local?.AwardXp(fallbackXp);
-            if (fallbackGold > 0) PlayerProgressManager.Local?.AwardGold(fallbackGold);
-            yield break;
-        }
-
-        byte[] HitBody(string tid, float dmg)
-        {
-            string j = $"{{\"characterId\":{charId},\"enemyTemplateId\":\"{tid}\",\"damageDealt\":{dmg}}}";
-            return System.Text.Encoding.UTF8.GetBytes(j);
-        }
-
-        // 1. POST hit (satisfies the server's 30s hit-gate before kill)
-        using (var hitReq = new UnityWebRequest($"{ServerConfig.AuthBaseUrl}/api/combat/hit", "POST"))
-        {
-            hitReq.uploadHandler   = new UploadHandlerRaw(HitBody(templateId, damage));
-            hitReq.downloadHandler = new DownloadHandlerBuffer();
-            hitReq.SetRequestHeader("Content-Type", "application/json");
-            hitReq.SetRequestHeader("Authorization", $"Bearer {jwt}");
-            hitReq.timeout = 5;
-            yield return hitReq.SendWebRequest();
-            // hit failure is non-fatal — kill will fail the gate below and we fallback
-        }
-
-        // 2. POST kill — server awards XP + gold + rolls loot into DB
-        string killJson = $"{{\"characterId\":{charId},\"enemyTemplateId\":\"{templateId}\"}}";
-        using (var killReq = new UnityWebRequest($"{ServerConfig.AuthBaseUrl}/api/combat/kill", "POST"))
-        {
-            killReq.uploadHandler   = new UploadHandlerRaw(System.Text.Encoding.UTF8.GetBytes(killJson));
-            killReq.downloadHandler = new DownloadHandlerBuffer();
-            killReq.SetRequestHeader("Content-Type", "application/json");
-            killReq.SetRequestHeader("Authorization", $"Bearer {jwt}");
-            killReq.timeout = 8;
-            yield return killReq.SendWebRequest();
-
-            if (killReq.result == UnityWebRequest.Result.Success)
-            {
-                // Refresh progress from server so XP bar + gold reflect DB truth
-                PlayerProgressManager.Local?.Refresh();
-            }
-            else
-            {
-                Debug.LogWarning($"[COMBAT] Kill API failed ({killReq.responseCode}): {killReq.error} — awarding locally");
-                if (fallbackXp   > 0) PlayerProgressManager.Local?.AwardXp(fallbackXp);
-                if (fallbackGold > 0) PlayerProgressManager.Local?.AwardGold(fallbackGold);
-            }
-        }
-    }
-#endif
+    [ClientRpc] void RpcMeleeSwing()    { /* swing anim + impact SFX */ }
+    [ClientRpc] void RpcRangedShot()    { /* ranged anim + projectile SFX */ }
+    [ClientRpc] void RpcPlayDeathEffect() { /* death VFX + SFX */ }
 
     // ─────────────────────────────────────────────────────────────────────────────
     // Gizmos

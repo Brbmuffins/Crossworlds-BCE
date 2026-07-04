@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using Mirror;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -31,7 +31,7 @@ using TMPro;
 public class LoginManager : MonoBehaviour
 {
     [Header("Server")]
-    public string authServerURL  = "http://" + ServerConfig.DefaultServerIP + ":3000";
+    public string authServerURL  = "http://15.204.243.36:3000";
     public string gameScene      = "GameWorld"; // fallback only — Mirror loads this via NetworkManager.Online Scene
 
     [Header("Optional — wire if you want button-click VFX")]
@@ -79,7 +79,7 @@ public class LoginManager : MonoBehaviour
         // Set defaults after the canvas is fully initialized.
         // Awake builds the fields; Start is the earliest safe time to assign text values.
         if (_serverInput != null)
-            _serverInput.text = PlayerPrefs.GetString("game_server_ip", ServerConfig.DefaultServerIP);
+            _serverInput.text = PlayerPrefs.GetString("game_server_ip", "15.204.243.36");
 
         // Auto-focus username so the player can start typing immediately
         if (_userInput != null)
@@ -177,7 +177,7 @@ public class LoginManager : MonoBehaviour
         titleGO.transform.SetParent(root, false);
         _titleText = titleGO.GetComponent<TextMeshProUGUI>();
         _titleText.text       = "CROSSWORLDS";
-        _titleText.fontSize   = 68f;
+        _titleText.fontSize   = 72f;
         _titleText.fontStyle  = FontStyles.Bold;
         _titleText.color      = AccentCyan;
         _titleText.alignment  = TextAlignmentOptions.Center;
@@ -187,16 +187,15 @@ public class LoginManager : MonoBehaviour
         rt.anchorMax = new Vector2(0.9f, 0.96f);
         rt.offsetMin = rt.offsetMax = Vector2.zero;
 
-        // Hero tagline — matches playcrossworlds.com branding
+        // "ONLINE" subtitle
         GameObject subGO = new GameObject("Subtitle", typeof(RectTransform), typeof(TextMeshProUGUI));
         subGO.transform.SetParent(root, false);
         var sub = subGO.GetComponent<TextMeshProUGUI>();
-        sub.text      = "FORGE YOUR LEGEND.  DEFY THE VOID.";
-        sub.fontSize  = 16f;
-        sub.color     = new Color(TextDim.r, TextDim.g, TextDim.b, 0.80f);
+        sub.text      = "B C E";
+        sub.fontSize  = 22f;
+        sub.color     = new Color(TextDim.r, TextDim.g, TextDim.b, 0.85f);
         sub.alignment = TextAlignmentOptions.Center;
-        sub.characterSpacing = 5f;
-        sub.fontStyle = FontStyles.Italic;
+        sub.characterSpacing = 14f;
         var subRt = subGO.GetComponent<RectTransform>();
         subRt.anchorMin = new Vector2(0.1f, 0.72f);
         subRt.anchorMax = new Vector2(0.9f, 0.80f);
@@ -237,11 +236,11 @@ public class LoginManager : MonoBehaviour
             new Vector2(0f, 0f), new Vector2(0.004f, 1f));
 
         // Panel header label
-        var header = MakeLabel(panelRt, "Header", "ENTER THE VOID", 13f, FontStyles.Bold, TextDim);
+        var header = MakeLabel(panelRt, "Header", "AUTHENTICATION", 13f, FontStyles.Bold, TextDim);
         header.rectTransform.anchorMin = new Vector2(0.05f, 0.84f);
         header.rectTransform.anchorMax = new Vector2(0.95f, 0.93f);
         header.rectTransform.offsetMin = header.rectTransform.offsetMax = Vector2.zero;
-        header.alignment = TextAlignmentOptions.Left;
+        header.alignment = TextAlignmentOptions.MidlineLeft;
         header.characterSpacing = 6f;
 
         // Thin separator
@@ -273,7 +272,7 @@ public class LoginManager : MonoBehaviour
         _statusText.textWrappingMode = TextWrappingModes.Normal;
 
         // Login button
-        BuildButton(panelRt, "ENTER THE WORLD", BtnLogin,
+        BuildButton(panelRt, "ENTER WORLD", BtnLogin,
             new Vector2(0.05f, 0.02f), new Vector2(0.95f, 0.155f), OnLoginClicked);
 
         // Register link
@@ -311,7 +310,7 @@ public class LoginManager : MonoBehaviour
         header.rectTransform.anchorMin = new Vector2(0.05f, 0.87f);
         header.rectTransform.anchorMax = new Vector2(0.95f, 0.95f);
         header.rectTransform.offsetMin = header.rectTransform.offsetMax = Vector2.zero;
-        header.alignment = TextAlignmentOptions.Left;
+        header.alignment = TextAlignmentOptions.MidlineLeft;
         header.characterSpacing = 6f;
 
         MakeImage(panelRt, "Sep", new Color(AccentCyan.r, AccentCyan.g, AccentCyan.b, 0.18f),
@@ -355,24 +354,22 @@ public class LoginManager : MonoBehaviour
         dot.rectTransform.anchorMin = new Vector2(0.04f, 0f);
         dot.rectTransform.anchorMax = new Vector2(0.15f, 1f);
         dot.rectTransform.offsetMin = dot.rectTransform.offsetMax = Vector2.zero;
-        dot.alignment = TextAlignmentOptions.Left;
+        dot.alignment = TextAlignmentOptions.MidlineLeft;
 
         var status = MakeLabel(pill.GetComponent<RectTransform>(), "StatusLabel", "SERVER ONLINE", 10f, FontStyles.Bold,
             new Color(0.4f, 0.9f, 0.5f, 1f));
         status.rectTransform.anchorMin = new Vector2(0.15f, 0f);
         status.rectTransform.anchorMax = new Vector2(0.96f, 1f);
         status.rectTransform.offsetMin = status.rectTransform.offsetMax = Vector2.zero;
-        status.alignment = TextAlignmentOptions.Left;
+        status.alignment = TextAlignmentOptions.MidlineLeft;
         status.characterSpacing = 3f;
 
         // Version label
-        // Load site icon from playcrossworlds.com/icon.png — async, fires in background
-        StartCoroutine(LoadSiteIcon(root));
-        var ver = MakeLabel(root, "Version", "BCE — Early Access · Invite Required", 10f, FontStyles.Normal, TextDim);
+        var ver = MakeLabel(root, "Version", "v0.1.0-alpha", 10f, FontStyles.Normal, TextDim);
         ver.rectTransform.anchorMin = new Vector2(0.78f, 0.02f);
         ver.rectTransform.anchorMax = new Vector2(0.98f, 0.06f);
         ver.rectTransform.offsetMin = ver.rectTransform.offsetMax = Vector2.zero;
-        ver.alignment = TextAlignmentOptions.Right;
+        ver.alignment = TextAlignmentOptions.MidlineRight;
     }
 
     // ── Input fields ───────────────────────────────────────────────────────
@@ -556,8 +553,8 @@ public class LoginManager : MonoBehaviour
         }
 
         // Save the chosen server IP so CharacterSelectManager can apply it before StartClient()
-        string ip = _serverInput != null ? _serverInput.text.Trim() : ServerConfig.DefaultServerIP;
-        if (string.IsNullOrEmpty(ip)) ip = ServerConfig.DefaultServerIP;
+        string ip = _serverInput != null ? _serverInput.text.Trim() : "15.204.243.36";
+        if (string.IsNullOrEmpty(ip)) ip = "15.204.243.36";
         PlayerPrefs.SetString("game_server_ip", ip);
         PlayerPrefs.Save();
 
@@ -576,7 +573,7 @@ public class LoginManager : MonoBehaviour
         PlayerPrefs.Save();
 
         SetStatus(_statusText, "Opening character select...", true);
-        SceneManager.LoadScene(SceneNames.CharacterSelect);
+        SceneManager.LoadScene("CharacterSelect");
     }
 #endif
 
@@ -643,7 +640,6 @@ public class LoginManager : MonoBehaviour
         PlayerPrefs.SetString("jwt_token", res.token);
         PlayerPrefs.SetString("username",  username);
         PlayerPrefs.Save();
-        AuthManager.Token = res.token;
 
         SetStatus(_statusText, "Authenticated. Loading character select...", true);
         if (sceneVFX != null) sceneVFX.OnLoginSuccess();
@@ -651,7 +647,7 @@ public class LoginManager : MonoBehaviour
 
         // Route through CharacterSelect so the player can pick their class.
         // CharacterSelectManager will call NetworkManager.StartClient() after selection.
-        SceneManager.LoadScene(SceneNames.CharacterSelect);
+        SceneManager.LoadScene("CharacterSelect");
     }
 
     IEnumerator RegisterRoutine(string username, string email, string password)
@@ -758,28 +754,6 @@ public class LoginManager : MonoBehaviour
         rt.anchorMax = Vector2.one;
         rt.offsetMin = rt.offsetMax = Vector2.zero;
         return img;
-    }
-
-    // ── Site icon — loads playcrossworlds.com/icon.png into the title area ──────
-
-    IEnumerator LoadSiteIcon(RectTransform root)
-    {
-        using var req = UnityWebRequestTexture.GetTexture("https://playcrossworlds.com/icon.png");
-        yield return req.SendWebRequest();
-        if (req.result != UnityWebRequest.Result.Success) yield break;
-
-        var tex = ((DownloadHandlerTexture)req.downloadHandler).texture;
-        if (tex == null) yield break;
-
-        // Place icon left of the title — small square at top-left of panel area
-        var iconGO = new GameObject("SiteIcon", typeof(RectTransform), typeof(Image));
-        iconGO.transform.SetParent(root, false);
-        var img = iconGO.GetComponent<Image>();
-        img.sprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f));
-        var rt = iconGO.GetComponent<RectTransform>();
-        rt.anchorMin = new Vector2(0.43f, 0.84f);
-        rt.anchorMax = new Vector2(0.47f, 0.90f);
-        rt.offsetMin = rt.offsetMax = Vector2.zero;
     }
 
     [System.Serializable] class TokenResponse { public string token; }

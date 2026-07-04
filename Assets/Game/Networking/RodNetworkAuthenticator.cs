@@ -22,7 +22,7 @@ using UnityEngine.Networking;
 public class RodNetworkAuthenticator : NetworkAuthenticator
 {
     [Header("Auth Server")]
-    public string authServerURL = "http://" + ServerConfig.DefaultServerIP + ":3000";
+    public string authServerURL = "http://15.204.243.36:3000";
 
     [Header("Dev Mode")]
     [Tooltip("Bypasses JWT + DB lookup. Editor-only local testing.")]
@@ -177,7 +177,7 @@ public class RodNetworkAuthenticator : NetworkAuthenticator
         // Only JWT and username are needed for identity.
         NetworkClient.Send(new AuthRequestMessage
         {
-            jwt      = devMode ? "dev" : (!string.IsNullOrEmpty(AuthManager.Token) ? AuthManager.Token : PlayerPrefs.GetString("jwt_token", "")),
+            jwt      = devMode ? "dev" : PlayerPrefs.GetString("jwt_token", ""),
             username = PlayerPrefs.GetString("username", "DevPlayer"),
         });
     }

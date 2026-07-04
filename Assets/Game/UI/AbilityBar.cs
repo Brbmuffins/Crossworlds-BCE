@@ -1,7 +1,6 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.InputSystem;
-using UnityEngine.EventSystems;
 using TMPro;
 
 // Ability bar — bottom HUD strip (4 equipped slots) + Tab spellbook overlay (all 8 spells).
@@ -210,12 +209,14 @@ public class AbilityBar : MonoBehaviour
         spellbookCards  = new Image[count];
         spellbookLabels = new TextMeshProUGUI[count];
 
-        // 4-column grid, taller cards to fit stat line
-        int   cols   = 4;
-        float cardW  = 130f;
-        float cardH  = 96f;
-        float gapX   = 10f;
-        float gapY   = 10f;
+        RectTransform panelRect = spellbookPanel.GetComponent<RectTransform>();
+
+        // Simple grid: 4 columns
+        int cols     = 4;
+        float cardW  = 110f;
+        float cardH  = 80f;
+        float gapX   = 12f;
+        float gapY   = 12f;
         float startX = -(cols * (cardW + gapX) - gapX) / 2f + cardW / 2f;
         float startY = 60f;
 
@@ -224,112 +225,63 @@ public class AbilityBar : MonoBehaviour
             int capturedIndex = i;
             AbilityDef ab = caster.spellbook[i];
 
-            // ── Card root ────────────────────────────────────────────────
-            var cardGO = new GameObject("SpellCard_" + i, typeof(RectTransform), typeof(Image), typeof(Button));
+            // Card background
+            GameObject cardGO = new GameObject("SpellCard_" + i, typeof(RectTransform), typeof(Image), typeof(Button));
             cardGO.transform.SetParent(spellbookPanel.transform, false);
 
-            var rt = cardGO.GetComponent<RectTransform>();
+            RectTransform rt = cardGO.GetComponent<RectTransform>();
+            int col = i % cols;
+            int row = i / cols;
             rt.sizeDelta        = new Vector2(cardW, cardH);
-            rt.anchoredPosition = new Vector2(startX + (i % cols) * (cardW + gapX),
-                                              startY - (i / cols) * (cardH + gapY));
+            rt.anchoredPosition = new Vector2(startX + col * (cardW + gapX), startY - row * (cardH + gapY));
 
             Image bg = cardGO.GetComponent<Image>();
             bg.color = ColorNormal;
             spellbookCards[i] = bg;
 
-            // ── Category color strip (left edge) ─────────────────────────
-            var strip = new GameObject("Strip", typeof(RectTransform), typeof(Image));
-            strip.transform.SetParent(cardGO.transform, false);
-            var srt = strip.GetComponent<RectTransform>();
-            srt.anchorMin = new Vector2(0, 0); srt.anchorMax = new Vector2(0, 1);
-            srt.sizeDelta = new Vector2(5f, 0); srt.anchoredPosition = Vector2.zero;
-            strip.GetComponent<Image>().color = CategoryColor(ab.category);
+            // Category color bar (left strip)
+            GameObject stripGO = new GameObject("Strip", typeof(RectTransform), typeof(Image));
+            stripGO.transform.SetParent(cardGO.transform, false);
+            RectTransform stripRt = stripGO.GetComponent<RectTransform>();
+            stripRt.anchorMin   = new Vector2(0, 0);
+            stripRt.anchorMax   = new Vector2(0, 1);
+            stripRt.sizeDelta   = new Vector2(5f, 0);
+            stripRt.anchoredPosition = Vector2.zero;
+            stripGO.GetComponent<Image>().color = CategoryColor(ab.category);
 
-            // ── Icon (top-left square) ────────────────────────────────────
-            if (ab.icon != null)
-            {
-                var iconGO = new GameObject("Icon", typeof(RectTransform), typeof(Image));
-                iconGO.transform.SetParent(cardGO.transform, false);
-                var irt = iconGO.GetComponent<RectTransform>();
-                irt.anchorMin = new Vector2(0.06f, 0.60f);
-                irt.anchorMax = new Vector2(0.30f, 0.98f);
-                irt.offsetMin = irt.offsetMax = Vector2.zero;
-                iconGO.GetComponent<Image>().sprite = ab.icon;
-            }
+            // Ability name label
+            GameObject labelGO = new GameObject("Label", typeof(RectTransform), typeof(TextMeshProUGUI));
+            labelGO.transform.SetParent(cardGO.transform, false);
+            RectTransform labelRt = labelGO.GetComponent<RectTransform>();
+            labelRt.anchorMin        = new Vector2(0.08f, 0.5f);
+            labelRt.anchorMax        = new Vector2(1f, 1f);
+            labelRt.offsetMin        = Vector2.zero;
+            labelRt.offsetMax        = Vector2.zero;
+            TextMeshProUGUI tmp      = labelGO.GetComponent<TextMeshProUGUI>();
+            tmp.text                 = ab.abilityName;
+            tmp.fontSize             = 11f;
+            tmp.color                = Color.white;
+            tmp.alignment            = TextAlignmentOptions.MidlineLeft;
+            spellbookLabels[i]       = tmp;
 
-            // ── Ability name ──────────────────────────────────────────────
-            float nameLeft = ab.icon != null ? 0.33f : 0.08f;
-            var nameLbl = MakeLabel("Name", cardGO.transform,
-                new Vector2(nameLeft, 0.60f), new Vector2(1f, 1f), 10.5f, FontStyles.Bold, Color.white);
-            nameLbl.text      = ab.abilityName;
-            spellbookLabels[i] = nameLbl;
+            // Category sub-label
+            GameObject subGO = new GameObject("Sub", typeof(RectTransform), typeof(TextMeshProUGUI));
+            subGO.transform.SetParent(cardGO.transform, false);
+            RectTransform subRt    = subGO.GetComponent<RectTransform>();
+            subRt.anchorMin        = new Vector2(0.08f, 0f);
+            subRt.anchorMax        = new Vector2(1f, 0.5f);
+            subRt.offsetMin        = Vector2.zero;
+            subRt.offsetMax        = Vector2.zero;
+            TextMeshProUGUI subTmp = subGO.GetComponent<TextMeshProUGUI>();
+            subTmp.text            = ab.category.ToString();
+            subTmp.fontSize        = 9f;
+            subTmp.color           = new Color(1f, 1f, 1f, 0.5f);
+            subTmp.alignment       = TextAlignmentOptions.MidlineLeft;
 
-            // ── Type badge (shape label) ──────────────────────────────────
-            var typeLbl = MakeLabel("Type", cardGO.transform,
-                new Vector2(0.08f, 0.36f), new Vector2(1f, 0.60f), 8.5f, FontStyles.Normal,
-                CategoryColor(ab.category));
-            typeLbl.text = ShapeLabel(ab.shape) + " · " + ab.category;
-
-            // ── Stats line (damage + CD) ──────────────────────────────────
-            string dmg = ab.damage > 0f
-                ? (ab.maxChargeDamage > ab.damage
-                    ? $"{ab.damage:0}–{ab.maxChargeDamage:0} dmg  "
-                    : $"{ab.damage:0} dmg  ")
-                : "";
-            string cd = $"{ab.cooldown:0}s CD";
-            var statsLbl = MakeLabel("Stats", cardGO.transform,
-                new Vector2(0.08f, 0.08f), new Vector2(1f, 0.36f), 8f, FontStyles.Normal,
-                new Color(0.75f, 0.75f, 0.80f));
-            statsLbl.text = dmg + cd;
-
-            // ── Click to select for equip ─────────────────────────────────
-            var btn = cardGO.GetComponent<Button>();
+            // Click handler
+            Button btn = cardGO.GetComponent<Button>();
             btn.onClick.AddListener(() => OnSpellCardClicked(capturedIndex));
-
-            // ── Hover → tooltip ───────────────────────────────────────────
-#if !UNITY_SERVER
-            var trigger = cardGO.AddComponent<EventTrigger>();
-            var enterEntry = new EventTrigger.Entry { eventID = EventTriggerType.PointerEnter };
-            enterEntry.callback.AddListener(data =>
-            {
-                var pos = ((PointerEventData)data).position;
-                AbilityTooltipUI.Instance?.Show(caster.spellbook[capturedIndex], pos);
-            });
-            trigger.triggers.Add(enterEntry);
-
-            var exitEntry = new EventTrigger.Entry { eventID = EventTriggerType.PointerExit };
-            exitEntry.callback.AddListener(_ => AbilityTooltipUI.Instance?.Hide());
-            trigger.triggers.Add(exitEntry);
-#endif
         }
-    }
-
-    static string ShapeLabel(AbilityShape shape)
-    {
-        switch (shape)
-        {
-            case AbilityShape.SkillShot:  return "Skill Shot";
-            case AbilityShape.Cone:       return "Cone";
-            case AbilityShape.Rectangle:  return "Line";
-            default:                      return "AoE";
-        }
-    }
-
-    static TextMeshProUGUI MakeLabel(string name, Transform parent,
-        Vector2 anchMin, Vector2 anchMax, float size, FontStyles style, Color col)
-    {
-        var go = new GameObject(name, typeof(RectTransform), typeof(TextMeshProUGUI));
-        go.transform.SetParent(parent, false);
-        var rt = go.GetComponent<RectTransform>();
-        rt.anchorMin = anchMin; rt.anchorMax = anchMax;
-        rt.offsetMin = new Vector2(4f, 0f); rt.offsetMax = new Vector2(-4f, 0f);
-        var t = go.GetComponent<TextMeshProUGUI>();
-        t.fontSize  = size;
-        t.fontStyle = style;
-        t.color     = col;
-        t.alignment = TextAlignmentOptions.TopLeft;
-        t.enableWordWrapping = false;
-        return t;
     }
 
     void OnSpellCardClicked(int spellbookIndex)

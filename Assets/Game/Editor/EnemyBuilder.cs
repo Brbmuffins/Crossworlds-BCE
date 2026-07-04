@@ -28,11 +28,6 @@ public static class EnemyBuilder
     const string PrefabDir = "Assets/Game/Prefabs";
     const string DropDir   = "Assets/Game/Data/DropTables";
 
-    // Generated model directories (populated by Tripo character-pipeline)
-    const string GruntModelDir  = "Assets/Game/Characters/Enemies/Grunt";
-    const string RangedModelDir = "Assets/Game/Characters/Enemies/Ranged";
-    const string EliteModelDir  = "Assets/Game/Characters/Enemies/Elite";
-
     // ── 4a Grunt ─────────────────────────────────────────────────────────────
     [MenuItem("BCE/Setup/4a ▶ Create Grunt Enemy Prefab")]
     public static void CreateGrunt()
@@ -44,17 +39,11 @@ public static class EnemyBuilder
             ("material_copper_bar",   1f, 1, 1),
         });
         var go = MakeEnemyBase("Enemy_Grunt", 60f, false, 4.5f, 1.5f, 1.5f, 12f, 8f, 1.2f);
-        bool hasModel = AttachModelIfExists(go, GruntModelDir);
-        if (!hasModel) go.GetComponent<Renderer>().sharedMaterial.color = new Color(0.55f, 0.25f, 0.1f);
-        var gruntCtrl = go.GetComponent<EnemyController>();
-        gruntCtrl.dropTable        = dt;
-        gruntCtrl.enemyTemplateId  = "goblin_grunt";
-        gruntCtrl.worldItemPrefab  = TryLoadWorldItem();
+        go.GetComponent<Renderer>().sharedMaterial.color = new Color(0.55f, 0.25f, 0.1f);
+        go.GetComponent<EnemyController>().dropTable = dt;
         SavePrefab(go, $"{PrefabDir}/Enemy_Grunt.prefab");
         Object.DestroyImmediate(go);
-        string wiNote = gruntCtrl.worldItemPrefab != null ? "" : "\nNEXT: Assign WorldItem.prefab to EnemyController.worldItemPrefab (run 4d first)";
-        string modelNote = hasModel ? " (Tripo mesh attached)" : " (placeholder capsule — run BCE/Setup/4a again after Tripo FBX lands)";
-        Debug.Log($"[BCE] Enemy_Grunt.prefab{modelNote} → Assets/Game/Prefabs/{wiNote}");
+        Debug.Log("[BCE] Enemy_Grunt.prefab → Assets/Game/Prefabs/\nNEXT: WaveSpawner.enemyPrefabs[0], assign WorldItem prefab");
     }
 
     // ── 4b Ranged ─────────────────────────────────────────────────────────────
@@ -67,17 +56,14 @@ public static class EnemyBuilder
             ("material_copper_shard", 3.5f, 1, 2),
         });
         var go = MakeEnemyBase("Enemy_Ranged", 40f, true, 3.5f, 5f, 2f, 8f, 10f, 4f);
-        bool hasModel = AttachModelIfExists(go, RangedModelDir);
-        if (!hasModel) go.GetComponent<Renderer>().sharedMaterial.color = new Color(0.2f, 0.4f, 0.6f);
+        go.GetComponent<Renderer>().sharedMaterial.color = new Color(0.2f, 0.4f, 0.6f);
         var ctrl = go.GetComponent<EnemyController>();
         ctrl.dropTable        = dt;
         ctrl.preferredRange   = 5f;
         ctrl.tooCloseDistance = 3f;
-        ctrl.enemyTemplateId  = "skeleton_ranged";
-        ctrl.worldItemPrefab  = TryLoadWorldItem();
         SavePrefab(go, $"{PrefabDir}/Enemy_Ranged.prefab");
         Object.DestroyImmediate(go);
-        Debug.Log($"[BCE] Enemy_Ranged.prefab{(hasModel ? " (Tripo mesh)" : " (placeholder)")} → Assets/Game/Prefabs/");
+        Debug.Log("[BCE] Enemy_Ranged.prefab → Assets/Game/Prefabs/\nNEXT: WaveSpawner.enemyPrefabs[1], assign EnemyProjectile prefab");
     }
 
     // ── 4c Elite ──────────────────────────────────────────────────────────────
@@ -94,8 +80,7 @@ public static class EnemyBuilder
         });
         var go = MakeEnemyBase("Enemy_Elite", 300f, false, 3.8f, 2f, 2f, 28f, 12f, 1.8f);
         go.transform.localScale = new Vector3(1.5f, 1.5f, 1.5f);
-        bool hasModel = AttachModelIfExists(go, EliteModelDir);
-        if (!hasModel) go.GetComponent<Renderer>().sharedMaterial.color = new Color(0.55f, 0.05f, 0.1f);
+        go.GetComponent<Renderer>().sharedMaterial.color = new Color(0.55f, 0.05f, 0.1f);
 
         var lightObj = new GameObject("EliteGlow");
         lightObj.transform.SetParent(go.transform, false);
@@ -103,13 +88,10 @@ public static class EnemyBuilder
         var l = lightObj.AddComponent<Light>();
         l.type = LightType.Point; l.color = new Color(1f, 0.2f, 0.1f); l.intensity = 2.5f; l.range = 10f;
 
-        var eliteCtrl = go.GetComponent<EnemyController>();
-        eliteCtrl.dropTable       = dt;
-        eliteCtrl.enemyTemplateId = "troll_elite";
-        eliteCtrl.worldItemPrefab = TryLoadWorldItem();
+        go.GetComponent<EnemyController>().dropTable = dt;
         SavePrefab(go, $"{PrefabDir}/Enemy_Elite.prefab");
         Object.DestroyImmediate(go);
-        Debug.Log($"[BCE] Enemy_Elite.prefab{(hasModel ? " (Tripo mesh)" : " (placeholder)")} → Assets/Game/Prefabs/");
+        Debug.Log("[BCE] Enemy_Elite.prefab → Assets/Game/Prefabs/\nNEXT: WaveSpawner.elitePrefab, add to NetworkManager.spawnPrefabs");
     }
 
     // ── 4d WorldItem ──────────────────────────────────────────────────────────
@@ -140,7 +122,7 @@ public static class EnemyBuilder
         root.AddComponent<Mirror.NetworkIdentity>();
 
         var wi = root.AddComponent<WorldItem>();
-        // glowLight is auto-created in WorldItem.Start() — no assignment needed
+        wi.glowLight = glow;
 
         SavePrefab(root, $"{PrefabDir}/WorldItem.prefab");
         Object.DestroyImmediate(root);
@@ -188,61 +170,6 @@ public static class EnemyBuilder
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    static GameObject TryLoadWorldItem()
-        => AssetDatabase.LoadAssetAtPath<GameObject>($"{PrefabDir}/WorldItem.prefab");
-
-    /// <summary>
-    /// Looks for the first .fbx in modelDir and attaches it as a "Model" child.
-    /// Disables the root MeshRenderer (capsule visual) so only the real mesh shows.
-    /// Returns true if a model was found and attached.
-    /// </summary>
-    static bool AttachModelIfExists(GameObject root, string modelDir)
-    {
-        if (!AssetDatabase.IsValidFolder(modelDir)) return false;
-
-        // Prefer the rigged model (rig/ subdir has bones) over base/idle/walk etc.
-        string rigDir  = modelDir + "/rig";
-        string baseDir = modelDir + "/base";
-        string[] searchDirs = AssetDatabase.IsValidFolder(rigDir)  ? new[] { rigDir }
-                            : AssetDatabase.IsValidFolder(baseDir) ? new[] { baseDir }
-                            : new[] { modelDir };
-
-        string[] guids = AssetDatabase.FindAssets("t:Model", searchDirs);
-        if (guids.Length == 0) return false;
-
-        string fbxPath = AssetDatabase.GUIDToAssetPath(guids[0]);
-        var modelAsset = AssetDatabase.LoadAssetAtPath<GameObject>(fbxPath);
-        if (modelAsset == null) return false;
-
-        // Disable placeholder capsule renderer — keep collider for physics
-        var rootRenderer = root.GetComponent<MeshRenderer>();
-        if (rootRenderer != null) rootRenderer.enabled = false;
-        // MeshFilter has no .enabled — disabling the Renderer is sufficient
-
-        var model = (GameObject)PrefabUtility.InstantiatePrefab(modelAsset, root.transform);
-        model.name = "Model";
-        model.transform.localPosition = Vector3.zero;
-        model.transform.localRotation = Quaternion.identity;
-        model.transform.localScale    = Vector3.one;
-
-        // Wire EnemyAnimController onto the model's Animator if present
-        var animCtrl = TryLoadEnemyAnimController();
-        if (animCtrl != null)
-        {
-            var anim = model.GetComponentInChildren<Animator>(true)
-                    ?? model.AddComponent<Animator>();
-            anim.runtimeAnimatorController = animCtrl;
-            anim.applyRootMotion = false;
-        }
-
-        Debug.Log($"[BCE] Attached model: {fbxPath}");
-        return true;
-    }
-
-    static RuntimeAnimatorController TryLoadEnemyAnimController()
-        => AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(
-            "Assets/Game/Animations/EnemyAnimController.controller");
-
     static GameObject MakeEnemyBase(string name, float hp, bool isRanged,
         float speed, float attackRange, float attackInterval, float damage,
         float aggroRadius, float stoppingDist)
@@ -258,11 +185,6 @@ public static class EnemyBuilder
         go.GetComponent<Renderer>().sharedMaterial = new Material(Shader.Find("Universal Render Pipeline/Lit"));
 
         go.AddComponent<Mirror.NetworkIdentity>();
-
-        // Animator — auto-assign EnemyAnimController if it exists; Avatar must be set in Inspector.
-        var anim = go.AddComponent<Animator>();
-        var enemyCtrl = TryLoadEnemyAnimController();
-        if (enemyCtrl != null) anim.runtimeAnimatorController = enemyCtrl;
 
         var agent              = go.AddComponent<NavMeshAgent>();
         agent.speed            = speed;
@@ -282,8 +204,6 @@ public static class EnemyBuilder
         ctrl.attackInterval = attackInterval;
         ctrl.damage         = damage;
         ctrl.isRanged       = isRanged;
-        // XP scales with HP — grunt≈20, ranged≈15, elite≈80
-        ctrl.xpReward       = Mathf.RoundToInt(hp * 0.3f);
 
         return go;
     }

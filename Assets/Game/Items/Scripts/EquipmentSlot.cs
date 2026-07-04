@@ -1,4 +1,3 @@
-#if !UNITY_SERVER
 using UnityEngine;
 using UnityEngine.EventSystems;
 
@@ -16,7 +15,6 @@ public class EquipmentSlot : MonoBehaviour, IPointerClickHandler, IPointerEnterH
         if (inventory.AddItem(item))
         {
             equipment.UnequipItem(slotType);
-            InventoryManager.Instance?.OnItemEquipped(item.id, false);
         }
     }
 
@@ -35,4 +33,3 @@ public class EquipmentSlot : MonoBehaviour, IPointerClickHandler, IPointerEnterH
         transform.localScale = Vector3.one;
     }
 }
-#endif

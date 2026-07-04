@@ -5,7 +5,7 @@ using TMPro;
 
 public class MainMenuUI : MonoBehaviour
 {
-    public string characterSelectScene = SceneNames.CharacterSelect;
+    public string characterSelectScene = "CharacterSelect";
 
     public void OnPlayClicked()
     {

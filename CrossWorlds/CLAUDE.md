@@ -1,7 +1,3 @@
-> **LEGACY — do not work from this file.** Canonical context: root `CLAUDE.md`.
-> Server/API reference: `_CONTEXT/CLAUDE.md`. Kept only for the 2026-06-29 session
-> log at the bottom; everything else here may be stale (old class names, old paths).
-
 # Crossworlds BCE — Claude Code Agent
 
 You are the senior backend developer for Crossworlds BCE, a live multiplayer action RPG.
@@ -33,7 +29,7 @@ enter portals into combat arenas, kill monsters, earn loot, level up, craft upgr
 - Web: Nginx, playcrossworlds.com, SSL via Certbot, serves `/var/www/rod/`
 - Server IP: 15.204.243.36
 
-**Heroes (Classes):** 0=Warden, 1=Ironclad, 2=Shadowblade, 3=Cleric, 4=Arcanist
+**Classes:** 0=Engineer, 1=Guardian, 2=Shadowblade, 3=Cleric, 4=Arcanist
 
 **Scene order:** LoginScene(0) → CharacterSelect(1) → Hub(2) → (Portal/Arena in progress)
 
@@ -186,6 +182,7 @@ All APIs for loot, progression, and crafting are live. Unity client is the only 
 
 ### Open bugs (don't close without fixing)
 - `orientation:F3` — Unity sending float as formatted string in `PATCH /character/position`
+- `GmConsole.cs` — needs `#if !UNITY_SERVER` guard, spamming errors every frame on server
 - `CmdSendChat` — missing `[CHAT]` log line server-side
 
 ### Phase 2 (don't build yet — schema stubbed, waiting on playtest)
@@ -202,44 +199,3 @@ Marketplace, guilds, quests, talent trees, more dungeons, world expansion
 5. Add to `GET /api/stats/game` on dashboard
 6. Restart auth server → check logs for errors
 7. Update `/opt/rod-auth/CLAUDE.md` API section and DB section
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
-
----
-
-## Session Log — 2026-06-29 (Cowork)
-
-### Scripts Written (new, net-new):
-| Script | Path | Role |
-|---|---|---|
-| ItemCatalogManager.cs | Systems/ | Self-bootstrap; loads GET /api/items |
-| HeroMasteryManager.cs | Systems/ | Singleton; GET/POST /api/mastery/*; fires OnMasteryLevelUp |
-| HeroCosmeticApplier.cs | Characters/Scripts/ | Mastery tier tints (Bronze→Diamond) |
-| CombatSessionTracker.cs | Combat/Scripts/ | .Local singleton; POST /api/combat/session/end |
-| SoulBondTether.cs | Combat/Scripts/ | Cleric amber LineRenderer tether |
-| ShieldValueHUD.cs | UI/ | World-space shield bar above shielded ally |
-| ClericRadarUI.cs | UI/ | Low-HP ally radar (Cleric only, classIndex==3) |
-| StatusEffectHUD.cs | UI/ | 6-icon status effect row with timers |
-| NPCInteractionManager.cs | Systems/ | E-key singleton; IHubNPC interface |
-| HangmanNPC.cs | Scene/ | Hub NPC → arena entry; Mirror [Command(requiresAuthority=false)] |
-| HangmanDialogueUI.cs | UI/ | Dialogue panel; 3 rotating flavor lines; ESC close |
-
-### Staging scripts copied from _scripts/ to Assets/Game/:
-Health, EnemyController, EnemyProjectile, DropTable, WorldItem, WaveSpawner,
-WorldBossController, WorldBossHealthBar, InventoryManager, TalentModifierApplier,
-TalentTreeUI, GuildPanelUI, QuestLogUI, QuestTracker, OnlinePlayersHUD,
-EnemyBuilder, WorldBossBuilder, Phase2Builder
-
-### Assets/Game/ folder structure created:
-Combat/Scripts/, Systems/, Characters/Scripts/, UI/, Scene/, Networking/, Editor/
-
-### Wire-up still required before play:
-1. WaveSpawner.SpawnEnemy() → add CombatSessionTracker.Local?.NotifyEnemySpawned(enemy)
-2. RodNetworkManager player spawn → add CombatSessionTracker.Local?.NotifyAllySpawned(go)
-3. PortalTransition/ArenaSceneBuilder → call CombatSessionTracker.Local.BeginSession()
-4. GmConsole.cs → wrap with #if !UNITY_SERVER / #endif
-5. NetworkManager.spawnPrefabs → add Enemy_Grunt, Enemy_Ranged, Enemy_Elite, WorldItem
-6. Place HangmanNPC GameObject in Hub scene
-
-### VPS scripts NOT yet pulled to local (at /opt/crossworlds-auth/unity-scripts/):
-ApiClient.cs, EnemyTemplate.cs, EnemyTemplateRegistry.cs, EnemyAI.cs,
-PlayerHealth.cs, HUDManager.cs, CraftingManager.cs

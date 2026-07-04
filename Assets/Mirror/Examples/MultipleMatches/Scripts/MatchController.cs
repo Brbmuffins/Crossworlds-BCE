@@ -37,7 +37,7 @@ namespace Mirror.Examples.MultipleMatch
             canvasController = GameObject.FindAnyObjectByType<CanvasController>();
 #else
             // Deprecated in Unity 2023.1
-            canvasController = GameObject.FindFirstObjectByType<CanvasController>();
+            canvasController = GameObject.FindObjectOfType<CanvasController>();
 #endif
         }
 

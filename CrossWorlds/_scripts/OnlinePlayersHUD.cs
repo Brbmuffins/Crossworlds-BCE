@@ -1,4 +1,3 @@
-#if !UNITY_SERVER
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -67,7 +66,7 @@ public class OnlinePlayersHUD : MonoBehaviour
         if (!NetworkServer.active)
         {
             names.Clear();
-            foreach (var identity in FindObjectsByType<NetworkIdentity>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+            foreach (var identity in FindObjectsOfType<NetworkIdentity>())
             {
                 var player = identity.GetComponent<PlayerInfo>();
                 if (player != null)
@@ -119,4 +118,3 @@ public class OnlinePlayersHUD : MonoBehaviour
     [Tooltip("The 'ONLINE N players' header Text (optional).")]
     public Text _headerLabel;
 }
-#endif
