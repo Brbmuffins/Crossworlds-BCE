@@ -18,6 +18,7 @@ Crossworlds BCE is a server-authoritative co-op action RPG built on Unity 6 and 
 
 ## Contents
 
+- [How to Play](#how-to-play)
 - [Classes](#classes)
 - [Spellbook — All 32 Abilities](#spellbook--all-32-abilities)
 - [Combat System](#combat-system)
@@ -41,6 +42,49 @@ Crossworlds BCE is a server-authoritative co-op action RPG built on Unity 6 and 
 
 ---
 
+## How to Play
+
+Crossworlds is a party-based action RPG. You and your allies share a hub world, then portal into arenas to fight escalating enemy waves and bosses for loot, mastery, and crafting materials. Combat is **aim-based** — there is no auto-attack and no tab-targeting; every ability is a skill shot, placed AoE, or telegraphed cone.
+
+### Core Loop
+
+1. **Log in** and choose one of five classes at Character Select.
+2. **Spawn into the Hub** — a shared, persistent social space. Chat, visit the Forge, and work gathering nodes (mine, fish, chop).
+3. **Build your kit** — open the Spellbook (**Tab**) and slot up to four abilities into **1–4**.
+4. **Enter a portal** — talk to **The Hangman** to launch an arena run.
+5. **Survive the arena** — clear escalating waves, read enemy telegraphs, dodge, and burst down the boss.
+6. **Collect loot** — gear, gold, and materials drop and persist to your character automatically.
+7. **Return to the Hub** — craft upgrades at the Forge, level professions, re-slot abilities.
+8. **Repeat** with stronger gear, higher hero mastery, and a sharper rotation.
+
+### Controls
+
+| Input | Action |
+|-------|--------|
+| **W A S D** | Move |
+| **Left Shift** (while moving) | Sprint |
+| **Space** | Jump |
+| **Left Alt** or **V** | Dodge roll — 2 charges, 0.35 s of full invulnerability, 5 s recharge each |
+| **1 – 4** | Select an equipped ability slot |
+| **Left Mouse** | Aim and cast the selected ability. *Hold* to charge — damage and area scale up to 3× |
+| **Right Mouse** / **Esc** | Cancel the held or aimed ability |
+| **Tab** | Open the Spellbook and equip abilities into slots 1–4 |
+| **F** | Gather from / interact with a resource node |
+| **E** | Interact with an NPC (Forge Master, The Hangman) |
+| **Enter** | Open chat |
+
+### Progression — three parallel tracks
+
+| Track | Earned by | Payoff |
+|-------|-----------|--------|
+| **Hero Mastery** | Clearing waves and bosses (XP scales with wave number) | Per-hero passive bonuses — damage, healing, cooldown reduction, max HP — applied through `CharacterStats` |
+| **Professions** | Gathering + crafting: Woodcutting, Fishing, Mining | Unlocks higher-tier smelt and craft recipes — see [AFK Professions](#afk-professions) |
+| **Gear** | Loot drops + Forge crafting | Stat bonuses and consumables; some flasks (e.g. boss resist kits) are **craft-exclusive** and never drop |
+
+Power comes primarily from **gear, hero mastery, and player skill** — reading telegraphs, landing skill shots, and sequencing abilities across the party.
+
+---
+
 ## Classes
 
 Five hero classes, each with a distinct role and playstyle. Class indices are fixed — never renumber.
@@ -54,6 +98,9 @@ Five hero classes, each with a distinct role and playstyle. Class indices are fi
 | 4 | **Arcanist** | | Mage / Control | Phase-shifts across terrain, chain lightning, singularity pulls, event horizons |
 
 ### Warden
+
+<img src="Docs/icons/classes/class-warden.png" width="100%"/>
+
 *"Hold the line. The constructs will do the rest."*
 
 The Warden is a battlefield engineer who wins through positioning and attrition. They deploy runic sentinel turrets, lay snare traps, redirect their constructs mid-fight, and pulse cooldowns for the whole team with Battle Hymn. Their ultimate, Conjurer's Surge, triggers every active construct simultaneously for burst rounds.
@@ -63,6 +110,9 @@ The Warden is a battlefield engineer who wins through positioning and attrition.
 **Synergies:** Ironclad pulls enemies into Warden's snare fields; Cleric keeps the turrets' owner alive long enough to matter.
 
 ### Ironclad
+
+<img src="Docs/icons/classes/class-ironclad.png" width="100%"/>
+
 *"Let them hit me. I'm building a debt they can't pay."*
 
 The Ironclad defines the frontline. Counter Blow turns incoming damage into a cone burst; Gravity Slam pulls a mob into a single point for the team to cleanse; Stalwart Stance becomes a damage sponge while tripling Threat generation. Iron Rampart raises an impenetrable stone wall that stops all projectiles for 10 seconds.
@@ -74,6 +124,8 @@ The Ironclad defines the frontline. Counter Blow turns incoming damage into a co
 ### Shadowblade — Bo-gar
 
 <img src="Inspiration ART/Hero Bo-Gar.png" alt="Bo-gar" width="180"/>
+
+<img src="Docs/icons/classes/class-shadowblade.png" width="100%"/>
 
 *"They can't hit what they can't see. Or silence."*
 
@@ -87,6 +139,8 @@ The Shadowblade is a precision assassin and soft CC specialist. Shadow Veil into
 
 <img src="Inspiration ART/Hero Brandolf.png" alt="Brandolf" width="180"/>
 
+<img src="Docs/icons/classes/class-cleric.png" width="100%"/>
+
 *"The fight ends when I say it ends."*
 
 The Cleric is the team's life insurance. Spirit Wisps drift and seek allies. Sacred Aegis grows stronger as the target takes hits. Soul Bond reroutes incoming damage onto the Cleric themselves as a sacrifice. Divine Spark revives a downed teammate — or detonates holy energy on undead. Temporal Grace is the most powerful ability in the game: full-team time rewind.
@@ -96,6 +150,9 @@ The Cleric is the team's life insurance. Spirit Wisps drift and seek allies. Sac
 **Synergies:** Every class benefits from Temporal Grace. Sacred Aegis pairs with Ironclad when he's in Stalwart Stance absorbing the most hits.
 
 ### Arcanist
+
+<img src="Docs/icons/classes/class-arcanist.png" width="100%"/>
+
 *"Distance is an illusion. So is the concept of 'safe.'"*
 
 The Arcanist controls space. Arcane Step is a true blink — it bypasses terrain, colliders, enemy hitboxes. Void Maw opens a singularity that drags enemies in before detonating. Forked Lightning chains between four targets. Collapsing Void is the team's hardest-hitting ability: an event horizon that pulls for 3 seconds then collapses for 60 AoE with the Weakened debuff applied.
@@ -107,6 +164,22 @@ The Arcanist controls space. Arcane Step is a true blink — it bypasses terrain
 ---
 
 ## Spellbook — All 32 Abilities
+
+Every class draws from the **shared pool (0–7)** plus its own kit. Equip any four abilities into slots **1–4** via the Spellbook (**Tab**). Indices are fixed and mirrored server-side — never renumber.
+
+**Shape** describes how an ability is delivered:
+
+| Shape | Meaning |
+|-------|---------|
+| **Skill Shot** | Travels in a straight line — must be aimed and led onto moving targets |
+| **Line** | Sweeps everything along a straight path in front of you |
+| **Cone** | Bursts in a wedge in your facing direction |
+| **AoE** | Placed circle at a target point on the ground |
+| **Deploy** | Leaves a persistent object — turret, trap, wall, ward, or wisps |
+| **Blink** | Instantly relocates you, ignoring terrain and colliders |
+| **Self / Target / Team** | Affects you, a single ally/enemy, or the whole party |
+
+Damage values are single-hit unless noted; ranges like `15–45` are uncharged → fully charged.
 
 ### Shared Pool (indices 0–7 — available to all classes)
 
