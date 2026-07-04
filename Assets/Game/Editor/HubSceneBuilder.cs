@@ -1,4 +1,4 @@
-// ═══════════════════════════════════════════════════════════════════════════
+﻿// ═══════════════════════════════════════════════════════════════════════════
 //  HubSceneBuilder — BCE/Build Hub Scene  (Editor-only, never ships in build)
 //
 //  Wipes decoration/environment from the scene, then rebuilds with only:
@@ -24,7 +24,7 @@ public static class HubSceneBuilder
         // ── Destroy decoration/environment — preserve networking objects ──
         // Keep anything with a NetworkIdentity (RodChatManager, etc.),
         // NetworkManager, or NetworkAuthenticator — deleting those breaks Mirror.
-        foreach (var go in Object.FindObjectsByType<GameObject>(FindObjectsSortMode.None))
+        foreach (var go in Object.FindObjectsByType<GameObject>(FindObjectsInactive.Exclude))
         {
             if (go.transform.parent != null) continue; // root objects only
             if (go.GetComponent<Mirror.NetworkIdentity>()      != null) continue;
@@ -36,7 +36,7 @@ public static class HubSceneBuilder
         // ── Ensure RodChatManager scene object exists ─────────────────────
         // Chat requires a scene NetworkBehaviour with a NetworkIdentity.
         // If the previous step preserved it, this is a no-op.
-        if (Object.FindFirstObjectByType<RodChatManager>() == null)
+        if (Object.FindAnyObjectByType<RodChatManager>() == null)
         {
             var chatGO = new GameObject("RodChatManager");
             chatGO.AddComponent<Mirror.NetworkIdentity>();
@@ -82,6 +82,66 @@ public static class HubSceneBuilder
             var   sp = new GameObject($"SpawnPoint_{i}");
             sp.transform.position = new Vector3(Mathf.Sin(a) * 4f, 0.1f, Mathf.Cos(a) * 4f);
             sp.AddComponent<Mirror.NetworkStartPosition>();
+        }
+
+        // ── Portals (3, at 120° intervals, radius 21) ─────────────────────
+        // Uses PortalTransition (NetworkBehaviour, ServerChangeScene) rather than
+        // HubPortal (client-side SceneManager.LoadScene) — correct for multiplayer.
+        var portalDefs = new (string label, string scene, Color color)[]
+        {
+            ("Copper Arena",  SceneNames.ArenaCopper,  new Color(0.2f, 0.6f, 1.0f)), // blue
+            ("Iron Arena",    "Arena_Iron",    new Color(0.3f, 0.9f, 0.3f)), // green
+            ("Dark Forge",    "",              new Color(1.0f, 0.8f, 0.1f)), // yellow — coming soon
+        };
+
+        for (int i = 0; i < portalDefs.Length; i++)
+        {
+            var (label, scene, col) = portalDefs[i];
+            float angle = (120f * i - 90f) * Mathf.Deg2Rad;
+            var pos = new Vector3(Mathf.Cos(angle) * 21f, 0f, Mathf.Sin(angle) * 21f);
+
+            // Visual — two stacked cylinders for an arch look
+            var portalGO = new GameObject($"Portal_{label.Replace(" ", "")}");
+            portalGO.transform.position = pos;
+            portalGO.transform.LookAt(Vector3.zero);
+
+            var arch = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            arch.name = "Arch";
+            arch.transform.SetParent(portalGO.transform, false);
+            arch.transform.localPosition = new Vector3(0f, 2f, 0f);
+            arch.transform.localScale    = new Vector3(0.25f, 2f, 0.25f);
+            Object.DestroyImmediate(arch.GetComponent<CapsuleCollider>());
+            var mat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+            mat.color = col;
+            arch.GetComponent<Renderer>().sharedMaterial = mat;
+
+            // Trigger collider for proximity check
+            var triggerGO = new GameObject("Trigger");
+            triggerGO.transform.SetParent(portalGO.transform, false);
+            triggerGO.transform.localPosition = new Vector3(0f, 1.5f, 0f);
+            var sc = triggerGO.AddComponent<SphereCollider>();
+            sc.isTrigger = true;
+            sc.radius = 3f;
+
+            // Point light
+            var lightGO = new GameObject("PortalLight");
+            lightGO.transform.SetParent(portalGO.transform, false);
+            lightGO.transform.localPosition = new Vector3(0f, 2f, 0f);
+            var pl = lightGO.AddComponent<Light>();
+            pl.type      = LightType.Point;
+            pl.color     = col;
+            pl.intensity = 3f;
+            pl.range     = 10f;
+
+            // NetworkIdentity required for PortalTransition (NetworkBehaviour)
+            portalGO.AddComponent<Mirror.NetworkIdentity>();
+
+            // PortalTransition — server-authoritative scene load
+            var pt = portalGO.AddComponent<PortalTransition>();
+            pt.arenaSceneName   = scene;
+            pt.portalDisplayName = label;
+
+            Debug.Log($"[HubSceneBuilder] Added portal: {label} → {(string.IsNullOrEmpty(scene) ? "Coming Soon" : scene)}");
         }
 
         EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
