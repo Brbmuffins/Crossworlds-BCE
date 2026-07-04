@@ -231,11 +231,8 @@ public static class HubPlayableBuilder
                 if (worldItem != null && ctrl.worldItemPrefab == null)
                     ctrl.worldItemPrefab = worldItem;
 
-                if (metalImpactVFX != null && ctrl.meleeImpactVFX == null)
-                    ctrl.meleeImpactVFX = metalImpactVFX;
-
-                if (smallExplosion != null && ctrl.deathVFX == null)
-                    ctrl.deathVFX = smallExplosion;
+                // EnemyController does not yet expose meleeImpactVFX / deathVFX fields.
+                // VFX wiring is an editor step once those fields are added to EnemyController.
 
                 // Assign EnemyAnimController if built (run BCE/Setup/4d first)
                 if (enemyAnimCtrl != null)
