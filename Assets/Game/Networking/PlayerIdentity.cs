@@ -39,6 +39,9 @@ public class PlayerIdentity : NetworkBehaviour
         var inv = InventoryManager.Instance;
         if (inv != null) inv.StartCoroutine(inv.LoadInventory());
 
+        // Same for professions — their Start() also ran before CharacterId was set.
+        ProfessionManager.Local?.Load();
+
         // Wire combat session tracker so it can count healing done this run
         CombatSessionTracker.Local?.NotifyAllySpawned(gameObject);
 #endif

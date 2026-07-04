@@ -44,11 +44,28 @@ public class ProfessionManager : MonoBehaviour
 
     // ─────────────────────────────────────────────────────────────────────────────
 
+    // Self-bootstrap so Local is never null, matching InventoryManager /
+    // ItemCatalogManager. Without this, nothing instantiated ProfessionManager
+    // and every ProfessionManager.Local?.… call silently no-opped.
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+    static void Bootstrap()
+    {
+        if (Local != null) return;
+        var go = new GameObject("[ProfessionManager]");
+        DontDestroyOnLoad(go);
+        go.AddComponent<ProfessionManager>();
+    }
+
     void Awake()
     {
         if (Local != null && Local != this) { Destroy(gameObject); return; }
         Local = this;
+        DontDestroyOnLoad(gameObject);
     }
+
+    // Attempts an initial load; no-ops until AuthManager.CharacterId is set, at
+    // which point PlayerIdentity.OnStartLocalPlayer re-triggers Load().
+    void Start() => Load();
 
     void OnDestroy()
     {
