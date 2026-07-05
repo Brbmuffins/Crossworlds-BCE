@@ -210,7 +210,7 @@ public class PlayerHUD : MonoBehaviour
     {
         var root = Rt(_canvas.transform, "HpRoot");
         root.anchorMin = new Vector2(0.01f, 0.88f);
-        root.anchorMax = new Vector2(0.13f, 0.96f);
+        root.anchorMax = new Vector2(0.10f, 0.96f);
         root.offsetMin = root.offsetMax = Vector2.zero;
 
         // Panel
