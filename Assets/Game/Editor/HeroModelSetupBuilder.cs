@@ -28,32 +28,39 @@ using UnityEngine;
 public static class HeroModelSetupBuilder
 {
     // ── Mappings ──────────────────────────────────────────────────────────────
+    // (prefabPath, modelPath, controllerPath, label)
+    // controllerPath = null → leave the model's existing Animator controller as-is
 
-    static readonly (string prefabPath, string modelPath, string label)[] Entries =
+    static readonly (string prefabPath, string modelPath, string controllerPath, string label)[] Entries =
     {
         (
             "Assets/Game/Prefabs/Warden.prefab",
             "Assets/Game/Characters/Engineer/Model/RoD-bike-ridah.fbx",
+            null,
             "Warden"
         ),
         (
             "Assets/Game/Prefabs/Ironclad.prefab",
             "Assets/Game/Heroes/Guardian/Guardian.fbx",
+            null,
             "Ironclad"
         ),
         (
             "Assets/Game/Prefabs/Shadowblade.prefab",
             "Assets/Game/Heroes/Bogar/Bogar.fbx",
+            null,
             "Shadowblade"
         ),
         (
             "Assets/Game/Prefabs/Cleric.prefab",
             "Assets/Game/Heroes/Brandalf/Brandalf.fbx",
+            "Assets/Game/Heroes/Brandalf/Brandalf.controller",
             "Cleric"
         ),
         (
             "Assets/Game/Prefabs/Arcanist.prefab",
             "Assets/Game/Heroes/Arcanist/Arcanist.fbx",
+            null,
             "Arcanist"
         ),
     };
@@ -67,7 +74,7 @@ public static class HeroModelSetupBuilder
         int skipped   = 0;
         int replaced  = 0;
 
-        foreach (var (prefabPath, modelPath, label) in Entries)
+        foreach (var (prefabPath, modelPath, controllerPath, label) in Entries)
         {
             var modelAsset = AssetDatabase.LoadAssetAtPath<GameObject>(modelPath);
             if (modelAsset == null)
@@ -87,27 +94,47 @@ public static class HeroModelSetupBuilder
                 continue;
             }
 
-            // Remove any existing Model child so we can replace it with the correct one
+            // Remove any existing Model child so we can replace it cleanly
             var existing = root.transform.Find("Model");
             if (existing != null)
             {
                 Object.DestroyImmediate(existing.gameObject);
-                Debug.Log($"[HeroModel] {label}: Removed old Model child.");
+                replaced++;
+                Debug.Log($"[HeroModel] {label}: removed old Model child.");
             }
 
-            // Instantiate the FBX as a child (plain copy, not a live prefab link —
-            // the FBX connection is maintained through the asset import pipeline).
+            // Instantiate FBX as a child — asset pipeline maintains the import link
             var modelGO = (GameObject)PrefabUtility.InstantiatePrefab(modelAsset, root.transform);
             if (modelGO == null)
-            {
-                // Fallback: plain instantiate if PrefabUtility can't link the FBX
                 modelGO = Object.Instantiate(modelAsset, root.transform);
-            }
 
             modelGO.name = "Model";
             modelGO.transform.localPosition = Vector3.zero;
             modelGO.transform.localRotation = Quaternion.identity;
             modelGO.transform.localScale    = Vector3.one;
+
+            // Assign AnimatorController if specified
+            if (controllerPath != null)
+            {
+                var controller = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(controllerPath);
+                if (controller != null)
+                {
+                    var anim = modelGO.GetComponentInChildren<Animator>();
+                    if (anim != null)
+                    {
+                        anim.runtimeAnimatorController = controller;
+                        Debug.Log($"[HeroModel] {label}: assigned {System.IO.Path.GetFileName(controllerPath)} to Animator.");
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"[HeroModel] {label}: no Animator found on model — controller not assigned.");
+                    }
+                }
+                else
+                {
+                    Debug.LogWarning($"[HeroModel] {label}: controller not found at {controllerPath}.");
+                }
+            }
 
             Debug.Log($"[HeroModel] {label}: attached {System.IO.Path.GetFileName(modelPath)}.");
             attached++;
