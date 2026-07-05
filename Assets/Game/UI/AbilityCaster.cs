@@ -205,7 +205,9 @@ public class AbilityCaster : NetworkBehaviour
     private float aimTimer = 0f;
 
     // Read by CameraFollow to suspend orbit while an indicator is active
-    public static bool IsAimingLocally { get; private set; }
+    public static bool    IsAimingLocally { get; private set; }
+    // Read by PlayerMovement to face the cursor during aim (Smite-style)
+    public static Vector3 AimDirection    { get; private set; }
     private float[] cooldownTimers = new float[4];
 
     private GameObject activeShieldVFX;
@@ -498,11 +500,13 @@ public class AbilityCaster : NetworkBehaviour
             aimDir.y = 0f;
             aimDir.Normalize();
             aimDistance = minimumAimDistance;
+            AimDirection = aimDir;
             return;
         }
 
         aimDistance = Mathf.Clamp(toTarget.magnitude, minimumAimDistance, ability.range);
         aimDir = toTarget.normalized;
+        AimDirection = aimDir;  // PlayerMovement reads this to face the cursor
     }
 
     GameObject CreateIndicator(AbilityDef ability)

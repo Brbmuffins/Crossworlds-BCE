@@ -194,6 +194,15 @@ public class PlayerMovement : MonoBehaviour
                     targetRotation = Quaternion.LookRotation(faceDir);
             }
         }
+
+        // Aim mode: character always faces the cursor (Smite-style)
+        // Overrides movement-based rotation so body and indicator stay aligned.
+        if (!lockCharacterRotation && AbilityCaster.IsAimingLocally)
+        {
+            Vector3 aimDir = AbilityCaster.AimDirection;
+            if (aimDir.sqrMagnitude > 0.001f)
+                targetRotation = Quaternion.LookRotation(aimDir);
+        }
     }
 
     void FixedUpdate()
