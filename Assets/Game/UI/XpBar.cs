@@ -152,11 +152,11 @@ public class XpBar : MonoBehaviour
         var container = new GameObject("XpBarContainer", typeof(RectTransform));
         container.transform.SetParent(root, false);
         var cRt = container.GetComponent<RectTransform>();
-        cRt.anchorMin        = new Vector2(0.3f, 0f);
-        cRt.anchorMax        = new Vector2(0.7f, 0f);
+        cRt.anchorMin        = new Vector2(0.15f, 0f);
+        cRt.anchorMax        = new Vector2(0.85f, 0f);
         cRt.pivot            = new Vector2(0.5f, 0f);
-        cRt.anchoredPosition = new Vector2(0f, 6f);
-        cRt.sizeDelta        = new Vector2(0f, 26f);
+        cRt.anchoredPosition = new Vector2(0f, 2f);   // flush at the very bottom
+        cRt.sizeDelta        = new Vector2(0f, 24f);
 
         // Background
         var bgGO = new GameObject("BG", typeof(RectTransform), typeof(Image));
