@@ -481,28 +481,64 @@ public class PlayerHUD : MonoBehaviour
         sub.rectTransform.offsetMin = sub.rectTransform.offsetMax = Vector2.zero;
         sub.alignment = TextAlignmentOptions.Center;
 
-        // Card grid container
-        var grid = new GameObject("Grid"); grid.transform.SetParent(root, false);
-        var gridRt = grid.AddComponent<RectTransform>();
-        gridRt.anchorMin = new Vector2(0.02f, 0.04f);
-        gridRt.anchorMax = new Vector2(0.98f, 0.82f);
-        gridRt.offsetMin = gridRt.offsetMax = Vector2.zero;
+        // ── Scrollable card grid ──────────────────────────────────────────────
+        // The class pool can be up to 32 cards; a fixed grid overflowed the panel
+        // and spilled onto the action bar. Wrap it in a ScrollRect so it always
+        // stays inside the panel body and scrolls instead.
+        var scrollGO = new GameObject("SpellScroll", typeof(RectTransform), typeof(ScrollRect));
+        scrollGO.transform.SetParent(root, false);
+        var scrollRt = scrollGO.GetComponent<RectTransform>();
+        scrollRt.anchorMin = new Vector2(0.02f, 0.04f);
+        scrollRt.anchorMax = new Vector2(0.98f, 0.82f);
+        scrollRt.offsetMin = scrollRt.offsetMax = Vector2.zero;
 
-        var glg = grid.AddComponent<GridLayoutGroup>();
-        glg.cellSize        = new Vector2(215f, 152f);
+        // Viewport clips overflow (needs a graphic for the mask to work).
+        var viewport = new GameObject("Viewport", typeof(RectTransform), typeof(Image), typeof(RectMask2D));
+        viewport.transform.SetParent(scrollGO.transform, false);
+        var vpRt = viewport.GetComponent<RectTransform>();
+        vpRt.anchorMin = Vector2.zero; vpRt.anchorMax = Vector2.one;
+        vpRt.offsetMin = vpRt.offsetMax = Vector2.zero;
+        viewport.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0.004f);
+
+        // Content grows downward; ContentSizeFitter drives its height from the grid.
+        var content = new GameObject("Content", typeof(RectTransform), typeof(GridLayoutGroup), typeof(ContentSizeFitter));
+        content.transform.SetParent(viewport.transform, false);
+        var contentRt = content.GetComponent<RectTransform>();
+        contentRt.anchorMin = new Vector2(0f, 1f);
+        contentRt.anchorMax = new Vector2(1f, 1f);
+        contentRt.pivot     = new Vector2(0.5f, 1f);
+        contentRt.offsetMin = contentRt.offsetMax = Vector2.zero;
+
+        var glg = content.GetComponent<GridLayoutGroup>();
+        glg.cellSize        = new Vector2(215f, 150f);
         glg.spacing         = new Vector2(12f, 12f);
+        glg.padding         = new RectOffset(6, 6, 6, 6);
         glg.startCorner     = GridLayoutGroup.Corner.UpperLeft;
         glg.startAxis       = GridLayoutGroup.Axis.Horizontal;
         glg.childAlignment  = TextAnchor.UpperCenter;
-        glg.constraint      = GridLayoutGroup.Constraint.Flexible;
+        // Fixed column count pairs reliably with ContentSizeFitter for row height;
+        // 6 columns fit the panel width and keep cards readable.
+        glg.constraint      = GridLayoutGroup.Constraint.FixedColumnCount;
+        glg.constraintCount = 6;
+
+        content.GetComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+        _spellScroll = scrollGO.GetComponent<ScrollRect>();
+        _spellScroll.viewport      = vpRt;
+        _spellScroll.content       = contentRt;
+        _spellScroll.horizontal    = false;
+        _spellScroll.vertical      = true;
+        _spellScroll.movementType  = ScrollRect.MovementType.Clamped;
+        _spellScroll.scrollSensitivity = 28f;
 
         // Cards populated later in RebuildSpellbook()
         root.gameObject.name = "SpellbookRoot";
-        _spellbookGridParent = grid.transform;
+        _spellbookGridParent = content.transform;
         return root.gameObject;
     }
 
     Transform _spellbookGridParent;
+    ScrollRect _spellScroll;
 
     void RebuildSpellbook()
     {
@@ -636,6 +672,7 @@ public class PlayerHUD : MonoBehaviour
             _spellbookOpen = !_spellbookOpen;
             _spellbookCanvas.gameObject.SetActive(_spellbookOpen);
             if (!_spellbookOpen) _pendingSpellIdx = -1;
+            else if (_spellScroll != null) _spellScroll.verticalNormalizedPosition = 1f; // open at top
             // Cursor is always free in MOBA mode; just ensure visible when spellbook is open.
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible   = true;
