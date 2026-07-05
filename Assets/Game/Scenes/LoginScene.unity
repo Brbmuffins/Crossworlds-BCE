@@ -285,6 +285,10 @@ MonoBehaviour:
   - {fileID: 2286457734563818783, guid: d228dda3426926b41ae915d331560f12, type: 3}
   - {fileID: 5383663458828750495, guid: ee265e874399c4643b9b9e77a5bc83c6, type: 3}
   - {fileID: 2500953069177823676, guid: 6a13aec1807a81c44b1ef19b74bbb966, type: 3}
+  - {fileID: 4577330360238886047, guid: e9b165cca9a40fe47bdda9b21d407720, type: 3}
+  - {fileID: 8204671760820388417, guid: 05ca882c1b18d70449cfc3fbde6fc614, type: 3}
+  - {fileID: 5551267369004884409, guid: b4c4d40894b065142ac7e320545e40e6, type: 3}
+  - {fileID: 5614484268032330788, guid: 348c7151261e1ba4db1931d6061f9a27, type: 3}
   exceptionsDisconnect: 1
   snapshotSettings:
     bufferTimeMultiplier: 2
@@ -306,6 +310,7 @@ MonoBehaviour:
   - {fileID: 2286457734563818783, guid: d228dda3426926b41ae915d331560f12, type: 3}
   - {fileID: 5383663458828750495, guid: ee265e874399c4643b9b9e77a5bc83c6, type: 3}
   - {fileID: 2500953069177823676, guid: 6a13aec1807a81c44b1ef19b74bbb966, type: 3}
+  worldPrefabs: []
   authServerURL: http://15.204.243.36:3000
 --- !u!114 &286295840
 MonoBehaviour:
@@ -718,9 +723,11 @@ MonoBehaviour:
   spawnStagger: 0.5
   eliteEveryNWaves: 3
   introDelay: 4
+  maxWaves: 10
   currentWave: 0
   enemiesAlive: 0
   waveActive: 0
+  arenaComplete: 0
 --- !u!114 &1711974948
 MonoBehaviour:
   m_ObjectHideFlags: 0
