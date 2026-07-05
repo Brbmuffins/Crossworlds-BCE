@@ -189,6 +189,12 @@ public class AbilityCaster : NetworkBehaviour
         new AbilityDef { abilityName = "Silence Ward",     shape = AbilityShape.Circle,    category = AbilityCategory.Support, range = 10f, indicatorSize = 5f, cooldown = 12f },
         // [31] Dark Harvest (Shadowblade Ultimate) — consume all active debuffs on enemies in range: 20 dmg per stack
         new AbilityDef { abilityName = "Dark Harvest",     shape = AbilityShape.Circle,    category = AbilityCategory.Damage,  range = 8f, indicatorSize = 8f, cooldown = 40f, damage = 20f, targetTag = "Enemy" },
+        // [32] Dark Mark (Shadowblade) — a cursed burst at the target point; sets up Dark Harvest
+        new AbilityDef { abilityName = "Dark Mark",        shape = AbilityShape.Circle,    category = AbilityCategory.Damage,  range = 9f, indicatorSize = 1.5f, cooldown = 6f, damage = 20f, targetTag = "Enemy" },
+        // [33] Fan of Blades (Shadowblade) — close cone of shadow blades; hold to charge
+        new AbilityDef { abilityName = "Fan of Blades",    shape = AbilityShape.Cone,      category = AbilityCategory.Damage,  range = 6f, coneAngle = 70f, cooldown = 5f, chargeable = true, maxChargeTime = 1.2f, damage = 12f, maxChargeDamage = 30f, maxChargeSizeMultiplier = 1.4f, targetTag = "Enemy", chargedTint = new Color(0.4f, 0.1f, 0.8f, 0.9f) },
+        // [34] Ether Lance (Arcanist) — piercing line of void energy; hold to charge
+        new AbilityDef { abilityName = "Ether Lance",      shape = AbilityShape.Rectangle, category = AbilityCategory.Damage,  range = 12f, rectWidth = 1.2f, cooldown = 5f, chargeable = true, maxChargeTime = 1.5f, damage = 15f, maxChargeDamage = 40f, maxChargeSizeMultiplier = 1.6f, targetTag = "Enemy" },
     };
 
     [Header("Equipped slots (indices into spellbook)")]

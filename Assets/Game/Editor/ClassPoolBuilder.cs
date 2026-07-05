@@ -32,7 +32,7 @@ public static class ClassPoolBuilder
             defaultEquipped:  new[] { 7,15,16,18 });         // Shield, Charge, Stance, Rampart
 
         CreatePool("Arcanist",
-            availableIndices: new[] { 0,1,2,3,4,5,6,7,19,20,21,22 },
+            availableIndices: new[] { 0,1,2,3,4,5,6,7,19,20,21,22,34 },  // +34 Ether Lance
             defaultEquipped:  new[] { 19,20,21,22 });        // Step, Maw, Lightning, Void
 
         CreatePool("Cleric",
@@ -40,7 +40,7 @@ public static class ClassPoolBuilder
             defaultEquipped:  new[] { 24,23,26,28 });        // Wisps, Bond, Aegis, Grace
 
         CreatePool("Shadowblade",
-            availableIndices: new[] { 0,1,2,3,4,5,6,7,29,30,31 },
+            availableIndices: new[] { 0,1,2,3,4,5,6,7,29,30,31,32,33 },  // +32 Dark Mark, +33 Fan of Blades
             defaultEquipped:  new[] { 1,30,31,29 });         // VoidBolt, Silence, Harvest, Veil
 
         AssetDatabase.SaveAssets();
