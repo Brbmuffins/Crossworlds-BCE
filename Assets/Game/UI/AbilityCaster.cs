@@ -537,8 +537,8 @@ public class AbilityCaster : NetworkBehaviour
             BuildOutlineLR(indicator, ability, c);
         }
 
-        // Range ring: thin circle at max cast distance centred on the player
-        if (ability.range > 0f)
+        // Range ring: only for Circle/Rectangle — cone length already shows the range
+        if (ability.range > 0f && ability.shape != AbilityShape.Cone)
             _rangeRingGO = CreateRangeRing(ability.range, c);
 
         return indicator;
@@ -687,7 +687,9 @@ public class AbilityCaster : NetworkBehaviour
         {
             float chargeMul   = Mathf.Lerp(1f, ability.maxChargeSizeMultiplier, chargeFraction);
             float distanceMul = aimDistance / ability.range;
-            indicator.transform.position   = transform.position + Vector3.up * 0.05f;
+            // Pull origin 0.5 units behind the player so the character body sits
+            // inside the fan rather than at the very tip.
+            indicator.transform.position   = transform.position - aimDir * 0.5f + Vector3.up * 0.05f;
             indicator.transform.rotation   = Quaternion.LookRotation(aimDir);
             indicator.transform.localScale = Vector3.one * distanceMul * chargeMul;
         }
@@ -838,7 +840,7 @@ public class AbilityCaster : NetworkBehaviour
             ApplyConeDamage(ability, indicator, damage, coneRange);
 
             if (ability.fireVisual)
-                SpawnFireBurst(transform.position + Vector3.up * 0.5f, indicator.transform.rotation, coneRange, ability.coneAngle);
+                SpawnFireBurst(transform.position + indicator.transform.forward * coneRange + Vector3.up * 0.5f, indicator.transform.rotation, coneRange, ability.coneAngle);
         }
 
         if (ability.shape == AbilityShape.Circle && ability.damage > 0f)
@@ -855,6 +857,14 @@ public class AbilityCaster : NetworkBehaviour
         // ── Route to ability-specific behaviours ──────────────────
         Vector3    castPoint   = indicator != null ? indicator.transform.position : transform.position;
         Quaternion castVfxRot  = indicator != null ? indicator.transform.rotation  : transform.rotation;
+
+        // Cone: effect spawns at the far (wide) end, not at the player's feet.
+        if (ability.shape == AbilityShape.Cone && indicator != null)
+        {
+            float coneRange = ability.range * indicator.transform.localScale.x;
+            castPoint = transform.position + indicator.transform.forward * coneRange;
+        }
+
 #if UNITY_EDITOR || !UNITY_SERVER
         if (ability.castVFX != null)
         {
