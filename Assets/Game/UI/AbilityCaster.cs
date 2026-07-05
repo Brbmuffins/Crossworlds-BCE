@@ -585,7 +585,7 @@ public class AbilityCaster : NetworkBehaviour
         Destroy(fx, 4f);
     }
 
-#if !UNITY_SERVER
+#if UNITY_EDITOR || !UNITY_SERVER
     System.Collections.IEnumerator TravelVFX(GameObject prefab, Vector3 from, Vector3 to,
                                              Quaternion rotation, float duration)
     {
@@ -694,7 +694,7 @@ public class AbilityCaster : NetworkBehaviour
         // ── Route to ability-specific behaviours ──────────────────
         Vector3    castPoint   = indicator != null ? indicator.transform.position : transform.position;
         Quaternion castVfxRot  = indicator != null ? indicator.transform.rotation  : transform.rotation;
-#if !UNITY_SERVER
+#if UNITY_EDITOR || !UNITY_SERVER
         if (ability.castVFX != null)
         {
             if (ability.shape == AbilityShape.Rectangle && indicator != null)
@@ -764,7 +764,7 @@ public class AbilityCaster : NetworkBehaviour
 #endif
         if (ability.castVFX != null)
         {
-#if !UNITY_SERVER
+#if UNITY_EDITOR || !UNITY_SERVER
             if (ability.shape == AbilityShape.Rectangle)
                 StartCoroutine(TravelVFX(ability.castVFX,
                     transform.position + Vector3.up * 1.2f,
