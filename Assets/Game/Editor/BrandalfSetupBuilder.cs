@@ -245,6 +245,8 @@ public static class BrandalfSetupBuilder
         using (var scope = new PrefabUtility.EditPrefabContentsScope(PrefabPath))
         {
             var root = scope.prefabContentsRoot;
+            if (root.GetComponent<PlayerFallReset>() == null)
+                root.AddComponent<PlayerFallReset>();
 
             // ── Remove any existing Model child ───────────────────────────────────
             var existing = root.transform.Find("Model");
