@@ -32,6 +32,11 @@ public class RodNetworkManager : NetworkManager
     [Tooltip("0=Warden, 1=Ironclad, 2=Shadowblade, 3=Cleric, 4=Arcanist")]
     public GameObject[] classPrefabs;
 
+    [Header("World / Combat Prefabs")]
+    [Tooltip("Enemy types, WorldItem, bosses — registered as spawnable on both client and server. " +
+             "Assign: Enemy_Grunt, Enemy_Ranged, Enemy_Elite, WorldItem, Wisp_Mob, Wraith.")]
+    public GameObject[] worldPrefabs;
+
     [Header("Auth Server")]
     [Tooltip("Must match RodNetworkAuthenticator.authServerURL")]
     public string authServerURL = "http://15.204.243.36:3000";
@@ -92,17 +97,31 @@ public class RodNetworkManager : NetworkManager
 
     public override void OnStartClient()
     {
-        if (classPrefabs != null)
-            foreach (var p in classPrefabs)
-                if (p != null && !spawnPrefabs.Contains(p))
-                    spawnPrefabs.Add(p);
+        // Stage all prefabs into spawnPrefabs BEFORE base.OnStartClient() so Mirror's
+        // built-in RegisterPrefab pass picks them all up in one shot.
+        RegisterIntoSpawnList(classPrefabs);
+        RegisterIntoSpawnList(worldPrefabs);
 
-        base.OnStartClient(); // registers spawnPrefabs (now includes our class prefabs)
+        base.OnStartClient(); // registers everything now in spawnPrefabs
 
-        // Direct registration as well — redundant but safe
-        if (classPrefabs != null)
-            foreach (var prefab in classPrefabs)
-                if (prefab != null) NetworkClient.RegisterPrefab(prefab);
+        // Belt-and-suspenders direct registration for non-editor builds
+        DirectRegister(classPrefabs);
+        DirectRegister(worldPrefabs);
+    }
+
+    void RegisterIntoSpawnList(GameObject[] prefabs)
+    {
+        if (prefabs == null) return;
+        foreach (var p in prefabs)
+            if (p != null && !spawnPrefabs.Contains(p))
+                spawnPrefabs.Add(p);
+    }
+
+    void DirectRegister(GameObject[] prefabs)
+    {
+        if (prefabs == null) return;
+        foreach (var p in prefabs)
+            if (p != null) NetworkClient.RegisterPrefab(p);
     }
 
     // ── Client connected + authenticated ──────────────────────────────────────
