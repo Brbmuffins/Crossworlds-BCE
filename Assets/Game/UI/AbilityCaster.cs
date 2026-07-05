@@ -224,16 +224,9 @@ public class AbilityCaster : NetworkBehaviour
 
     void Awake()
     {
-        // Mirror: remote player clones must not process local input or register
-        // with client-only systems. Only the local player's caster stays active.
-        // (Matches the isLocalPlayer guard in PlayerMovement.Start.)
-        var netId = GetComponent<NetworkIdentity>();
-        if (netId != null && NetworkClient.active && !NetworkServer.active && !netId.isLocalPlayer)
-        {
-            enabled = false;
-            return;
-        }
-
+        // Remote-player gating is handled by ShouldProcessLocalInput() in Update.
+        // isLocalPlayer is NOT set in Awake (Mirror sets it after instantiation),
+        // so any enabled-check here would wrongly disable the local player too.
         SyncEquippedFromSpellbook();
 
         _passive        = GetComponent<ClassPassive>();
@@ -250,8 +243,88 @@ public class AbilityCaster : NetworkBehaviour
     {
         if (!ShouldProcessLocalInput()) return;
 
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
+        // Cursor is always free — CameraFollow locks it only while right-mouse orbit is
+        // active.  AbilityCaster never locks; it only ensures cursor is visible for aim.
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible   = true;
+
+        // Solo / editor play (no Mirror session): wire camera now.
+        // In networked play, OnStartLocalPlayer handles this instead.
+        if (!NetworkClient.active && !NetworkServer.active)
+        {
+            Camera sceneCam = Camera.main;
+            if (sceneCam != null) WireCamera(sceneCam);
+            else StartCoroutine(AcquireCameraRetry());
+        }
+    }
+
+    // Mirror fires this exactly once per local player object, after isLocalPlayer is
+    // confirmed — the safe place for any local-player-only setup.
+    // Also handles the DontDestroyOnLoad carry-over case: if the player persists across
+    // scenes, sceneLoaded re-runs AcquireCamera to grab the new scene's camera.
+    public override void OnStartLocalPlayer()
+    {
+        base.OnStartLocalPlayer();
+        AcquireCamera();
+        UnityEngine.SceneManagement.SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+
+    public override void OnStopLocalPlayer()
+    {
+        base.OnStopLocalPlayer();
+        UnityEngine.SceneManagement.SceneManager.sceneLoaded -= OnSceneLoaded;
+    }
+
+    void OnSceneLoaded(UnityEngine.SceneManagement.Scene scene, UnityEngine.SceneManagement.LoadSceneMode mode)
+    {
+        // Scene is fully loaded by the time this callback fires.
+        Camera sceneCam = Camera.main;
+        if (sceneCam != null)
+            WireCamera(sceneCam);
+        else
+            StartCoroutine(AcquireCameraRetry());
+    }
+
+    void AcquireCamera()
+    {
+        Camera sceneCam = Camera.main;
+        if (sceneCam == null)
+        {
+            // Camera may not be loaded yet (race during scene transition).
+            // CameraFollow's self-heal coroutine will pick up the player anyway,
+            // but start a retry so PlayerMovement.cam is also wired correctly.
+            StartCoroutine(AcquireCameraRetry());
+            return;
+        }
+
+        WireCamera(sceneCam);
+    }
+
+    System.Collections.IEnumerator AcquireCameraRetry()
+    {
+        for (int i = 0; i < 10; i++)
+        {
+            yield return new UnityEngine.WaitForSeconds(0.2f);
+            Camera sceneCam = Camera.main;
+            if (sceneCam != null) { WireCamera(sceneCam); yield break; }
+        }
+        Debug.LogWarning("[AbilityCaster] AcquireCamera: Camera.main still null after retries.");
+    }
+
+    void WireCamera(Camera sceneCam)
+    {
+        // Wire PlayerMovement.cam so WASD movement is camera-relative.
+        var pm = GetComponent<PlayerMovement>();
+        if (pm != null) pm.cam = sceneCam;
+
+        // Wire CameraFollow from here (OnStartLocalPlayer) as the authoritative path.
+        // PlayerMovement.Start() also does this as a fast path, but Mirror's
+        // OnStartLocalPlayer fires after the prefab is fully spawned and isLocalPlayer
+        // is confirmed — safer than relying on Start() timing alone.
+        var follow = sceneCam.GetComponent<CameraFollow>()
+                  ?? FindFirstObjectByType<CameraFollow>()
+                  ?? sceneCam.gameObject.AddComponent<CameraFollow>();
+        follow.target = transform;
     }
 
     public void SyncEquippedFromSpellbook()
@@ -352,6 +425,10 @@ public class AbilityCaster : NetworkBehaviour
         if (!ShouldProcessLocalInput())
             return;
 
+        // Smite-style: update AimDirection every frame so the character always faces
+        // the cursor regardless of whether an ability indicator is active.
+        RefreshAimDirection();
+
         for (int i = 0; i < 4; i++)
         {
             if (abilities[i] == null) continue;
@@ -388,9 +465,9 @@ public class AbilityCaster : NetworkBehaviour
                     activeIndicator = CreateIndicator(abilities[i]);
                     IsAimingLocally = true;
 
-                    // Show cursor so mouse drives the aim indicator
-                    Cursor.lockState = CursorLockMode.Confined;
-                    Cursor.visible = true;
+                    // Force cursor free in case camera orbit had it locked
+                    Cursor.lockState = CursorLockMode.None;
+                    Cursor.visible   = true;
                 }
             }
         }
@@ -415,9 +492,7 @@ public class AbilityCaster : NetworkBehaviour
                 heldAbilityIndex = -1;
                 activeIndicator = null;
                 DestroyRangeRing();
-
-                Cursor.lockState = CursorLockMode.Locked;
-                Cursor.visible = false;
+                // Cursor stays free — CameraFollow owns lock state when not aiming
             }
         }
     }
@@ -429,9 +504,7 @@ public class AbilityCaster : NetworkBehaviour
         activeIndicator = null;
         DestroyRangeRing();
         heldAbilityIndex = -1;
-
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
+        // Cursor stays free — CameraFollow resumes ownership
     }
 
     public float GetCooldownFraction(int slot)
@@ -486,6 +559,17 @@ public class AbilityCaster : NetworkBehaviour
             return ray.GetPoint(distance);
 
         return transform.position + transform.forward * minimumAimDistance;
+    }
+
+    // Called every frame to keep AimDirection current so PlayerMovement can always
+    // rotate the character toward the cursor (Smite-style), not just during aim mode.
+    void RefreshAimDirection()
+    {
+        Vector3 tp = GetCameraAimPoint();
+        Vector3 to = tp - transform.position;
+        to.y = 0f;
+        if (to.sqrMagnitude > 0.001f)
+            AimDirection = to.normalized;
     }
 
     void GetAimData(AbilityDef ability, out Vector3 aimDir, out float aimDistance)

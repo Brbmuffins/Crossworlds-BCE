@@ -596,8 +596,9 @@ public class PlayerHUD : MonoBehaviour
             _spellbookOpen = !_spellbookOpen;
             _spellbookCanvas.gameObject.SetActive(_spellbookOpen);
             if (!_spellbookOpen) _pendingSpellIdx = -1;
-            Cursor.lockState = _spellbookOpen ? CursorLockMode.None : CursorLockMode.Locked;
-            Cursor.visible   = _spellbookOpen;
+            // Cursor is always free in MOBA mode; just ensure visible when spellbook is open.
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible   = true;
         }
 
         // Equip pending spell into selected slot

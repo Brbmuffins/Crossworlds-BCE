@@ -183,9 +183,9 @@ public class AbilityBar : MonoBehaviour
             if (!spellbookOpen)
                 pendingSpellbookIndex = -1;
 
-            // Unlock/relock cursor
-            Cursor.lockState = spellbookOpen ? CursorLockMode.None : CursorLockMode.Locked;
-            Cursor.visible   = spellbookOpen;
+            // Cursor is always free in MOBA mode.
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible   = true;
         }
     }
 
