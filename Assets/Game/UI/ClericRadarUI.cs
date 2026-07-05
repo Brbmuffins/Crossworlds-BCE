@@ -260,6 +260,7 @@ public class ClericRadarUI : MonoBehaviour
 
         // Background
         var bgGO = new GameObject("BG"); bgGO.transform.SetParent(_portraitRoot.transform, false);
+        bgGO.AddComponent<RectTransform>(); // Unity 6: must exist before StretchFull/Image
         StretchFull(bgGO);
         bgGO.AddComponent<Image>().color = new Color(0.05f, 0.06f, 0.09f, 0.88f);
 
@@ -288,17 +289,4 @@ public class ClericRadarUI : MonoBehaviour
         hpRect.offsetMin = hpRect.offsetMax = Vector2.zero;
         _portraitHpPct = hpGO.AddComponent<TextMeshProUGUI>();
         _portraitHpPct.fontSize = 10f; _portraitHpPct.color = new Color(1f, 0.3f, 0.3f);
-        _portraitHpPct.alignment = TextAlignmentOptions.Center;
-        _portraitHpPct.fontStyle = FontStyles.Bold;
-
-        _portraitRoot.SetActive(false);
-    }
-
-    void StretchFull(GameObject go)
-    {
-        var r = go.GetComponent<RectTransform>() ?? go.AddComponent<RectTransform>();
-        r.anchorMin = Vector2.zero; r.anchorMax = Vector2.one;
-        r.offsetMin = r.offsetMax = Vector2.zero;
-    }
-}
-#endif
+        _portraitHpPct.alignment = TextAlignmentOp
