@@ -8,8 +8,11 @@ using UnityEngine.AI;
 /// BCE/Hub World/Setup Field Ghoul NPCs
 ///
 /// Wires the existing "Field Goul" models already in the Hub scene:
-///   1. NavMeshAgent   — pathfinding (speed 2, stopping 0.5)
-///   2. FieldGhoulNPC  — wander loop (plain MonoBehaviour, works in editor + server)
+///   1. Tag → "Enemy"   — abilities use CompareTag("Enemy") for targeting
+///   2. Health           — required for TakeDamage; 200 HP, passive (no aggro)
+///   3. NavMeshAgent     — pathfinding (speed 2, stopping 0.5)
+///   4. FieldGhoulNPC    — wander loop (plain MonoBehaviour, editor + server)
+///   5. CapsuleCollider  — if no collider exists, so raycasts/overlaps can hit it
 ///
 /// Re-running is safe — components are added only if missing.
 /// NavMesh must be baked (Window → AI → Navigation → Bake).
@@ -75,6 +78,25 @@ public static class FieldGhoulSetupBuilder
         agent.radius           = 0.4f;
         agent.height           = 1.8f;
         agent.baseOffset       = 0f;
+
+        // Tag — abilities filter targets with CompareTag("Enemy")
+        go.tag = "Enemy";
+
+        // Health — required for TakeDamage calls in AbilityCaster
+        var health = go.GetComponent<Health>();
+        if (health == null) health = go.AddComponent<Health>();
+        health.maxHealth     = 200f;
+        health.currentHealth = 200f;
+
+        // Collider — abilities use Physics.OverlapSphere / SphereCastAll to find hits.
+        // Add a capsule on the root if nothing collidable is already present.
+        if (go.GetComponentInChildren<Collider>() == null)
+        {
+            var cap = go.AddComponent<CapsuleCollider>();
+            cap.center = new Vector3(0f, 0.9f, 0f);
+            cap.radius = 0.4f;
+            cap.height = 1.8f;
+        }
 
         var npc = go.GetComponent<FieldGhoulNPC>();
         if (npc == null) npc = go.AddComponent<FieldGhoulNPC>();
