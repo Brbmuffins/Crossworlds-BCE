@@ -5,6 +5,8 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Networking;
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.UI;
+using UnityEngine.EventSystems;
 using TMPro;
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -72,10 +74,40 @@ public class CharacterSelectUI : MonoBehaviour
 
     void Start()
     {
+        EnsureSingleEventSystem();
         BuildPreview();
         BuildUI();
         if (characters != null && characters.Length > 0)
             ShowClass(0);
+    }
+
+    // Two enabled EventSystems (e.g. a DontDestroyOnLoad one carried in from another
+    // scene plus this scene's own) make uGUI silently stop processing clicks. Keep one,
+    // disable the rest, and guarantee it drives the new Input System.
+    void EnsureSingleEventSystem()
+    {
+        var systems = FindObjectsByType<EventSystem>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+        EventSystem keep = systems.Length > 0 ? systems[0] : null;
+
+        if (keep == null)
+        {
+            var go = new GameObject("EventSystem");
+            keep = go.AddComponent<EventSystem>();
+            go.AddComponent<InputSystemUIInputModule>();
+        }
+        else
+        {
+            for (int i = 1; i < systems.Length; i++)
+            {
+                Debug.LogWarning($"[CharSel] Disabling duplicate EventSystem '{systems[i].name}' — it was blocking clicks.");
+                systems[i].gameObject.SetActive(false);
+            }
+            if (keep.GetComponent<InputSystemUIInputModule>() == null)
+            {
+                foreach (var m in keep.GetComponents<BaseInputModule>()) m.enabled = false;
+                keep.gameObject.AddComponent<InputSystemUIInputModule>();
+            }
+        }
     }
 
     void Update()
@@ -299,6 +331,10 @@ public class CharacterSelectUI : MonoBehaviour
     {
         var canvas = GetComponentInParent<Canvas>();
         if (canvas == null) { Debug.LogError("[CharSel] Must be child of a Canvas."); return; }
+        // Sit above the self-bootstrapping gameplay HUDs (90–201) that also wake up in
+        // this scene, so none of them intercept the class-select clicks.
+        canvas.overrideSorting = true;
+        canvas.sortingOrder    = 500;
         var root = canvas.GetComponent<RectTransform>();
 
         // Full-screen background
@@ -340,7 +376,7 @@ public class CharacterSelectUI : MonoBehaviour
             int ci = i;
             var d  = characters[i];
 
-            var btnGO = new GameObject("Btn_" + d.className);
+            var btnGO = new GameObject("Btn_" + d.className, typeof(RectTransform));
             btnGO.transform.SetParent(panel.rectTransform, false);
             _classBtnBg[i] = btnGO.AddComponent<Image>();
             _classBtnBg[i].color = new Color(1f, 1f, 1f, 0.03f);
@@ -395,7 +431,7 @@ public class CharacterSelectUI : MonoBehaviour
         rt.offsetMax = new Vector2(-RIGHT_W, 0f);
 
         // RenderTexture display
-        var rawGO = new GameObject("Preview3D");
+        var rawGO = new GameObject("Preview3D", typeof(RectTransform));
         rawGO.transform.SetParent(rt, false);
         _previewDisplay = rawGO.AddComponent<RawImage>();
         _previewDisplay.texture = previewRenderTexture;
@@ -408,7 +444,7 @@ public class CharacterSelectUI : MonoBehaviour
         arf.aspectRatio = 512f / 820f;
 
         // Portrait fallback (Image — shown when no 3D prefab assigned)
-        var portGO = new GameObject("Portrait");
+        var portGO = new GameObject("Portrait", typeof(RectTransform));
         portGO.transform.SetParent(rt, false);
         _portraitOverlay = portGO.AddComponent<Image>();
         _portraitOverlay.preserveAspect = true;
@@ -490,7 +526,7 @@ public class CharacterSelectUI : MonoBehaviour
         HRule(p, y, W); y += 10f;
 
         // ── Deployable panel ──
-        var depGO = new GameObject("Deployable");
+        var depGO = new GameObject("Deployable", typeof(RectTransform));
         depGO.transform.SetParent(p, false);
         _depPanel = depGO.AddComponent<Image>();
         _depPanel.color = new Color(0f, 0f, 0f, 0f); // prevent default white flash
@@ -499,7 +535,7 @@ public class CharacterSelectUI : MonoBehaviour
         y += 72f;
 
         // Icon
-        var diGO = new GameObject("DepIcon");
+        var diGO = new GameObject("DepIcon", typeof(RectTransform));
         diGO.transform.SetParent(depRt, false);
         _depIcon = diGO.AddComponent<Image>();
         _depIcon.preserveAspect = true;
@@ -544,7 +580,7 @@ public class CharacterSelectUI : MonoBehaviour
 
         // ── DEPLOY button ──
         float btnH = 48f;
-        var btnGO = new GameObject("DeployBtn");
+        var btnGO = new GameObject("DeployBtn", typeof(RectTransform));
         btnGO.transform.SetParent(p, false);
         var btnImg = btnGO.AddComponent<Image>();
         btnImg.color = new Color(0.12f, 0.55f, 0.30f, 1f);
@@ -570,7 +606,7 @@ public class CharacterSelectUI : MonoBehaviour
 
     void BuildTraitPill(Transform parent, TraitPill trait, Color accent)
     {
-        var pillGO = new GameObject("Pill");
+        var pillGO = new GameObject("Pill", typeof(RectTransform));
         pillGO.transform.SetParent(parent, false);
         var bg = pillGO.AddComponent<Image>();
         bg.color = new Color(accent.r, accent.g, accent.b, 0.16f);
@@ -591,7 +627,7 @@ public class CharacterSelectUI : MonoBehaviour
 
     void BuildStatBar(Transform parent, ClassStat stat, Color accent)
     {
-        var rowGO = new GameObject("Stat_" + stat.label);
+        var rowGO = new GameObject("Stat_" + stat.label, typeof(RectTransform));
         rowGO.transform.SetParent(parent, false);
         var le = rowGO.AddComponent<LayoutElement>(); le.preferredHeight = 18f;
         var hg = rowGO.AddComponent<HorizontalLayoutGroup>();
@@ -606,7 +642,7 @@ public class CharacterSelectUI : MonoBehaviour
 
         for (int i = 0; i < 5; i++)
         {
-            var pip = new GameObject("P" + i);
+            var pip = new GameObject("P" + i, typeof(RectTransform));
             pip.transform.SetParent(rowGO.transform, false);
             pip.AddComponent<Image>().color = i < stat.value
                 ? new Color(accent.r, accent.g, accent.b, 0.88f)
@@ -618,7 +654,7 @@ public class CharacterSelectUI : MonoBehaviour
 
     void BuildAbilityCard(Transform parent, AbilityPreview ability, Color accent)
     {
-        var cardGO = new GameObject("Card_" + ability.abilityName);
+        var cardGO = new GameObject("Card_" + ability.abilityName, typeof(RectTransform));
         cardGO.transform.SetParent(parent, false);
         cardGO.AddComponent<Image>().color = new Color(accent.r, accent.g, accent.b, 0.16f);
         var vg = cardGO.AddComponent<VerticalLayoutGroup>();
@@ -631,14 +667,14 @@ public class CharacterSelectUI : MonoBehaviour
         vg.childForceExpandHeight = false;
 
         // Accent top bar
-        var bar = new GameObject("Bar");
+        var bar = new GameObject("Bar", typeof(RectTransform));
         bar.transform.SetParent(cardGO.transform, false);
         bar.AddComponent<Image>().color = new Color(accent.r, accent.g, accent.b, 0.55f);
         var barLE = bar.AddComponent<LayoutElement>();
         barLE.preferredHeight = 2f; barLE.flexibleWidth = 1f;
 
         // Icon — fixed square, never stretches
-        var iconGO = new GameObject("Icon");
+        var iconGO = new GameObject("Icon", typeof(RectTransform));
         iconGO.transform.SetParent(cardGO.transform, false);
         var iconImg = iconGO.AddComponent<Image>();
         iconImg.sprite          = ability.icon;
@@ -730,19 +766,22 @@ public class CharacterSelectUI : MonoBehaviour
 
     Image MkImg(RectTransform parent, string name, Color col)
     {
-        var go  = new GameObject(name); go.transform.SetParent(parent, false);
+        var go  = new GameObject(name, typeof(RectTransform));
+        go.transform.SetParent(parent, false);
         var img = go.AddComponent<Image>(); img.color = col;
         return img;
     }
 
     TextMeshProUGUI MkTMP(RectTransform parent, string name, string text, float size, FontStyles style)
     {
-        var go  = new GameObject(name); go.transform.SetParent(parent, false);
+        var go  = new GameObject(name, typeof(RectTransform));
+        go.transform.SetParent(parent, false);
         var tmp = go.AddComponent<TextMeshProUGUI>();
         tmp.text = text; tmp.fontSize = size; tmp.fontStyle = style; tmp.color = TextPrim;
-        go.GetComponent<RectTransform>().anchorMin = Vector2.zero;
-        go.GetComponent<RectTransform>().anchorMax = Vector2.one;
-        go.GetComponent<RectTransform>().offsetMin = go.GetComponent<RectTransform>().offsetMax = Vector2.zero;
+        var rt = go.GetComponent<RectTransform>();
+        rt.anchorMin = Vector2.zero;
+        rt.anchorMax = Vector2.one;
+        rt.offsetMin = rt.offsetMax = Vector2.zero;
         return tmp;
     }
 

@@ -1,4 +1,4 @@
-#if !UNITY_SERVER
+#if UNITY_EDITOR || !UNITY_SERVER
 using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
@@ -106,6 +106,7 @@ public class HeroMasteryUI : MonoBehaviour
     {
         BuildUI();
         _panel.SetActive(false);
+        if (_dimOverlay != null) _dimOverlay.gameObject.SetActive(false); // else it blocks ALL clicks
 
         if (HeroMasteryManager.Local != null)
         {
@@ -148,6 +149,7 @@ public class HeroMasteryUI : MonoBehaviour
 
     public void Open()
     {
+        if (_dimOverlay != null) _dimOverlay.gameObject.SetActive(true);
         _panel.SetActive(true);
         _open = true;
         Refresh();
@@ -156,6 +158,7 @@ public class HeroMasteryUI : MonoBehaviour
     public void Close()
     {
         _panel.SetActive(false);
+        if (_dimOverlay != null) _dimOverlay.gameObject.SetActive(false);
         _open = false;
     }
 
@@ -205,6 +208,10 @@ public class HeroMasteryUI : MonoBehaviour
     // ── UI construction ───────────────────────────────────────────────────────
     void BuildUI()
     {
+        // Canvas root needs a RectTransform for children to resolve their UI layout.
+        if (GetComponent<RectTransform>() == null)
+            gameObject.AddComponent<RectTransform>();
+
         var canvas = gameObject.AddComponent<Canvas>();
         canvas.renderMode   = RenderMode.ScreenSpaceOverlay;
         canvas.sortingOrder = 94;
@@ -215,7 +222,7 @@ public class HeroMasteryUI : MonoBehaviour
         gameObject.AddComponent<GraphicRaycaster>();
 
         // Dim overlay (full screen)
-        var dimGO = new GameObject("DimOverlay");
+        var dimGO = new GameObject("DimOverlay", typeof(RectTransform));
         dimGO.transform.SetParent(transform, false);
         StretchFull(dimGO);
         _dimOverlay = dimGO.AddComponent<Image>();
@@ -312,7 +319,7 @@ public class HeroMasteryUI : MonoBehaviour
         refs.borderOutline.color = new Color(0.2f, 0.2f, 0.25f, 0.6f);
 
         // Card background — second child, covers border except the 1px edge
-        var bgChildGO = new GameObject("CardBg");
+        var bgChildGO = new GameObject("CardBg", typeof(RectTransform));
         bgChildGO.transform.SetParent(cardGO.transform, false);
         StretchFull(bgChildGO);
         refs.bg = bgChildGO.AddComponent<Image>();
@@ -351,7 +358,7 @@ public class HeroMasteryUI : MonoBehaviour
         xpBgImg.color = new Color(0.05f, 0.05f, 0.07f, 1f);
 
         // ── XP fill ───────────────────────────────────────────────────────────
-        var xpFillGO = new GameObject("XpFill");
+        var xpFillGO = new GameObject("XpFill", typeof(RectTransform));
         xpFillGO.transform.SetParent(xpBgGO.transform, false);
         StretchFull(xpFillGO);
         refs.xpBarFill = xpFillGO.AddComponent<Image>();

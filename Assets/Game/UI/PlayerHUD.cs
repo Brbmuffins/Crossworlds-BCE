@@ -1,9 +1,9 @@
-#if !UNITY_SERVER
 using System.Collections;
 using System.Collections.Generic;
 using Mirror;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 using TMPro;
 
 /// <summary>
@@ -30,6 +30,12 @@ public class PlayerHUD : MonoBehaviour
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void Bootstrap()
     {
+        // Compiles on every build target (no #if UNITY_SERVER), but never runs on a
+        // truly headless server — a real dedicated server has no graphics device.
+        // This lets the HUD appear in the editor whether the active build target is
+        // Client or Dedicated Server.
+        if (SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.Null)
+            return;
         if (Instance != null) return;
         var go = new GameObject("[PlayerHUD]");
         DontDestroyOnLoad(go);
@@ -89,6 +95,8 @@ public class PlayerHUD : MonoBehaviour
 
     void Awake()
     {
+        if (SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.Null)
+        { enabled = false; return; }
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
         BuildAllUI();
@@ -97,6 +105,28 @@ public class PlayerHUD : MonoBehaviour
     void Update()
     {
         ScanForPlayer();
+
+        // The HUD only belongs in gameplay scenes. Hide it on the menus (Login /
+        // CharacterSelect) so it neither renders nor eats UI raycasts there — but
+        // show it in gameplay scenes even before a player has fully bound, so it
+        // never silently disappears. Ticks below already null-check _health/_caster.
+        string scene = SceneManager.GetActiveScene().name;
+        bool menuScene = scene == "Login" || scene == "LoginScene" || scene == "CharacterSelect";
+        bool show = !menuScene;
+        // Use SetActive (not canvas.enabled) so the GraphicRaycaster deregisters and
+        // cannot intercept clicks on menu-scene canvases with a higher sortingOrder.
+        if (_canvas      != null && _canvas.gameObject.activeSelf      != show) _canvas.gameObject.SetActive(show);
+        if (_floatCanvas != null && _floatCanvas.gameObject.activeSelf != show) _floatCanvas.gameObject.SetActive(show);
+        if (!show)
+        {
+            if (_spellbookOpen && _spellbookCanvas != null)
+            {
+                _spellbookOpen = false;
+                _spellbookCanvas.gameObject.SetActive(false);
+            }
+            return;
+        }
+
         TickHpBar();
         TickAbilityBar();
         TickSpellbook();
@@ -586,9 +616,9 @@ public class PlayerHUD : MonoBehaviour
 
     IEnumerator FloatRoutine(Vector3 worldPos, float amount, bool isHeal)
     {
-        var go  = new GameObject("FloatNum");
+        var go  = new GameObject("FloatNum", typeof(RectTransform));
         go.transform.SetParent(_floatCanvas.transform, false);
-        var rt  = go.AddComponent<RectTransform>();
+        var rt  = go.GetComponent<RectTransform>();
         var tmp = go.AddComponent<TextMeshProUGUI>();
 
         tmp.text      = isHeal ? $"+{Mathf.RoundToInt(amount)}" : $"-{Mathf.RoundToInt(amount)}";
@@ -666,4 +696,3 @@ public class PlayerHUD : MonoBehaviour
         rt.offsetMin = rt.offsetMax = Vector2.zero;
     }
 }
-#endif

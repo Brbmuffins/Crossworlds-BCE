@@ -1,4 +1,4 @@
-#if !UNITY_SERVER
+#if UNITY_EDITOR || !UNITY_SERVER
 using System.Collections;
 using System;
 using UnityEngine;
@@ -196,7 +196,7 @@ public class GatheringHUD : MonoBehaviour
 
     static GameObject MakeImage(string name, Transform parent, Color color)
     {
-        var go  = new GameObject(name);
+        var go  = new GameObject(name, typeof(RectTransform));
         go.transform.SetParent(parent, false);
         var img = go.AddComponent<Image>();
         img.color = color;
@@ -206,7 +206,7 @@ public class GatheringHUD : MonoBehaviour
     static TextMeshProUGUI MakeTMP(string name, Transform parent,
         string text, int size, FontStyles style, Color color)
     {
-        var go = new GameObject(name);
+        var go = new GameObject(name, typeof(RectTransform));
         go.transform.SetParent(parent, false);
         var t       = go.AddComponent<TextMeshProUGUI>();
         t.text      = text;

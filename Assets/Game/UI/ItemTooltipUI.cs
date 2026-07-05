@@ -1,4 +1,4 @@
-﻿#if !UNITY_SERVER
+#if UNITY_EDITOR || !UNITY_SERVER
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -136,15 +136,14 @@ public class ItemTooltipUI : MonoBehaviour
         _panelRT.sizeDelta = new Vector2(PanelW, PanelH);
 
         // Border (slightly larger bg)
-        var borderGO = new GameObject("Border");
+        var borderGO = new GameObject("Border", typeof(RectTransform));
         borderGO.transform.SetParent(panelGO.transform, false);
         _border = borderGO.AddComponent<Image>();
         _border.color = ColBorder;
-        var bRT = borderGO.AddComponent<RectTransform>();
-        Stretch(bRT, -1f, 1f);
+        Stretch(borderGO.GetComponent<RectTransform>(), -1f, 1f);
 
         // Background
-        var bgGO = new GameObject("BG");
+        var bgGO = new GameObject("BG", typeof(RectTransform));
         bgGO.transform.SetParent(panelGO.transform, false);
         var bgImg = bgGO.AddComponent<Image>();
         bgImg.color = ColBg;

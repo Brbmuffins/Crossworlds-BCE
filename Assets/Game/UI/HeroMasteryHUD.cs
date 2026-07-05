@@ -1,4 +1,4 @@
-﻿#if !UNITY_SERVER
+#if UNITY_EDITOR || !UNITY_SERVER
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -174,7 +174,7 @@ public class HeroMasteryHUD : MonoBehaviour
         rootRect.sizeDelta        = new Vector2(0f, 18f);
 
         // Background
-        var bgGO = new GameObject("BG");
+        var bgGO = new GameObject("BG", typeof(RectTransform));
         bgGO.transform.SetParent(_root.transform, false);
         StretchFull(bgGO);
         _bg = bgGO.AddComponent<Image>();

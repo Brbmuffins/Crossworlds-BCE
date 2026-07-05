@@ -1,4 +1,4 @@
-#if !UNITY_SERVER
+#if UNITY_EDITOR || !UNITY_SERVER
 using System.Collections;
 using UnityEngine;
 
@@ -49,7 +49,7 @@ public class FloatingDamageText : MonoBehaviour
             var obj = new GameObject($"DmgText_{i}");
             obj.transform.SetParent(transform, false);
             obj.SetActive(false);
-            DontDestroyOnLoad(obj);
+            // Children of a DontDestroyOnLoad root persist automatically — no call needed.
 
             var tm = obj.AddComponent<TextMesh>();
             tm.characterSize = 0.12f;
