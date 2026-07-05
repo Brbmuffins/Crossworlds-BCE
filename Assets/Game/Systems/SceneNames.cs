@@ -10,10 +10,12 @@ public static class SceneNames
     public const string CharacterSelect = "CharacterSelect";
     public const string Hub             = "Darkwood";   // scene renamed from Hub
     public const string ArenaCopper     = "Arena_Copper";
+    public const string VoidDungeon     = "VoidDungeon";   // placeholder — future dungeon build
 
     // ── Full asset paths (used by editor scripts and Mirror scene fields) ─
     public const string LoginPath           = "Assets/Game/Scenes/LoginScene.unity";
     public const string CharacterSelectPath = "Assets/Game/Scenes/CharacterSelect.unity";
     public const string HubPath             = "Assets/Game/Scenes/Darkwood.unity";
     public const string ArenaCopperPath     = "Assets/Game/Scenes/Arena_Copper.unity";
+    public const string VoidDungeonPath     = "Assets/Game/Scenes/VoidDungeon.unity";
 }
