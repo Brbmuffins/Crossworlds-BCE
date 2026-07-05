@@ -84,7 +84,7 @@ public class ClericAnimationDriver : NetworkBehaviour
 
     void Update()
     {
-        if (!isLocalPlayer || animator == null || _rb == null) return;
+        if (!isLocalPlayer || animator == null || _rb == null || animator.runtimeAnimatorController == null) return;
 
         float speed = new Vector3(_rb.linearVelocity.x, 0f, _rb.linearVelocity.z).magnitude;
         float normalized = Mathf.Clamp(speed / baseSprintSpeed * 1.5f, 0f, 1.5f);
