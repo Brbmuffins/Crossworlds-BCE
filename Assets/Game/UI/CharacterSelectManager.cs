@@ -46,7 +46,7 @@ public class CharacterSelectManager : MonoBehaviour
         {
             idx = 0, name = "WARDEN", role = "Damage  ·  Control",
             blurb = "Commands runic sentinels and snare traps that work in concert. Set up the killzone before enemies arrive — place, position, activate. Reactive Wardens lose; patient ones dominate.",
-            abilities = new[] { "Runic Sentinel", "Runic Snare", "Battle Hymn", "Conjurer's Surge" },
+            abilities = new[] { "Runic Sentinel", "Runic Snare", "Battle Hymn", "Mend" },
             passive = "Overengineered — constructs in overlapping zones stack output",
             accent = new Color(1f, 0.55f, 0.05f),
             vfxA = "Assets/brbmuffins Studio/brbmuffins Magic Pack/Prefabs/Character auras/Plexus.prefab",
@@ -56,7 +56,7 @@ public class CharacterSelectManager : MonoBehaviour
         {
             idx = 1, name = "IRONCLAD", role = "Tank  ·  Crowd Control",
             blurb = "Takes hits for the team and punishes enemies who focus them. Rune Chain locks one target for 5 full seconds. Shieldwall Charge staggers everything in its path. The anvil everything else is smashed against.",
-            abilities = new[] { "Shieldwall Charge", "Rune Chain", "Iron Rampart", "Counter Blow" },
+            abilities = new[] { "Arcane Ward", "Shieldwall Charge", "Stalwart Stance", "Iron Rampart" },
             passive = "Threat Protocol — damage stacks DR bonus and redirects enemy aggro",
             accent = new Color(0.15f, 0.65f, 1f),
             vfxA = "Assets/brbmuffins Studio/brbmuffins Magic Pack/Prefabs/Character auras/Lightning aura.prefab",
@@ -66,7 +66,7 @@ public class CharacterSelectManager : MonoBehaviour
         {
             idx = 2, name = "SHADOWBLADE", role = "Stealth  ·  Burst",
             blurb = "Silence wards, shadow veils, and debuff detonations. Invisible until it's too late. A Shadowblade who knows when to harvest beats button-mashers every single time.",
-            abilities = new[] { "Shadow Veil", "Silence Ward", "Dark Mark", "Dark Harvest" },
+            abilities = new[] { "Void Bolt", "Silence Ward", "Dark Harvest", "Shadow Veil" },
             passive = "Bounty System — elite kills instantly reset all cooldowns",
             accent = new Color(0.6f, 0.1f, 1f),
             vfxA = "Assets/brbmuffins Dark Arts/brbmuffins Fantasy Pack/Prefabs/Effects normal/Death magic circle.prefab",
@@ -76,7 +76,7 @@ public class CharacterSelectManager : MonoBehaviour
         {
             idx = 3, name = "CLERIC", role = "Support  ·  Sustain",
             blurb = "Emergency revivals, sacred aegis shields, and sustained team uptime. The difference between a wipe and a clutch win. No one notices the Cleric — until they're down and need one.",
-            abilities = new[] { "Soul Bond", "Spirit Wisps", "Divine Spark", "Temporal Grace" },
+            abilities = new[] { "Spirit Wisps", "Soul Bond", "Sacred Aegis", "Temporal Grace" },
             passive = "Triage Loop — each ally healed triggers 8% self-heal on the Cleric",
             accent = new Color(0.1f, 1f, 0.45f),
             vfxA = "Assets/brbmuffins Studio/brbmuffins Magic Pack/Prefabs/Magic circles/Healing circle.prefab",
