@@ -17,7 +17,7 @@ public static class BuildScript
     {
         "Assets/Game/Scenes/LoginScene.unity",
         "Assets/Game/Scenes/CharacterSelect.unity",
-        "Assets/Game/Scenes/Hub.unity",
+        "Assets/Game/Scenes/Darkwood.unity",   // renamed from Hub.unity
     };
 
     // ── Dedicated Server (Linux) ─────────────────────────────────────────

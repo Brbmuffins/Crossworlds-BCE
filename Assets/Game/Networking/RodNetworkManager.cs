@@ -52,7 +52,7 @@ public class RodNetworkManager : NetworkManager
         // Mirror uses offlineScene to auto-navigate back to login on disconnect —
         // this is what makes Logout and chat teardown work correctly.
         offlineScene = "Assets/Game/Scenes/LoginScene.unity";
-        onlineScene  = "Assets/Game/Scenes/Hub.unity";
+        onlineScene  = "Assets/Game/Scenes/Darkwood.unity";   // renamed from Hub.unity
 
         if (transport == null)
             transport = GetComponent<Mirror.Transport>();
