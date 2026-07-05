@@ -75,6 +75,8 @@ Crossworlds is a party-based action RPG. You and your allies share a hub world, 
 | **E** | Interact with an NPC (Forge Master, The Hangman) |
 | **Enter** | Open chat |
 
+<p align="center"><img src="Inspiration ART/action bar.png" width="340"/><br/><sub><i>Ability bar — slots <b>1–4</b> with a live cooldown countdown (slot 2 recharging).</i></sub></p>
+
 ### Progression — three parallel tracks
 
 | Track | Earned by | Payoff |
@@ -179,6 +181,8 @@ The Arcanist controls space. Arcane Step is a true blink — it bypasses terrain
 
 Every class draws from the **shared pool (0–7)** plus its own kit. Equip any four abilities into slots **1–4** via the Spellbook (**Tab**). Indices are fixed and mirrored server-side — never renumber.
 
+<p align="center"><img src="Inspiration ART/spellbookaplha.png" width="100%"/><br/><sub><i>The in-game Spellbook (<b>Tab</b>) — every ability shows its icon, category (colour strip), range/damage, and cooldown. Click a card, press <b>1–4</b> to equip.</i></sub></p>
+
 **Shape** describes how an ability is delivered:
 
 | Shape | Meaning |
@@ -262,6 +266,8 @@ Damage values are single-hit unless noted; ranges like `15–45` are uncharged �
 <img src="Docs/icons/combat/combat-directional.png" width="100%"/>
 
 > *Every shot is aimed. A charged Void Bolt streaks into a pack while the AoE indicator burns on the floor — no auto-attack, no tab-target, just placement and timing.*
+
+<p align="center"><img src="Inspiration ART/visuals combats.png" width="360"/><br/><sub><i>In-game: a deployed Runic Sentinel turret beside a crackling ability singularity.</i></sub></p>
 
 ### Smite-Style Directional Combat
 
@@ -691,6 +697,8 @@ Idle → (player enters aggroRadius) → Chase → (in attackRange) → Attack
 <sub>New enemy zone — 2026-07-04 content update.</sub>
 
 The **Fields of Gundab** are the first themed enemy zone beyond the void arenas, with a fully-animated signature foe: the **Field Goul**, a lurching brute.
+
+<p align="center"><img src="Inspiration ART/combat waves.png" width="100%"/><br/><sub><i>Combat waves kicking off in the Fields of Gundab — the zone arms as the first player enters.</i></sub></p>
 
 | Enemy | Model | Animations | Driver |
 |-------|-------|------------|--------|
