@@ -209,8 +209,8 @@ public class PlayerHUD : MonoBehaviour
     void BuildHpBar()
     {
         var root = Rt(_canvas.transform, "HpRoot");
-        root.anchorMin = new Vector2(0.01f, 0.03f);
-        root.anchorMax = new Vector2(0.22f, 0.10f);
+        root.anchorMin = new Vector2(0.01f, 0.88f);
+        root.anchorMax = new Vector2(0.13f, 0.96f);
         root.offsetMin = root.offsetMax = Vector2.zero;
 
         // Panel
@@ -297,7 +297,7 @@ public class PlayerHUD : MonoBehaviour
         root.anchorMin        = new Vector2(0.5f, 0f);
         root.anchorMax        = new Vector2(0.5f, 0f);
         root.pivot            = new Vector2(0.5f, 0f);
-        root.anchoredPosition = new Vector2(0f, 12f);
+        root.anchoredPosition = new Vector2(0f, 50f);
         root.sizeDelta        = new Vector2(barWidth, barHeight);
 
         // Panel background
@@ -316,8 +316,11 @@ public class PlayerHUD : MonoBehaviour
 
     void BuildSlot(RectTransform parent, int i, float x, float size)
     {
-        // Container
+        // Container — anchored to bar bottom so slots sit inside the panel
         var slotRt = Rt(parent, "Slot_" + i);
+        slotRt.anchorMin        = new Vector2(0.5f, 0f);
+        slotRt.anchorMax        = new Vector2(0.5f, 0f);
+        slotRt.pivot            = new Vector2(0.5f, 0f);
         slotRt.anchoredPosition = new Vector2(x, 20f);
         slotRt.sizeDelta        = new Vector2(size, size);
 
@@ -355,13 +358,16 @@ public class PlayerHUD : MonoBehaviour
         _slotKey[i].rectTransform.offsetMin = _slotKey[i].rectTransform.offsetMax = Vector2.zero;
         _slotKey[i].alignment = TextAlignmentOptions.TopLeft;
 
-        // Ability name (bottom strip)
+        // Ability name (bottom strip — anchored to bar bottom, below the slot)
         _slotName[i] = Lbl(parent, "Name_" + i, "", 9f);
         _slotName[i].color     = TextDim;
         _slotName[i].alignment = TextAlignmentOptions.Center;
-        float nameX = x;
-        _slotName[i].rectTransform.anchoredPosition = new Vector2(nameX, 4f);
-        _slotName[i].rectTransform.sizeDelta        = new Vector2(size, 18f);
+        var nameRt = _slotName[i].rectTransform;
+        nameRt.anchorMin        = new Vector2(0.5f, 0f);
+        nameRt.anchorMax        = new Vector2(0.5f, 0f);
+        nameRt.pivot            = new Vector2(0.5f, 0f);
+        nameRt.anchoredPosition = new Vector2(x, 2f);
+        nameRt.sizeDelta        = new Vector2(size, 16f);
     }
 
     void RebuildAbilitySlots()
@@ -466,8 +472,8 @@ public class PlayerHUD : MonoBehaviour
         gridRt.offsetMin = gridRt.offsetMax = Vector2.zero;
 
         var glg = grid.AddComponent<GridLayoutGroup>();
-        glg.cellSize        = new Vector2(160f, 110f);
-        glg.spacing         = new Vector2(12f, 12f);
+        glg.cellSize        = new Vector2(190f, 130f);
+        glg.spacing         = new Vector2(10f, 10f);
         glg.startCorner     = GridLayoutGroup.Corner.UpperLeft;
         glg.startAxis       = GridLayoutGroup.Axis.Horizontal;
         glg.childAlignment  = TextAnchor.UpperCenter;
@@ -528,41 +534,46 @@ public class PlayerHUD : MonoBehaviour
         iconImg.rectTransform.anchorMax = new Vector2(0.32f, 0.95f);
         iconImg.rectTransform.offsetMin = iconImg.rectTransform.offsetMax = Vector2.zero;
 
-        // Name
-        var name = Lbl(cardRt, "Name", ab.abilityName.ToUpper(), 11f);
-        name.fontStyle = FontStyles.Bold;
-        name.color     = Color.white;
-        name.rectTransform.anchorMin = new Vector2(0.35f, 0.60f);
-        name.rectTransform.anchorMax = new Vector2(0.98f, 0.95f);
+        // Name — auto-sizes down from 13pt if text is long
+        var name = Lbl(cardRt, "Name", ab.abilityName.ToUpper(), 13f);
+        name.fontStyle          = FontStyles.Bold;
+        name.color              = Color.white;
+        name.enableAutoSizing   = true;
+        name.fontSizeMin        = 9f;
+        name.fontSizeMax        = 13f;
+        name.textWrappingMode   = TextWrappingModes.Normal;
+        name.rectTransform.anchorMin = new Vector2(0.35f, 0.58f);
+        name.rectTransform.anchorMax = new Vector2(0.97f, 0.94f);
         name.rectTransform.offsetMin = name.rectTransform.offsetMax = Vector2.zero;
-        name.alignment = TextAlignmentOptions.TopLeft;
+        name.alignment = TextAlignmentOptions.BottomLeft;
 
         // Category tag
-        var cat = Lbl(cardRt, "Cat", ab.category.ToString().ToUpper(), 9f);
+        var cat = Lbl(cardRt, "Cat", ab.category.ToString().ToUpper(), 10f);
         cat.color     = CategoryTint(ab.category);
         cat.rectTransform.anchorMin = new Vector2(0.35f, 0.40f);
-        cat.rectTransform.anchorMax = new Vector2(0.98f, 0.62f);
+        cat.rectTransform.anchorMax = new Vector2(0.97f, 0.60f);
         cat.rectTransform.offsetMin = cat.rectTransform.offsetMax = Vector2.zero;
         cat.alignment = TextAlignmentOptions.TopLeft;
 
-        // Description generated from stats (AbilityDef has no free-text description field)
-        string descText = $"{ab.range:0.#}m  ·  {ab.cooldown:0.#}s cd";
-        if (ab.damage > 0f)       descText += $"  ·  {ab.damage:0}dmg";
-        if (ab.healAmount > 0f)   descText += $"  ·  +{ab.healAmount:0}hp";
-        if (ab.shieldAbsorb > 0f) descText += $"  ·  {ab.shieldAbsorb:0} shield";
-        var desc = Lbl(cardRt, "Desc", descText, 9f);
+        // Stats row
+        string descText = $"{ab.range:0.#}m range";
+        if (ab.damage > 0f)       descText += $"  •  {ab.damage:0} dmg";
+        if (ab.healAmount > 0f)   descText += $"  •  +{ab.healAmount:0} hp";
+        if (ab.shieldAbsorb > 0f) descText += $"  •  {ab.shieldAbsorb:0} shield";
+        var desc = Lbl(cardRt, "Desc", descText, 10f);
         desc.color             = TextDim;
         desc.textWrappingMode  = TextWrappingModes.Normal;
         desc.rectTransform.anchorMin = new Vector2(0.04f, 0.04f);
-        desc.rectTransform.anchorMax = new Vector2(0.98f, 0.40f);
+        desc.rectTransform.anchorMax = new Vector2(0.97f, 0.40f);
         desc.rectTransform.offsetMin = desc.rectTransform.offsetMax = Vector2.zero;
         desc.alignment = TextAlignmentOptions.TopLeft;
 
-        // Cooldown badge
-        var cdLabel = Lbl(cardRt, "CD", $"{ab.cooldown:0.#}s", 9f);
-        cdLabel.color     = new Color(0.9f, 0.7f, 0.2f, 0.85f);
-        cdLabel.rectTransform.anchorMin = new Vector2(0.68f, 0.86f);
-        cdLabel.rectTransform.anchorMax = new Vector2(0.98f, 1.00f);
+        // Cooldown badge — top-right corner
+        var cdLabel = Lbl(cardRt, "CD", $"{ab.cooldown:0.#}s", 10f);
+        cdLabel.color     = new Color(0.9f, 0.7f, 0.2f, 0.9f);
+        cdLabel.fontStyle = FontStyles.Bold;
+        cdLabel.rectTransform.anchorMin = new Vector2(0.65f, 0.86f);
+        cdLabel.rectTransform.anchorMax = new Vector2(0.97f, 1.00f);
         cdLabel.rectTransform.offsetMin = cdLabel.rectTransform.offsetMax = Vector2.zero;
         cdLabel.alignment = TextAlignmentOptions.TopRight;
     }

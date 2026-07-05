@@ -133,6 +133,7 @@ public class XpBar : MonoBehaviour
         // Canvas
         var cgo = new GameObject("XpBarCanvas",
             typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster), typeof(CanvasGroup));
+        DontDestroyOnLoad(cgo);
         _canvas = cgo.GetComponent<Canvas>();
         _canvas.renderMode   = RenderMode.ScreenSpaceOverlay;
         _canvas.sortingOrder = 90;
@@ -154,14 +155,14 @@ public class XpBar : MonoBehaviour
         cRt.anchorMin        = new Vector2(0.3f, 0f);
         cRt.anchorMax        = new Vector2(0.7f, 0f);
         cRt.pivot            = new Vector2(0.5f, 0f);
-        cRt.anchoredPosition = new Vector2(0f, 8f);
-        cRt.sizeDelta        = new Vector2(0f, 22f);
+        cRt.anchoredPosition = new Vector2(0f, 6f);
+        cRt.sizeDelta        = new Vector2(0f, 26f);
 
         // Background
         var bgGO = new GameObject("BG", typeof(RectTransform), typeof(Image));
         bgGO.transform.SetParent(container.transform, false);
         _fillBg = bgGO.GetComponent<Image>();
-        _fillBg.color = new Color(0.06f, 0.04f, 0.16f);
+        _fillBg.color = new Color(0.14f, 0.09f, 0.32f);
         StretchFull(bgGO.GetComponent<RectTransform>());
 
         // Fill
@@ -202,8 +203,8 @@ public class XpBar : MonoBehaviour
         xpGO.transform.SetParent(container.transform, false);
         _xpText = xpGO.GetComponent<TextMeshProUGUI>();
         _xpText.text      = "0 / 100 XP";
-        _xpText.fontSize  = 9f;
-        _xpText.color     = new Color(0.8f, 0.8f, 1f, 0.9f);
+        _xpText.fontSize  = 11f;
+        _xpText.color     = new Color(0.85f, 0.82f, 1f, 1f);
         _xpText.alignment = TextAlignmentOptions.Center;
         StretchFull(xpGO.GetComponent<RectTransform>());
     }
