@@ -515,6 +515,13 @@ public class AbilityCaster : NetworkBehaviour
         return Mathf.Clamp01(cooldownTimers[slot] / abilities[slot].cooldown);
     }
 
+    // Seconds of cooldown left on a slot (0 when ready). Used by the HUD countdown.
+    public float GetCooldownRemaining(int slot)
+    {
+        if (slot < 0 || slot >= cooldownTimers.Length) return 0f;
+        return Mathf.Max(0f, cooldownTimers[slot]);
+    }
+
     KeyControl GetDigitKey(int index)
     {
         switch (index)
