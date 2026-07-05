@@ -1673,6 +1673,9 @@ public class AbilityCaster : NetworkBehaviour
         go.transform.rotation = rotation;
 
         ParticleSystem ps = go.AddComponent<ParticleSystem>();
+        // A freshly added ParticleSystem is already playing; main.duration can only be
+        // set while stopped, so clear it before configuring.
+        ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
 
         var main = ps.main;
         main.duration = 0.3f;

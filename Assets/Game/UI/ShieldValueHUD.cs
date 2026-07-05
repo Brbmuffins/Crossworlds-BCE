@@ -205,6 +205,9 @@ public class ShieldValueHUD : MonoBehaviour
     {
         var ps   = new GameObject("ShieldBreak").AddComponent<ParticleSystem>();
         ps.transform.position = transform.position;
+        // A freshly added ParticleSystem is already playing; main.duration can only be
+        // set while stopped, so clear it before configuring.
+        ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
 
         var main        = ps.main;
         main.loop                = false;
