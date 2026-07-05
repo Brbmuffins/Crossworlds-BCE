@@ -6,19 +6,18 @@ using UnityEngine;
 /// <summary>
 /// AbilityVFXAssignerBuilder — BCE/Heroes/Assign Ability VFX
 ///
-/// Scans the brbmuffins VFX packs already in the project and assigns
-/// castVFX + hitVFX prefabs to every AbilityDef in all 5 class spellbooks.
+/// Assigns castVFX, hitVFX, and deployablePrefab (+ turretPrefab for Runic
+/// Sentinel) to every AbilityDef in all 5 class spellbooks.
 ///
-/// Safe to re-run — skips entries that already match. Run after importing
-/// new VFX prefabs or adding abilities.
+/// Prefab lookup searches brbmuffins packs in priority order so the dark
+/// Fantasy Pack "Magic circle" beats the cartoon Magic Pack one. FBX models
+/// in the Engineer/Turret folder are also included for the turret slot.
 ///
-/// Fantasy Pack (dark runes/plasma/lightning) takes priority over Magic Pack
-/// when both contain a same-named prefab.
+/// Safe to re-run — only writes fields that differ from current value.
+/// Run BCE → Heroes → Assign Ability VFX after any new VFX import.
 /// </summary>
 public static class AbilityVFXAssignerBuilder
 {
-    // Search order matters: Fantasy Pack first so "Magic circle" resolves to
-    // the darker runic version rather than the Magic Pack cartoon one.
     static readonly string[] SearchFolders =
     {
         "Assets/brbmuffins Dark Arts",
@@ -27,6 +26,7 @@ public static class AbilityVFXAssignerBuilder
         "Assets/brbmuffins VFX",
         "Assets/brbmuffins FX",
         "Assets/brbmuffins Trails",
+        "Assets/Game/Characters/Engineer/Turret",
     };
 
     static readonly string[] HeroPrefabs =
@@ -38,54 +38,63 @@ public static class AbilityVFXAssignerBuilder
         "Assets/Game/Prefabs/Arcanist.prefab",
     };
 
-    // ── VFX map ───────────────────────────────────────────────────────────────
-    // Key   = abilityName (must match AbilityDef.abilityName exactly)
-    // Value = (castVFX prefab name, hitVFX prefab name)
-    // Use null to leave a slot unchanged.
-    static readonly Dictionary<string, (string cast, string hit)> VfxMap =
-        new Dictionary<string, (string, string)>
+    // ── Main VFX map ──────────────────────────────────────────────────────────
+    // (castVFX, hitVFX, deployablePrefab) — null = leave slot unchanged
+    static readonly Dictionary<string, (string cast, string hit, string deploy)> VfxMap =
+        new Dictionary<string, (string, string, string)>
     {
         // ── Arcanist ─────────────────────────────────────────────────────────
-        { "Void Bolt",          ("Plazma sphere",                   "Plexus AoE") },
-        { "Storm Lash",         ("Human_SpellAura_Lightning",       "Electro slash") },
-        { "Ember Surge",        ("Human_SpellAura_Fire",            "Human_Spell_Fireball") },
-        { "Mind Spike",         ("Dard magic shoot",                "Electro hit") },
-        { "Binding Wave",       ("Magic circle",                    "Red energy explosion") },
-        { "Arcane Ward",        ("Human_Spell_Shield",              null) },
-        { "Conjurer's Surge",   ("Human_SpellAura_Lightning",       "Human_Spell_Shockwave_Explosion") },
-        { "Forked Lightning",   ("Human_SpellAura_Lightning",       "Lightning attack") },
-        { "Collapsing Void",    ("Death magic circle",              "Explosion") },
-        { "Void Maw",           ("Death magic circle",              "Plexus AoE") },
-        { "Arcane Step",        ("Teleport",                        "Glowing orbs") },
+        { "Void Bolt",          ("Plazma sphere",                    "Plexus AoE",                null) },
+        { "Storm Lash",         ("Human_SpellAura_Lightning",        "Electro slash",             null) },
+        { "Ember Surge",        ("Human_SpellAura_Fire",             "Human_Spell_Fireball",      null) },
+        { "Mind Spike",         ("Dard magic shoot",                 "Electro hit",               null) },
+        { "Binding Wave",       ("Magic circle",                     "Red energy explosion",      "Magic circle") },
+        { "Arcane Ward",        ("Human_Spell_Shield",               null,                        null) },
+        { "Conjurer's Surge",   ("Human_SpellAura_Lightning",        "Human_Spell_Shockwave_Explosion", null) },
+        { "Forked Lightning",   ("Human_SpellAura_Lightning",        "Lightning attack",          null) },
+        { "Collapsing Void",    ("Death magic circle",               "Explosion",                 "Death magic circle") },
+        { "Void Maw",           ("Death magic circle",               "Plexus AoE",                "Death magic circle") },
+        { "Arcane Step",        ("Teleport",                         "Glowing orbs",              null) },
 
-        // ── Warden (Engineer) ─────────────────────────────────────────────────
-        { "Runic Sentinel",     ("Magic circle",                    "Electro hit") },
-        { "Runic Snare",        ("Magic circle",                    "Ground AOE explosion") },
-        { "Rune Chain",         ("Lightning strike skill",          "Electro slash") },
-        { "Mending Circle",     ("Human_SpellAura_Heal",            "Healing circle") },
+        // ── Warden ───────────────────────────────────────────────────────────
+        // Runic Sentinel turretPrefab is handled separately in TurretMap below
+        { "Runic Sentinel",     ("Magic circle",                     "Electro hit",               "Magic circle") },
+        { "Runic Snare",        ("Magic circle",                     "Ground AOE explosion",      "Magic circle") },
+        { "Rune Chain",         ("Lightning strike skill",           "Electro slash",             null) },
+        { "Mending Circle",     ("Human_SpellAura_Heal",             "Healing circle",            "Healing circle") },
 
-        // ── Ironclad (Guardian) ───────────────────────────────────────────────
-        { "Counter Blow",       ("Charge slash red",                "AoE slash orange") },
-        { "Gravity Slam",       ("Human_SpellAura_Shockwave_Ground","Ground AOE explosion") },
-        { "Shieldwall Charge",  ("Charge slash blue",               "Explosion") },
-        { "Stalwart Stance",    ("Human_Spell_Shield",              null) },
-        { "Iron Rampart",       ("Mana wall",                       null) },
+        // ── Ironclad ─────────────────────────────────────────────────────────
+        { "Counter Blow",       ("Charge slash red",                 "AoE slash orange",          null) },
+        { "Gravity Slam",       ("Human_SpellAura_Shockwave_Ground", "Ground AOE explosion",      "Ground spikes") },
+        { "Shieldwall Charge",  ("Charge slash blue",                "Explosion",                 null) },
+        { "Stalwart Stance",    ("Human_Spell_Shield",               null,                        null) },
+        { "Iron Rampart",       ("Mana wall",                        null,                        "Mana wall") },
 
         // ── Shadowblade ───────────────────────────────────────────────────────
-        { "Shadow Veil",        ("Smoke vortex",                    null) },
-        { "Silence Ward",       ("Mana wall",                       "Freeze circle") },
-        { "Dark Harvest",       ("Death magic circle",              "Smoke AOE explosion") },
+        { "Shadow Veil",        ("Smoke vortex",                     null,                        null) },
+        { "Silence Ward",       ("Mana wall",                        "Freeze circle",             "Freeze circle") },
+        { "Dark Harvest",       ("Death magic circle",               "Smoke AOE explosion",       "Death magic circle") },
 
         // ── Cleric ────────────────────────────────────────────────────────────
-        { "Battle Hymn",        ("Human_SpellAura_Heal",            null) },
-        { "Spirit Redirect",    ("Magic arrow",                     "Human_SpellAura_Heal") },
-        { "Mend",               ("Human_SpellAura_Heal",            "Human_Spell_Heal") },
-        { "Soul Bond",          ("Human_SpellAura_Heal",            null) },
-        { "Spirit Wisps",       ("Human_SpellAura_Heal",            "Human_Spell_Heal") },
-        { "Divine Spark",       ("Human_SpellAura_Heal",            "Human_Spell_Heal") },
-        { "Sacred Aegis",       ("Human_Spell_Shield",              null) },
-        { "Dispel",             ("Magic circle",                    "Electro hit") },
-        { "Temporal Grace",     ("Ice freeze skill",                "Human_Spell_Ice") },
+        { "Battle Hymn",        ("Human_SpellAura_Heal",             null,                        "Healing circle") },
+        { "Spirit Redirect",    ("Magic arrow",                      "Human_SpellAura_Heal",      null) },
+        { "Mend",               ("Human_SpellAura_Heal",             "Human_Spell_Heal",          null) },
+        { "Soul Bond",          ("Human_SpellAura_Heal",             null,                        "Magic circle") },
+        { "Spirit Wisps",       ("Human_SpellAura_Heal",             "Human_Spell_Heal",          null) },
+        { "Divine Spark",       ("Human_SpellAura_Heal",             "Human_Spell_Heal",          null) },
+        { "Sacred Aegis",       ("Human_Spell_Shield",               null,                        null) },
+        { "Dispel",             ("Magic circle",                     "Electro hit",               null) },
+        { "Temporal Grace",     ("Ice freeze skill",                 "Human_Spell_Ice",           "Freeze circle") },
+    };
+
+    // ── Turret map ────────────────────────────────────────────────────────────
+    // Abilities with spawnTurret=true get a turretPrefab from the FBX models.
+    // The FBX is loaded as a model import (acts as a visual placeholder until
+    // you create a proper turret prefab with NavMesh/AI components).
+    static readonly Dictionary<string, string> TurretMap =
+        new Dictionary<string, string>
+    {
+        { "Runic Sentinel", "Engineer Turret 1" },
     };
 
     // ── Entry point ───────────────────────────────────────────────────────────
@@ -121,7 +130,7 @@ public static class AbilityVFXAssignerBuilder
                 continue;
             }
 
-            var so          = new SerializedObject(caster);
+            var so            = new SerializedObject(caster);
             var spellbookProp = so.FindProperty("spellbook");
             if (spellbookProp == null || !spellbookProp.isArray) continue;
 
@@ -129,34 +138,42 @@ public static class AbilityVFXAssignerBuilder
 
             for (int i = 0; i < spellbookProp.arraySize; i++)
             {
-                var elem        = spellbookProp.GetArrayElementAtIndex(i);
-                var nameProp    = elem.FindPropertyRelative("abilityName");
-                var castVfxProp = elem.FindPropertyRelative("castVFX");
-                var hitVfxProp  = elem.FindPropertyRelative("hitVFX");
+                var elem           = spellbookProp.GetArrayElementAtIndex(i);
+                var nameProp       = elem.FindPropertyRelative("abilityName");
+                var castVfxProp    = elem.FindPropertyRelative("castVFX");
+                var hitVfxProp     = elem.FindPropertyRelative("hitVFX");
+                var deployProp     = elem.FindPropertyRelative("deployablePrefab");
+                var turretProp     = elem.FindPropertyRelative("turretPrefab");
 
                 if (nameProp == null) continue;
                 string abilityName = nameProp.stringValue;
-
-                if (!VfxMap.TryGetValue(abilityName, out var vfx)) continue;
-
                 int changed = 0;
-                if (vfx.cast != null)
-                    changed += Set(castVfxProp, vfx.cast, lookup,
-                        $"{heroName}/{abilityName} castVFX");
-                if (vfx.hit != null)
-                    changed += Set(hitVfxProp, vfx.hit, lookup,
-                        $"{heroName}/{abilityName} hitVFX");
+
+                // Cast + hit + deployable
+                if (VfxMap.TryGetValue(abilityName, out var vfx))
+                {
+                    if (vfx.cast   != null) changed += Set(castVfxProp,  vfx.cast,   lookup, $"{heroName}/{abilityName} castVFX");
+                    if (vfx.hit    != null) changed += Set(hitVfxProp,   vfx.hit,    lookup, $"{heroName}/{abilityName} hitVFX");
+                    if (vfx.deploy != null) changed += Set(deployProp,    vfx.deploy, lookup, $"{heroName}/{abilityName} deployablePrefab");
+                }
+
+                // Turret model
+                if (TurretMap.TryGetValue(abilityName, out string turretName))
+                    changed += Set(turretProp, turretName, lookup, $"{heroName}/{abilityName} turretPrefab");
 
                 total += changed;
             }
 
             so.ApplyModifiedProperties();
-            Debug.Log($"[VFXAssigner] Processed {System.IO.Path.GetFileNameWithoutExtension(prefabPath)}");
+            Debug.Log($"[VFXAssigner] Processed {heroName}");
         }
 
         AssetDatabase.SaveAssets();
         EditorUtility.DisplayDialog("Ability VFX",
-            $"Done. Assigned {total} VFX reference(s) across all class prefabs.", "OK");
+            $"Done. Assigned {total} reference(s) across all class prefabs.\n\n" +
+            "Note: Runic Sentinel turretPrefab is set to the raw FBX model as a\n" +
+            "visual placeholder. Create a proper prefab (with NavMeshAgent + AI)\n" +
+            "when you're ready to make it functional.", "OK");
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -164,36 +181,46 @@ public static class AbilityVFXAssignerBuilder
     static Dictionary<string, string> BuildPrefabLookup()
     {
         var lookup = new Dictionary<string, string>(System.StringComparer.OrdinalIgnoreCase);
-        string[] guids = AssetDatabase.FindAssets("t:Prefab", SearchFolders);
 
-        foreach (string guid in guids)
+        // Prefabs — first match wins (SearchFolders order = priority)
+        string[] prefabGuids = AssetDatabase.FindAssets("t:Prefab", SearchFolders);
+        foreach (string guid in prefabGuids)
         {
             string path = AssetDatabase.GUIDToAssetPath(guid);
             string name = System.IO.Path.GetFileNameWithoutExtension(path);
-            // First match wins — SearchFolders order puts Fantasy Pack first so
-            // "Magic circle" resolves to the dark runic one, not the cartoon one.
-            if (!lookup.ContainsKey(name))
-                lookup[name] = path;
+            if (!lookup.ContainsKey(name)) lookup[name] = path;
         }
+
+        // Also include FBX models from the turret folder so turretPrefab can
+        // reference the raw mesh import as a visual placeholder.
+        string[] modelGuids = AssetDatabase.FindAssets("t:Model",
+            new[] { "Assets/Game/Characters/Engineer/Turret" });
+        foreach (string guid in modelGuids)
+        {
+            string path = AssetDatabase.GUIDToAssetPath(guid);
+            string name = System.IO.Path.GetFileNameWithoutExtension(path);
+            if (!lookup.ContainsKey(name)) lookup[name] = path;
+        }
+
         return lookup;
     }
 
-    static int Set(SerializedProperty prop, string prefabName,
+    static int Set(SerializedProperty prop, string assetName,
         Dictionary<string, string> lookup, string label)
     {
         if (prop == null) return 0;
 
-        if (!lookup.TryGetValue(prefabName, out string path))
+        if (!lookup.TryGetValue(assetName, out string path))
         {
-            Debug.LogWarning($"[VFXAssigner] '{prefabName}' not found — skipping {label}");
+            Debug.LogWarning($"[VFXAssigner] '{assetName}' not found — skipping {label}");
             return 0;
         }
 
-        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
-        if (prefab == null) return 0;
-        if (prop.objectReferenceValue == prefab) return 0; // already correct
+        var asset = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+        if (asset == null) return 0;
+        if (prop.objectReferenceValue == asset) return 0;
 
-        prop.objectReferenceValue = prefab;
+        prop.objectReferenceValue = asset;
         Debug.Log($"[VFXAssigner] {label}  →  {path}");
         return 1;
     }
