@@ -7,9 +7,10 @@ using UnityEngine.InputSystem;
 // ═══════════════════════════════════════════════════════════════════════════
 //  CameraFollow — Smite / MOBA-style 3rd-person camera
 //
-//  Middle mouse held  → orbit (yaw + pitch)
+//  Right mouse drag   → orbit (yaw + pitch), cursor locked during the drag
+//                       (only when not aiming — AbilityCaster owns RMB while aiming)
 //  Scroll wheel       → zoom in / out
-//  Cursor always free; AbilityCaster owns aim indicator positioning.
+//  Free cursor otherwise; AbilityCaster owns aim indicator positioning.
 //
 //  Target wiring:
 //    • Fast path: PlayerMovement.Start() calls follow.target = transform
@@ -95,12 +96,6 @@ public class CameraFollow : MonoBehaviour
     {
         if (_target == null) return;
 
-        if (Cursor.lockState != CursorLockMode.None)
-        {
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible   = true;
-        }
-
         var mouse = Mouse.current;
         if (mouse == null) return;
 
@@ -108,9 +103,25 @@ public class CameraFollow : MonoBehaviour
         bool typingInUI = (selGO != null && selGO.GetComponent<TMPro.TMP_InputField>() != null)
                         || (RodChatManager.Instance != null && RodChatManager.Instance.IsOpen);
 
-        bool orbitActive = mouse.middleButton.isPressed
+        // Smite-style: hold RIGHT mouse and drag to rotate the camera. Only when NOT
+        // aiming an ability — AbilityCaster owns RMB (cancel) while an indicator is up —
+        // and not typing in chat.
+        bool orbitActive = mouse.rightButton.isPressed
                         && !typingInUI
                         && !AbilityCaster.IsAimingLocally;
+
+        // Lock & hide the cursor while dragging so rotation is continuous and the pointer
+        // can't slip off-screen; restore the free aiming cursor on release.
+        if (orbitActive && Cursor.lockState != CursorLockMode.Locked)
+        {
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible   = false;
+        }
+        else if (!orbitActive && Cursor.lockState != CursorLockMode.None)
+        {
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible   = true;
+        }
 
         bool justEntered = orbitActive && !_prevOrbitActive;
         _prevOrbitActive = orbitActive;
