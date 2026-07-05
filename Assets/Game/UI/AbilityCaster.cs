@@ -193,6 +193,7 @@ public class AbilityCaster : NetworkBehaviour
 
     private int heldAbilityIndex = -1;
     private GameObject activeIndicator;
+    private GameObject _rangeRingGO;
     private float aimTimer = 0f;
     private float[] cooldownTimers = new float[4];
 
@@ -373,8 +374,9 @@ public class AbilityCaster : NetworkBehaviour
                     aimTimer = 0f;
                     activeIndicator = CreateIndicator(abilities[i]);
 
-                    Cursor.lockState = CursorLockMode.Locked;
-                    Cursor.visible = false;
+                    // Show cursor so mouse drives the aim indicator
+                    Cursor.lockState = CursorLockMode.Confined;
+                    Cursor.visible = true;
                 }
             }
         }
@@ -393,11 +395,11 @@ public class AbilityCaster : NetworkBehaviour
             else if (Mouse.current.leftButton.wasPressedThisFrame)
             {
                 FinalizeCast(abilities[heldAbilityIndex], activeIndicator, aimTimer);
-
                 cooldownTimers[heldAbilityIndex] = CooldownFor(abilities[heldAbilityIndex]);
 
                 heldAbilityIndex = -1;
                 activeIndicator = null;
+                DestroyRangeRing();
 
                 Cursor.lockState = CursorLockMode.Locked;
                 Cursor.visible = false;
@@ -407,10 +409,9 @@ public class AbilityCaster : NetworkBehaviour
 
     void CancelAim()
     {
-        if (activeIndicator != null)
-            Destroy(activeIndicator);
-
+        if (activeIndicator != null) Destroy(activeIndicator);
         activeIndicator = null;
+        DestroyRangeRing();
         heldAbilityIndex = -1;
 
         Cursor.lockState = CursorLockMode.Locked;
@@ -450,7 +451,9 @@ public class AbilityCaster : NetworkBehaviour
 
     Vector3 GetCameraAimPoint()
     {
-        Ray ray = cam.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
+        // Mouse cursor world position — cast a ray from cursor, not screen centre
+        Vector2 mp  = Mouse.current.position.ReadValue();
+        Ray     ray = cam.ScreenPointToRay(new Vector3(mp.x, mp.y, 0f));
 
         RaycastHit[] hits = Physics.RaycastAll(ray, 100f);
         System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
@@ -490,32 +493,71 @@ public class AbilityCaster : NetworkBehaviour
 
     GameObject CreateIndicator(AbilityDef ability)
     {
-        GameObject indicator;
+        Color c = GetCategoryColor(ability.category);
+        GameObject indicator = new GameObject("AimIndicator");
 
-        if (ability.shape == AbilityShape.Circle)
+        if (ability.shape == AbilityShape.Cone)
         {
-            indicator = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            indicator.transform.localScale = new Vector3(ability.indicatorSize, 0.02f, ability.indicatorSize);
-        }
-        else if (ability.shape == AbilityShape.Rectangle)
-        {
-            indicator = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            indicator.transform.localScale = new Vector3(ability.rectWidth, 0.02f, ability.range);
+            // Fan mesh for cone — hard to outline cleanly, keep as tinted mesh
+            var fan = CreateConeIndicator(ability.range, ability.coneAngle);
+            fan.transform.SetParent(indicator.transform, false);
+            var rend = fan.GetComponent<Renderer>();
+            var mat  = new Material(Shader.Find("Sprites/Default"));
+            mat.color = new Color(c.r, c.g, c.b, 0.30f);
+            rend.material = mat;
         }
         else
         {
-            indicator = CreateConeIndicator(ability.range, ability.coneAngle);
+            // Circle + Rectangle: crisp LineRenderer outline (Smite style)
+            BuildOutlineLR(indicator, ability, c);
         }
 
-        Collider col = indicator.GetComponent<Collider>();
-        if (col != null) Destroy(col);
-
-        Renderer rend = indicator.GetComponent<Renderer>();
-        Material mat = new Material(Shader.Find("Sprites/Default"));
-        mat.color = GetCategoryColor(ability.category);
-        rend.material = mat;
+        // Range ring: thin circle at max cast distance centred on the player
+        if (ability.range > 0f)
+            _rangeRingGO = CreateRangeRing(ability.range, c);
 
         return indicator;
+    }
+
+    void BuildOutlineLR(GameObject go, AbilityDef ability, Color color)
+    {
+        LineRenderer lr = go.AddComponent<LineRenderer>();
+        lr.useWorldSpace   = true;
+        lr.loop            = true;
+        lr.startWidth      = lr.endWidth = 0.08f;
+        lr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        lr.receiveShadows  = false;
+        lr.material        = new Material(Shader.Find("Sprites/Default"));
+        lr.startColor      = lr.endColor = color;
+        lr.positionCount   = 0;   // filled in UpdateIndicatorTransform every frame
+    }
+
+    GameObject CreateRangeRing(float range, Color c)
+    {
+        var go = new GameObject("RangeRing");
+        LineRenderer lr = go.AddComponent<LineRenderer>();
+        lr.useWorldSpace   = false;     // local-space ring: move GO, don't rebuild points
+        lr.loop            = true;
+        lr.startWidth      = lr.endWidth = 0.04f;
+        lr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        lr.receiveShadows  = false;
+        lr.material        = new Material(Shader.Find("Sprites/Default"));
+        lr.startColor      = lr.endColor = new Color(c.r, c.g, c.b, 0.30f);
+
+        const int segs = 64;
+        lr.positionCount = segs;
+        for (int i = 0; i < segs; i++)
+        {
+            float a = i / (float)segs * Mathf.PI * 2f;
+            lr.SetPosition(i, new Vector3(Mathf.Cos(a) * range, 0f, Mathf.Sin(a) * range));
+        }
+        go.transform.position = transform.position + Vector3.up * 0.05f;
+        return go;
+    }
+
+    void DestroyRangeRing()
+    {
+        if (_rangeRingGO != null) { Destroy(_rangeRingGO); _rangeRingGO = null; }
     }
 
     Color GetCategoryColor(AbilityCategory category)
@@ -540,42 +582,84 @@ public class AbilityCaster : NetworkBehaviour
         GetAimData(ability, out Vector3 aimDir, out float aimDistance);
         float chargeFraction = GetChargeFraction(ability, aimTime);
 
+        var lr = indicator.GetComponent<LineRenderer>();
+
         if (ability.shape == AbilityShape.Circle)
         {
-            indicator.transform.position = transform.position + aimDir * aimDistance + Vector3.up * 0.05f;
+            float radius = (ability.indicatorSize / 2f) *
+                           Mathf.Lerp(1f, ability.maxChargeSizeMultiplier, chargeFraction);
+            Vector3 centre = transform.position + aimDir * aimDistance + Vector3.up * 0.06f;
+            indicator.transform.position = centre;
+
+            if (lr != null) SetRingPoints(lr, centre, radius, 40);
         }
         else if (ability.shape == AbilityShape.Rectangle)
         {
             float widthMul = Mathf.Lerp(1f, ability.maxChargeSizeMultiplier, chargeFraction);
-            indicator.transform.position = transform.position + aimDir * (aimDistance / 2f) + Vector3.up * 0.05f;
-            indicator.transform.rotation = Quaternion.LookRotation(aimDir);
-            indicator.transform.localScale = new Vector3(ability.rectWidth * widthMul, 0.02f, aimDistance);
+            float hw = ability.rectWidth * widthMul / 2f;
+            Vector3 mid = transform.position + aimDir * (aimDistance / 2f) + Vector3.up * 0.06f;
+
+            indicator.transform.position   = mid;
+            indicator.transform.rotation   = Quaternion.LookRotation(aimDir);
+            // Keep localScale so ApplyRectangleDamage still works
+            indicator.transform.localScale = new Vector3(ability.rectWidth * widthMul, 1f, aimDistance);
+
+            if (lr != null) SetRectPoints(lr, mid, aimDir, hw, aimDistance / 2f);
         }
         else if (ability.shape == AbilityShape.Cone)
         {
-            float chargeMul = Mathf.Lerp(1f, ability.maxChargeSizeMultiplier, chargeFraction);
+            float chargeMul   = Mathf.Lerp(1f, ability.maxChargeSizeMultiplier, chargeFraction);
             float distanceMul = aimDistance / ability.range;
-            indicator.transform.position = transform.position + Vector3.up * 0.05f;
-            indicator.transform.rotation = Quaternion.LookRotation(aimDir);
+            indicator.transform.position   = transform.position + Vector3.up * 0.05f;
+            indicator.transform.rotation   = Quaternion.LookRotation(aimDir);
             indicator.transform.localScale = Vector3.one * distanceMul * chargeMul;
         }
 
+        // Range ring follows the player
+        if (_rangeRingGO != null)
+            _rangeRingGO.transform.position = new Vector3(
+                transform.position.x, transform.position.y + 0.05f, transform.position.z);
+
+        // Charge tint — apply to LR (circle/rect) or renderer (cone)
         if (ability.chargeable)
         {
-            Renderer rend = indicator.GetComponent<Renderer>();
             Color baseColor = GetCategoryColor(ability.category);
-            Color c;
+            Color c = ability.chargedTint.a > 0f
+                ? Color.Lerp(baseColor, ability.chargedTint, chargeFraction)
+                : new Color(baseColor.r, baseColor.g, baseColor.b, Mathf.Lerp(baseColor.a, 0.95f, chargeFraction));
 
-            if (ability.chargedTint.a > 0f)
-                c = Color.Lerp(baseColor, ability.chargedTint, chargeFraction);
+            if (lr != null)
+            {
+                lr.startColor = lr.endColor = c;
+            }
             else
             {
-                c = baseColor;
-                c.a = Mathf.Lerp(c.a, 0.85f, chargeFraction);
+                var rend = indicator.GetComponentInChildren<Renderer>();
+                if (rend != null) rend.material.color = c;
             }
-
-            rend.material.color = c;
         }
+    }
+
+    // ── LineRenderer helpers ─────────────────────────────────────────────────
+
+    static void SetRingPoints(LineRenderer lr, Vector3 centre, float radius, int segs)
+    {
+        if (lr.positionCount != segs) lr.positionCount = segs;
+        for (int i = 0; i < segs; i++)
+        {
+            float a = i / (float)segs * Mathf.PI * 2f;
+            lr.SetPosition(i, centre + new Vector3(Mathf.Cos(a) * radius, 0f, Mathf.Sin(a) * radius));
+        }
+    }
+
+    static void SetRectPoints(LineRenderer lr, Vector3 centre, Vector3 fwd, float hw, float hl)
+    {
+        if (lr.positionCount != 4) { lr.positionCount = 4; lr.loop = true; }
+        Vector3 right = Vector3.Cross(Vector3.up, fwd).normalized;
+        lr.SetPosition(0, centre - right * hw - fwd * hl);
+        lr.SetPosition(1, centre + right * hw - fwd * hl);
+        lr.SetPosition(2, centre + right * hw + fwd * hl);
+        lr.SetPosition(3, centre - right * hw + fwd * hl);
     }
 
     void SpawnVFX(GameObject prefab, Vector3 position, Quaternion rotation)
