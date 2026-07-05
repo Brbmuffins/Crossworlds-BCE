@@ -93,6 +93,13 @@ public class AbilityCaster : NetworkBehaviour
     [Tooltip("NullFieldZone prefab (Silence Ward) — curse fog")]
     public GameObject nullFieldPrefab;
 
+    [Header("Cleric VFX")]
+    [Tooltip("ClericHealVFX component on the Cleric prefab — triggers particle burst on heal casts")]
+    public ClericHealVFX healVFX;
+
+    /// <summary>Raised on the local client whenever a heal-category ability fires.</summary>
+    public event System.Action OnHealCast;
+
     [Header("Class Deployables")]
     [Tooltip("RestorationBeacon (Cleric) or BastionNode (Ironclad)")]
     public GameObject beaconPrefab;
@@ -578,6 +585,24 @@ public class AbilityCaster : NetworkBehaviour
         Destroy(fx, 4f);
     }
 
+#if !UNITY_SERVER
+    System.Collections.IEnumerator TravelVFX(GameObject prefab, Vector3 from, Vector3 to,
+                                             Quaternion rotation, float duration)
+    {
+        if (prefab == null) yield break;
+        GameObject fx = Instantiate(prefab, from, rotation);
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            if (fx == null) yield break;
+            fx.transform.position = Vector3.Lerp(from, to, Mathf.SmoothStep(0f, 1f, elapsed / duration));
+            yield return null;
+        }
+        if (fx != null) Destroy(fx, 3f);
+    }
+#endif
+
     // Called by BountySystem passive when a kill is registered.
     public void ReduceAllCooldowns(float seconds)
     {
@@ -633,9 +658,9 @@ public class AbilityCaster : NetworkBehaviour
             damageMultiplier *= _characterStats.DamageMultiplier;
 
         castAnimator?.PlayCast(ability.category);
-
-        if (ability.castVFX != null)
-            SpawnVFX(ability.castVFX, transform.position + Vector3.up * 1f, transform.rotation);
+#if !UNITY_SERVER
+        if (ability.category == AbilityCategory.Heal) OnHealCast?.Invoke();
+#endif
 
         if (ability.shape == AbilityShape.Rectangle && ability.damage > 0f && indicator != null)
         {
@@ -667,7 +692,20 @@ public class AbilityCaster : NetworkBehaviour
             SpawnTurret(ability, indicator.transform.position);
 
         // ── Route to ability-specific behaviours ──────────────────
-        Vector3 castPoint = indicator != null ? indicator.transform.position : transform.position;
+        Vector3    castPoint   = indicator != null ? indicator.transform.position : transform.position;
+        Quaternion castVfxRot  = indicator != null ? indicator.transform.rotation  : transform.rotation;
+#if !UNITY_SERVER
+        if (ability.castVFX != null)
+        {
+            if (ability.shape == AbilityShape.Rectangle && indicator != null)
+                StartCoroutine(TravelVFX(ability.castVFX,
+                    transform.position + Vector3.up * 1.2f,
+                    castPoint + Vector3.up * 0.5f,
+                    castVfxRot, 0.3f));
+            else
+                SpawnVFX(ability.castVFX, castPoint + Vector3.up * 0.8f, castVfxRot);
+        }
+#endif
         DispatchAbility(ability, castPoint, damageMultiplier);
 
         if (indicator != null)
@@ -721,8 +759,21 @@ public class AbilityCaster : NetworkBehaviour
     {
         if (ability == null) return;
         castAnimator?.PlayCast(ability.category);
+#if !UNITY_SERVER
+        if (ability.category == AbilityCategory.Heal) OnHealCast?.Invoke();
+#endif
         if (ability.castVFX != null)
-            SpawnVFX(ability.castVFX, position + Vector3.up, rotation);
+        {
+#if !UNITY_SERVER
+            if (ability.shape == AbilityShape.Rectangle)
+                StartCoroutine(TravelVFX(ability.castVFX,
+                    transform.position + Vector3.up * 1.2f,
+                    position + Vector3.up * 0.5f,
+                    rotation, 0.3f));
+            else
+#endif
+                SpawnVFX(ability.castVFX, position + Vector3.up, rotation);
+        }
     }
 
     int FindSpellbookIndex(AbilityDef ability)
