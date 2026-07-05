@@ -20,6 +20,7 @@ Crossworlds BCE is a server-authoritative co-op action RPG built on Unity 6 and 
 
 ## Contents
 
+- [📖 **Player Guide** — every ability & how to use it (field manual)](PLAYER_GUIDE.md)
 - [How to Play](#how-to-play)
 - [Classes](#classes)
 - [Spellbook — All 32 Abilities](#spellbook--all-32-abilities)
