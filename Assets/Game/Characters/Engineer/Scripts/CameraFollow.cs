@@ -89,25 +89,33 @@ public class CameraFollow : MonoBehaviour
                    || (RodChatManager.Instance != null && RodChatManager.Instance.IsOpen);
         bool lookActive = _rightHeld && !_typingInUI;
 
+        // Suspend orbit and cursor management while an ability indicator is being aimed.
+        // AbilityCaster owns the cursor during aim; fighting over lockState breaks aim.
+        bool aimBlocking = AbilityCaster.IsAimingLocally;
+
         // ── Cursor lock / unlock ──────────────────────────────────────────
-        if (lookActive && Cursor.lockState != CursorLockMode.Locked)
+        if (!aimBlocking)
         {
-            Cursor.lockState = CursorLockMode.Locked;
-            Cursor.visible   = false;
-        }
-        else if (!lookActive && Cursor.lockState == CursorLockMode.Locked)
-        {
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible   = true;
+            if (lookActive && Cursor.lockState != CursorLockMode.Locked)
+            {
+                Cursor.lockState = CursorLockMode.Locked;
+                Cursor.visible   = false;
+            }
+            else if (!lookActive && Cursor.lockState == CursorLockMode.Locked)
+            {
+                Cursor.lockState = CursorLockMode.None;
+                Cursor.visible   = true;
+            }
         }
 
         // ── Camera rotation ───────────────────────────────────────────────
         // mouse.delta accumulates while cursor is free. On the FIRST frame we enter
         // look mode that stale delta would cause a violent swing — discard it.
+        // Reset _prevLookActive while aiming so re-entering orbit after aim doesn't swing.
         bool justEnteredLook = lookActive && !_prevLookActive;
-        _prevLookActive = lookActive;
+        _prevLookActive = aimBlocking ? false : lookActive;
 
-        if (lookActive && !justEnteredLook)
+        if (lookActive && !justEnteredLook && !aimBlocking)
         {
             Vector2 delta = mouse.delta.ReadValue();
             // Clamp per-frame delta to prevent single-frame spikes

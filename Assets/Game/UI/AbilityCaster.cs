@@ -203,6 +203,9 @@ public class AbilityCaster : NetworkBehaviour
     private GameObject activeIndicator;
     private GameObject _rangeRingGO;
     private float aimTimer = 0f;
+
+    // Read by CameraFollow to suspend orbit while an indicator is active
+    public static bool IsAimingLocally { get; private set; }
     private float[] cooldownTimers = new float[4];
 
     private GameObject activeShieldVFX;
@@ -381,6 +384,7 @@ public class AbilityCaster : NetworkBehaviour
                     heldAbilityIndex = i;
                     aimTimer = 0f;
                     activeIndicator = CreateIndicator(abilities[i]);
+                    IsAimingLocally = true;
 
                     // Show cursor so mouse drives the aim indicator
                     Cursor.lockState = CursorLockMode.Confined;
@@ -405,6 +409,7 @@ public class AbilityCaster : NetworkBehaviour
                 FinalizeCast(abilities[heldAbilityIndex], activeIndicator, aimTimer);
                 cooldownTimers[heldAbilityIndex] = CooldownFor(abilities[heldAbilityIndex]);
 
+                IsAimingLocally = false;
                 heldAbilityIndex = -1;
                 activeIndicator = null;
                 DestroyRangeRing();
@@ -417,6 +422,7 @@ public class AbilityCaster : NetworkBehaviour
 
     void CancelAim()
     {
+        IsAimingLocally = false;
         if (activeIndicator != null) Destroy(activeIndicator);
         activeIndicator = null;
         DestroyRangeRing();
@@ -503,6 +509,8 @@ public class AbilityCaster : NetworkBehaviour
     {
         Color c = GetCategoryColor(ability.category);
         GameObject indicator = new GameObject("AimIndicator");
+        // Parent to player so the indicator moves with them even between Update frames
+        indicator.transform.SetParent(transform);
 
         if (ability.shape == AbilityShape.Cone)
         {
@@ -576,7 +584,9 @@ public class AbilityCaster : NetworkBehaviour
             float a = i / (float)segs * Mathf.PI * 2f;
             lr.SetPosition(i, new Vector3(Mathf.Cos(a) * range, 0f, Mathf.Sin(a) * range));
         }
-        go.transform.position = transform.position + Vector3.up * 0.05f;
+        // Anchor to player — lr uses local space so ring auto-follows without per-frame update
+        go.transform.SetParent(transform);
+        go.transform.localPosition = Vector3.up * 0.05f;
         return go;
     }
 
@@ -693,11 +703,6 @@ public class AbilityCaster : NetworkBehaviour
             indicator.transform.rotation   = Quaternion.LookRotation(aimDir);
             indicator.transform.localScale = Vector3.one * distanceMul * chargeMul;
         }
-
-        // Range ring follows the player
-        if (_rangeRingGO != null)
-            _rangeRingGO.transform.position = new Vector3(
-                transform.position.x, transform.position.y + 0.05f, transform.position.z);
 
         // Charge tint — apply to LR (circle/rect) or renderer (cone)
         if (ability.chargeable)
