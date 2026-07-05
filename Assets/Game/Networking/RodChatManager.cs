@@ -283,6 +283,28 @@ public class RodChatManager : NetworkBehaviour
     //   InputBg  — bottom 13% of panel, hidden when not typing
     // ─────────────────────────────────────────────────────────────────────
 
+    // Resolve a usable TMP font once. Relying on the implicit default font asset can
+    // yield invisible text (visible box, no glyphs) when TMP_Settings.defaultFontAsset
+    // isn't wired — assign this explicitly to every text object we create.
+    static TMP_FontAsset s_font;
+    static TMP_FontAsset ChatFont
+    {
+        get
+        {
+            if (s_font != null) return s_font;
+            s_font = TMP_Settings.defaultFontAsset;
+            if (s_font == null)
+                s_font = Resources.Load<TMP_FontAsset>("Fonts & Materials/LiberationSans SDF");
+            if (s_font == null)
+            {
+                // Last resort: adopt the font from any TMP text already alive in the scene.
+                var any = FindFirstObjectByType<TMP_Text>();
+                if (any != null) s_font = any.font;
+            }
+            return s_font;
+        }
+    }
+
     void BuildUI()
     {
         // ── Canvas ────────────────────────────────────────────────────────
@@ -326,6 +348,7 @@ public class RodChatManager : NetworkBehaviour
             new Vector2(0f, 0.13f), new Vector2(1f, 0.93f),
             new Vector2(6f, 4f), new Vector2(-6f, -4f));
         _log = logGO.AddComponent<TextMeshProUGUI>();
+        if (ChatFont != null) _log.font = ChatFont;
         _log.fontSize         = 11f;
         _log.color            = Color.white;
         _log.alignment        = TextAlignmentOptions.TopLeft;
@@ -352,6 +375,7 @@ public class RodChatManager : NetworkBehaviour
         var phGO = MakeRect("Placeholder", inputGO.GetComponent<RectTransform>(),
             Vector2.zero, Vector2.one);
         var ph = phGO.AddComponent<TextMeshProUGUI>();
+        if (ChatFont != null) ph.font = ChatFont;
         ph.text      = "Say something...";
         ph.fontSize  = 13f;
         ph.color     = new Color(0.3f, 0.27f, 0.4f);
@@ -360,6 +384,7 @@ public class RodChatManager : NetworkBehaviour
         var txtGO = MakeRect("Text", inputGO.GetComponent<RectTransform>(),
             Vector2.zero, Vector2.one);
         var txt = txtGO.AddComponent<TextMeshProUGUI>();
+        if (ChatFont != null) txt.font = ChatFont;
         txt.fontSize = 13f;
         txt.color    = Color.white;
 
@@ -401,6 +426,8 @@ public class RodChatManager : NetworkBehaviour
         Vector2 anchorMin, Vector2 anchorMax)
     {
         var go = MakeRect(name, parent, anchorMin, anchorMax);
-        return go.AddComponent<TextMeshProUGUI>();
+        var t = go.AddComponent<TextMeshProUGUI>();
+        if (ChatFont != null) t.font = ChatFont;
+        return t;
     }
 }

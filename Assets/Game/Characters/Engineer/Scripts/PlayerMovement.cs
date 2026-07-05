@@ -53,8 +53,15 @@ public class PlayerMovement : MonoBehaviour
     void Start()
     {
         // ── Mirror: disable input on remote player objects ────────────────────
+        // When no network session is running (editor solo play), any PlayerMovement
+        // is treated as the local player.  Once a network session is active, only the
+        // Mirror-designated local player may process input; scene-placed characters
+        // with no NetworkIdentity are decorations and must disable themselves.
         var netId = GetComponent<NetworkIdentity>();
-        bool isLocal = netId == null || netId.isLocalPlayer;
+        bool networkActive = NetworkClient.active || NetworkServer.active;
+        bool isLocal = networkActive
+            ? (netId != null && netId.isLocalPlayer)   // net session: must be the local player
+            : (netId == null || netId.isLocalPlayer);  // solo editor: anything goes
         if (!isLocal)
         {
             enabled = false;
@@ -66,6 +73,12 @@ public class PlayerMovement : MonoBehaviour
         stats  = GetComponent<CharacterStats>();
         health = GetComponent<Health>();
 
+        // Movement is Rigidbody-driven (MovePosition). If the imported rig has Apply
+        // Root Motion enabled, the run/sprint clip physically drags the mesh forward
+        // while the Rigidbody drags the root — the mesh detaches and flies around the
+        // camera's follow point. Force it off so the animation stays in-place.
+        if (anim != null) anim.applyRootMotion = false;
+
         // Cache which parameters the controller actually has
         if (anim != null && anim.runtimeAnimatorController != null)
             foreach (var p in anim.parameters)
@@ -76,7 +89,11 @@ public class PlayerMovement : MonoBehaviour
         if (cam == null && Camera.allCamerasCount > 0) cam = Camera.allCameras[0];
         if (cam != null)
         {
-            var follow = cam.GetComponent<CameraFollow>() ?? cam.gameObject.AddComponent<CameraFollow>();
+            // Prefer scene-placed CameraFollow anywhere in the scene to avoid creating a
+            // second component with default settings that fights the scene-placed one.
+            var follow = FindFirstObjectByType<CameraFollow>();
+            if (follow == null)
+                follow = cam.gameObject.AddComponent<CameraFollow>();
             follow.target = transform; // setter calls SnapToTarget() automatically
         }
 
@@ -183,26 +200,12 @@ public class PlayerMovement : MonoBehaviour
             camRight.y   = 0; camRight.Normalize();
 
             if (isMoving)
-            {
                 moveDirection = (camForward * input.y + camRight * input.x).normalized;
-
-                Vector3 faceDir = pressingS
-                    ? -moveDirection
-                    : moveDirection;
-
-                if (!lockCharacterRotation && faceDir.sqrMagnitude > 0.001f)
-                    targetRotation = Quaternion.LookRotation(faceDir);
-            }
         }
 
-        // Aim mode: character always faces the cursor (Smite-style)
-        // Overrides movement-based rotation so body and indicator stay aligned.
-        if (!lockCharacterRotation && AbilityCaster.IsAimingLocally)
-        {
-            Vector3 aimDir = AbilityCaster.AimDirection;
-            if (aimDir.sqrMagnitude > 0.001f)
-                targetRotation = Quaternion.LookRotation(aimDir);
-        }
+        // Character faces movement direction only. Mouse cursor is for ability aim, not rotation.
+        if (!lockCharacterRotation && moveDirection.sqrMagnitude > 0.001f)
+            targetRotation = Quaternion.LookRotation(moveDirection);
     }
 
     void FixedUpdate()

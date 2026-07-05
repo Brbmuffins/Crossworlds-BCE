@@ -23,12 +23,21 @@ public class FieldGhoulNPC : MonoBehaviour
     NavMeshAgent _agent;
     Animator     _anim;
     Vector3      _origin;
+    bool         _hasWalkParam;   // controller actually declares walkBoolParam
 
     void Start()
     {
         _agent  = GetComponent<NavMeshAgent>();
         _anim   = GetComponentInChildren<Animator>();
         _origin = transform.position;
+
+        // Only drive the walk bool if the controller declares it — the Field Goul
+        // rig uses Speed/Attack/Scream/Die, so SetBool("isMoving") would spam
+        // "Parameter does not exist" every tick otherwise.
+        if (_anim != null && _anim.runtimeAnimatorController != null)
+            foreach (var p in _anim.parameters)
+                if (p.name == walkBoolParam) { _hasWalkParam = true; break; }
+
         StartCoroutine(WanderLoop());
     }
 
@@ -57,7 +66,7 @@ public class FieldGhoulNPC : MonoBehaviour
 
     void SetWalking(bool walking)
     {
-        if (_anim != null && _anim.runtimeAnimatorController != null)
+        if (_hasWalkParam)
             _anim.SetBool(walkBoolParam, walking);
     }
 }

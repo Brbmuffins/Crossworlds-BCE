@@ -1,19 +1,21 @@
+using Mirror;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 
 // ═══════════════════════════════════════════════════════════════════════════
-//  CameraFollow — WoW-style 3rd-person camera
+//  CameraFollow — Smite / MOBA-style 3rd-person camera
 //
-//  Right mouse held   → lock cursor, orbit camera
-//  Left mouse held    -> no camera/movement action
-//  Either released    → unlock cursor (can click UI)
+//  Right mouse drag   → orbit (yaw + pitch), cursor locked during the drag
+//                       (only when not aiming — AbilityCaster owns RMB while aiming)
 //  Scroll wheel       → zoom in / out
+//  Free cursor otherwise; AbilityCaster owns aim indicator positioning.
 //
-//  Setting Target snaps the camera behind the character immediately —
-//  no lerp from world origin on zone-in.
+//  Target wiring:
+//    • Fast path: PlayerMovement.Start() calls follow.target = transform
+//    • Fallback:  FindLocalPlayer() coroutine polls every 0.2 s until found
 // ═══════════════════════════════════════════════════════════════════════════
-
 public class CameraFollow : MonoBehaviour
 {
     [Header("Distance")]
@@ -22,8 +24,8 @@ public class CameraFollow : MonoBehaviour
     public float maxDistance = 20f;
     public float zoomSpeed   = 4f;
 
-    [Header("Orbit")]
-    [Tooltip("Degrees per pixel of mouse movement. 0.15–0.35 is typical MMO range.")]
+    [Header("Orbit (middle mouse)")]
+    [Tooltip("Degrees per pixel of mouse movement.")]
     public float mouseSensitivity = 0.25f;
     public float minPitch = -20f;
     public float maxPitch =  70f;
@@ -32,45 +34,62 @@ public class CameraFollow : MonoBehaviour
     public float heightOffset = 1.6f;
 
     [Header("Collision")]
-    public bool cameraCollision = true;
-    public LayerMask collisionMask = ~0;
-    public float collisionRadius = 0.28f;
-    public float collisionBuffer = 0.15f;
-    public float collisionSmoothSpeed = 18f;
+    public bool      cameraCollision     = false;
+    public LayerMask collisionMask       = ~0;
+    public float     collisionRadius     = 0.28f;
+    public float     collisionBuffer     = 0.15f;
+    public float     collisionSmoothSpeed = 18f;
 
-    // ── Target property — snaps camera immediately on assign ──────────────
+    // Set by PlayerMovement.Start() or by FindLocalPlayer coroutine.
     Transform _target;
     public Transform target
     {
         get => _target;
-        set
-        {
-            _target = value;
-            if (_target != null) SnapToTarget();
-        }
+        set { _target = value; if (_target != null) SnapToTarget(); }
     }
 
-    // Read by PlayerMovement
-    public float Yaw            => _yaw;
-    public bool  RightMouseHeld => _rightHeld && !_typingInUI;
+    public float Yaw => _yaw;
 
-    float   _yaw;
-    float   _pitch = 18f;
-    bool    _rightHeld;
-    bool    _typingInUI;
-    bool    _prevLookActive;   // detect first frame of look to discard stale delta
-    Vector3 _smoothPos;
-    float   _currentCollisionDistance;
-
-    // ── Lifecycle ─────────────────────────────────────────────────────────
+    float _yaw;
+    float _pitch = 18f;
+    bool  _prevOrbitActive;
+    float _currentCollisionDistance;
 
     void Start()
     {
-        // Snap if target was set before Start (e.g. via Inspector)
-        if (_target != null) SnapToTarget();
-
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible   = true;
+
+        if (_target != null) SnapToTarget();
+
+        StartCoroutine(FindLocalPlayer());
+    }
+
+    // Polls until a local player is found. Stops once target is confirmed.
+    IEnumerator FindLocalPlayer()
+    {
+        while (true)
+        {
+            yield return new WaitForSeconds(0.2f);
+            if (_target != null) yield break;
+
+            // Networked: find the Mirror local player
+            foreach (var ni in FindObjectsByType<NetworkIdentity>(
+                         FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+            {
+                if (!ni.isLocalPlayer) continue;
+                if (ni.GetComponent<PlayerMovement>() == null) continue;
+                target = ni.transform;   // setter calls SnapToTarget
+                yield break;
+            }
+
+            // Solo / editor (no Mirror session): find any PlayerMovement
+            if (!NetworkClient.active && !NetworkServer.active)
+            {
+                var pm = FindFirstObjectByType<PlayerMovement>();
+                if (pm != null) { target = pm.transform; yield break; }
+            }
+        }
     }
 
     void LateUpdate()
@@ -80,45 +99,36 @@ public class CameraFollow : MonoBehaviour
         var mouse = Mouse.current;
         if (mouse == null) return;
 
-        _rightHeld = mouse.rightButton.isPressed;
+        var selGO       = EventSystem.current?.currentSelectedGameObject;
+        bool typingInUI = (selGO != null && selGO.GetComponent<TMPro.TMP_InputField>() != null)
+                        || (RodChatManager.Instance != null && RodChatManager.Instance.IsOpen);
 
-        // Block orbit when typing OR when chat is open — the second check covers the
-        // one-frame gap between ActivateInputField() and currentSelectedGameObject being set.
-        var selGO = EventSystem.current?.currentSelectedGameObject;
-        _typingInUI = (selGO != null && selGO.GetComponent<TMPro.TMP_InputField>() != null)
-                   || (RodChatManager.Instance != null && RodChatManager.Instance.IsOpen);
-        bool lookActive = _rightHeld && !_typingInUI;
+        // Smite-style: hold RIGHT mouse and drag to rotate the camera. Only when NOT
+        // aiming an ability — AbilityCaster owns RMB (cancel) while an indicator is up —
+        // and not typing in chat.
+        bool orbitActive = mouse.rightButton.isPressed
+                        && !typingInUI
+                        && !AbilityCaster.IsAimingLocally;
 
-        // Suspend orbit and cursor management while an ability indicator is being aimed.
-        // AbilityCaster owns the cursor during aim; fighting over lockState breaks aim.
-        bool aimBlocking = AbilityCaster.IsAimingLocally;
-
-        // ── Cursor lock / unlock ──────────────────────────────────────────
-        if (!aimBlocking)
+        // Lock & hide the cursor while dragging so rotation is continuous and the pointer
+        // can't slip off-screen; restore the free aiming cursor on release.
+        if (orbitActive && Cursor.lockState != CursorLockMode.Locked)
         {
-            if (lookActive && Cursor.lockState != CursorLockMode.Locked)
-            {
-                Cursor.lockState = CursorLockMode.Locked;
-                Cursor.visible   = false;
-            }
-            else if (!lookActive && Cursor.lockState == CursorLockMode.Locked)
-            {
-                Cursor.lockState = CursorLockMode.None;
-                Cursor.visible   = true;
-            }
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible   = false;
+        }
+        else if (!orbitActive && Cursor.lockState != CursorLockMode.None)
+        {
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible   = true;
         }
 
-        // ── Camera rotation ───────────────────────────────────────────────
-        // mouse.delta accumulates while cursor is free. On the FIRST frame we enter
-        // look mode that stale delta would cause a violent swing — discard it.
-        // Reset _prevLookActive while aiming so re-entering orbit after aim doesn't swing.
-        bool justEnteredLook = lookActive && !_prevLookActive;
-        _prevLookActive = aimBlocking ? false : lookActive;
+        bool justEntered = orbitActive && !_prevOrbitActive;
+        _prevOrbitActive = orbitActive;
 
-        if (lookActive && !justEnteredLook && !aimBlocking)
+        if (orbitActive && !justEntered)
         {
             Vector2 delta = mouse.delta.ReadValue();
-            // Clamp per-frame delta to prevent single-frame spikes
             delta.x = Mathf.Clamp(delta.x, -50f, 50f);
             delta.y = Mathf.Clamp(delta.y, -50f, 50f);
             _yaw   += delta.x * mouseSensitivity;
@@ -126,92 +136,71 @@ public class CameraFollow : MonoBehaviour
             _pitch  = Mathf.Clamp(_pitch, minPitch, maxPitch);
         }
 
-        // ── Zoom ──────────────────────────────────────────────────────────
         float scroll = mouse.scroll.ReadValue().y;
         if (Mathf.Abs(scroll) > 0.01f)
             distance = Mathf.Clamp(distance - scroll * zoomSpeed * 0.01f,
                                    minDistance, maxDistance);
 
-        // ── Position — instant follow, no lag ─────────────────────────────
-        // Positional smoothing causes the character to drift out of frame.
-        // WoW-style cameras follow position immediately; smoothness comes from
-        // character animation, not camera lag.
-        _smoothPos = _target.position;
+        Vector3    pos     = _target.position;
+        Quaternion rot     = Quaternion.Euler(_pitch, _yaw, 0f);
+        Vector3    offset  = rot * new Vector3(0f, 0f, -distance);
+        Vector3    lookAt  = pos + Vector3.up * heightOffset;
+        Vector3    desired = lookAt + offset;
 
-        Quaternion rot    = Quaternion.Euler(_pitch, _yaw, 0f);
-        Vector3    offset = rot * new Vector3(0f, 0f, -distance);
-        Vector3    lookAt = _smoothPos + Vector3.up * heightOffset;
-
-        Vector3 desiredPosition = lookAt + offset;
-        transform.position = ResolveCameraPosition(lookAt, desiredPosition);
+        transform.position = ResolveCameraPosition(lookAt, desired);
         transform.LookAt(lookAt);
     }
 
-    // ── Public helpers ────────────────────────────────────────────────────
-
-    /// <summary>Instantly places the camera behind the target. Call after setting target.</summary>
     public void SnapToTarget()
     {
         if (_target == null) return;
+        _yaw = _target.eulerAngles.y;
 
-        _yaw       = _target.eulerAngles.y;
-        _smoothPos = _target.position;
-
+        Vector3    pos    = _target.position;
         Quaternion rot    = Quaternion.Euler(_pitch, _yaw, 0f);
         Vector3    offset = rot * new Vector3(0f, 0f, -distance);
-        Vector3    lookAt = _smoothPos + Vector3.up * heightOffset;
+        Vector3    lookAt = pos + Vector3.up * heightOffset;
 
-        Vector3 desiredPosition = lookAt + offset;
         _currentCollisionDistance = distance;
-        transform.position = ResolveCameraPosition(lookAt, desiredPosition, true);
+        transform.position = ResolveCameraPosition(lookAt, lookAt + offset, snap: true);
         transform.LookAt(lookAt);
     }
 
     Vector3 ResolveCameraPosition(Vector3 lookAt, Vector3 desiredPosition, bool snap = false)
     {
-        if (!cameraCollision)
-            return desiredPosition;
+        if (!cameraCollision) return desiredPosition;
 
-        Vector3 toCamera = desiredPosition - lookAt;
-        float desiredDistance = toCamera.magnitude;
-        if (desiredDistance <= 0.001f)
-            return desiredPosition;
+        Vector3 toCamera    = desiredPosition - lookAt;
+        float   desiredDist = toCamera.magnitude;
+        if (desiredDist <= 0.001f) return desiredPosition;
 
-        Vector3 direction = toCamera / desiredDistance;
-        float clearDistance = desiredDistance;
+        Vector3 dir       = toCamera / desiredDist;
+        float   clearDist = desiredDist;
 
         RaycastHit[] hits = Physics.SphereCastAll(
-            lookAt,
-            collisionRadius,
-            direction,
-            desiredDistance,
-            collisionMask,
-            QueryTriggerInteraction.Ignore);
+            lookAt, collisionRadius, dir, desiredDist,
+            collisionMask, QueryTriggerInteraction.Ignore);
 
         if (hits != null && hits.Length > 0)
         {
             System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
-            foreach (RaycastHit hit in hits)
+            foreach (var hit in hits)
             {
-                if (hit.collider == null)
-                    continue;
-
-                if (_target != null && hit.collider.transform.IsChildOf(_target))
-                    continue;
-
-                clearDistance = Mathf.Max(0.05f, hit.distance - collisionBuffer);
+                if (hit.collider == null) continue;
+                if (_target != null && hit.collider.transform.IsChildOf(_target)) continue;
+                clearDist = Mathf.Max(0.05f, hit.distance - collisionBuffer);
                 break;
             }
         }
 
-        float targetDistance = Mathf.Clamp(clearDistance, 0.05f, desiredDistance);
+        float targetDist = Mathf.Clamp(clearDist, 0.05f, desiredDist);
         _currentCollisionDistance = snap
-            ? targetDistance
+            ? targetDist
             : Mathf.Lerp(
-                _currentCollisionDistance <= 0f ? targetDistance : _currentCollisionDistance,
-                targetDistance,
+                _currentCollisionDistance <= 0f ? targetDist : _currentCollisionDistance,
+                targetDist,
                 1f - Mathf.Exp(-collisionSmoothSpeed * Time.deltaTime));
 
-        return lookAt + direction * _currentCollisionDistance;
+        return lookAt + dir * _currentCollisionDistance;
     }
 }

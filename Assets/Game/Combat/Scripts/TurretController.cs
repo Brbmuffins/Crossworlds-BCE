@@ -177,6 +177,9 @@ public class TurretController : MonoBehaviour
         go.transform.localPosition = Vector3.forward * 0.5f;
 
         ParticleSystem ps = go.AddComponent<ParticleSystem>();
+        // A freshly added ParticleSystem is already playing; main.duration can only be
+        // set while stopped, so clear it before configuring.
+        ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
         var main = ps.main;
         main.loop = false;
         main.duration = 0.1f;

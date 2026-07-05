@@ -77,6 +77,7 @@ public class PlayerHUD : MonoBehaviour
     Image[]             _slotRing     = new Image[Slots];
     TextMeshProUGUI[]   _slotKey      = new TextMeshProUGUI[Slots];
     TextMeshProUGUI[]   _slotName     = new TextMeshProUGUI[Slots];
+    TextMeshProUGUI[]   _slotCdText   = new TextMeshProUGUI[Slots];   // live cooldown countdown
     int                 _activeSlot   = 0;
 
     // Spellbook
@@ -343,6 +344,13 @@ public class PlayerHUD : MonoBehaviour
         _slotCooldown[i].fillAmount = 0f;
         Stretch(_slotCooldown[i].rectTransform);
 
+        // Cooldown countdown number (centred over the icon, hidden when ready)
+        _slotCdText[i] = Lbl(slotRt, "CdText", "", 20f);
+        _slotCdText[i].fontStyle = FontStyles.Bold;
+        _slotCdText[i].color     = Color.white;
+        _slotCdText[i].alignment = TextAlignmentOptions.Center;
+        Stretch(_slotCdText[i].rectTransform);
+
         // Active ring (border glow)
         _slotRing[i] = Img(slotRt, "Ring", Transparent);
         _slotRing[i].rectTransform.anchorMin = new Vector2(-0.06f, -0.06f);
@@ -405,6 +413,15 @@ public class PlayerHUD : MonoBehaviour
             float cd = (_caster != null) ? _caster.GetCooldownFraction(i) : 0f;
             _slotCooldown[i].fillAmount = cd;
 
+            // Live countdown number over the icon while on cooldown
+            if (_slotCdText[i] != null)
+            {
+                float rem = (_caster != null) ? _caster.GetCooldownRemaining(i) : 0f;
+                _slotCdText[i].text = rem > 0.05f
+                    ? (rem >= 1f ? Mathf.Ceil(rem).ToString("0") : rem.ToString("0.0"))
+                    : "";
+            }
+
             // Active slot: gold ring with pulse
             if (i == _activeSlot)
             {
@@ -464,28 +481,64 @@ public class PlayerHUD : MonoBehaviour
         sub.rectTransform.offsetMin = sub.rectTransform.offsetMax = Vector2.zero;
         sub.alignment = TextAlignmentOptions.Center;
 
-        // Card grid container
-        var grid = new GameObject("Grid"); grid.transform.SetParent(root, false);
-        var gridRt = grid.AddComponent<RectTransform>();
-        gridRt.anchorMin = new Vector2(0.02f, 0.04f);
-        gridRt.anchorMax = new Vector2(0.98f, 0.82f);
-        gridRt.offsetMin = gridRt.offsetMax = Vector2.zero;
+        // ── Scrollable card grid ──────────────────────────────────────────────
+        // The class pool can be up to 32 cards; a fixed grid overflowed the panel
+        // and spilled onto the action bar. Wrap it in a ScrollRect so it always
+        // stays inside the panel body and scrolls instead.
+        var scrollGO = new GameObject("SpellScroll", typeof(RectTransform), typeof(ScrollRect));
+        scrollGO.transform.SetParent(root, false);
+        var scrollRt = scrollGO.GetComponent<RectTransform>();
+        scrollRt.anchorMin = new Vector2(0.02f, 0.04f);
+        scrollRt.anchorMax = new Vector2(0.98f, 0.82f);
+        scrollRt.offsetMin = scrollRt.offsetMax = Vector2.zero;
 
-        var glg = grid.AddComponent<GridLayoutGroup>();
-        glg.cellSize        = new Vector2(190f, 130f);
-        glg.spacing         = new Vector2(10f, 10f);
+        // Viewport clips overflow (needs a graphic for the mask to work).
+        var viewport = new GameObject("Viewport", typeof(RectTransform), typeof(Image), typeof(RectMask2D));
+        viewport.transform.SetParent(scrollGO.transform, false);
+        var vpRt = viewport.GetComponent<RectTransform>();
+        vpRt.anchorMin = Vector2.zero; vpRt.anchorMax = Vector2.one;
+        vpRt.offsetMin = vpRt.offsetMax = Vector2.zero;
+        viewport.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0.004f);
+
+        // Content grows downward; ContentSizeFitter drives its height from the grid.
+        var content = new GameObject("Content", typeof(RectTransform), typeof(GridLayoutGroup), typeof(ContentSizeFitter));
+        content.transform.SetParent(viewport.transform, false);
+        var contentRt = content.GetComponent<RectTransform>();
+        contentRt.anchorMin = new Vector2(0f, 1f);
+        contentRt.anchorMax = new Vector2(1f, 1f);
+        contentRt.pivot     = new Vector2(0.5f, 1f);
+        contentRt.offsetMin = contentRt.offsetMax = Vector2.zero;
+
+        var glg = content.GetComponent<GridLayoutGroup>();
+        glg.cellSize        = new Vector2(215f, 150f);
+        glg.spacing         = new Vector2(12f, 12f);
+        glg.padding         = new RectOffset(6, 6, 6, 6);
         glg.startCorner     = GridLayoutGroup.Corner.UpperLeft;
         glg.startAxis       = GridLayoutGroup.Axis.Horizontal;
         glg.childAlignment  = TextAnchor.UpperCenter;
-        glg.constraint      = GridLayoutGroup.Constraint.Flexible;
+        // Fixed column count pairs reliably with ContentSizeFitter for row height;
+        // 6 columns fit the panel width and keep cards readable.
+        glg.constraint      = GridLayoutGroup.Constraint.FixedColumnCount;
+        glg.constraintCount = 6;
+
+        content.GetComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+        _spellScroll = scrollGO.GetComponent<ScrollRect>();
+        _spellScroll.viewport      = vpRt;
+        _spellScroll.content       = contentRt;
+        _spellScroll.horizontal    = false;
+        _spellScroll.vertical      = true;
+        _spellScroll.movementType  = ScrollRect.MovementType.Clamped;
+        _spellScroll.scrollSensitivity = 28f;
 
         // Cards populated later in RebuildSpellbook()
         root.gameObject.name = "SpellbookRoot";
-        _spellbookGridParent = grid.transform;
+        _spellbookGridParent = content.transform;
         return root.gameObject;
     }
 
     Transform _spellbookGridParent;
+    ScrollRect _spellScroll;
 
     void RebuildSpellbook()
     {
@@ -547,35 +600,58 @@ public class PlayerHUD : MonoBehaviour
         name.rectTransform.offsetMin = name.rectTransform.offsetMax = Vector2.zero;
         name.alignment = TextAlignmentOptions.BottomLeft;
 
-        // Category tag
-        var cat = Lbl(cardRt, "Cat", ab.category.ToString().ToUpper(), 10f);
+        // Delivery + category line (how the ability is thrown)
+        string delivery = ab.shape == AbilityShape.Cone      ? "CONE"
+                        : ab.shape == AbilityShape.Rectangle ? "LINE"
+                        : ab.spawnTurret                     ? "DEPLOY"
+                        : ab.range <= 0f                     ? "SELF"
+                        :                                      "AoE";
+        var cat = Lbl(cardRt, "Cat", $"{delivery}  ·  {ab.category.ToString().ToUpper()}", 10f);
         cat.color     = CategoryTint(ab.category);
-        cat.rectTransform.anchorMin = new Vector2(0.35f, 0.40f);
+        cat.fontStyle = FontStyles.Bold;
+        cat.rectTransform.anchorMin = new Vector2(0.35f, 0.44f);
         cat.rectTransform.anchorMax = new Vector2(0.97f, 0.60f);
         cat.rectTransform.offsetMin = cat.rectTransform.offsetMax = Vector2.zero;
         cat.alignment = TextAlignmentOptions.TopLeft;
 
-        // Stats row
-        string descText = $"{ab.range:0.#}m range";
-        if (ab.damage > 0f)       descText += $"  •  {ab.damage:0} dmg";
-        if (ab.healAmount > 0f)   descText += $"  •  +{ab.healAmount:0} hp";
-        if (ab.shieldAbsorb > 0f) descText += $"  •  {ab.shieldAbsorb:0} shield";
-        var desc = Lbl(cardRt, "Desc", descText, 10f);
-        desc.color             = TextDim;
+        // Readable stat lines (one fact per line, colour-coded)
+        var sb = new System.Text.StringBuilder();
+        if (ab.chargeable && ab.maxChargeDamage > ab.damage)
+            sb.Append($"<color=#ff6b4a>Damage</color> {ab.damage:0}–{ab.maxChargeDamage:0}  <i><color=#94a3b8>hold to charge</color></i>\n");
+        else if (ab.damage > 0f)
+            sb.Append($"<color=#ff6b4a>Damage</color> {ab.damage:0}\n");
+        if (ab.healAmount > 0f)
+            sb.Append($"<color=#39e67a>Heal</color> +{ab.healAmount:0}\n");
+        if (ab.shieldAbsorb > 0f)
+            sb.Append($"<color=#5aa0ff>Shield</color> {ab.shieldAbsorb:0}" + (ab.shieldDuration > 0f ? $" · {ab.shieldDuration:0.#}s\n" : "\n"));
+        sb.Append(ab.range > 0f
+            ? $"<color=#94a3b8>Range</color> {ab.range:0.#}m"
+            : "<color=#94a3b8>Self-cast</color>");
+
+        var desc = Lbl(cardRt, "Desc", sb.ToString(), 10.5f);
+        desc.color             = new Color(0.88f, 0.88f, 0.92f, 1f);
+        desc.richText          = true;
         desc.textWrappingMode  = TextWrappingModes.Normal;
-        desc.rectTransform.anchorMin = new Vector2(0.04f, 0.04f);
-        desc.rectTransform.anchorMax = new Vector2(0.97f, 0.40f);
+        desc.lineSpacing       = 6f;
+        desc.rectTransform.anchorMin = new Vector2(0.06f, 0.05f);
+        desc.rectTransform.anchorMax = new Vector2(0.97f, 0.42f);
         desc.rectTransform.offsetMin = desc.rectTransform.offsetMax = Vector2.zero;
         desc.alignment = TextAlignmentOptions.TopLeft;
 
-        // Cooldown badge — top-right corner
-        var cdLabel = Lbl(cardRt, "CD", $"{ab.cooldown:0.#}s", 10f);
-        cdLabel.color     = new Color(0.9f, 0.7f, 0.2f, 0.9f);
+        // Cooldown pill — top-right, unmistakable
+        var cdPill = Img(cardRt, "CdPill", ab.cooldown > 0f
+            ? new Color(0.14f, 0.11f, 0.03f, 0.95f)
+            : new Color(0.05f, 0.14f, 0.07f, 0.95f));
+        cdPill.rectTransform.anchorMin = new Vector2(0.62f, 0.82f);
+        cdPill.rectTransform.anchorMax = new Vector2(0.97f, 0.99f);
+        cdPill.rectTransform.offsetMin = cdPill.rectTransform.offsetMax = Vector2.zero;
+
+        var cdLabel = Lbl(cdPill.rectTransform, "CD",
+            ab.cooldown > 0f ? $"CD {ab.cooldown:0.#}s" : "INSTANT", 10f);
+        cdLabel.color     = ab.cooldown > 0f ? new Color(1f, 0.82f, 0.25f) : new Color(0.5f, 0.9f, 0.6f);
         cdLabel.fontStyle = FontStyles.Bold;
-        cdLabel.rectTransform.anchorMin = new Vector2(0.65f, 0.86f);
-        cdLabel.rectTransform.anchorMax = new Vector2(0.97f, 1.00f);
-        cdLabel.rectTransform.offsetMin = cdLabel.rectTransform.offsetMax = Vector2.zero;
-        cdLabel.alignment = TextAlignmentOptions.TopRight;
+        Stretch(cdLabel.rectTransform);
+        cdLabel.alignment = TextAlignmentOptions.Center;
     }
 
     int _pendingSpellIdx = -1;
@@ -596,8 +672,10 @@ public class PlayerHUD : MonoBehaviour
             _spellbookOpen = !_spellbookOpen;
             _spellbookCanvas.gameObject.SetActive(_spellbookOpen);
             if (!_spellbookOpen) _pendingSpellIdx = -1;
-            Cursor.lockState = _spellbookOpen ? CursorLockMode.None : CursorLockMode.Locked;
-            Cursor.visible   = _spellbookOpen;
+            else if (_spellScroll != null) _spellScroll.verticalNormalizedPosition = 1f; // open at top
+            // Cursor is always free in MOBA mode; just ensure visible when spellbook is open.
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible   = true;
         }
 
         // Equip pending spell into selected slot

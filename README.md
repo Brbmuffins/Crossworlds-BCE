@@ -20,6 +20,7 @@ Crossworlds BCE is a server-authoritative co-op action RPG built on Unity 6 and 
 
 ## Contents
 
+- [📖 **Player Guide** — every ability & how to use it (field manual)](PLAYER_GUIDE.md)
 - [How to Play](#how-to-play)
 - [Classes](#classes)
 - [Spellbook — All 32 Abilities](#spellbook--all-32-abilities)
@@ -74,6 +75,8 @@ Crossworlds is a party-based action RPG. You and your allies share a hub world, 
 | **F** | Gather from / interact with a resource node |
 | **E** | Interact with an NPC (Forge Master, The Hangman) |
 | **Enter** | Open chat |
+
+<p align="center"><img src="Inspiration ART/action bar.png" width="340"/><br/><sub><i>Ability bar — slots <b>1–4</b> with a live cooldown countdown (slot 2 recharging).</i></sub></p>
 
 ### Progression — three parallel tracks
 
@@ -179,6 +182,8 @@ The Arcanist controls space. Arcane Step is a true blink — it bypasses terrain
 
 Every class draws from the **shared pool (0–7)** plus its own kit. Equip any four abilities into slots **1–4** via the Spellbook (**Tab**). Indices are fixed and mirrored server-side — never renumber.
 
+<p align="center"><img src="Inspiration ART/spellbookaplha.png" width="100%"/><br/><sub><i>The in-game Spellbook (<b>Tab</b>) — every ability shows its icon, category (colour strip), range/damage, and cooldown. Click a card, press <b>1–4</b> to equip.</i></sub></p>
+
 **Shape** describes how an ability is delivered:
 
 | Shape | Meaning |
@@ -262,6 +267,8 @@ Damage values are single-hit unless noted; ranges like `15–45` are uncharged �
 <img src="Docs/icons/combat/combat-directional.png" width="100%"/>
 
 > *Every shot is aimed. A charged Void Bolt streaks into a pack while the AoE indicator burns on the floor — no auto-attack, no tab-target, just placement and timing.*
+
+<p align="center"><img src="Inspiration ART/visuals combats.png" width="360"/><br/><sub><i>In-game: a deployed Runic Sentinel turret beside a crackling ability singularity.</i></sub></p>
 
 ### Smite-Style Directional Combat
 
@@ -579,12 +586,12 @@ curl -s http://localhost:3000/api/professions/1   # verify endpoint responds
 | [`Assets/Game/Systems/AfkGatheringStation.cs`](Assets/Game/Systems/AfkGatheringStation.cs) | AFK loop — F to start, auto-award per tick, drift cancel |
 | [`Assets/Game/Systems/ProfessionManager.cs`](Assets/Game/Systems/ProfessionManager.cs) | Client singleton — loads/caches profession levels, posts XP, fires level-up event |
 | [`Assets/Game/UI/GatheringHUD.cs`](Assets/Game/UI/GatheringHUD.cs) | Screen-space HUD — progress bar, pulse on yield, level-up flash |
-| [`Assets/Game/Editor/AfkStationBuilder.cs`](Assets/Game/Editor/AfkStationBuilder.cs) | BCE menu: 8a–8f drop stations into Hub scene |
+| [`Assets/Game/Editor/AfkStationBuilder.cs`](Assets/Game/Editor/AfkStationBuilder.cs) | BCE menu: 8a–8f drop stations into the Darkwood (hub) scene |
 | [`_CONTEXT/professions-award-xp-patch.js`](_CONTEXT/professions-award-xp-patch.js) | VPS patch — `POST /api/professions/award-xp` |
 | `Assets/Game/Combat/Scripts/ResourceNode.cs` | Legacy manual F-key harvest (still valid for one-shot depleting nodes) |
 
 **Editor steps to wire it up:**
-1. Open Unity → Hub scene
+1. Open Unity → Darkwood (hub) scene
 2. `BCE/Setup/8f` — adds `ProfessionManager` to scene
 3. `BCE/Setup/8a` through `8e` — drops each station mesh into the scene; position as desired
 4. Call `ProfessionManager.Local.Load()` from your hub `OnStartClient` (or `LoginManager` post-login callback)
@@ -691,6 +698,8 @@ Idle → (player enters aggroRadius) → Chase → (in attackRange) → Attack
 <sub>New enemy zone — 2026-07-04 content update.</sub>
 
 The **Fields of Gundab** are the first themed enemy zone beyond the void arenas, with a fully-animated signature foe: the **Field Goul**, a lurching brute.
+
+<p align="center"><img src="Inspiration ART/combat waves.png" width="100%"/><br/><sub><i>Combat waves kicking off in the Fields of Gundab — the zone arms as the first player enters.</i></sub></p>
 
 | Enemy | Model | Animations | Driver |
 |-------|-------|------------|--------|
@@ -1360,12 +1369,12 @@ SQL: parameterized queries only. No string interpolation. Ever.
 | 80/443 | Nginx | SSL live via Certbot |
 | 3001 | Uptime Kuma | Do not touch |
 
-**Scene order:** LoginScene (0) → CharacterSelect (1) → Hub (2) → Arena (in progress)
+**Scene order:** LoginScene (0) → CharacterSelect (1) → Darkwood (2, the hub — renamed from Hub) → Arena (in progress). Also present: `TutorialIsland`, `VoidDungeon` (placeholder, not yet in Build Settings). `RodNetworkManager` sets `onlineScene = Darkwood.unity` and `offlineScene = LoginScene.unity` in `Awake()` — never in the Inspector.
 
 **Mirror discipline:**
 - `[Server]` on every game-state mutation
 - `[ClientRpc]` for visual-only effects (telegraphs, hit VFX)
-- Client-only code behind `#if !UNITY_SERVER`
+- Client-only code (VFX, UI, HUD) behind **`#if UNITY_EDITOR || !UNITY_SERVER`** — never `#if !UNITY_SERVER` alone. The editor's active build target is Dedicated Server, so `UNITY_SERVER` is defined there too; `!UNITY_SERVER` alone silently strips the code from editor play-mode.
 - Client-side singletons (`CombatSessionTracker`, `InventoryManager`) notified from `OnStartClient` — NOT from server-side spawn paths
 - `#if UNITY_EDITOR` guards are safe; Editor scripts never compile with `UNITY_SERVER`
 
@@ -1531,6 +1540,21 @@ In-game admin console — gated by the `GM_USERS` allowlist in `GmConsole.cs`; �
 
 ## Changelog
 
+### 2026-07-05 — Camera/movement fixes, chat, hub scene rename
+
+**Gameplay feel:**
+- **Root-motion mesh-fly bug fixed** — the shared Brandalf rig imported with **Apply Root Motion ON**, so the run/sprint clip dragged the mesh while `PlayerMovement` drove the Rigidbody root, detaching the body from the camera's follow point ("character flies loose around the POV"). `PlayerMovement.Start()` now forces `anim.applyRootMotion = false` for all five classes.
+- **CameraFollow** simplified to a Smite/MOBA rig that follows the player root (middle-mouse orbit, scroll zoom); camera-collision defaults off; target wiring de-duplicated (PlayerMovement owns `CameraFollow.target`, AbilityCaster owns `PlayerMovement.cam`).
+- Hero-prefab Rigidbodies set to **Interpolate** for smooth follow.
+
+**Chat:**
+- **`RodChatManager` invisible-text fixed** — procedurally-built TMP text rendered as an empty box (no glyphs) when TMP's implicit default font didn't resolve. Now resolves a font once (`TMP_Settings.defaultFontAsset` → `LiberationSans SDF` → borrow from any live `TMP_Text`) and assigns it to every chat text object.
+
+**Scenes (from the Hub→Darkwood merge):**
+- **`Hub.unity` renamed to `Darkwood.unity`.** Updated the stale C# references the merge left behind: `RodNetworkManager.onlineScene`, `SceneNames.Hub`/`HubPath`, and `BuildScript` server-build scene list. `EditorBuildSettings` already pointed at Darkwood.
+- Orphan duplicate `Login.unity` renamed to **`VoidDungeon.unity`** — a named placeholder for a future dungeon build (GUID preserved); added `SceneNames.VoidDungeon`/`VoidDungeonPath`.
+- New `TutorialIsland.unity` scene present (not yet in Build Settings).
+
 ### 2026-07-04 — Fields of Gundab + code-review fixes + branch reconciliation
 
 **New content (Fields of Gundab):**
@@ -1583,7 +1607,7 @@ Localized, behavior-preserving audit across combat, networking, abilities, statu
 | Priority | Task |
 |----------|------|
 | 🔴 | Rotate credentials leaked into git history (ROADMAP Q7) |
-| 🔴 | `GmConsole.cs` — add `#if !UNITY_SERVER` guard (spamming errors on server build) |
+| 🔴 | `GmConsole.cs` — add `#if UNITY_EDITOR || !UNITY_SERVER` guard (spamming errors on server build) |
 | 🔴 | **CLASS_NAMES** — live server still has `['Engineer','Guardian',...]`; live characters use those names. Changing to `['Warden','Ironclad',...]` needs coordinated Unity deploy + `UPDATE characters SET class_name=...` migration. See `_CONTEXT/VPS_SERVER.md` for migration plan. |
 | 🟡 | Document `rod-realtime` (port 5000 local) — found on VPS during 2026-07-03 audit; purpose unknown |
 | 🟡 | Create `PlayerProjectile` prefab in editor; assign to hero prefabs; register in NetworkManager |
@@ -1627,7 +1651,8 @@ Assets/Game/
                            HubSceneBuilder, EnemyBuilder, AfkStationBuilder, IronWardenBuilder,
                            FieldGoulAnimatorBuilder
   3d Assets/Fences/        wooden-fence set (Gundab dressing; see Tools/generate_wooden_fence_fbx.py)
-  Scenes/                  LoginScene(0), CharacterSelect(1), Hub(2)
+  Scenes/                  LoginScene(0), CharacterSelect(1), Darkwood(2, hub — renamed from Hub);
+                           TutorialIsland, VoidDungeon (placeholder for a future dungeon build)
   Prefabs/                 5 hero prefabs + Enemy_Grunt / Enemy_Ranged / Enemy_Elite
   Heroes/Brandalf/         6th-hero model — DECISION PENDING (skin vs class), don't wire
 

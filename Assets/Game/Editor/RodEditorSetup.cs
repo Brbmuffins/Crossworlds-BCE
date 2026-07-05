@@ -68,8 +68,6 @@ public static class RodEditorSetup
     const string HUB_SCENE_PATH         = "Assets/Game/Scenes/Hub.unity";
     const string GAME_WORLD_PATH        = "Assets/brbmuffins Skybox/Scenes/GameWorld.unity"; // legacy ref
     const string SERVER_ADDRESS         = "15.204.243.36";
-    const string ENGINEER_FBX_PATH      = "Assets/Game/Characters/Engineer/Model/Idle.fbx";
-    const string PREFABS_DIR            = "Assets/Game/Prefabs";
 
     // ─────────────────────────────────────────────────────────────────────────
     //  0. Create Character Select Scene
@@ -227,8 +225,8 @@ public static class RodEditorSetup
             "✅ Login Scene Ready",
             "LoginScene.unity created and wired!\n\n" +
             "Just 2 quick drags left:\n" +
-            "  1. NetworkManager → classPrefabs [0–3]\n" +
-            "     (Engineer / Guardian / Wraith / Medic)\n\n" +
+            "  1. NetworkManager → classPrefabs [0–4]\n" +
+            "     (Warden / Ironclad / Shadowblade / Cleric / Arcanist)\n\n" +
             "  2. LoginUI (LoginScreenVFX) → VFX prefab slots\n\n" +
             "Then run menu item 2 to clean GameWorld.",
             "Got it!");
@@ -294,118 +292,11 @@ public static class RodEditorSetup
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    //  4. Moved to RodPrefabBuilder.cs
+    //  4. Create Class Prefabs — see RodPrefabBuilder.cs (BCE/Setup/4).
+    //  The old CreateClassPrefabs() here built legacy Engineer/Guardian/Wraith/
+    //  Medic placeholders and overwrote classPrefabs; it was dead (no menu, never
+    //  called) and has been removed to avoid clobbering the real hero prefabs.
     // ─────────────────────────────────────────────────────────────────────────
-
-    // (see Assets/Game/Editor/RodPrefabBuilder.cs)
-    static void CreateClassPrefabs()
-    {
-        // Load the Engineer FBX model
-        var engineerFbx = AssetDatabase.LoadAssetAtPath<GameObject>(ENGINEER_FBX_PATH);
-        if (engineerFbx == null)
-        {
-            EditorUtility.DisplayDialog("Model Not Found",
-                $"Could not find Engineer FBX at:\n{ENGINEER_FBX_PATH}\n\n" +
-                "Check the path in RodEditorSetup.cs → ENGINEER_FBX_PATH.", "OK");
-            return;
-        }
-
-        Directory.CreateDirectory(PREFABS_DIR);
-
-        // Class names — index must match RodNetworkManager.classPrefabs order
-        string[] classNames = { "Warden", "Ironclad", "Shadowblade", "Cleric", "Arcanist" };
-        var createdPaths    = new string[classNames.Length];
-
-        for (int i = 0; i < classNames.Length; i++)
-        {
-            string name     = classNames[i];
-            string path     = $"{PREFABS_DIR}/{name}.prefab";
-
-            // ── Build the root GameObject ─────────────────────────────────────
-            var root = new GameObject(name);
-
-            // Required by Mirror — every networked object needs this
-            root.AddComponent<NetworkIdentity>();
-
-            // Our custom SyncVar identity (name + class index)
-            var identity    = root.AddComponent<PlayerIdentity>();
-            identity.classIndex = i;
-
-            // Physics
-            var rb          = root.AddComponent<Rigidbody>();
-            rb.freezeRotation = true;
-            rb.mass         = 80f;
-            rb.linearDamping = 1f;
-
-            // Collision — capsule sized for a humanoid
-            var col         = root.AddComponent<CapsuleCollider>();
-            col.height      = 1.8f;
-            col.radius      = 0.35f;
-            col.center      = new Vector3(0f, 0.9f, 0f);
-
-            // Player movement script (cam assigned at runtime via CameraFollow)
-            root.AddComponent<PlayerMovement>();
-
-            // ── Attach the Engineer model as a child ──────────────────────────
-            var model = (GameObject)PrefabUtility.InstantiatePrefab(engineerFbx, root.transform);
-            model.name = "Model";
-            model.transform.localPosition = Vector3.zero;
-            model.transform.localRotation = Quaternion.identity;
-            model.transform.localScale    = Vector3.one;
-
-            // ── Save as prefab ────────────────────────────────────────────────
-            var prefab = PrefabUtility.SaveAsPrefabAsset(root, path);
-            Object.DestroyImmediate(root);
-
-            createdPaths[i] = path;
-            Debug.Log($"[BCE] Created prefab: {path}");
-
-            // Mark for Mirror spawning (prefab must have NetworkIdentity GUID)
-            _ = prefab; // suppress unused warning
-        }
-
-        AssetDatabase.Refresh();
-
-        // ── Auto-assign to RodNetworkManager in LoginScene ────────────────────
-        if (File.Exists(LOGIN_SCENE_PATH))
-        {
-            var loginScene = EditorSceneManager.OpenScene(LOGIN_SCENE_PATH, OpenSceneMode.Single);
-
-            RodNetworkManager nm = null;
-            foreach (var root in loginScene.GetRootGameObjects())
-            {
-                nm = root.GetComponent<RodNetworkManager>();
-                if (nm != null) break;
-            }
-
-            if (nm != null)
-            {
-                nm.classPrefabs = new GameObject[createdPaths.Length];
-                for (int i = 0; i < createdPaths.Length; i++)
-                    nm.classPrefabs[i] = AssetDatabase.LoadAssetAtPath<GameObject>(createdPaths[i]);
-
-                EditorUtility.SetDirty(nm);
-                EditorSceneManager.SaveScene(loginScene);
-                Debug.Log("[BCE] ✅ classPrefabs assigned to RodNetworkManager in LoginScene.");
-            }
-            else
-            {
-                Debug.LogWarning("[BCE] LoginScene found but no RodNetworkManager — run step 1 first.");
-            }
-        }
-        else
-        {
-            Debug.LogWarning("[BCE] LoginScene not found — run step 1 first, then step 4.");
-        }
-
-        EditorUtility.DisplayDialog("✅ Class Prefabs Created",
-            "4 prefabs created in Assets/Game/Prefabs/:\n" +
-            "  [0] Engineer\n  [1] Guardian\n  [2] Wraith\n  [3] Medic\n\n" +
-            "All using the Engineer model as a placeholder.\n" +
-            "classPrefabs auto-assigned to RodNetworkManager.\n\n" +
-            "Swap individual models later when you have the real assets.",
-            "Done!");
-    }
 
     // ─────────────────────────────────────────────────────────────────────────
     //  Shared helpers

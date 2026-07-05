@@ -33,6 +33,7 @@ public class ClericAnimationDriver : NetworkBehaviour
     // ── Private ───────────────────────────────────────────────────────────────
     private Rigidbody _rb;
     private bool      _hooked;
+    private bool      _hasSpeedParam;   // controller actually declares "Speed"
 
     static readonly int SpeedHash     = Animator.StringToHash("Speed");
     static readonly int CastHealHash  = Animator.StringToHash("CastHeal");
@@ -44,6 +45,13 @@ public class ClericAnimationDriver : NetworkBehaviour
         if (animator == null)
             animator = GetComponentInChildren<Animator>();
         _rb = GetComponent<Rigidbody>();
+
+        // Only drive Speed if the assigned controller declares it — otherwise
+        // SetFloat(SpeedHash, …) spams "Parameter 'Hash …' does not exist" every frame.
+        if (animator != null && animator.runtimeAnimatorController != null)
+            foreach (var p in animator.parameters)
+                if (p.nameHash == SpeedHash) { _hasSpeedParam = true; break; }
+
         HookAbilityCaster();
     }
 
@@ -85,6 +93,7 @@ public class ClericAnimationDriver : NetworkBehaviour
     void Update()
     {
         if (!isLocalPlayer || animator == null || _rb == null || animator.runtimeAnimatorController == null) return;
+        if (!_hasSpeedParam) return;
 
         float speed = new Vector3(_rb.linearVelocity.x, 0f, _rb.linearVelocity.z).magnitude;
         float normalized = Mathf.Clamp(speed / baseSprintSpeed * 1.5f, 0f, 1.5f);

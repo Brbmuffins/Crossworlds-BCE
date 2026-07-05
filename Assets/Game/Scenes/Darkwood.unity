@@ -1382,7 +1382,7 @@ MonoBehaviour:
   sprintSpeed: 25
   jumpForce: 15
   rotationSpeed: 12
-  cam: {fileID: 2044594951}
+  cam: {fileID: 0}
   lockCharacterRotation: 0
   captureStartRotationAsLock: 1
   lockedRotationEuler: {x: 0, y: 0, z: 0}
@@ -13472,7 +13472,7 @@ MonoBehaviour:
   minPitch: -20
   maxPitch: 70
   heightOffset: 1.6
-  cameraCollision: 1
+  cameraCollision: 0
   collisionMask:
     serializedVersion: 2
     m_Bits: 4294967295
