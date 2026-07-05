@@ -111,6 +111,14 @@ public class AbilityCaster : NetworkBehaviour
     [Header("Mouse Aim")]
     public float minimumAimDistance = 1f;
 
+    [Header("Indicator Textures")]
+    [Tooltip("Damage circle indicator — try MagicCircle10 / MagicCircle17 / Circle17")]
+    public Texture2D indicatorTextureDamage;
+    [Tooltip("Heal circle indicator — try SnowCircle / MagicCircle14")]
+    public Texture2D indicatorTextureHeal;
+    [Tooltip("Support circle indicator — try Circle42 / MagicCircle13")]
+    public Texture2D indicatorTextureSupport;
+
     [Header("Spellbook — all available spells")]
     public AbilityDef[] spellbook = new AbilityDef[]
     {
@@ -498,17 +506,34 @@ public class AbilityCaster : NetworkBehaviour
 
         if (ability.shape == AbilityShape.Cone)
         {
-            // Fan mesh for cone — hard to outline cleanly, keep as tinted mesh
-            var fan = CreateConeIndicator(ability.range, ability.coneAngle);
+            var fan  = CreateConeIndicator(ability.range, ability.coneAngle);
             fan.transform.SetParent(indicator.transform, false);
             var rend = fan.GetComponent<Renderer>();
             var mat  = new Material(Shader.Find("Sprites/Default"));
             mat.color = new Color(c.r, c.g, c.b, 0.30f);
             rend.material = mat;
         }
-        else
+        else if (ability.shape == AbilityShape.Circle)
         {
-            // Circle + Rectangle: crisp LineRenderer outline (Smite style)
+            // Flat quad lying on the XZ plane with a magic-circle texture + category tint.
+            // The parent indicator GO is the anchor point; the Quad is a child so
+            // spinning the parent rotates the texture without affecting position.
+            var quad = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            Destroy(quad.GetComponent<Collider>());
+            quad.transform.SetParent(indicator.transform, false);
+            quad.transform.localRotation = Quaternion.Euler(90f, 0f, 0f); // face up
+            quad.transform.localScale    = new Vector3(ability.indicatorSize,
+                                                       ability.indicatorSize, 1f);
+
+            var rend = quad.GetComponent<Renderer>();
+            var mat  = new Material(Shader.Find("Sprites/Default"));
+            mat.mainTexture = GetIndicatorTexture(ability.category);
+            mat.color       = c;
+            rend.material   = mat;
+        }
+        else // Rectangle
+        {
+            // Directional shapes read better as an outline than a stretched circle texture
             BuildOutlineLR(indicator, ability, c);
         }
 
@@ -564,9 +589,54 @@ public class AbilityCaster : NetworkBehaviour
     {
         switch (category)
         {
-            case AbilityCategory.Heal:    return new Color(0.2f, 1f, 0.3f, 0.45f);
-            case AbilityCategory.Support: return new Color(0.2f, 0.6f, 1f, 0.45f);
-            default:                      return new Color(1f, 0.5f, 0.1f, 0.45f);
+            case AbilityCategory.Heal:    return new Color(0.2f, 1f, 0.3f, 0.55f);
+            case AbilityCategory.Support: return new Color(0.2f, 0.6f, 1f, 0.55f);
+            default:                      return new Color(1f, 0.4f, 0.05f, 0.55f);
+        }
+    }
+
+    // Returns the assigned Inspector texture for a category, or a procedural ring
+    // if none is assigned.  Procedural ring is cached after first build.
+    Texture2D GetIndicatorTexture(AbilityCategory category)
+    {
+        switch (category)
+        {
+            case AbilityCategory.Heal:    return indicatorTextureHeal    ?? ProceduralRingTexture;
+            case AbilityCategory.Support: return indicatorTextureSupport ?? ProceduralRingTexture;
+            default:                      return indicatorTextureDamage  ?? ProceduralRingTexture;
+        }
+    }
+
+    static Texture2D s_proceduralRing;
+    static Texture2D ProceduralRingTexture
+    {
+        get
+        {
+            if (s_proceduralRing != null) return s_proceduralRing;
+
+            const int size = 128;
+            s_proceduralRing = new Texture2D(size, size, TextureFormat.RGBA32, false);
+            s_proceduralRing.wrapMode = TextureWrapMode.Clamp;
+            float half = size * 0.5f;
+
+            for (int y = 0; y < size; y++)
+            for (int x = 0; x < size; x++)
+            {
+                // Normalised distance from centre: 0 = centre, 1 = edge
+                float d = Vector2.Distance(new Vector2(x + 0.5f, y + 0.5f),
+                                           new Vector2(half, half)) / half;
+
+                // Bright outer ring band
+                float ring  = Mathf.SmoothStep(0.60f, 0.74f, d)
+                            * (1f - Mathf.SmoothStep(0.87f, 1.00f, d));
+                // Very faint inner fill so the centre area is visible but not blinding
+                float inner = (1f - Mathf.SmoothStep(0f, 0.60f, d)) * 0.12f;
+
+                s_proceduralRing.SetPixel(x, y,
+                    new Color(1f, 1f, 1f, Mathf.Clamp01(ring + inner)));
+            }
+            s_proceduralRing.Apply();
+            return s_proceduralRing;
         }
     }
 
@@ -586,12 +656,19 @@ public class AbilityCaster : NetworkBehaviour
 
         if (ability.shape == AbilityShape.Circle)
         {
-            float radius = (ability.indicatorSize / 2f) *
-                           Mathf.Lerp(1f, ability.maxChargeSizeMultiplier, chargeFraction);
+            float sizeMul = Mathf.Lerp(1f, ability.maxChargeSizeMultiplier, chargeFraction);
             Vector3 centre = transform.position + aimDir * aimDistance + Vector3.up * 0.06f;
-            indicator.transform.position = centre;
 
-            if (lr != null) SetRingPoints(lr, centre, radius, 40);
+            // Spin the parent GO — the flat Quad child rotates in place on the ground
+            indicator.transform.position = centre;
+            indicator.transform.rotation = Quaternion.Euler(0f, Time.time * 25f, 0f);
+
+            // Scale the Quad child for charge growth
+            if (indicator.transform.childCount > 0)
+            {
+                float size = ability.indicatorSize * sizeMul;
+                indicator.transform.GetChild(0).localScale = new Vector3(size, size, 1f);
+            }
         }
         else if (ability.shape == AbilityShape.Rectangle)
         {
