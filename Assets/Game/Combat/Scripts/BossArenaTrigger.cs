@@ -19,7 +19,7 @@ public class BossArenaTrigger : MonoBehaviour
 
     void Start()
     {
-        _warden = Object.FindFirstObjectByType<IronWardenController>();
+        _warden = Object.FindAnyObjectByType<IronWardenController>();
         if (_warden == null)
             Debug.LogWarning("[WardenArena] No IronWardenController found in scene.");
     }
@@ -30,7 +30,7 @@ public class BossArenaTrigger : MonoBehaviour
         if (!NetworkServer.active) return;   // server only
 
         // Re-resolve in case the boss spawned after this trigger's Start().
-        if (_warden == null) _warden = Object.FindFirstObjectByType<IronWardenController>();
+        if (_warden == null) _warden = Object.FindAnyObjectByType<IronWardenController>();
         if (_warden == null) return;
 
         _started = true;

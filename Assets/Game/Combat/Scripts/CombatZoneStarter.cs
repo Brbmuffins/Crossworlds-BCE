@@ -18,7 +18,7 @@ public class CombatZoneStarter : MonoBehaviour
 
     void Start()
     {
-        _spawner = Object.FindFirstObjectByType<WaveSpawner>();
+        _spawner = Object.FindAnyObjectByType<WaveSpawner>();
         if (_spawner == null)
             Debug.LogWarning("[CombatZone] No WaveSpawner found in scene.");
     }

@@ -27,7 +27,7 @@ public class ResourceNode : MonoBehaviour
 
         if (inventory == null)
         {
-            inventory = FindFirstObjectByType<Inventory>();
+            inventory = FindAnyObjectByType<Inventory>();
             if (inventory == null) return;
         }
 

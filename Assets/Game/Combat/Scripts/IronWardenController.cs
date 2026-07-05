@@ -235,7 +235,7 @@ public class IronWardenController : NetworkBehaviour
     IEnumerator MortarSequence()
     {
         RpcAnnounce("[BOSS] Mortar Strike incoming — spread out!");
-        var players = FindObjectsByType<PlayerIdentity>(FindObjectsSortMode.None);
+        var players = FindObjectsByType<PlayerIdentity>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
         if (players.Length == 0) yield break;
 
         for (int i = 0; i < mortarCount; i++)
@@ -353,7 +353,7 @@ public class IronWardenController : NetworkBehaviour
         RpcAnnounce("[BOSS] LOCKDOWN — The Iron Warden prepares a devastating blow!");
 
         // Root all players via StatusEffectManager.Bound
-        var players = FindObjectsByType<PlayerIdentity>(FindObjectsSortMode.None);
+        var players = FindObjectsByType<PlayerIdentity>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
         foreach (var p in players)
             p.GetComponent<StatusEffectManager>()?.AddEffect(
                 new StatusEffect(StatusEffectType.Bound, lockdownDuration, 0f));
