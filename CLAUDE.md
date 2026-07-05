@@ -29,7 +29,11 @@ and `CrossWorlds/CLAUDE.md` (legacy) defer to it.
   1=Ironclad(=Guardian legacy), 2=Shadowblade, 3=Cleric, 4=Arcanist. Legacy docs use the
   old names; the index positions are what matters — never renumber.
 - **Mirror discipline**: `[Server]` on every game-state mutation; client-only code
-  (VFX, UI, HUD attach) behind `#if !UNITY_SERVER`. Client-side singletons
+  (VFX, UI, HUD attach) behind `#if UNITY_EDITOR || !UNITY_SERVER` — **never
+  `#if !UNITY_SERVER` alone**. The editor's active build target is Dedicated Server,
+  so `UNITY_SERVER` is defined there too; `!UNITY_SERVER` silently strips client code
+  in the editor. `UNITY_EDITOR || !UNITY_SERVER` keeps it compiled for editor play-mode
+  while still excluding it from actual server builds. Client-side singletons
   (`CombatSessionTracker`, `InventoryManager`, …) are notified from `OnStartClient`
   hooks, NOT from server-side spawn paths (host-mode-only bug).
 - **Ports frozen**: 3000 auth, 4000 dashboard, 7777/UDP game, 3001 Kuma.
