@@ -1088,7 +1088,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bc9e8cffba9989e44befc63ab0449ebc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  zoneName: Field of Gundab
+  zoneName: Dravo's orruption
   subtitle: 
   showOnEnter: 1
   localPlayerOnly: 1
