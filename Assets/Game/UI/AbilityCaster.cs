@@ -227,6 +227,15 @@ public class AbilityCaster : NetworkBehaviour
         // Remote-player gating is handled by ShouldProcessLocalInput() in Update.
         // isLocalPlayer is NOT set in Awake (Mirror sets it after instantiation),
         // so any enabled-check here would wrongly disable the local player too.
+
+        // Seed the equipped loadout from the class pool so the action bar matches the
+        // selected class. Without this, equippedIndices stays at the hardcoded shared
+        // pool {0,1,2,3} for every class (bar wouldn't match Character Select).
+        if (classPool != null && classPool.defaultEquipped != null)
+            for (int i = 0; i < equippedIndices.Length && i < 4; i++)
+                equippedIndices[i] = (i < classPool.defaultEquipped.Length)
+                    ? classPool.defaultEquipped[i] : -1;
+
         SyncEquippedFromSpellbook();
 
         _passive        = GetComponent<ClassPassive>();
