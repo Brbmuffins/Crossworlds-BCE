@@ -18,6 +18,9 @@ public class PlayerMovement : MonoBehaviour
     public bool captureStartRotationAsLock = true;
     public Vector3 lockedRotationEuler = Vector3.zero;
 
+    [Header("Physics Stability")]
+    public bool keepUpright = true;
+
     // ── Dodge Roll ────────────────────────────────────────────────
     [Header("Dodge Roll")]
     public float dodgeForce       = 14f;   // burst speed during dodge
@@ -73,6 +76,8 @@ public class PlayerMovement : MonoBehaviour
         stats  = GetComponent<CharacterStats>();
         health = GetComponent<Health>();
 
+        ConfigureRigidbody();
+
         // Movement is Rigidbody-driven (MovePosition). If the imported rig has Apply
         // Root Motion enabled, the run/sprint clip physically drags the mesh forward
         // while the Rigidbody drags the root — the mesh detaches and flies around the
@@ -101,8 +106,8 @@ public class PlayerMovement : MonoBehaviour
             lockedRotationEuler = transform.rotation.eulerAngles;
 
         targetRotation = lockCharacterRotation
-            ? Quaternion.Euler(lockedRotationEuler)
-            : transform.rotation;
+            ? UprightRotation(Quaternion.Euler(lockedRotationEuler))
+            : UprightRotation(transform.rotation);
         currentSpeed   = moveSpeed;
         _dodgeCharges  = dodgeMaxCharges;
 
@@ -210,6 +215,12 @@ public class PlayerMovement : MonoBehaviour
 
     void FixedUpdate()
     {
+        if (rb == null)
+            return;
+
+        if (keepUpright)
+            KeepBodyUpright();
+
         if (jumpRequested)
         {
             jumpRequested = false;
@@ -228,13 +239,47 @@ public class PlayerMovement : MonoBehaviour
 
         if (lockCharacterRotation)
         {
-            targetRotation = Quaternion.Euler(lockedRotationEuler);
+            targetRotation = UprightRotation(Quaternion.Euler(lockedRotationEuler));
             rb.MoveRotation(targetRotation);
         }
         else
         {
-            rb.MoveRotation(Quaternion.Slerp(rb.rotation, targetRotation, rotationSpeed * Time.fixedDeltaTime));
+            targetRotation = UprightRotation(targetRotation);
+            Quaternion currentRotation = keepUpright ? UprightRotation(rb.rotation) : rb.rotation;
+            rb.MoveRotation(Quaternion.Slerp(currentRotation, targetRotation, rotationSpeed * Time.fixedDeltaTime));
         }
+    }
+
+    void ConfigureRigidbody()
+    {
+        if (rb == null)
+            return;
+
+        rb.interpolation = RigidbodyInterpolation.Interpolate;
+
+        if (!keepUpright)
+            return;
+
+        rb.constraints |= RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
+        rb.angularVelocity = Vector3.zero;
+        rb.rotation = UprightRotation(rb.rotation);
+    }
+
+    void KeepBodyUpright()
+    {
+        Vector3 angularVelocity = rb.angularVelocity;
+        angularVelocity.x = 0f;
+        angularVelocity.z = 0f;
+        rb.angularVelocity = angularVelocity;
+
+        float tilt = Vector3.Angle(rb.transform.up, Vector3.up);
+        if (tilt > 0.5f)
+            rb.rotation = UprightRotation(rb.rotation);
+    }
+
+    static Quaternion UprightRotation(Quaternion rotation)
+    {
+        return Quaternion.Euler(0f, rotation.eulerAngles.y, 0f);
     }
 
     // ── Dodge Roll ────────────────────────────────────────────────
@@ -281,11 +326,31 @@ public class PlayerMovement : MonoBehaviour
 
     private void OnCollisionEnter(Collision collision)
     {
-        if (collision.gameObject.CompareTag("Ground"))
+        if (collision.gameObject.CompareTag("Ground") || HasWalkableContact(collision))
         {
             isGrounded = true;
             SetAnimBool("isGrounded", true);
         }
+    }
+
+    private void OnCollisionStay(Collision collision)
+    {
+        if (collision.gameObject.CompareTag("Ground") || HasWalkableContact(collision))
+        {
+            isGrounded = true;
+            SetAnimBool("isGrounded", true);
+        }
+    }
+
+    static bool HasWalkableContact(Collision collision)
+    {
+        foreach (ContactPoint contact in collision.contacts)
+        {
+            if (contact.normal.y >= 0.45f)
+                return true;
+        }
+
+        return false;
     }
 
     private void OnTriggerEnter(Collider other)
