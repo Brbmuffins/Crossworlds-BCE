@@ -46,6 +46,13 @@ public class EnemyController : NetworkBehaviour
     public DropTable  dropTable;
     public GameObject worldItemPrefab;
 
+    // ── DB Template ID ────────────────────────────────────────────────────────────
+    // Must match an id in the enemy_templates DB table (e.g. "grunt_basic").
+    // Used by PostCombatKill to award XP/gold via POST /api/combat/kill.
+    // Assign in the Inspector on each prefab after running seed_arena_content_2026-07-06.sql.
+    [Header("Server")]
+    public string enemyTemplateId = "grunt_basic";
+
     // ── Private ──────────────────────────────────────────────────────────────────
     private Health               _health;
     private NavMeshAgent         _agent;
@@ -215,10 +222,14 @@ public class EnemyController : NetworkBehaviour
         // Silenced: cannot attack (mirrors EnemyAI behaviour)
         if (_status != null && _status.IsSilenced) return;
 
+        // Get target netId so the client Rpc can restrict hitstop to the hit player only
+        var targetNetId = _target.GetComponent<NetworkIdentity>();
+        uint hitNetId = targetNetId != null ? targetNetId.netId : 0u;
+
         if (!isRanged)
         {
             targetHealth.TakeDamage(damage, gameObject);
-            RpcMeleeSwing();
+            RpcMeleeSwing(hitNetId);
         }
         else
         {
@@ -237,7 +248,7 @@ public class EnemyController : NetworkBehaviour
                 // Fallback instant damage if no projectile prefab set
                 targetHealth.TakeDamage(damage, gameObject);
             }
-            RpcRangedShot();
+            RpcRangedShot(hitNetId);
         }
     }
 
@@ -281,7 +292,62 @@ public class EnemyController : NetworkBehaviour
         }
 
         yield return new WaitForSeconds(2.6f);
+
+        // Notify clients of the kill so the LOCAL client can POST /api/combat/kill
+        // with its own JWT. The server doesn't hold player JWTs — client-initiated
+        // kill reports with the hit-gate anti-exploit design is the correct pattern.
+        if (!string.IsNullOrEmpty(enemyTemplateId))
+            RpcNotifyEnemyKilled(enemyTemplateId);
+
         NetworkServer.Destroy(gameObject);
+    }
+
+    /// <summary>
+    /// Fired on all clients after enemy death. Only the local client posts the kill
+    /// report — remote clients ignore it (their own kills fire their own reports).
+    /// </summary>
+    [ClientRpc]
+    void RpcNotifyEnemyKilled(string templateId)
+    {
+#if UNITY_EDITOR || !UNITY_SERVER
+        // Only the local (owning) client sends the API call to avoid duplicate reports.
+        // NetworkClient.localPlayer is null until a player spawns — guard it.
+        if (NetworkClient.localPlayer == null) return;
+        var pi = NetworkClient.localPlayer.GetComponent<PlayerIdentity>();
+        if (pi == null) return;
+
+        int    charId = pi.characterId;
+        string token  = AuthManager.Token;
+        if (charId <= 0 || string.IsNullOrEmpty(token)) return;
+
+        // Kick off via CombatSessionTracker if available (it batches and retries);
+        // otherwise fire directly.
+        var tracker = CombatSessionTracker.Local;
+        if (tracker != null)
+            tracker.PostKill(charId, templateId, token);
+        else
+            StartCoroutine(DirectPostKill(charId, templateId, token));
+    }
+
+    System.Collections.IEnumerator DirectPostKill(int charId, string templateId, string token)
+    {
+        string url  = $"{ServerConfig.AuthBaseUrl}/api/combat/kill";
+        string body = $"{{\"characterId\":{charId},\"enemyTemplateId\":\"{templateId}\"}}";
+
+        using var req = new UnityEngine.Networking.UnityWebRequest(url, "POST");
+        req.uploadHandler   = new UnityEngine.Networking.UploadHandlerRaw(
+            System.Text.Encoding.UTF8.GetBytes(body));
+        req.downloadHandler = new UnityEngine.Networking.DownloadHandlerBuffer();
+        req.SetRequestHeader("Content-Type", "application/json");
+        req.SetRequestHeader("Authorization", $"Bearer {token}");
+
+        yield return req.SendWebRequest();
+
+        if (req.result != UnityEngine.Networking.UnityWebRequest.Result.Success)
+            Debug.LogWarning($"[COMBAT] kill POST failed: {req.error}");
+        else
+            Debug.Log($"[COMBAT] kill posted: char={charId} enemy={templateId}");
+#endif
     }
 
     [Server]
@@ -327,9 +393,58 @@ public class EnemyController : NetworkBehaviour
     // RPCs (Week 7: wire anim + SFX)
     // ─────────────────────────────────────────────────────────────────────────────
 
-    [ClientRpc] void RpcMeleeSwing()    { /* swing anim + impact SFX */ }
-    [ClientRpc] void RpcRangedShot()    { /* ranged anim + projectile SFX */ }
-    [ClientRpc] void RpcPlayDeathEffect() { /* death VFX + SFX */ }
+    [ClientRpc]
+    void RpcMeleeSwing(uint targetNetId)
+    {
+#if UNITY_EDITOR || !UNITY_SERVER
+        bool isElite = CompareTag("Elite");
+
+        // Sound plays for everyone (positional audio sells the hit universally)
+        CombatAudio.Instance?.PlayMeleeHit();
+
+        // Hitstop and shake only on the client whose local player was hit.
+        // Otherwise all 4 clients freeze every time any enemy swings at anyone.
+        bool isLocalTarget = NetworkClient.localPlayer != null
+                          && NetworkClient.localPlayer.GetComponent<NetworkIdentity>()?.netId == targetNetId;
+        if (isLocalTarget)
+        {
+            HitstopManager.Freeze(isElite ? HitstopManager.Weight.Medium : HitstopManager.Weight.Light);
+            ScreenShake.AddTrauma(isElite ? 0.20f : 0.12f);
+        }
+#endif
+    }
+
+    [ClientRpc]
+    void RpcRangedShot(uint targetNetId)
+    {
+#if UNITY_EDITOR || !UNITY_SERVER
+        CombatAudio.Instance?.PlayRangedHit();
+        // Ranged: no hitstop; light shake only on the targeted player's client
+        bool isLocalTarget = NetworkClient.localPlayer != null
+                          && NetworkClient.localPlayer.GetComponent<NetworkIdentity>()?.netId == targetNetId;
+        if (isLocalTarget) ScreenShake.AddTrauma(0.10f);
+#endif
+    }
+
+    [ClientRpc]
+    void RpcPlayDeathEffect()
+    {
+#if UNITY_EDITOR || !UNITY_SERVER
+        // Layer 3 — Death sound
+        CombatAudio.Instance?.PlayDeath();
+
+        // Layer 4 — Spawn death VFX at position (EnemyDeathVFX handles the actual prefab)
+        FloatingDamageText.Spawn(transform.position + Vector3.up * 1.5f, 0,
+            FloatingDamageText.DamageType.Normal, "✕");
+
+        // Layer 5 — Kill-blow shake (stronger for elites)
+        bool isElite = CompareTag("Elite");
+        ScreenShake.AddTrauma(isElite ? 0.45f : 0.20f);
+
+        // Kill-blow hitstop
+        HitstopManager.Freeze(isElite ? HitstopManager.Weight.Heavy : HitstopManager.Weight.Medium);
+#endif
+    }
 
     // ─────────────────────────────────────────────────────────────────────────────
     // Gizmos

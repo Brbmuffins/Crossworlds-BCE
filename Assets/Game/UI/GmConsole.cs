@@ -1,3 +1,4 @@
+#if UNITY_EDITOR || !UNITY_SERVER
 using System;
 using System.Collections.Generic;
 using Mirror;
@@ -258,7 +259,10 @@ public class GmConsole : MonoBehaviour
     {
         if (_health == null) { Log("<color=#f87171>No Health component found.</color>"); return; }
         _godActive = !_godActive;
-        _health.isInvulnerable = _godActive;
+        // Route through PlayerMovement.CmdSetInvulnerable so the server's Health is
+        // updated (Health.TakeDamage runs server-side and checks isInvulnerable there).
+        if (_movement != null) _movement.CmdSetInvulnerable(_godActive);
+        else if (_health != null) _health.isInvulnerable = _godActive; // solo/editor fallback
         Log(_godActive
             ? "<color=#4ade80>God mode ON — invulnerable</color>"
             : "<color=#94a3b8>God mode OFF</color>");
@@ -598,3 +602,4 @@ public class GmConsole : MonoBehaviour
         Log("<color=#6366f1>GM Console ready. Type 'help' for commands.</color>");
     }
 }
+#endif // UNITY_EDITOR || !UNITY_SERVER

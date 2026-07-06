@@ -936,7 +936,7 @@ public class AbilityCaster : NetworkBehaviour
             damageMultiplier *= _characterStats.DamageMultiplier;
 
         castAnimator?.PlayCast(ability.category);
-#if !UNITY_SERVER
+#if UNITY_EDITOR || !UNITY_SERVER
         if (ability.category == AbilityCategory.Heal) OnHealCast?.Invoke();
 #endif
 
@@ -1045,7 +1045,7 @@ public class AbilityCaster : NetworkBehaviour
     {
         if (ability == null) return;
         castAnimator?.PlayCast(ability.category);
-#if !UNITY_SERVER
+#if UNITY_EDITOR || !UNITY_SERVER
         if (ability.category == AbilityCategory.Heal) OnHealCast?.Invoke();
 #endif
         if (ability.castVFX != null)

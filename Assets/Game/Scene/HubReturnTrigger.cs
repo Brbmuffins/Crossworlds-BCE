@@ -23,7 +23,7 @@ public class HubReturnTrigger : NetworkBehaviour
     [Header("Prompt")]
     public string promptText = "Press E to Return to Hub";
 
-#if !UNITY_SERVER
+#if UNITY_EDITOR || !UNITY_SERVER
     bool _returning = false;
 #endif
 
@@ -42,7 +42,7 @@ public class HubReturnTrigger : NetworkBehaviour
     // ── Trigger ───────────────────────────────────────────────────────────────
     void OnTriggerEnter(Collider other)
     {
-#if !UNITY_SERVER
+#if UNITY_EDITOR || !UNITY_SERVER
         if (_returning) return;
         if (!other.CompareTag("Player")) return;
 
@@ -57,7 +57,7 @@ public class HubReturnTrigger : NetworkBehaviour
     // ── Return flow ───────────────────────────────────────────────────────────
     void ReturnToHub()
     {
-#if !UNITY_SERVER
+#if UNITY_EDITOR || !UNITY_SERVER
         Debug.Log("[HUB] Player returning to hub — saving progress...");
 
         PlayerProgressManager.Local?.SaveProgress();

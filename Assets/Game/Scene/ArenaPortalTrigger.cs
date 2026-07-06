@@ -44,7 +44,7 @@ public class ArenaPortalTrigger : NetworkBehaviour
     // ── Trigger ───────────────────────────────────────────────────────────────
     void OnTriggerEnter(Collider other)
     {
-#if !UNITY_SERVER
+#if UNITY_EDITOR || !UNITY_SERVER
         if (!other.CompareTag("Player")) return;
         var netId = other.GetComponent<NetworkIdentity>();
         if (netId == null || !netId.isLocalPlayer) return;
@@ -63,7 +63,7 @@ public class ArenaPortalTrigger : NetworkBehaviour
 
     void OnTriggerExit(Collider other)
     {
-#if !UNITY_SERVER
+#if UNITY_EDITOR || !UNITY_SERVER
         if (!other.CompareTag("Player")) return;
         var netId = other.GetComponent<NetworkIdentity>();
         if (netId == null || !netId.isLocalPlayer) return;
@@ -75,7 +75,7 @@ public class ArenaPortalTrigger : NetworkBehaviour
     // ── Public: called by HangmanDialogueUI "Enter Arena" button ─────────────
     public void EnterArena()
     {
-#if !UNITY_SERVER
+#if UNITY_EDITOR || !UNITY_SERVER
         // Prevent double-entry
         if (CombatSessionTracker.Local?.IsInSession == true)
         {

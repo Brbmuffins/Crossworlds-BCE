@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 
-public class PlayerMovement : MonoBehaviour
+public class PlayerMovement : NetworkBehaviour
 {
     public float moveSpeed = 5f;
     public float sprintSpeed = 9f;
@@ -297,8 +297,10 @@ public class PlayerMovement : MonoBehaviour
         dir.y = 0;
         dir.Normalize();
 
-        // Grant i-frames
-        if (health != null) health.isInvulnerable = true;
+        // Grant i-frames — must be set on the server (Health.TakeDamage runs server-side).
+        // In a network session, send a Command; in editor solo-play write locally.
+        if (health != null) health.isInvulnerable = true;   // local write (editor/solo)
+        if (NetworkClient.active) CmdSetInvulnerable(true);
 
         SetAnimTrigger("dodge");
 
@@ -319,9 +321,53 @@ public class PlayerMovement : MonoBehaviour
         }
 
         // Remove i-frames
-        if (health != null) health.isInvulnerable = false;
+        if (health != null) health.isInvulnerable = false;  // local write (editor/solo)
+        if (NetworkClient.active) CmdSetInvulnerable(false);
 
         _isDodging = false;
+    }
+
+    // ── Server i-frame sync ───────────────────────────────────────────────────────
+    // Sets isInvulnerable on the server-side Health so dodge i-frames are respected
+    // by TakeDamage (which runs server-authoritative). The local write above covers
+    // editor solo-play; the Command covers dedicated-server and hosted sessions.
+    //
+    // Anti-abuse: track last invuln-grant time and max window on the server.
+    // A legit dodge grants invuln for ~dodgeDuration (0.35s); reject grants that arrive
+    // faster than INVULN_MIN_INTERVAL or try to stay active longer than INVULN_MAX_WINDOW.
+    const float INVULN_MIN_INTERVAL = 3.0f;  // must match dodgeRecharge (5s) minus tolerance
+    const float INVULN_MAX_WINDOW   = 0.60f;  // max time invuln stays true server-side (2× dodgeDuration + buffer)
+    float _lastInvulnGrantTime = -999f;
+
+    [Command]
+    public void CmdSetInvulnerable(bool value)
+    {
+        if (value)
+        {
+            // Reject if granted too recently (exploit: spam Command to keep invuln permanently)
+            if (Time.time - _lastInvulnGrantTime < INVULN_MIN_INTERVAL)
+            {
+                Debug.LogWarning($"[COMBAT] {name}: CmdSetInvulnerable(true) rejected — too soon after last grant");
+                return;
+            }
+            _lastInvulnGrantTime = Time.time;
+
+            // Auto-clear after the max window even if CmdSetInvulnerable(false) never arrives
+            StartCoroutine(AutoClearInvuln());
+        }
+
+        if (health != null) health.isInvulnerable = value;
+    }
+
+    [Server]
+    System.Collections.IEnumerator AutoClearInvuln()
+    {
+        yield return new WaitForSeconds(INVULN_MAX_WINDOW);
+        if (health != null && health.isInvulnerable)
+        {
+            health.isInvulnerable = false;
+            Debug.Log($"[COMBAT] {name}: server auto-cleared stale invuln after {INVULN_MAX_WINDOW}s");
+        }
     }
 
     private void OnCollisionEnter(Collision collision)

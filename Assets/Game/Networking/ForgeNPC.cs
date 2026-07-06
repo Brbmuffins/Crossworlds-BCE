@@ -78,7 +78,7 @@ public class ForgeNPC : MonoBehaviour
     // ── Actions ───────────────────────────────────────────────────────────────
     void OpenCrafting()
     {
-#if !UNITY_SERVER
+#if UNITY_EDITOR || !UNITY_SERVER
         // Canonical crafting UI is ForgeCraftingPanel (Smelt + Craft tabs,
         // /api/professions/recipes). It loads all of the character's recipes, so
         // professionId isn't passed here.

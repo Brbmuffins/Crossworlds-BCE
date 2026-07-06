@@ -1,4 +1,4 @@
-#if !UNITY_SERVER
+#if UNITY_EDITOR || !UNITY_SERVER
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -394,7 +394,7 @@ public class InventoryBagUI : MonoBehaviour
             var enterEntry = new EventTrigger.Entry { eventID = EventTriggerType.PointerEnter };
             enterEntry.callback.AddListener(ed =>
             {
-#if !UNITY_SERVER
+#if UNITY_EDITOR || !UNITY_SERVER
                 if (!string.IsNullOrEmpty(_currentItemId))
                     ItemTooltipUI.Instance?.Show(_currentItemId, ((PointerEventData)ed).position);
 #endif
@@ -403,7 +403,7 @@ public class InventoryBagUI : MonoBehaviour
             var exitEntry = new EventTrigger.Entry { eventID = EventTriggerType.PointerExit };
             exitEntry.callback.AddListener(_ =>
             {
-#if !UNITY_SERVER
+#if UNITY_EDITOR || !UNITY_SERVER
                 ItemTooltipUI.Instance?.Hide();
 #endif
             });
@@ -449,7 +449,7 @@ public class InventoryBagUI : MonoBehaviour
             _icon.color       = new Color(1f, 1f, 1f, 0f);
             _qty.text         = "";
             _equipBadge.gameObject.SetActive(false);
-#if !UNITY_SERVER
+#if UNITY_EDITOR || !UNITY_SERVER
             ItemTooltipUI.Instance?.Hide();
 #endif
         }

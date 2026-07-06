@@ -18,7 +18,7 @@ using UnityEngine;
 /// </summary>
 public class ClericHealVFX : NetworkBehaviour
 {
-#if !UNITY_SERVER
+#if UNITY_EDITOR || !UNITY_SERVER
     [Header("Particles")]
     [Tooltip("Short burst — plays once at cast origin (e.g. a gold radial burst)")]
     public ParticleSystem healBurst;
@@ -48,12 +48,12 @@ public class ClericHealVFX : NetworkBehaviour
     [ClientRpc]
     void RpcPlayHealVFX()
     {
-#if !UNITY_SERVER
+#if UNITY_EDITOR || !UNITY_SERVER
         PlayVisual();
 #endif
     }
 
-#if !UNITY_SERVER
+#if UNITY_EDITOR || !UNITY_SERVER
     void PlayVisual()
     {
         if (healBurst != null)

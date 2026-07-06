@@ -1,4 +1,4 @@
-#if !UNITY_SERVER
+#if UNITY_EDITOR || !UNITY_SERVER
 using UnityEngine;
 
 /// <summary>
@@ -80,6 +80,9 @@ public class CombatAudio : MonoBehaviour
     void Play(AudioClip clip)
     {
         if (clip == null || _src == null) return;
+        // Pitch randomization prevents repetitive sound — ±pitchVariance from FeelConfig
+        float variance   = FeelConfig.Instance != null ? FeelConfig.Instance.pitchVariance : 0.07f;
+        _src.pitch       = 1f + Random.Range(-variance, variance);
         _src.PlayOneShot(clip, masterVolume);
     }
 }

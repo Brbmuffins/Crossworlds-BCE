@@ -66,6 +66,15 @@ public class WorldBossController : NetworkBehaviour
     [Header("Transition")]
     public float immunityWindowDuration = 4f;
 
+    // ── Phase VFX (client-side cosmetic — NO NetworkIdentity on these prefabs) ────
+    [Header("Phase VFX (assign from brbmuffins assets — see SCENE_SETUP.md)")]
+    [Tooltip("Smoke AOE explosion.prefab — plays at boss on phase transition")]
+    public GameObject transitionVFXPrefab;
+    [Tooltip("Red energy explosion.prefab — plays at boss death")]
+    public GameObject deathVFXPrefab;
+    [Tooltip("Optional — LineRenderer prefab for tether visual. Null = no visual.")]
+    public GameObject tetherLinePrefab;
+
     // ── Loot ─────────────────────────────────────────────────────────────────────
     [Header("Drop Table")]
     [Tooltip("WorldItem.prefab — must be registered in NetworkManager.spawnPrefabs")]
@@ -466,7 +475,10 @@ public class WorldBossController : NetworkBehaviour
 
     void OnPhaseSync(BossPhase _, BossPhase newPhase)
     {
-#if !UNITY_SERVER
+        // Guard: UNITY_EDITOR || !UNITY_SERVER — never bare !UNITY_SERVER alone.
+        // Editor active build target is Dedicated Server, so !UNITY_SERVER strips
+        // this in play-mode. UNITY_EDITOR preserves it for editor testing.
+#if UNITY_EDITOR || !UNITY_SERVER
         FindAnyObjectByType<WorldBossHealthBar>()?.OnPhaseChanged(newPhase);
 #endif
     }
@@ -490,7 +502,13 @@ public class WorldBossController : NetworkBehaviour
     }
 
     [ClientRpc]
-    void RpcShowTransitionVFX() { /* Wire phase-transition VFX here (Week 7) */ }
+    void RpcShowTransitionVFX()
+    {
+#if UNITY_EDITOR || !UNITY_SERVER
+        if (transitionVFXPrefab != null)
+            Instantiate(transitionVFXPrefab, transform.position, Quaternion.identity);
+#endif
+    }
 
     [ClientRpc]
     void RpcShowVoidDrainVFX(bool active)
@@ -499,7 +517,16 @@ public class WorldBossController : NetworkBehaviour
     }
 
     [ClientRpc]
-    void RpcPlayDeathVFX() { /* Wire death VFX here (Week 7) */ }
+    void RpcPlayDeathVFX()
+    {
+#if UNITY_EDITOR || !UNITY_SERVER
+        if (deathVFXPrefab != null)
+        {
+            Instantiate(deathVFXPrefab, transform.position, Quaternion.identity);
+            Instantiate(deathVFXPrefab, transform.position + Vector3.up * 3f, Quaternion.identity);
+        }
+#endif
+    }
 
     [Server]
     void SpawnLoot(string itemId)
@@ -526,7 +553,55 @@ public class WorldBossController : NetworkBehaviour
 
     IEnumerator ShowTetherVisual(uint netIdA, uint netIdB, float duration)
     {
-        // Wire LineRenderer tether visual here (Week 7)
+#if UNITY_EDITOR || !UNITY_SERVER
+        // Resolve the two players from their netIds
+        NetworkIdentity identA = null, identB = null;
+        if (NetworkClient.spawned.TryGetValue(netIdA, out var niA)) identA = niA;
+        if (NetworkClient.spawned.TryGetValue(netIdB, out var niB)) identB = niB;
+
+        if (identA == null || identB == null)
+        {
+            yield return new WaitForSeconds(duration);
+            yield break;
+        }
+
+        // Spawn a LineRenderer (either from prefab or created inline)
+        GameObject tetherGO;
+        LineRenderer lr;
+
+        if (tetherLinePrefab != null)
+        {
+            tetherGO = Instantiate(tetherLinePrefab);
+            lr       = tetherGO.GetComponent<LineRenderer>();
+            if (lr == null) lr = tetherGO.AddComponent<LineRenderer>();
+        }
+        else
+        {
+            tetherGO = new GameObject("TetherVisual");
+            lr       = tetherGO.AddComponent<LineRenderer>();
+            lr.material       = new Material(Shader.Find("Universal Render Pipeline/Particles/Unlit"));
+            lr.material.color = new Color(0.7f, 0.3f, 1f, 0.85f);
+            lr.widthMultiplier = 0.08f;
+            lr.positionCount   = 2;
+        }
+
+        // Animate tether line for its duration
+        float elapsed = 0f;
+        while (elapsed < duration && identA != null && identB != null)
+        {
+            lr.SetPosition(0, identA.transform.position + Vector3.up * 1.2f);
+            lr.SetPosition(1, identB.transform.position + Vector3.up * 1.2f);
+            // Pulse colour — white → purple → white for urgency
+            float t = Mathf.PingPong(elapsed * 2f, 1f);
+            lr.material.color = Color.Lerp(new Color(0.9f, 0.7f, 1f, 0.9f),
+                                           new Color(0.5f, 0.1f, 1f, 0.7f), t);
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        Destroy(tetherGO);
+#else
         yield return new WaitForSeconds(duration);
+#endif
     }
 }

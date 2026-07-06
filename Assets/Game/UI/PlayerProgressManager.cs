@@ -25,7 +25,7 @@ public class PlayerProgressManager : MonoBehaviour
     // ── Singleton ─────────────────────────────────────────────────────────────
     public static PlayerProgressManager Local { get; private set; }
 
-#if !UNITY_SERVER
+#if UNITY_EDITOR || !UNITY_SERVER
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     static void Bootstrap()
     {

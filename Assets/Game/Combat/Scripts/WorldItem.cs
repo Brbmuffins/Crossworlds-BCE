@@ -65,7 +65,7 @@ public class WorldItem : NetworkBehaviour
         ApplyRarityGlow(itemId);
     }
 
-#if !UNITY_SERVER
+#if UNITY_EDITOR || !UNITY_SERVER
     void Update()
     {
         float y = _origin.y + Mathf.Sin(Time.time * floatSpeed) * floatAmplitude;
@@ -113,7 +113,7 @@ public class WorldItem : NetworkBehaviour
             return;
         }
 
-#if !UNITY_SERVER
+#if UNITY_EDITOR || !UNITY_SERVER
         var inv = InventoryManager.Instance;
         if (inv != null)
             inv.OnItemPickedUp(pickedItemId, qty);

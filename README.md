@@ -1540,6 +1540,28 @@ In-game admin console — gated by the `GM_USERS` allowlist in `GmConsole.cs`; �
 
 ## Changelog
 
+### 2026-07-06 — Netcode hardening, game feel pass, arena content seed
+
+**Netcode / security:**
+- **Mirror guard sweep (28 files)** — all bare `#if !UNITY_SERVER` directives replaced with `#if UNITY_EDITOR || !UNITY_SERVER`. The editor's active build target is Dedicated Server, so `UNITY_SERVER` is defined in editor play-mode; the old guard silently stripped client VFX, HUD, and audio from all editor playtests. Affected files include `PlayerAnimator`, `ClericHealVFX`, `CombatAudio`, `CombatSessionTracker`, `EnemyHealthBar`, `WaveSpawner`, `WorldItem`, `ForgeNPC`, `PlayerIdentity`, and 19 more.
+- **Dodge i-frames in multiplayer** — `PlayerMovement` upgraded from `MonoBehaviour` to `NetworkBehaviour`. Dodge now routes through `[Command] CmdSetInvulnerable(bool)` so `Health.TakeDamage` (server-only) sees the flag. Server-side abuse guards: minimum 3 s between grants, auto-clear after 0.6 s if the clear command is lost.
+- **GmConsole guard + god command fix** — added `#if UNITY_EDITOR || !UNITY_SERVER` guard to `GmConsole.cs` (was spamming compile errors on server build); `god` command now routes through `CmdSetInvulnerable` instead of writing `health.isInvulnerable` directly on the client.
+- **Kill reporting architecture** — `EnemyController.DeathSequence` no longer tries to POST `/api/combat/kill` server-side (server doesn't hold player JWTs). Added `RpcNotifyEnemyKilled(templateId)` [ClientRpc] → only the local client posts its own kill with `AuthManager.Token`, consistent with the existing hit-gate anti-exploit.
+- **Per-client hitstop** — `RpcMeleeSwing` and `RpcRangedShot` now carry `uint targetNetId`; hitstop and screen shake fire only on the client whose local player was hit, not all 4 clients.
+
+**Game feel (polisher pass):**
+- **`HitstopManager.cs`** — client-only singleton; 4 freeze weights (Light 30 ms, Medium 50 ms, Heavy 80 ms, KillBlow 110 ms); uses `Time.timeScale = 0` + unscaled coroutine poll so hitstop doesn't freeze its own timer.
+- **`ScreenShake.cs`** — Trauma² Perlin-noise camera shake in `LateUpdate`; runs on unscaled time so hitstop freeze doesn't kill the shake curve. Static presets: `PlayerHit(0.25)`, `PlayerDowned(0.70)`, `EliteHit(0.40)`, `BossSlam(0.90)`. Attach to main camera (editor step).
+- **`FeelConfig.cs`** — `[CreateAssetMenu]` ScriptableObject centralizing all feel tuning (hitstop durations, shake offsets/frequency, pitch variance, damage text timing). Load via `Resources.Load<FeelConfig>("FeelConfig")` — must be created in `Resources/`.
+- **`PlayerHitFeedback.cs`** — `NetworkBehaviour`; hooks `Health.onDamageTaken` + `onDownedChanged` in `OnStartClient` (local player only); trauma proportional to damage fraction; KillBlow hitstop + `PlayerDowned()` shake on down.
+- **`CombatAudio.cs`** — pitch variance on all `Play()` calls, ±7% from `FeelConfig.pitchVariance`, prevents identical-hit audio fatigue.
+- **Death feedback** — `RpcPlayDeathEffect` now plays death sound + spawns ✕ floating damage text + kill-blow hitstop/shake (stronger for elites).
+
+**Content (content-generator pass):**
+- **`_CONTEXT/seed_arena_content_2026-07-06.sql`** — DB seed for VPS; adds 8 enemy templates calibrated to COMBAT_DESIGN_2026-07-06.md TTK/TTD curves: `grunt_basic/veteran`, `ranged_basic/veteran` (Void Rifler), `elite_basic/veteran` (Void Warlord), `void_emitter_basic` (stationary area-denial), `shielder_basic` (front-shield puzzle); 8 new items (4 materials: void shard, iron fragment, phase crystal, soul ember; 4 consumables: health potion, void ward scroll, iron will tonic, phase salve); loot table rows for all 8 enemy types.
+- **`EnemyController`** — added `enemyTemplateId` Inspector field (default `"grunt_basic"`); assign on each prefab variant after running the seed.
+- **`CrossWorlds/_context/COMBAT_DESIGN_2026-07-06.md`** — full combat design audit: TTK/TTD analysis, wave scaling proposal (`hpScalePerWave=0.08`, `damageScalePerWave=0.05`), new enemy design notes (Shielder, Leaper, Void Emitter), spawn budget system, mastery XP curve.
+
 ### 2026-07-05 — Camera/movement fixes, chat, hub scene rename
 
 **Gameplay feel:**
@@ -1606,13 +1628,19 @@ Localized, behavior-preserving audit across combat, networking, abilities, statu
 
 | Priority | Task |
 |----------|------|
+| 🔴 | **Delete `D:\Crossworlds\.git\index.lock`** (left by timed-out git diff), then commit: (1) guard sweep + i-frame fix, (2) feel system + EnemyController changes |
+| 🔴 | **Run VPS seed:** `mysql -u crossworlds -p crossworlds < _CONTEXT/seed_arena_content_2026-07-06.sql` |
 | 🔴 | Rotate credentials leaked into git history (ROADMAP Q7) |
-| 🔴 | `GmConsole.cs` — add `#if UNITY_EDITOR || !UNITY_SERVER` guard (spamming errors on server build) |
 | 🔴 | **CLASS_NAMES** — live server still has `['Engineer','Guardian',...]`; live characters use those names. Changing to `['Warden','Ironclad',...]` needs coordinated Unity deploy + `UPDATE characters SET class_name=...` migration. See `_CONTEXT/VPS_SERVER.md` for migration plan. |
+| 🟡 | **Editor:** Add `ScreenShake` component to main camera GameObject |
+| 🟡 | **Editor:** Add `PlayerHitFeedback` to each hero prefab |
+| 🟡 | **Editor:** Create `FeelConfig.asset` (Right-click → Crossworlds/FeelConfig) in `Assets/Resources/` |
+| 🟡 | **Editor:** Assign audio clips to `CombatAudio` Inspector slots |
+| 🟡 | **Editor:** Set `enemyTemplateId` on enemy prefab variants after running seed (grunt→`grunt_basic`, ranged→`ranged_basic`, elite→`elite_basic`) |
 | 🟡 | Document `rod-realtime` (port 5000 local) — found on VPS during 2026-07-03 audit; purpose unknown |
 | 🟡 | Create `PlayerProjectile` prefab in editor; assign to hero prefabs; register in NetworkManager |
 | 🟡 | Bake NavMesh in Arena_Copper |
-| 🟡 | Set `enemyTemplateId` on enemy prefab variants (match `enemy_templates.id` in DB) |
+| 🟡 | Add `hpScalePerWave` + `damageScalePerWave` to `WaveSpawner` (see `COMBAT_DESIGN_2026-07-06.md`) |
 | 🟡 | Inventory bag UI (4×6 grid, tooltip, equip) → `/api/inventory/*` |
 | 🟡 | Progression HUD (XP bar, level-up panel) → `/api/character/save-progress` |
 | 🟡 | Portal transition (Hub → Arena scene loading) |
@@ -1635,7 +1663,8 @@ Assets/Game/
   Combat/Scripts/          EnemyController, EnemyProjectile, WaveSpawner, Health, HealthBarUI,
                            StatusEffectManager, CombatSessionTracker, DropTable, WorldItem,
                            PlayerProjectile, WorldBossController, IronWardenController,
-                           SiegeTurretBehaviour, BossArenaTrigger, WraithAbilities
+                           SiegeTurretBehaviour, BossArenaTrigger, WraithAbilities,
+                           HitstopManager, ScreenShake, FeelConfig, PlayerHitFeedback, CombatAudio
   Enemies/Fields of Gundab/  Field Goul — model + Idle/Run/Punch/Scream/Death anims,
                            Field_Goul.controller, FieldGoulAnimationDriver
   Items/Scripts/           CharacterStats, Equipment, EquipmentUI, InventoryUI
@@ -1656,8 +1685,10 @@ Assets/Game/
   Prefabs/                 5 hero prefabs + Enemy_Grunt / Enemy_Ranged / Enemy_Elite
   Heroes/Brandalf/         6th-hero model — DECISION PENDING (skin vs class), don't wire
 
-CrossWorlds/               legacy staging tree + design docs (read-only reference)
-_CONTEXT/                  server/API docs (CLAUDE.md, VPS_SERVER.md), VPS patch files
+CrossWorlds/               legacy staging tree + design docs (read-only reference);
+                           _context/COMBAT_DESIGN_2026-07-06.md (TTK/TTD audit, wave scaling, new enemy types)
+_CONTEXT/                  server/API docs (CLAUDE.md, VPS_SERVER.md), VPS patch files,
+                           seed_arena_content_2026-07-06.sql (8 enemy templates + items + loot tables)
 Docs/                      logo.png, screenshots; icons/ (ability + class + combat art),
                            models/ (enemy, boss & class GLB + renders), reviews/ (code reviews)
 Tools/                     generate_wooden_fence_fbx.py (asset generator)

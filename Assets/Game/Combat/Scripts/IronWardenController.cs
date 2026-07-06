@@ -424,7 +424,7 @@ public class IronWardenController : NetworkBehaviour
     // ── SyncVar hook ───────────────────────────────────────────────────────────
     void OnPhaseChanged(WardenPhase _, WardenPhase newPhase)
     {
-#if !UNITY_SERVER
+#if UNITY_EDITOR || !UNITY_SERVER
         FindAnyObjectByType<WorldBossHealthBar>()?.OnPhaseChanged(
             newPhase == WardenPhase.Dead
                 ? WorldBossController.BossPhase.Dead
@@ -437,7 +437,7 @@ public class IronWardenController : NetworkBehaviour
     [ClientRpc]
     void RpcAnnounce(string msg)
     {
-#if !UNITY_SERVER
+#if UNITY_EDITOR || !UNITY_SERVER
         RodChatManager.Instance?.AddSystemMessage(msg);
 #endif
     }
@@ -445,7 +445,7 @@ public class IronWardenController : NetworkBehaviour
     [ClientRpc]
     void RpcShowWarningCircle(Vector3 pos, float radius, float duration)
     {
-#if !UNITY_SERVER
+#if UNITY_EDITOR || !UNITY_SERVER
         if (warningCirclePrefab == null) return;
         var go = Instantiate(warningCirclePrefab, pos, Quaternion.identity);
         go.transform.localScale = Vector3.one * radius * 2f;
@@ -457,7 +457,7 @@ public class IronWardenController : NetworkBehaviour
     [ClientRpc]
     void RpcPullPlayersTo(Vector3 bossPos)
     {
-#if !UNITY_SERVER
+#if UNITY_EDITOR || !UNITY_SERVER
         var localPlayer = NetworkClient.localPlayer;
         if (localPlayer == null) return;
         var cc = localPlayer.GetComponent<CharacterController>();

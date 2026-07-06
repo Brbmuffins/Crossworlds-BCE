@@ -65,7 +65,7 @@ public class HangmanNPC : NetworkBehaviour, INPCInteractable
         // Only interactable in Hub
         if (!SceneManager.GetActiveScene().name.Contains(SceneNames.Hub)) return;
 
-#if !UNITY_SERVER
+#if UNITY_EDITOR || !UNITY_SERVER
         NPCInteractionManager.Instance?.RegisterNearby(this);
 #endif
     }
@@ -75,7 +75,7 @@ public class HangmanNPC : NetworkBehaviour, INPCInteractable
         var ni = other.GetComponent<NetworkIdentity>();
         if (ni == null || !ni.isLocalPlayer) return;
 
-#if !UNITY_SERVER
+#if UNITY_EDITOR || !UNITY_SERVER
         NPCInteractionManager.Instance?.UnregisterNearby(this);
         HangmanDialogueUI.Instance?.Hide();
 #endif
@@ -84,7 +84,7 @@ public class HangmanNPC : NetworkBehaviour, INPCInteractable
     // ── INPCInteractable.Interact ─────────────────────────────────────────────
     public void Interact()
     {
-#if !UNITY_SERVER
+#if UNITY_EDITOR || !UNITY_SERVER
         // Block if already in a session
         if (CombatSessionTracker.Local?.IsInSession == true)
         {
@@ -104,7 +104,7 @@ public class HangmanNPC : NetworkBehaviour, INPCInteractable
     /// </summary>
     public void ConfirmChallenge()
     {
-#if !UNITY_SERVER
+#if UNITY_EDITOR || !UNITY_SERVER
         HangmanDialogueUI.Instance?.Hide();
 #endif
         CmdChallengeHangman();
@@ -115,7 +115,7 @@ public class HangmanNPC : NetworkBehaviour, INPCInteractable
     [TargetRpc]
     void TargetAlreadyInSession(NetworkConnection target)
     {
-#if !UNITY_SERVER
+#if UNITY_EDITOR || !UNITY_SERVER
         HangmanDialogueUI.Instance?.ShowMessage("You're already in combat!");
 #endif
     }

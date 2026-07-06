@@ -96,7 +96,7 @@ public class WaveSpawner : NetworkBehaviour
     [ClientRpc]
     void RpcOnArenaComplete()
     {
-#if !UNITY_SERVER
+#if UNITY_EDITOR || !UNITY_SERVER
         ArenaClearUI.ShowArenaClear();
 #endif
     }
@@ -197,7 +197,7 @@ public class WaveSpawner : NetworkBehaviour
     [ClientRpc]
     void RpcNotifyEnemySpawned(uint netId)
     {
-#if !UNITY_SERVER
+#if UNITY_EDITOR || !UNITY_SERVER
         if (NetworkClient.spawned.TryGetValue(netId, out var ni))
             CombatSessionTracker.Local?.NotifyEnemySpawned(ni.gameObject);
 #endif
@@ -206,7 +206,7 @@ public class WaveSpawner : NetworkBehaviour
     [ClientRpc]
     void RpcNotifyWaveComplete()
     {
-#if !UNITY_SERVER
+#if UNITY_EDITOR || !UNITY_SERVER
         CombatSessionTracker.Local?.NotifyWaveComplete();
 #endif
     }
@@ -218,7 +218,7 @@ public class WaveSpawner : NetworkBehaviour
     [ClientRpc]
     void RpcAwardWaveMasteryXp(int wave)
     {
-#if !UNITY_SERVER
+#if UNITY_EDITOR || !UNITY_SERVER
         int heroId = PlayerProgressManager.Local?.ClassIndex ?? 0;
         int xp     = 40 + wave * 15;
         HeroMasteryManager.Local?.AwardXp(heroId, xp);
@@ -233,7 +233,7 @@ public class WaveSpawner : NetworkBehaviour
     [ClientRpc]
     void RpcAwardArenaCompletionXp()
     {
-#if !UNITY_SERVER
+#if UNITY_EDITOR || !UNITY_SERVER
         int heroId = PlayerProgressManager.Local?.ClassIndex ?? 0;
         const int bonus = 200;
         HeroMasteryManager.Local?.AwardXp(heroId, bonus);
