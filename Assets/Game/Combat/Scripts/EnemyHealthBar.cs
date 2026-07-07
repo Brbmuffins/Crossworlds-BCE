@@ -7,27 +7,28 @@ using UnityEngine.UI;
 /// Self-contained: reads Health from the same GameObject, builds its own Canvas.
 /// Added programmatically by EnemyController.OnStartClient — no prefab setup needed.
 ///
-/// Visual: slim red bar (width ~1 unit in world space) with a dark background.
+/// Visual: slim segmented bar (green current HP over red missing HP) with a dark border.
 /// Faces camera via LateUpdate billboard, hidden when enemy is dead.
 /// </summary>
 [RequireComponent(typeof(Health))]
 public class EnemyHealthBar : MonoBehaviour
 {
     // ── Config ────────────────────────────────────────────────────────────────
-    const float BAR_WIDTH     = 1.2f;    // world-space width of bar
-    const float BAR_HEIGHT    = 0.12f;
-    const float FLOAT_HEIGHT  = 2.5f;    // above the enemy root
-    const float CANVAS_SCALE  = 0.01f;   // world-space canvas scale
+    const float BAR_WIDTH       = 1.2f;    // world-space width of bar
+    const float BAR_HEIGHT      = 0.12f;
+    const float DEFAULT_HEIGHT  = 1.65f;   // fallback above the enemy root
+    const float HEAD_PADDING    = 0.25f;   // above visible/collider bounds
+    const float CANVAS_SCALE    = 0.01f;   // world-space canvas scale
 
     // Colours
-    static readonly Color ColBg      = new Color(0.08f, 0.06f, 0.08f, 0.85f);
-    static readonly Color ColFill    = new Color(0.85f, 0.15f, 0.15f, 0.92f);
-    static readonly Color ColLow     = new Color(1.00f, 0.40f, 0.05f, 0.92f);  // <30%
-    static readonly Color ColCritLow = new Color(1.00f, 0.90f, 0.10f, 0.92f);  // <15%
+    static readonly Color ColBorder = new Color(0.02f, 0.02f, 0.02f, 0.95f);
+    static readonly Color ColHealth = new Color(0.15f, 0.85f, 0.20f, 0.95f);
+    static readonly Color ColDamage = new Color(0.95f, 0.08f, 0.06f, 0.95f);
 
     // ── References ────────────────────────────────────────────────────────────
     Health  _health;
     Image   _fill;
+    RectTransform _fillRect;
     Canvas  _canvas;
 
     // ── Setup ─────────────────────────────────────────────────────────────────
@@ -59,7 +60,7 @@ public class EnemyHealthBar : MonoBehaviour
     {
         var canvasGO = new GameObject("EnemyHPBar");
         canvasGO.transform.SetParent(transform, false);
-        canvasGO.transform.localPosition = new Vector3(0f, FLOAT_HEIGHT, 0f);
+        canvasGO.transform.localPosition = new Vector3(0f, GetBarHeight(), 0f);
         canvasGO.transform.localScale    = Vector3.one * CANVAS_SCALE;
 
         _canvas = canvasGO.AddComponent<Canvas>();
@@ -72,7 +73,7 @@ public class EnemyHealthBar : MonoBehaviour
         float h = BAR_HEIGHT / CANVAS_SCALE;
         canvasRT.sizeDelta = new Vector2(w, h);
 
-        // Background
+        // Border
         var bgGO = new GameObject("BG", typeof(RectTransform));
         bgGO.transform.SetParent(canvasGO.transform, false);
         var bgRT = bgGO.GetComponent<RectTransform>();
@@ -81,22 +82,53 @@ public class EnemyHealthBar : MonoBehaviour
         bgRT.offsetMin = Vector2.zero;
         bgRT.offsetMax = Vector2.zero;
         var bgImg = bgGO.AddComponent<Image>();
-        bgImg.color = ColBg;
+        bgImg.color = ColBorder;
+
+        // Missing-health track. This stays full width; the green fill sits above it.
+        var damageGO = new GameObject("MissingHealth", typeof(RectTransform));
+        damageGO.transform.SetParent(canvasGO.transform, false);
+        var damageRT = damageGO.GetComponent<RectTransform>();
+        damageRT.anchorMin = Vector2.zero;
+        damageRT.anchorMax = Vector2.one;
+        damageRT.offsetMin = new Vector2(2f, 2f);
+        damageRT.offsetMax = new Vector2(-2f, -2f);
+        var damageImg = damageGO.AddComponent<Image>();
+        damageImg.color = ColDamage;
 
         // Fill
         var fillGO = new GameObject("Fill", typeof(RectTransform));
-        fillGO.transform.SetParent(canvasGO.transform, false);
-        var fillRT = fillGO.GetComponent<RectTransform>();
-        fillRT.anchorMin = Vector2.zero;
-        fillRT.anchorMax = new Vector2(1f, 1f);
-        fillRT.pivot     = new Vector2(0f, 0.5f);
-        fillRT.offsetMin = new Vector2(2f, 2f);
-        fillRT.offsetMax = new Vector2(-2f, -2f);
+        fillGO.transform.SetParent(damageGO.transform, false);
+        _fillRect = fillGO.GetComponent<RectTransform>();
+        _fillRect.anchorMin = Vector2.zero;
+        _fillRect.anchorMax = Vector2.one;
+        _fillRect.pivot     = new Vector2(0f, 0.5f);
+        _fillRect.offsetMin = Vector2.zero;
+        _fillRect.offsetMax = Vector2.zero;
         _fill = fillGO.AddComponent<Image>();
-        _fill.type       = Image.Type.Filled;
-        _fill.fillMethod = Image.FillMethod.Horizontal;
-        _fill.fillAmount = 1f;
-        _fill.color      = ColFill;
+        _fill.type  = Image.Type.Simple;
+        _fill.color = ColHealth;
+    }
+
+    float GetBarHeight()
+    {
+        float top = float.NegativeInfinity;
+
+        foreach (var renderer in GetComponentsInChildren<Renderer>())
+        {
+            if (renderer == null || !renderer.enabled) continue;
+            top = Mathf.Max(top, transform.InverseTransformPoint(renderer.bounds.max).y);
+        }
+
+        foreach (var collider in GetComponentsInChildren<Collider>())
+        {
+            if (collider == null || !collider.enabled) continue;
+            top = Mathf.Max(top, transform.InverseTransformPoint(collider.bounds.max).y);
+        }
+
+        if (float.IsNegativeInfinity(top))
+            top = DEFAULT_HEIGHT - HEAD_PADDING;
+
+        return Mathf.Max(0.75f, top + HEAD_PADDING);
     }
 
     // ── Billboard — always face camera ────────────────────────────────────────
@@ -119,12 +151,9 @@ public class EnemyHealthBar : MonoBehaviour
 
     void UpdateFill(float current, float max)
     {
-        if (_fill == null) return;
+        if (_fill == null || _fillRect == null) return;
         float fraction = max > 0f ? Mathf.Clamp01(current / max) : 0f;
-        _fill.fillAmount = fraction;
-        _fill.color = fraction < 0.15f ? ColCritLow
-                    : fraction < 0.30f ? ColLow
-                    : ColFill;
+        _fillRect.anchorMax = new Vector2(fraction, 1f);
     }
 }
 #endif
