@@ -3131,10 +3131,12 @@ MonoBehaviour:
   syncDirection: 0
   syncMode: 0
   syncInterval: 0
-  maxHealth: 200
-  currentHealth: 200
+  maxHealth: 100
+  currentHealth: 100
   isPlayer: 0
   isRobotic: 0
+  showEnemyHealthBar: 1
+  showFloatingNumbers: 1
   onHealthChanged:
     m_PersistentCalls:
       m_Calls: []
@@ -4458,10 +4460,12 @@ MonoBehaviour:
   syncDirection: 0
   syncMode: 0
   syncInterval: 0
-  maxHealth: 200
-  currentHealth: 200
+  maxHealth: 100
+  currentHealth: 100
   isPlayer: 0
   isRobotic: 0
+  showEnemyHealthBar: 1
+  showFloatingNumbers: 1
   onHealthChanged:
     m_PersistentCalls:
       m_Calls: []
@@ -9971,10 +9975,12 @@ MonoBehaviour:
   syncDirection: 0
   syncMode: 0
   syncInterval: 0
-  maxHealth: 200
-  currentHealth: 200
+  maxHealth: 100
+  currentHealth: 100
   isPlayer: 0
   isRobotic: 0
+  showEnemyHealthBar: 1
+  showFloatingNumbers: 1
   onHealthChanged:
     m_PersistentCalls:
       m_Calls: []

@@ -2,6 +2,10 @@ using Mirror;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Controls;
+using UnityEngine.Rendering.Universal;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 public enum AbilityShape { Circle, Cone, Rectangle }
 public enum AbilityCategory { Damage, Heal, Support }
@@ -62,6 +66,15 @@ public class AbilityDef
 
 public class AbilityCaster : NetworkBehaviour
 {
+    const string DefaultDecalShaderName = "Shader Graphs/Decal";
+    const float RectFillAlpha = 0.14f;
+    const float RectFillChargedAlpha = 0.24f;
+    const float RectDecalAlpha = 0.35f;
+    const string DefaultDecalMaterialPath = "Packages/com.unity.render-pipelines.universal/Runtime/Materials/Decal.mat";
+    static readonly Vector3 GroundDecalPivot = new Vector3(0f, 0f, 0.5f);
+    static bool s_warnedInvalidRectDecal;
+    static bool s_loggedRectIndicatorPath;
+
     public Camera cam;
     public Inventory inventory;
     public CastAnimator castAnimator;
@@ -110,6 +123,13 @@ public class AbilityCaster : NetworkBehaviour
 
     [Header("Mouse Aim")]
     public float minimumAimDistance = 1f;
+
+    [Header("Ground Projection")]
+    [SerializeField] float indicatorGroundOffset = 0.02f;
+    [SerializeField] float indicatorRaycastHeight = 12f;
+    [SerializeField] float indicatorRaycastDistance = 40f;
+    [SerializeField] float indicatorDecalProjectionDepth = 8f;
+    [SerializeField] Material indicatorDecalMaterial;
 
     [Header("Indicator Textures")]
     [Tooltip("Damage circle indicator — try MagicCircle10 / MagicCircle17 / Circle17")]
@@ -633,19 +653,16 @@ public class AbilityCaster : NetworkBehaviour
         }
         else if (ability.shape == AbilityShape.Circle)
         {
-            // Flat quad lying on the XZ plane with a magic-circle texture + category tint.
-            // The parent indicator GO is the anchor point; the Quad is a child so
-            // spinning the parent rotates the texture without affecting position.
-            var quad = GameObject.CreatePrimitive(PrimitiveType.Quad);
-            Destroy(quad.GetComponent<Collider>());
-            quad.transform.SetParent(indicator.transform, false);
-            quad.transform.localRotation = Quaternion.Euler(90f, 0f, 0f); // face up
-            quad.transform.localScale    = new Vector3(ability.indicatorSize,
+            var disk = CreateCircleIndicator();
+            disk.transform.SetParent(indicator.transform, false);
+            disk.transform.localRotation = Quaternion.Euler(90f, 0f, 0f); // face up
+            disk.transform.localScale    = new Vector3(ability.indicatorSize,
                                                        ability.indicatorSize, 1f);
 
-            var rend = quad.GetComponent<Renderer>();
-            var mat  = new Material(Shader.Find("Sprites/Default"));
-            mat.mainTexture = GetIndicatorTexture(ability.category);
+            var rend = disk.GetComponent<Renderer>();
+            var mat  = CreateTransparentIndicatorMaterial();
+            mat.mainTexture = ProceduralRingTexture;
+            SetMaterialTexture(mat, ProceduralRingTexture);
             mat.color       = c;
             rend.material   = mat;
         }
@@ -653,6 +670,8 @@ public class AbilityCaster : NetworkBehaviour
         {
             // Directional shapes read better as an outline than a stretched circle texture
             BuildOutlineLR(indicator, ability, c);
+            if (!BuildProjectedRectDecal(indicator, c))
+                BuildProjectedRectFill(indicator, c);
         }
 
         // Range ring: only for Circle/Rectangle — cone length already shows the range
@@ -673,6 +692,76 @@ public class AbilityCaster : NetworkBehaviour
         lr.material        = new Material(Shader.Find("Sprites/Default"));
         lr.startColor      = lr.endColor = color;
         lr.positionCount   = 0;   // filled in UpdateIndicatorTransform every frame
+    }
+
+    GameObject CreateCircleIndicator()
+    {
+        var go = new GameObject("CircleIndicator");
+        MeshFilter mf = go.AddComponent<MeshFilter>();
+        go.AddComponent<MeshRenderer>();
+
+        const int radialSegments = 8;
+        const int angularSegments = 96;
+        Vector3[] vertices = new Vector3[1 + radialSegments * angularSegments];
+        Vector2[] uv = new Vector2[vertices.Length];
+        int[] triangles = new int[angularSegments * 3 + (radialSegments - 1) * angularSegments * 6];
+
+        vertices[0] = Vector3.zero;
+        uv[0] = new Vector2(0.5f, 0.5f);
+
+        int vertex = 1;
+        for (int r = 1; r <= radialSegments; r++)
+        {
+            float radius = r / (float)radialSegments * 0.5f;
+            for (int i = 0; i < angularSegments; i++)
+            {
+                float angle = i / (float)angularSegments * Mathf.PI * 2f;
+                float x = Mathf.Cos(angle) * radius;
+                float y = Mathf.Sin(angle) * radius;
+                vertices[vertex] = new Vector3(x, y, 0f);
+                uv[vertex] = new Vector2(x + 0.5f, y + 0.5f);
+                vertex++;
+            }
+        }
+
+        int tri = 0;
+        for (int i = 0; i < angularSegments; i++)
+        {
+            triangles[tri++] = 0;
+            triangles[tri++] = 1 + i;
+            triangles[tri++] = 1 + ((i + 1) % angularSegments);
+        }
+
+        for (int r = 1; r < radialSegments; r++)
+        {
+            int innerStart = 1 + (r - 1) * angularSegments;
+            int outerStart = 1 + r * angularSegments;
+            for (int i = 0; i < angularSegments; i++)
+            {
+                int next = (i + 1) % angularSegments;
+                int innerA = innerStart + i;
+                int innerB = innerStart + next;
+                int outerA = outerStart + i;
+                int outerB = outerStart + next;
+
+                triangles[tri++] = innerA;
+                triangles[tri++] = outerA;
+                triangles[tri++] = innerB;
+                triangles[tri++] = innerB;
+                triangles[tri++] = outerA;
+                triangles[tri++] = outerB;
+            }
+        }
+
+        Mesh mesh = new Mesh { name = "CircleIndicatorDisk" };
+        mesh.MarkDynamic();
+        mesh.vertices = vertices;
+        mesh.uv = uv;
+        mesh.triangles = triangles;
+        mesh.RecalculateNormals();
+        mf.sharedMesh = mesh;
+
+        return go;
     }
 
     GameObject CreateRangeRing(float range, Color c)
@@ -777,11 +866,10 @@ public class AbilityCaster : NetworkBehaviour
         if (ability.shape == AbilityShape.Circle)
         {
             float sizeMul = Mathf.Lerp(1f, ability.maxChargeSizeMultiplier, chargeFraction);
-            Vector3 centre = transform.position + aimDir * aimDistance + Vector3.up * 0.06f;
+            Vector3 centre = ProjectToGround(transform.position + aimDir * aimDistance);
 
-            // Spin the parent GO — the flat Quad child rotates in place on the ground
             indicator.transform.position = centre;
-            indicator.transform.rotation = Quaternion.Euler(0f, Time.time * 25f, 0f);
+            indicator.transform.rotation = Quaternion.identity;
 
             // Scale the Quad child for charge growth
             if (indicator.transform.childCount > 0)
@@ -789,19 +877,27 @@ public class AbilityCaster : NetworkBehaviour
                 float size = ability.indicatorSize * sizeMul;
                 indicator.transform.GetChild(0).localScale = new Vector3(size, size, 1f);
             }
+
+            UpdateProjectedCircleFill(indicator);
         }
         else if (ability.shape == AbilityShape.Rectangle)
         {
             float widthMul = Mathf.Lerp(1f, ability.maxChargeSizeMultiplier, chargeFraction);
             float hw = ability.rectWidth * widthMul / 2f;
-            Vector3 mid = transform.position + aimDir * (aimDistance / 2f) + Vector3.up * 0.06f;
+            Vector3 mid = ProjectToGround(transform.position + aimDir * (aimDistance / 2f), out Vector3 groundNormal);
+            Vector3 groundForward = Vector3.ProjectOnPlane(aimDir, groundNormal);
+            if (groundForward.sqrMagnitude < 0.0001f)
+                groundForward = aimDir;
+            groundForward.Normalize();
 
             indicator.transform.position   = mid;
-            indicator.transform.rotation   = Quaternion.LookRotation(aimDir);
+            indicator.transform.rotation   = Quaternion.LookRotation(groundForward, groundNormal);
             // Keep localScale so ApplyRectangleDamage still works
             indicator.transform.localScale = new Vector3(ability.rectWidth * widthMul, 1f, aimDistance);
 
-            if (lr != null) SetRectPoints(lr, mid, aimDir, hw, aimDistance / 2f);
+            if (lr != null) SetRectPoints(lr, mid, groundForward, groundNormal, hw, aimDistance / 2f);
+            UpdateProjectedRectDecal(indicator, mid, groundForward, groundNormal, ability.rectWidth * widthMul, aimDistance);
+            UpdateProjectedRectFill(indicator);
         }
         else if (ability.shape == AbilityShape.Cone)
         {
@@ -809,7 +905,7 @@ public class AbilityCaster : NetworkBehaviour
             float distanceMul = aimDistance / ability.range;
             // Pull origin 0.5 units behind the player so the character body sits
             // inside the fan rather than at the very tip.
-            indicator.transform.position   = transform.position - aimDir * 0.5f + Vector3.up * 0.05f;
+            indicator.transform.position   = ProjectToGround(transform.position - aimDir * 0.5f);
             indicator.transform.rotation   = Quaternion.LookRotation(aimDir);
             indicator.transform.localScale = Vector3.one * distanceMul * chargeMul;
         }
@@ -825,6 +921,7 @@ public class AbilityCaster : NetworkBehaviour
             if (lr != null)
             {
                 lr.startColor = lr.endColor = c;
+                SetProjectedRectColor(indicator, c);
             }
             else
             {
@@ -846,14 +943,404 @@ public class AbilityCaster : NetworkBehaviour
         }
     }
 
-    static void SetRectPoints(LineRenderer lr, Vector3 centre, Vector3 fwd, float hw, float hl)
+    void SetRectPoints(LineRenderer lr, Vector3 centre, Vector3 fwd, Vector3 up, float hw, float hl)
     {
         if (lr.positionCount != 4) { lr.positionCount = 4; lr.loop = true; }
-        Vector3 right = Vector3.Cross(Vector3.up, fwd).normalized;
-        lr.SetPosition(0, centre - right * hw - fwd * hl);
-        lr.SetPosition(1, centre + right * hw - fwd * hl);
-        lr.SetPosition(2, centre + right * hw + fwd * hl);
-        lr.SetPosition(3, centre - right * hw + fwd * hl);
+        Vector3 right = Vector3.Cross(up, fwd).normalized;
+        lr.SetPosition(0, ProjectToGround(centre - right * hw - fwd * hl));
+        lr.SetPosition(1, ProjectToGround(centre + right * hw - fwd * hl));
+        lr.SetPosition(2, ProjectToGround(centre + right * hw + fwd * hl));
+        lr.SetPosition(3, ProjectToGround(centre - right * hw + fwd * hl));
+    }
+
+    void BuildProjectedRectFill(GameObject indicator, Color color)
+    {
+        var fill = new GameObject("ProjectedRectFill");
+        fill.transform.SetParent(indicator.transform, false);
+
+        if (!s_loggedRectIndicatorPath)
+        {
+            s_loggedRectIndicatorPath = true;
+            Debug.Log("[SpellIndicator] Rectangle indicator using mesh fallback fill.", this);
+        }
+
+        var mf = fill.AddComponent<MeshFilter>();
+        var mr = fill.AddComponent<MeshRenderer>();
+        mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        mr.receiveShadows = false;
+
+        var mat = CreateTransparentIndicatorMaterial();
+        mat.color = new Color(color.r, color.g, color.b, RectFillAlpha);
+        mat.mainTexture = RectDecalTexture;
+        mat.renderQueue = 3000;
+        mr.material = mat;
+
+        const int widthSegments = 12;
+        const int lengthSegments = 48;
+        Vector3[] vertices = new Vector3[(widthSegments + 1) * (lengthSegments + 1)];
+        Vector2[] uv = new Vector2[vertices.Length];
+        int[] triangles = new int[widthSegments * lengthSegments * 6];
+
+        int v = 0;
+        for (int z = 0; z <= lengthSegments; z++)
+        {
+            float nz = z / (float)lengthSegments;
+            for (int x = 0; x <= widthSegments; x++)
+            {
+                float nx = x / (float)widthSegments;
+                vertices[v] = new Vector3(nx - 0.5f, 0f, nz - 0.5f);
+                uv[v] = new Vector2(nx, nz);
+                v++;
+            }
+        }
+
+        int t = 0;
+        for (int z = 0; z < lengthSegments; z++)
+        for (int x = 0; x < widthSegments; x++)
+        {
+            int i = z * (widthSegments + 1) + x;
+            triangles[t++] = i;
+            triangles[t++] = i + widthSegments + 1;
+            triangles[t++] = i + 1;
+            triangles[t++] = i + 1;
+            triangles[t++] = i + widthSegments + 1;
+            triangles[t++] = i + widthSegments + 2;
+        }
+
+        Mesh mesh = new Mesh { name = "ProjectedRectIndicator" };
+        mesh.vertices = vertices;
+        mesh.uv = uv;
+        mesh.triangles = triangles;
+        mesh.RecalculateNormals();
+        mf.sharedMesh = mesh;
+    }
+
+    bool BuildProjectedRectDecal(GameObject indicator, Color color)
+    {
+        Material mat = CreateRectDecalMaterial(color);
+        if (mat == null)
+        {
+            WarnInvalidRectDecal(null);
+            return false;
+        }
+
+        var decalGO = new GameObject("ProjectedRectDecal");
+        decalGO.transform.SetParent(indicator.transform, false);
+
+        DecalProjector projector = decalGO.AddComponent<DecalProjector>();
+        projector.material = mat;
+        projector.drawDistance = indicatorRaycastDistance;
+        projector.fadeFactor = 1f;
+        projector.fadeScale = 1f;
+        projector.startAngleFade = 180f;
+        projector.endAngleFade = 180f;
+        projector.scaleMode = DecalScaleMode.ScaleInvariant;
+        projector.pivot = GroundDecalPivot;
+        projector.size = new Vector3(1f, 1f, indicatorDecalProjectionDepth);
+
+        bool valid = projector.IsValid();
+        if (!valid)
+        {
+            WarnInvalidRectDecal(mat);
+            Destroy(decalGO);
+        }
+        else if (!s_loggedRectIndicatorPath)
+        {
+            s_loggedRectIndicatorPath = true;
+            string shaderName = mat != null && mat.shader != null ? mat.shader.name : "none";
+            Debug.Log($"[SpellIndicator] Rectangle indicator using URP DecalProjector. Shader: {shaderName}", this);
+        }
+
+        return valid;
+    }
+
+    Material CreateRectDecalMaterial(Color color)
+    {
+        Material mat = indicatorDecalMaterial != null
+            ? new Material(indicatorDecalMaterial)
+            : null;
+
+        if (mat == null)
+        {
+#if UNITY_EDITOR
+            Material packageDecal = AssetDatabase.LoadAssetAtPath<Material>(DefaultDecalMaterialPath);
+            if (packageDecal != null)
+                mat = new Material(packageDecal);
+#endif
+        }
+
+        if (mat == null)
+        {
+            UniversalRenderPipelineAsset pipelineAsset =
+                UniversalRenderPipeline.asset
+                ?? (UnityEngine.QualitySettings.renderPipeline as UniversalRenderPipelineAsset)
+                ?? (UnityEngine.Rendering.GraphicsSettings.defaultRenderPipeline as UniversalRenderPipelineAsset);
+
+            Material defaultDecal = pipelineAsset != null ? pipelineAsset.decalMaterial : null;
+            if (defaultDecal != null)
+                mat = new Material(defaultDecal);
+        }
+
+        if (mat == null)
+        {
+            Shader shader = Shader.Find(DefaultDecalShaderName);
+            if (shader == null)
+                return null;
+
+            mat = new Material(shader);
+        }
+
+        Color decalColor = new Color(color.r, color.g, color.b, RectDecalAlpha);
+        SetMaterialColor(mat, decalColor);
+
+        Texture2D texture = RectDecalTexture;
+        if (mat.HasProperty("Base_Map")) mat.SetTexture("Base_Map", texture);
+        if (mat.HasProperty("_BaseMap")) mat.SetTexture("_BaseMap", texture);
+        if (mat.HasProperty("_MainTex")) mat.SetTexture("_MainTex", texture);
+
+        return mat;
+    }
+
+    void WarnInvalidRectDecal(Material mat)
+    {
+        if (s_warnedInvalidRectDecal)
+            return;
+
+        s_warnedInvalidRectDecal = true;
+        string shaderName = mat != null && mat.shader != null ? mat.shader.name : "none";
+        Debug.LogWarning(
+            $"Rectangle spell decal material is not a valid URP DecalProjector material. Shader: {shaderName}. " +
+            "Using mesh fallback; assign a URP Decal material to indicatorDecalMaterial if this warning appears.",
+            this);
+    }
+
+    Material CreateTransparentIndicatorMaterial()
+    {
+        Shader shader = Shader.Find("Universal Render Pipeline/Unlit");
+        Material mat = shader != null
+            ? new Material(shader)
+            : new Material(Shader.Find("Sprites/Default"));
+
+        if (mat.HasProperty("_Surface")) mat.SetFloat("_Surface", 1f);
+        if (mat.HasProperty("_Blend")) mat.SetFloat("_Blend", 0f);
+        if (mat.HasProperty("_SrcBlend")) mat.SetFloat("_SrcBlend", (float)UnityEngine.Rendering.BlendMode.SrcAlpha);
+        if (mat.HasProperty("_DstBlend")) mat.SetFloat("_DstBlend", (float)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+        if (mat.HasProperty("_ZWrite")) mat.SetFloat("_ZWrite", 0f);
+        if (mat.HasProperty("_Cull")) mat.SetFloat("_Cull", (float)UnityEngine.Rendering.CullMode.Off);
+        mat.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+        mat.renderQueue = 3000;
+        return mat;
+    }
+
+    static Texture2D s_rectDecalTexture;
+    static Texture2D RectDecalTexture
+    {
+        get
+        {
+            if (s_rectDecalTexture != null)
+                return s_rectDecalTexture;
+
+            const int size = 32;
+            s_rectDecalTexture = new Texture2D(size, size, TextureFormat.RGBA32, false);
+            s_rectDecalTexture.wrapMode = TextureWrapMode.Clamp;
+
+            for (int y = 0; y < size; y++)
+            for (int x = 0; x < size; x++)
+            {
+                float edge = Mathf.Min(Mathf.Min(x, size - 1 - x), Mathf.Min(y, size - 1 - y));
+                float edgeFade = Mathf.SmoothStep(0f, 1f, edge / 5f);
+                float lengthNoise = Mathf.PerlinNoise(x * 0.18f, y * 0.06f);
+                float brush = Mathf.Lerp(0.55f, 1f, lengthNoise);
+                float alpha = edgeFade * brush;
+                s_rectDecalTexture.SetPixel(x, y, new Color(1f, 1f, 1f, alpha));
+            }
+
+            s_rectDecalTexture.Apply();
+            return s_rectDecalTexture;
+        }
+    }
+
+    void UpdateProjectedRectDecal(GameObject indicator, Vector3 centre, Vector3 forward, Vector3 normal, float width, float length)
+    {
+        DecalProjector projector = indicator.GetComponentInChildren<DecalProjector>();
+        if (projector == null)
+            return;
+
+        Transform decalTransform = projector.transform;
+        decalTransform.position = centre;
+        decalTransform.rotation = Quaternion.LookRotation(-normal, forward);
+        projector.pivot = GroundDecalPivot;
+        projector.size = new Vector3(width, length, indicatorDecalProjectionDepth);
+    }
+
+    void SetProjectedRectColor(GameObject indicator, Color color)
+    {
+        DecalProjector projector = indicator.GetComponentInChildren<DecalProjector>();
+        if (projector != null && projector.material != null)
+            SetMaterialColor(projector.material, color);
+
+        MeshRenderer renderer = indicator.GetComponentInChildren<MeshRenderer>();
+        if (renderer != null && renderer.gameObject.name == "ProjectedRectFill" && renderer.material != null)
+        {
+            float alpha = Mathf.Lerp(RectFillAlpha, RectFillChargedAlpha, Mathf.InverseLerp(0.55f, 0.95f, color.a));
+            renderer.material.color = new Color(color.r, color.g, color.b, alpha);
+        }
+    }
+
+    static void SetMaterialColor(Material mat, Color color)
+    {
+        if (mat.HasProperty("_BaseColor")) mat.SetColor("_BaseColor", color);
+        if (mat.HasProperty("_Color")) mat.SetColor("_Color", color);
+    }
+
+    static void SetMaterialTexture(Material mat, Texture texture)
+    {
+        if (mat.HasProperty("Base_Map")) mat.SetTexture("Base_Map", texture);
+        if (mat.HasProperty("_BaseMap")) mat.SetTexture("_BaseMap", texture);
+        if (mat.HasProperty("_MainTex")) mat.SetTexture("_MainTex", texture);
+    }
+
+    void UpdateProjectedCircleFill(GameObject indicator)
+    {
+        MeshFilter mf = null;
+        MeshFilter[] filters = indicator.GetComponentsInChildren<MeshFilter>();
+        foreach (MeshFilter filter in filters)
+        {
+            if (filter != null && filter.gameObject.name == "CircleIndicator")
+            {
+                mf = filter;
+                break;
+            }
+        }
+
+        if (mf == null || mf.sharedMesh == null) return;
+
+        Mesh mesh = mf.sharedMesh;
+        Vector3[] vertices = mesh.vertices;
+        Vector2[] uv = mesh.uv;
+        if (uv == null || uv.Length != vertices.Length) return;
+
+        Transform fillTransform = mf.transform;
+        for (int i = 0; i < vertices.Length; i++)
+        {
+            Vector3 flatLocal = new Vector3(uv[i].x - 0.5f, uv[i].y - 0.5f, 0f);
+            Vector3 world = fillTransform.TransformPoint(flatLocal);
+            vertices[i] = fillTransform.InverseTransformPoint(ProjectToGround(world));
+        }
+
+        mesh.vertices = vertices;
+        mesh.RecalculateBounds();
+        mesh.RecalculateNormals();
+    }
+
+    void UpdateProjectedRectFill(GameObject indicator)
+    {
+        MeshFilter mf = null;
+        MeshFilter[] filters = indicator.GetComponentsInChildren<MeshFilter>();
+        foreach (MeshFilter filter in filters)
+        {
+            if (filter != null && filter.gameObject.name == "ProjectedRectFill")
+            {
+                mf = filter;
+                break;
+            }
+        }
+
+        if (mf == null || mf.sharedMesh == null) return;
+
+        Mesh mesh = mf.sharedMesh;
+        Vector3[] vertices = mesh.vertices;
+        Vector2[] uv = mesh.uv;
+        if (uv == null || uv.Length != vertices.Length) return;
+
+        Transform indicatorTransform = indicator.transform;
+        Vector3 centre = indicatorTransform.position;
+        Vector3 right = indicatorTransform.right;
+        Vector3 forward = indicatorTransform.forward;
+        Vector3 scale = indicatorTransform.localScale;
+        Vector3 fillOffset = mf.transform.localPosition;
+
+        for (int i = 0; i < vertices.Length; i++)
+        {
+            float localX = (uv[i].x - 0.5f) * scale.x + fillOffset.x;
+            float localZ = (uv[i].y - 0.5f) * scale.z + fillOffset.z;
+            Vector3 world = centre + right * localX + forward * localZ;
+            vertices[i] = mf.transform.InverseTransformPoint(ProjectToGround(world));
+        }
+
+        mesh.vertices = vertices;
+        mesh.RecalculateBounds();
+        mesh.RecalculateNormals();
+    }
+
+    Vector3 ProjectToGround(Vector3 point)
+    {
+        return ProjectToGround(point, out _);
+    }
+
+    Vector3 ProjectToGround(Vector3 point, out Vector3 normal)
+    {
+        if (TryProjectToTerrain(point, out Vector3 terrainPoint, out normal))
+            return terrainPoint;
+
+        Vector3 origin = point + Vector3.up * indicatorRaycastHeight;
+        RaycastHit[] hits = Physics.RaycastAll(
+            origin,
+            Vector3.down,
+            indicatorRaycastDistance,
+            ~0,
+            QueryTriggerInteraction.Ignore);
+
+        normal = Vector3.up;
+        if (hits.Length == 0)
+            return point + Vector3.up * indicatorGroundOffset;
+
+        System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+        foreach (RaycastHit hit in hits)
+        {
+            Transform hitTransform = hit.transform;
+            if (hitTransform == transform || hitTransform.IsChildOf(transform)) continue;
+            if (hit.collider.GetComponentInParent<Health>() != null) continue;
+            if (hit.collider.CompareTag("Player") || hit.collider.CompareTag("Enemy")) continue;
+
+            normal = hit.normal;
+            return hit.point + hit.normal * indicatorGroundOffset;
+        }
+
+        return point + Vector3.up * indicatorGroundOffset;
+    }
+
+    bool TryProjectToTerrain(Vector3 point, out Vector3 projected, out Vector3 normal)
+    {
+        projected = point + Vector3.up * indicatorGroundOffset;
+        normal = Vector3.up;
+
+        Terrain[] terrains = Terrain.activeTerrains;
+        if (terrains == null || terrains.Length == 0)
+            return false;
+
+        foreach (Terrain terrain in terrains)
+        {
+            if (terrain == null || terrain.terrainData == null) continue;
+
+            Vector3 pos = terrain.transform.position;
+            Vector3 size = terrain.terrainData.size;
+            float localX = point.x - pos.x;
+            float localZ = point.z - pos.z;
+
+            if (localX < 0f || localZ < 0f || localX > size.x || localZ > size.z)
+                continue;
+
+            float nx = Mathf.Clamp01(localX / size.x);
+            float nz = Mathf.Clamp01(localZ / size.z);
+            float y = pos.y + terrain.SampleHeight(point);
+
+            normal = terrain.terrainData.GetInterpolatedNormal(nx, nz).normalized;
+            projected = new Vector3(point.x, y, point.z) + normal * indicatorGroundOffset;
+            return true;
+        }
+
+        return false;
     }
 
     void SpawnVFX(GameObject prefab, Vector3 position, Quaternion rotation)
