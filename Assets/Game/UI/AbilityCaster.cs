@@ -586,12 +586,12 @@ public class AbilityCaster : NetworkBehaviour
         Vector2 mp  = Mouse.current.position.ReadValue();
         Ray     ray = cam.ScreenPointToRay(new Vector3(mp.x, mp.y, 0f));
 
-        RaycastHit[] hits = Physics.RaycastAll(ray, 100f);
+        RaycastHit[] hits = Physics.RaycastAll(ray, 100f, ~0, QueryTriggerInteraction.Ignore);
         System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
 
         foreach (RaycastHit hit in hits)
         {
-            if (hit.transform == transform || hit.transform.IsChildOf(transform))
+            if (ShouldIgnoreIndicatorHit(hit))
                 continue;
             return hit.point;
         }
@@ -665,6 +665,8 @@ public class AbilityCaster : NetworkBehaviour
             SetMaterialTexture(mat, ProceduralRingTexture);
             mat.color       = c;
             rend.material   = mat;
+
+            BuildCircleOutline(indicator, c);
         }
         else // Rectangle
         {
@@ -762,6 +764,22 @@ public class AbilityCaster : NetworkBehaviour
         mf.sharedMesh = mesh;
 
         return go;
+    }
+
+    void BuildCircleOutline(GameObject indicator, Color color)
+    {
+        var outline = new GameObject("CircleIndicatorOutline");
+        outline.transform.SetParent(indicator.transform, false);
+
+        LineRenderer lr = outline.AddComponent<LineRenderer>();
+        lr.useWorldSpace = true;
+        lr.loop = true;
+        lr.startWidth = lr.endWidth = 0.12f;
+        lr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        lr.receiveShadows = false;
+        lr.material = new Material(Shader.Find("Sprites/Default"));
+        lr.startColor = lr.endColor = BrightOutlineColor(color);
+        lr.positionCount = 0;
     }
 
     GameObject CreateRangeRing(float range, Color c)
@@ -876,6 +894,7 @@ public class AbilityCaster : NetworkBehaviour
             {
                 float size = ability.indicatorSize * sizeMul;
                 indicator.transform.GetChild(0).localScale = new Vector3(size, size, 1f);
+                UpdateCircleOutline(indicator, centre, size * 0.5f);
             }
 
             UpdateProjectedCircleFill(indicator);
@@ -918,10 +937,14 @@ public class AbilityCaster : NetworkBehaviour
                 ? Color.Lerp(baseColor, ability.chargedTint, chargeFraction)
                 : new Color(baseColor.r, baseColor.g, baseColor.b, Mathf.Lerp(baseColor.a, 0.95f, chargeFraction));
 
-            if (lr != null)
+            if (ability.shape == AbilityShape.Rectangle && lr != null)
             {
                 lr.startColor = lr.endColor = c;
                 SetProjectedRectColor(indicator, c);
+            }
+            else if (ability.shape == AbilityShape.Circle)
+            {
+                SetCircleIndicatorColor(indicator, c);
             }
             else
             {
@@ -941,6 +964,57 @@ public class AbilityCaster : NetworkBehaviour
             float a = i / (float)segs * Mathf.PI * 2f;
             lr.SetPosition(i, centre + new Vector3(Mathf.Cos(a) * radius, 0f, Mathf.Sin(a) * radius));
         }
+    }
+
+    void UpdateCircleOutline(GameObject indicator, Vector3 centre, float radius)
+    {
+        LineRenderer lr = GetCircleOutline(indicator);
+        if (lr == null)
+            return;
+
+        const int segs = 128;
+        if (lr.positionCount != segs) lr.positionCount = segs;
+        for (int i = 0; i < segs; i++)
+        {
+            float a = i / (float)segs * Mathf.PI * 2f;
+            Vector3 flatPoint = centre + new Vector3(Mathf.Cos(a) * radius, 0f, Mathf.Sin(a) * radius);
+            lr.SetPosition(i, ProjectToGround(flatPoint));
+        }
+    }
+
+    void SetCircleIndicatorColor(GameObject indicator, Color color)
+    {
+        MeshRenderer[] renderers = indicator.GetComponentsInChildren<MeshRenderer>();
+        foreach (MeshRenderer renderer in renderers)
+        {
+            if (renderer != null && renderer.gameObject.name == "CircleIndicator" && renderer.material != null)
+                renderer.material.color = color;
+        }
+
+        LineRenderer outline = GetCircleOutline(indicator);
+        if (outline != null)
+            outline.startColor = outline.endColor = BrightOutlineColor(color);
+    }
+
+    LineRenderer GetCircleOutline(GameObject indicator)
+    {
+        LineRenderer[] renderers = indicator.GetComponentsInChildren<LineRenderer>();
+        foreach (LineRenderer renderer in renderers)
+        {
+            if (renderer != null && renderer.gameObject.name == "CircleIndicatorOutline")
+                return renderer;
+        }
+
+        return null;
+    }
+
+    static Color BrightOutlineColor(Color color)
+    {
+        return new Color(
+            Mathf.Clamp01(color.r * 1.5f + 0.2f),
+            Mathf.Clamp01(color.g * 1.5f + 0.2f),
+            Mathf.Clamp01(color.b * 1.5f + 0.2f),
+            Mathf.Clamp01(Mathf.Max(color.a, 0.95f)));
     }
 
     void SetRectPoints(LineRenderer lr, Vector3 centre, Vector3 fwd, Vector3 up, float hw, float hl)
@@ -1298,16 +1372,41 @@ public class AbilityCaster : NetworkBehaviour
         System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
         foreach (RaycastHit hit in hits)
         {
-            Transform hitTransform = hit.transform;
-            if (hitTransform == transform || hitTransform.IsChildOf(transform)) continue;
-            if (hit.collider.GetComponentInParent<Health>() != null) continue;
-            if (hit.collider.CompareTag("Player") || hit.collider.CompareTag("Enemy")) continue;
+            if (ShouldIgnoreIndicatorHit(hit)) continue;
 
             normal = hit.normal;
             return hit.point + hit.normal * indicatorGroundOffset;
         }
 
         return point + Vector3.up * indicatorGroundOffset;
+    }
+
+    bool ShouldIgnoreIndicatorHit(RaycastHit hit)
+    {
+        Collider hitCollider = hit.collider;
+        if (hitCollider == null)
+            return true;
+
+        Transform hitTransform = hitCollider.transform;
+        if (hitTransform == transform || hitTransform.IsChildOf(transform))
+            return true;
+
+        if (hitCollider.GetComponentInParent<Health>() != null)
+            return true;
+
+        return HasIndicatorIgnoredTag(hitTransform);
+    }
+
+    static bool HasIndicatorIgnoredTag(Transform hitTransform)
+    {
+        while (hitTransform != null)
+        {
+            if (hitTransform.CompareTag("Player") || hitTransform.CompareTag("Enemy"))
+                return true;
+            hitTransform = hitTransform.parent;
+        }
+
+        return false;
     }
 
     bool TryProjectToTerrain(Vector3 point, out Vector3 projected, out Vector3 normal)
