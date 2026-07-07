@@ -127,7 +127,7 @@ public class HeroCosmeticApplier : MonoBehaviour
     TrailRenderer   _trail;
 
     // Cached MaterialPropertyBlock (re-used to avoid allocations)
-    MaterialPropertyBlock _mpb = new MaterialPropertyBlock();
+    MaterialPropertyBlock _mpb;
 
     // Shader property IDs (cached at first use)
     static int _propBaseColor  = -1;
@@ -141,6 +141,7 @@ public class HeroCosmeticApplier : MonoBehaviour
     // ── Lifecycle ─────────────────────────────────────────────────────────────
     void Awake()
     {
+        _mpb = new MaterialPropertyBlock();
         _propBaseColor = Shader.PropertyToID("_BaseColor");
         _propColor     = Shader.PropertyToID("_Color");
         _propEmission  = Shader.PropertyToID("_EmissionColor");

@@ -145,8 +145,26 @@ public class InventoryManager : MonoBehaviour
     public IEnumerator LoadInventory()
     {
         int charId   = AuthManager.CharacterId;
-        string token = AuthManager.Token;
-        if (charId <= 0 || string.IsNullOrEmpty(token)) { Debug.LogWarning("[LOOT] LoadInventory: auth not ready"); yield break; }
+        string token = !string.IsNullOrEmpty(AuthManager.Token)
+            ? AuthManager.Token
+            : PlayerPrefs.GetString("jwt_token", "");
+
+        float waited = 0f;
+        while ((charId <= 0 || string.IsNullOrEmpty(token)) && waited < 8f)
+        {
+            yield return new WaitForSeconds(0.25f);
+            waited += 0.25f;
+            charId = AuthManager.CharacterId;
+            token = !string.IsNullOrEmpty(AuthManager.Token)
+                ? AuthManager.Token
+                : PlayerPrefs.GetString("jwt_token", "");
+        }
+
+        if (charId <= 0 || string.IsNullOrEmpty(token))
+        {
+            Debug.LogWarning("[LOOT] LoadInventory: auth not ready");
+            yield break;
+        }
 
         string url = $"{ServerConfig.AuthBaseUrl}/api/inventory/{charId}";
         using var req = UnityWebRequest.Get(url);

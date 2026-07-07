@@ -14,19 +14,19 @@ OcclusionCullingSettings:
 RenderSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 10
-  m_Fog: 0
-  m_FogColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  m_Fog: 1
+  m_FogColor: {r: 0.02, g: 0.01, b: 0.06, a: 1}
   m_FogMode: 3
-  m_FogDensity: 0.01
+  m_FogDensity: 0.025
   m_LinearFogStart: 0
   m_LinearFogEnd: 300
-  m_AmbientSkyColor: {r: 0.212, g: 0.227, b: 0.259, a: 1}
-  m_AmbientEquatorColor: {r: 0.114, g: 0.125, b: 0.133, a: 1}
-  m_AmbientGroundColor: {r: 0.047, g: 0.043, b: 0.035, a: 1}
+  m_AmbientSkyColor: {r: 0.04, g: 0.03, b: 0.09, a: 1}
+  m_AmbientEquatorColor: {r: 0.04, g: 0.03, b: 0.09, a: 1}
+  m_AmbientGroundColor: {r: 0.04, g: 0.03, b: 0.09, a: 1}
   m_AmbientIntensity: 1
   m_AmbientMode: 0
   m_SubtractiveShadowColor: {r: 0.42, g: 0.478, b: 0.627, a: 1}
-  m_SkyboxMaterial: {fileID: 2100000, guid: aed657681c6812845bb7736c343b5e9b, type: 2}
+  m_SkyboxMaterial: {fileID: 2100000, guid: 6eecb3bb77b3f7a43a504fceda3b0b5f, type: 2}
   m_HaloStrength: 0.5
   m_FlareStrength: 1
   m_FlareFadeSpeed: 3
@@ -156,7 +156,7 @@ Camera:
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 2
-  m_BackGroundColor: {r: 0.03, g: 0.02, b: 0.07, a: 1}
+  m_BackGroundColor: {r: 0.01, g: 0.01, b: 0.03, a: 1}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
@@ -177,9 +177,9 @@ Camera:
     y: 0
     width: 1
     height: 1
-  near clip plane: 0.3
-  far clip plane: 100
-  field of view: 60
+  near clip plane: 0.1
+  far clip plane: 200
+  field of view: 55
   orthographic: 0
   orthographic size: 5
   m_Depth: 0
@@ -443,6 +443,7 @@ GameObject:
   - component: {fileID: 572117810}
   - component: {fileID: 572117809}
   - component: {fileID: 572117808}
+  - component: {fileID: 572117811}
   m_Layer: 0
   m_Name: LoginUI
   m_TagString: Untagged
@@ -462,25 +463,25 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2d55726f233d33c439a0a238eee8ef2a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LoginScreenVFX
-  dustMotes: {fileID: 0}
-  fireFlies: {fileID: 0}
-  groundFog: {fileID: 0}
-  electricSparks: {fileID: 0}
-  lightningAura: {fileID: 0}
-  lightPillar: {fileID: 0}
-  lootBeam: {fileID: 0}
-  magicCircle: {fileID: 0}
-  magicCircle2: {fileID: 0}
-  plexusAura: {fileID: 0}
-  portalBlue: {fileID: 0}
-  glowingOrbs: {fileID: 0}
-  cosmosTrail: {fileID: 0}
-  voidTrail: {fileID: 0}
-  loginSuccessVFX: {fileID: 0}
-  loginFailVFX: {fileID: 0}
-  ambientLoop: {fileID: 0}
-  sparksInterval: 8
-  slowRotateSpeed: 3
+  dustMotes: {fileID: 1000012882023006, guid: 5ca4c580b3888314581688fa46fb142d, type: 3}
+  fireFlies: {fileID: 1135660793345562, guid: 379785de5e39005469c875710d3cc5a7, type: 3}
+  groundFog: {fileID: 1269120730060968, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
+  electricSparks: {fileID: 1000011396044746, guid: 96b2ec0239d11fa4b9792311efceb8ed, type: 3}
+  lightningAura: {fileID: 2350289595039498615, guid: 4d9a3b35b3bc07649b697df7fb497b6d, type: 3}
+  lightPillar: {fileID: 1124489700285160176, guid: 6555300494081614fa6b6a823cca9f64, type: 3}
+  lootBeam: {fileID: 883407852276016311, guid: fb3b9b0b33d48c64c8c11e01dbe71caa, type: 3}
+  magicCircle: {fileID: 606317162780701244, guid: a2a060732547fe64581bb0cb3c2bdf1d, type: 3}
+  magicCircle2: {fileID: 151920881395052490, guid: 48c5715f9603c3842a353516a8baefbb, type: 3}
+  plexusAura: {fileID: 5158311535708934045, guid: bad5794a53f5c3645bb444b3a040ba01, type: 3}
+  portalBlue: {fileID: 3288734912414284343, guid: 45e0f06c750176947862c10346226439, type: 3}
+  glowingOrbs: {fileID: 1083261786300254, guid: 5ada718ad8eefc341a11217c754bc91a, type: 3}
+  cosmosTrail: {fileID: 1662094874520849773, guid: f6bbcfa7e746d0340bd78dd22f35b3b3, type: 3}
+  voidTrail: {fileID: 1367619002952535313, guid: 664c64bbb000f5e428ca3b8f7e0ea923, type: 3}
+  loginSuccessVFX: {fileID: 883407852276016311, guid: fb3b9b0b33d48c64c8c11e01dbe71caa, type: 3}
+  loginFailVFX: {fileID: 1000011396044746, guid: 96b2ec0239d11fa4b9792311efceb8ed, type: 3}
+  ambientLoop: {fileID: 8300000, guid: 133bb20799ebc6745a6ecdbafc2652ab, type: 3}
+  sparksInterval: 10
+  slowRotateSpeed: 4
 --- !u!114 &572117809
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -496,6 +497,25 @@ MonoBehaviour:
   authServerURL: http://15.204.243.36:3000
   gameScene: GameWorld
   sceneVFX: {fileID: 572117808}
+--- !u!114 &572117811
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 572117807}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 90918767f01edd543b5f565fc600a5ae, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LoginBackgroundFX
+  cameraPos: {x: 0, y: 2.5, z: -6}
+  lookTarget: {x: 0, y: 1, z: 8}
+  driftX: 1.2
+  driftY: 0.25
+  driftPeriod: 90
+  fogColor: {r: 0.02, g: 0.01, b: 0.05, a: 1}
+  ambientColor: {r: 0.04, g: 0.03, b: 0.09, a: 1}
 --- !u!4 &572117810
 Transform:
   m_ObjectHideFlags: 0

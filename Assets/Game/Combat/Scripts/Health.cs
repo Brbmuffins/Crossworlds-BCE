@@ -16,6 +16,10 @@ public class Health : NetworkBehaviour
     public bool isPlayer  = false;  // players go downed instead of dying outright
     public bool isRobotic = false;  // Defibrillator deals 60 burst dmg to robotics
 
+    [Header("Combat Feedback")]
+    [SerializeField] bool showEnemyHealthBar = true;
+    [SerializeField] bool showFloatingNumbers = true;
+
     // ── Events ────────────────────────────────────────────────────
     public UnityEvent<float, float> onHealthChanged;    // (current, max)
     public UnityEvent               onDeath;
@@ -83,6 +87,9 @@ public class Health : NetworkBehaviour
         if (!NetworkClient.active && !NetworkServer.active)
             currentHealth = maxHealth;
         _statusEffects = GetComponent<StatusEffectManager>();
+#if UNITY_EDITOR || !UNITY_SERVER
+        TryAttachEnemyHealthBar();
+#endif
     }
 
     public override void OnStartServer()
@@ -95,6 +102,9 @@ public class Health : NetworkBehaviour
     public override void OnStartClient()
     {
         base.OnStartClient();
+#if UNITY_EDITOR || !UNITY_SERVER
+        TryAttachEnemyHealthBar();
+#endif
         onHealthChanged?.Invoke(currentHealth, maxHealth);
         onDownedChanged?.Invoke(_isDowned);
     }
@@ -176,6 +186,7 @@ public class Health : NetworkBehaviour
         currentHealth = Mathf.Max(0f, currentHealth - amount);
         onHealthChanged?.Invoke(currentHealth, maxHealth);
         onDamageTaken?.Invoke(amount);
+        ShowDamageFeedback(amount);
 
         if (currentHealth <= 0f)
             HandleDeath(source);
@@ -190,6 +201,7 @@ public class Health : NetworkBehaviour
         currentHealth += actual;
         onHealthChanged?.Invoke(currentHealth, maxHealth);
         onHealApplied?.Invoke(actual);
+        ShowHealFeedback(actual);
     }
 
     // Defibrillator: revive a downed player at hpPercent (e.g. 0.3 = 30%)
@@ -304,6 +316,79 @@ public class Health : NetworkBehaviour
     {
         onDownedChanged?.Invoke(newValue);
     }
+
+    void ShowDamageFeedback(float amount)
+    {
+        if (!showFloatingNumbers || amount <= 0f) return;
+
+        if (CanRpcCombatFeedback())
+            RpcShowDamageNumber(amount, transform.position);
+        else if (!NetworkClient.active || NetworkServer.active)
+            SpawnDamageNumber(amount, transform.position);
+    }
+
+    void ShowHealFeedback(float amount)
+    {
+        if (!showFloatingNumbers || amount <= 0f) return;
+
+        if (CanRpcCombatFeedback())
+            RpcShowHealNumber(amount, transform.position);
+        else if (!NetworkClient.active || NetworkServer.active)
+            SpawnHealNumber(amount, transform.position);
+    }
+
+    bool CanRpcCombatFeedback()
+    {
+        return NetworkServer.active
+            && netIdentity != null
+            && netIdentity.netId != 0;
+    }
+
+    [ClientRpc]
+    void RpcShowDamageNumber(float amount, Vector3 worldPosition)
+    {
+        SpawnDamageNumber(amount, worldPosition);
+    }
+
+    [ClientRpc]
+    void RpcShowHealNumber(float amount, Vector3 worldPosition)
+    {
+        SpawnHealNumber(amount, worldPosition);
+    }
+
+    static void SpawnDamageNumber(float amount, Vector3 worldPosition)
+    {
+#if UNITY_EDITOR || !UNITY_SERVER
+        FloatingDamageText.Spawn(worldPosition, amount, FloatingDamageText.DamageType.Normal);
+#endif
+    }
+
+    static void SpawnHealNumber(float amount, Vector3 worldPosition)
+    {
+#if UNITY_EDITOR || !UNITY_SERVER
+        FloatingDamageText.Spawn(worldPosition, amount, FloatingDamageText.DamageType.Heal);
+#endif
+    }
+
+#if UNITY_EDITOR || !UNITY_SERVER
+    void TryAttachEnemyHealthBar()
+    {
+        if (!showEnemyHealthBar || isPlayer) return;
+        if (!ShouldShowEnemyHealthBar()) return;
+        if (GetComponent<EnemyHealthBar>() != null) return;
+
+        gameObject.AddComponent<EnemyHealthBar>();
+    }
+
+    bool ShouldShowEnemyHealthBar()
+    {
+        return CompareTag("Enemy")
+            || GetComponent<EnemyAI>() != null
+            || GetComponent<EnemyController>() != null
+            || GetComponent<IronWardenController>() != null
+            || GetComponent<WorldBossController>() != null;
+    }
+#endif
 
     private void HandleDeath(GameObject source)
     {

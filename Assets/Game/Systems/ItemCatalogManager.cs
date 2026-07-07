@@ -106,18 +106,19 @@ public class ItemCatalogManager : MonoBehaviour
 
         try
         {
-            var resp = JsonUtility.FromJson<CatalogResponse>(req.downloadHandler.text);
-            if (resp?.items != null)
+            ItemTemplate[] items = ParseCatalogItems(req.downloadHandler.text);
+            if (items == null) yield break;
+
+            foreach (var item in items)
             {
-                foreach (var item in resp.items)
-                {
-                    if (item == null) continue;
-                    _byId[item.id]     = item;
+                if (item == null) continue;
+                _byId[item.id] = item;
+                if (!string.IsNullOrEmpty(item.name))
                     _byName[item.name] = item;
-                }
-                IsLoaded = true;
-                Debug.Log($"[CATALOG] Loaded {_byId.Count} item templates");
             }
+
+            IsLoaded = true;
+            Debug.Log($"[CATALOG] Loaded {_byId.Count} item templates");
         }
         catch (Exception e)
         {
@@ -126,6 +127,17 @@ public class ItemCatalogManager : MonoBehaviour
     }
 
     // ── JSON ──────────────────────────────────────────────────────────────────
+    static ItemTemplate[] ParseCatalogItems(string json)
+    {
+        if (string.IsNullOrWhiteSpace(json)) return null;
+
+        string trimmed = json.TrimStart();
+        if (trimmed.StartsWith("["))
+            return JsonUtility.FromJson<CatalogResponse>("{\"items\":" + json + "}").items;
+
+        return JsonUtility.FromJson<CatalogResponse>(json).items;
+    }
+
     [Serializable] class CatalogResponse { public ItemTemplate[] items; }
 }
 #endif

@@ -171,6 +171,36 @@ public class CombatSessionTracker : MonoBehaviour
     }
 
     // ── HTTP POST ─────────────────────────────────────────────────────────────
+    public void PostKill(int characterId, string enemyTemplateId, string token)
+    {
+        if (characterId <= 0 || string.IsNullOrEmpty(enemyTemplateId) || string.IsNullOrEmpty(token))
+            return;
+
+        StartCoroutine(PostKillRoutine(characterId, enemyTemplateId, token));
+    }
+
+    IEnumerator PostKillRoutine(int characterId, string enemyTemplateId, string token)
+    {
+        string body = JsonUtility.ToJson(new KillRequest
+        {
+            characterId = characterId,
+            enemyTemplateId = enemyTemplateId
+        });
+
+        using var req = new UnityWebRequest($"{ServerConfig.AuthBaseUrl}/api/combat/kill", "POST");
+        req.uploadHandler = new UploadHandlerRaw(System.Text.Encoding.UTF8.GetBytes(body));
+        req.downloadHandler = new DownloadHandlerBuffer();
+        req.SetRequestHeader("Content-Type", "application/json");
+        req.SetRequestHeader("Authorization", $"Bearer {token}");
+
+        yield return req.SendWebRequest();
+
+        if (req.result != UnityWebRequest.Result.Success)
+            Debug.LogWarning($"[COMBAT] kill POST failed: {req.error}");
+        else
+            Debug.Log($"[COMBAT] kill posted: char={characterId} enemy={enemyTemplateId}");
+    }
+
     IEnumerator PostSessionStats()
     {
         _posted = true;
@@ -243,6 +273,13 @@ public class CombatSessionTracker : MonoBehaviour
         public int   wavesSurvived;
         public int   durationSeconds;
         public int   heroClass;
+    }
+
+    [System.Serializable]
+    class KillRequest
+    {
+        public int characterId;
+        public string enemyTemplateId;
     }
 }
 #endif
