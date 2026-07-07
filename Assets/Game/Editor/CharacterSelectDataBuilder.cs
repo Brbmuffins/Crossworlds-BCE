@@ -318,6 +318,8 @@ public static class CharacterSelectDataBuilder
         d.classColor     = new Color(0.38f, 0.22f, 0.98f);
         d.classColorDark = new Color(0.10f, 0.05f, 0.28f);
         d.portrait       = LoadPortrait("arcanist");
+        d.prefab         = LoadModel("Assets/Game/Prefabs/Arcanist.prefab");
+        d.previewPrefab  = d.prefab;
 
         d.traits = new TraitPill[]
         {
@@ -406,5 +408,13 @@ public static class CharacterSelectDataBuilder
         if (spr == null)
             Debug.LogWarning($"[BCE] Icon not found: {path}");
         return spr;
+    }
+
+    static GameObject LoadModel(string path)
+    {
+        var model = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+        if (model == null)
+            Debug.LogWarning($"[BCE] Model not found: {path}");
+        return model;
     }
 }

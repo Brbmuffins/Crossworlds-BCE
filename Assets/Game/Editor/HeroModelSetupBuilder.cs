@@ -14,7 +14,7 @@ using UnityEngine;
 ///   1  Ironclad    → Heroes/Guardian/Guardian.fbx
 ///   2  Shadowblade → Heroes/Bogar/Bogar.fbx
 ///   3  Cleric      → Heroes/Brandalf/Brandalf.fbx                    (temp; Brandalf decision pending)
-///   4  Arcanist    → Heroes/Arcanist/Arcanist.fbx
+///   4  Arcanist    → Heroes/Dravos/fantasy_goblin_3d_model/Idle.fbx
 ///
 /// Safe to re-run — skips any prefab that already has a "Model" child.
 ///
@@ -59,8 +59,8 @@ public static class HeroModelSetupBuilder
         ),
         (
             "Assets/Game/Prefabs/Arcanist.prefab",
-            "Assets/Game/Heroes/Arcanist/Arcanist.fbx",
-            null,
+            "Assets/Game/Heroes/Dravos/fantasy_goblin_3d_model/Idle.fbx",
+            "Assets/Game/Heroes/Dravos/fantasy_goblin_3d_model/Dravos.controller",
             "Arcanist"
         ),
     };

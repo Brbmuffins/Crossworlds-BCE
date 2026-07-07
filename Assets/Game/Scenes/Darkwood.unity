@@ -3137,6 +3137,8 @@ MonoBehaviour:
   isRobotic: 0
   showEnemyHealthBar: 1
   showFloatingNumbers: 1
+  enemyHealthBarHeightOffset: 0
+  enemyHealthBarFixedHeight: 1
   onHealthChanged:
     m_PersistentCalls:
       m_Calls: []
@@ -4466,6 +4468,8 @@ MonoBehaviour:
   isRobotic: 0
   showEnemyHealthBar: 1
   showFloatingNumbers: 1
+  enemyHealthBarHeightOffset: 0
+  enemyHealthBarFixedHeight: 1
   onHealthChanged:
     m_PersistentCalls:
       m_Calls: []
@@ -9981,6 +9985,8 @@ MonoBehaviour:
   isRobotic: 0
   showEnemyHealthBar: 1
   showFloatingNumbers: 1
+  enemyHealthBarHeightOffset: 0
+  enemyHealthBarFixedHeight: 1
   onHealthChanged:
     m_PersistentCalls:
       m_Calls: []

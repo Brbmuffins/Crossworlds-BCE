@@ -9,13 +9,12 @@ using UnityEngine;
 /// that class's own model, so the in-game spawn matches the character-select preview.
 ///
 /// For each class it:
-///   1. Forces the model FBX to Humanoid + auto-creates an avatar (so Engineer's
-///      Humanoid AnimationController retargets onto it).
+///   1. Forces the model FBX to Humanoid + auto-creates an avatar.
 ///   2. Opens the class prefab, removes the old "Model" child, instantiates the new
 ///      model as "Model", resets its transform.
 ///   3. Auto-scales the model to ~1.8u tall (Tripo raws aren't normalized) and grounds it.
-///   4. Wires the Model's Animator: controller = Engineer AnimationController,
-///      avatar = the new model's avatar, root motion off.
+///   4. Wires the Model's Animator: controller, avatar = the new model's avatar,
+///      root motion off.
 ///
 /// Warden is intentionally skipped — its model already IS the Engineer model.
 /// PlayerMovement finds the Animator via GetComponentInChildren at runtime, so no
@@ -25,7 +24,7 @@ public static class CharacterModelSwapper
 {
     const float TargetHeight = 1.8f;   // matches the CapsuleCollider height
 
-    const string ControllerPath =
+    const string DefaultControllerPath =
         "Assets/Game/Characters/Engineer/Animations/AnimationController.controller";
 
     struct Entry
@@ -33,6 +32,7 @@ public static class CharacterModelSwapper
         public string className;
         public string prefabPath;
         public string modelPath;
+        public string controllerPath;
     }
 
     static readonly Entry[] Map =
@@ -40,24 +40,31 @@ public static class CharacterModelSwapper
         new Entry { className = "Ironclad",    prefabPath = "Assets/Game/Prefabs/Ironclad.prefab",    modelPath = "Assets/Game/Heroes/Guardian/Guardian.fbx" },
         new Entry { className = "Shadowblade", prefabPath = "Assets/Game/Prefabs/Shadowblade.prefab", modelPath = "Assets/Game/Heroes/Bogar/Bogar.fbx" },
         new Entry { className = "Cleric",      prefabPath = "Assets/Game/Prefabs/Cleric.prefab",      modelPath = "Assets/Game/Heroes/Brandalf/Brandalf.fbx" },
-        new Entry { className = "Arcanist",    prefabPath = "Assets/Game/Prefabs/Arcanist.prefab",    modelPath = "Assets/Game/Heroes/Arcanist/Arcanist.fbx" },
+        new Entry
+        {
+            className = "Arcanist",
+            prefabPath = "Assets/Game/Prefabs/Arcanist.prefab",
+            modelPath = "Assets/Game/Heroes/Dravos/fantasy_goblin_3d_model/Idle.fbx",
+            controllerPath = "Assets/Game/Heroes/Dravos/fantasy_goblin_3d_model/Dravos.controller"
+        },
     };
 
     [MenuItem("BCE/Setup/CharacterSelect - Swap Class Prefab Models")]
     public static void Swap()
     {
-        var controller = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(ControllerPath);
-        if (controller == null)
-        {
-            Debug.LogError($"[ModelSwap] AnimationController not found at {ControllerPath}. Aborting.");
-            return;
-        }
-
         int done = 0;
         var report = new List<string>();
 
         foreach (var e in Map)
         {
+            string controllerPath = string.IsNullOrEmpty(e.controllerPath) ? DefaultControllerPath : e.controllerPath;
+            var controller = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(controllerPath);
+            if (controller == null)
+            {
+                Debug.LogError($"[ModelSwap] AnimationController not found at {controllerPath}. Skipping {e.className}.");
+                continue;
+            }
+
             // 1 — Ensure the model is Humanoid with an avatar.
             var avatar = EnsureHumanoid(e.modelPath);
             if (avatar == null)
