@@ -17,7 +17,8 @@ public class EnemyHealthBar : MonoBehaviour
     const float BAR_WIDTH       = 1.2f;    // world-space width of bar
     const float BAR_HEIGHT      = 0.12f;
     const float DEFAULT_HEIGHT  = 1.65f;   // fallback above the enemy root
-    const float HEAD_PADDING    = 0.25f;   // above visible/collider bounds
+    const float DEFAULT_OFFSET  = 0.25f;   // above visible/collider bounds
+    const float MIN_HEIGHT      = 0.2f;
     const float CANVAS_SCALE    = 0.01f;   // world-space canvas scale
 
     // Colours
@@ -111,6 +112,11 @@ public class EnemyHealthBar : MonoBehaviour
 
     float GetBarHeight()
     {
+        float fixedHeight = _health != null ? _health.EnemyHealthBarFixedHeight : -1f;
+        if (fixedHeight >= 0f)
+            return Mathf.Max(MIN_HEIGHT, fixedHeight);
+
+        float heightOffset = _health != null ? _health.EnemyHealthBarHeightOffset : DEFAULT_OFFSET;
         float top = float.NegativeInfinity;
 
         foreach (var renderer in GetComponentsInChildren<Renderer>())
@@ -126,15 +132,17 @@ public class EnemyHealthBar : MonoBehaviour
         }
 
         if (float.IsNegativeInfinity(top))
-            top = DEFAULT_HEIGHT - HEAD_PADDING;
+            top = DEFAULT_HEIGHT - heightOffset;
 
-        return Mathf.Max(0.75f, top + HEAD_PADDING);
+        return Mathf.Max(MIN_HEIGHT, top + heightOffset);
     }
 
     // ── Billboard — always face camera ────────────────────────────────────────
     void LateUpdate()
     {
         if (_canvas == null) return;
+        _canvas.transform.localPosition = new Vector3(0f, GetBarHeight(), 0f);
+
         var cam = Camera.main;
         if (cam == null) return;
         // Face toward camera (not toward target like LookAt, just copy camera rotation)

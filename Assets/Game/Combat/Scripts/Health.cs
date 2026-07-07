@@ -19,6 +19,10 @@ public class Health : NetworkBehaviour
     [Header("Combat Feedback")]
     [SerializeField] bool showEnemyHealthBar = true;
     [SerializeField] bool showFloatingNumbers = true;
+    [SerializeField, Tooltip("Extra world-space height above the detected enemy head for the floating health bar. Lower values pull it closer.")]
+    float enemyHealthBarHeightOffset = 0.25f;
+    [SerializeField, Tooltip("Optional fixed local Y height for the enemy health bar. Use -1 to auto-place from render/collider bounds.")]
+    float enemyHealthBarFixedHeight = -1f;
 
     // ── Events ────────────────────────────────────────────────────
     public UnityEvent<float, float> onHealthChanged;    // (current, max)
@@ -77,6 +81,8 @@ public class Health : NetworkBehaviour
     public  float BaseMaxHealth        => _baseMaxHealth;
 
     public float Fraction => maxHealth > 0f ? currentHealth / maxHealth : 0f;
+    public float EnemyHealthBarHeightOffset => enemyHealthBarHeightOffset;
+    public float EnemyHealthBarFixedHeight => enemyHealthBarFixedHeight;
 
     // ── StatusEffect integration ───────────────────────────────────
     private StatusEffectManager _statusEffects;
