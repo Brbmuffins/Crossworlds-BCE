@@ -71,6 +71,8 @@ public class AbilityCaster : NetworkBehaviour
     const float RectFillChargedAlpha = 0.24f;
     const float RectDecalAlpha = 0.35f;
     const string DefaultDecalMaterialPath = "Packages/com.unity.render-pipelines.universal/Runtime/Materials/Decal.mat";
+    const int ArcaneStepPulseCount = 4;
+    const float ArcaneStepPulseInterval = 1f;
     static readonly Vector3 GroundDecalPivot = new Vector3(0f, 0f, 0.5f);
     static bool s_warnedInvalidRectDecal;
     static bool s_loggedRectIndicatorPath;
@@ -180,7 +182,7 @@ public class AbilityCaster : NetworkBehaviour
 
         // ── ARCANIST (indices 19–22) ───────────────────────────────────────────────────
         // [19] Arcane Step — teleport up to 10 units in aimed direction
-        new AbilityDef { abilityName = "Arcane Step",      shape = AbilityShape.Circle,    category = AbilityCategory.Support, range = 10f, indicatorSize = 0.5f, cooldown = 4f },
+        new AbilityDef { abilityName = "Arcane Step",      shape = AbilityShape.Circle,    category = AbilityCategory.Support, range = 10f, indicatorSize = 3.5f, cooldown = 4f, damage = 10f, targetTag = "Enemy" },
         // [20] Void Maw — pull enemies to center for 3s then 20 AoE burst
         new AbilityDef { abilityName = "Void Maw",         shape = AbilityShape.Circle,    category = AbilityCategory.Damage,  range = 10f, indicatorSize = 8f, cooldown = 9f, damage = 20f, targetTag = "Enemy" },
         // [21] Forked Lightning — chain lightning, jumps up to 4 enemies (30/25/20/15 dmg)
@@ -1544,7 +1546,7 @@ public class AbilityCaster : NetworkBehaviour
                 SpawnFireBurst(transform.position + indicator.transform.forward * coneRange + Vector3.up * 0.5f, indicator.transform.rotation, coneRange, ability.coneAngle);
         }
 
-        if (ability.shape == AbilityShape.Circle && ability.damage > 0f)
+        if (ability.shape == AbilityShape.Circle && ability.damage > 0f && !IsArcaneStep(ability))
         {
             ApplyCircleDamage(ability, indicator, damageMultiplier);
         }
@@ -1665,6 +1667,11 @@ public class AbilityCaster : NetworkBehaviour
     }
 
     // ── Ability dispatch ─────────────────────────────────────────
+    static bool IsArcaneStep(AbilityDef ability)
+    {
+        return ability != null && ability.abilityName == "Arcane Step";
+    }
+
     void DispatchAbility(AbilityDef ability, Vector3 castPoint, float dmgMult)
     {
         switch (ability.abilityName)
@@ -1719,6 +1726,7 @@ public class AbilityCaster : NetworkBehaviour
             // ─ Arcanist ──────────────────────────────────────────
             case "Arcane Step":
                 dashHandler?.PhaseShift(castPoint);
+                StartCoroutine(ArcaneStepPulseDamage(ability, castPoint, dmgMult));
                 break;
 
             case "Void Maw":
@@ -1777,6 +1785,50 @@ public class AbilityCaster : NetworkBehaviour
     }
 
     // ── New ability methods ──────────────────────────────────────
+
+    System.Collections.IEnumerator ArcaneStepPulseDamage(AbilityDef ability, Vector3 centre, float damageMultiplier)
+    {
+        float radius = ability.indicatorSize > 0f ? ability.indicatorSize * 0.5f : 1.75f;
+        float damage = (ability.damage > 0f ? ability.damage : 10f) * damageMultiplier;
+
+        for (int pulse = 0; pulse < ArcaneStepPulseCount; pulse++)
+        {
+            ApplyPulseDamage(centre, radius, damage, ability.targetTag, ability.hitVFX);
+            yield return new WaitForSeconds(ArcaneStepPulseInterval);
+        }
+    }
+
+    void ApplyPulseDamage(Vector3 centre, float radius, float damage, string targetTag, GameObject hitVFX)
+    {
+        Collider[] hits = Physics.OverlapSphere(centre, radius);
+        var damaged = new System.Collections.Generic.HashSet<Health>();
+
+        foreach (Collider hit in hits)
+        {
+            Health health = hit.GetComponentInParent<Health>();
+            if (health == null || damaged.Contains(health))
+                continue;
+
+            if (!HitMatchesTargetTag(hit, health, targetTag))
+                continue;
+
+            damaged.Add(health);
+            health.TakeDamage(damage, gameObject);
+            SpawnVFX(hitVFX, health.transform.position + Vector3.up * 0.5f, Quaternion.identity);
+        }
+    }
+
+    static bool HitMatchesTargetTag(Collider hit, Health health, string targetTag)
+    {
+        if (string.IsNullOrEmpty(targetTag))
+            return true;
+
+        if (hit.CompareTag(targetTag) || health.CompareTag(targetTag))
+            return true;
+
+        Transform root = health.transform.root;
+        return root != null && root.CompareTag(targetTag);
+    }
 
     void CastOverdrive(AbilityDef ability)
     {
