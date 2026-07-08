@@ -28,6 +28,12 @@ on:
     branches: [main]
   workflow_dispatch:   # also triggerable manually from the Actions tab
 
+# Only one build+deploy at a time: a new push to main cancels an in-progress
+# run so the VPS only ever receives the latest commit (no racing deploys).
+concurrency:
+  group: build-and-deploy-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
 
   # ── Dedicated Server → VPS ───────────────────────────────────────────────
