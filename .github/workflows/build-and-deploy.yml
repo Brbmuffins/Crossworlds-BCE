@@ -1,44 +1,42 @@
 # ═══════════════════════════════════════════════════════════════════════════
-#  Crossworlds (BCE) — Build & Deploy
+#  Crossworlds BCE — CI/CD Pipeline
 #
-#  Triggers on every push to main.
-#  Two parallel jobs:
-#    build-server  → Linux dedicated server → SCP to VPS → restart crossworlds
-#    build-client  → Windows client → GitHub Release (stable download URL)
+#  Triggers: push to main (auto), or manual via Actions tab.
 #
-#  One-time secrets to add in GitHub → Settings → Secrets → Actions:
-#    UNITY_LICENSE   — contents of your .ulf license file
-#    UNITY_EMAIL     — Unity account email
-#    UNITY_PASSWORD  — Unity account password
-#    VPS_HOST        — 15.204.243.36
-#    VPS_SSH_KEY     — private key that can SSH as ubuntu@VPS_HOST
+#  Jobs:
+#    build-server  → Linux dedicated server → VPS deploy (with auto-rollback)
+#    build-client  → Windows client → GitHub Release (latest)
 #
-#  Stable client download URL (share this with friends):
-#    https://github.com/Brbmuffins/Rate-of-Decay-ONLINE/releases/latest/download/Crossworlds-Windows.zip
+#  One-time setup — add these secrets in GitHub → Settings → Secrets → Actions:
+#
+#    UNITY_LICENSE   Export from Unity Hub: Help → Manage License → Export .ulf
+#    UNITY_EMAIL     Your Unity account email
+#    UNITY_PASSWORD  Your Unity account password
+#    VPS_HOST        15.204.243.36
+#    VPS_SSH_KEY     Private SSH key for ubuntu@VPS_HOST
+#                    (generate a deploy key: ssh-keygen -t ed25519 -C "github-actions"
+#                     add the PUBLIC key to ~/.ssh/authorized_keys on the VPS)
+#
+#  Stable client download URL (share with friends):
+#    https://github.com/<owner>/<repo>/releases/latest/download/Crossworlds-Windows.zip
 # ═══════════════════════════════════════════════════════════════════════════
 
 name: Build and Deploy
 
 on:
-  workflow_dispatch:   # manual trigger only — auto-push disabled until secrets are configured
-  # push:
-  #   branches: [main]
-  # Uncomment push above and add these secrets in GitHub → Settings → Secrets → Actions:
-  #   UNITY_LICENSE   — contents of your .ulf license file (run Unity → Help → Manage License → Export)
-  #   UNITY_EMAIL     — your Unity account email
-  #   UNITY_PASSWORD  — your Unity account password
-  #   VPS_HOST        — 15.204.243.36
-  #   VPS_SSH_KEY     — private SSH key for ubuntu@VPS_HOST
+  push:
+    branches: [main]
+  workflow_dispatch:   # also triggerable manually from the Actions tab
 
 jobs:
 
-  # ── Dedicated Server ──────────────────────────────────────────────────────
+  # ── Dedicated Server → VPS ───────────────────────────────────────────────
   build-server:
     name: Server → VPS
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout (with LFS)
         uses: actions/checkout@v4
         with:
           lfs: true
@@ -61,47 +59,56 @@ jobs:
           buildMethod:    BuildScript.BuildDedicatedServer
           versioning:     None
 
-      - name: Stop crossworlds on VPS
-        uses: appleboy/ssh-action@v1
+      # Rename binaries to match the names systemd expects, then tar.gz
+      # Mirrors exactly what tools/build-server.ps1 does locally.
+      - name: Pack server tarball
+        run: |
+          OUT=build/DedicatedServer
+          # Rename to the exact names /etc/systemd/system/crossworlds.service expects
+          if [ -f "$OUT/Crossworlds.x86_64" ]; then
+            mv "$OUT/Crossworlds.x86_64" "$OUT/CrossworldsBCE.x86_64"
+            mv "$OUT/Crossworlds_Data"   "$OUT/CrossworldsBCE_Data"
+          fi
+          chmod +x "$OUT/CrossworldsBCE.x86_64"
+          tar -czf build/crossworlds-server.tar.gz \
+            -C "$OUT" \
+            --exclude "*_BackUpThisFolder_ButDontShipItWithYourGame" \
+            --exclude "*_BurstDebugInformation_DoNotShip" \
+            .
+          echo "Packed: $(du -sh build/crossworlds-server.tar.gz | cut -f1)"
+
+      - name: Upload tarball + deploy script to VPS
+        uses: appleboy/scp-action@v0.1.7
         with:
           host:     ${{ secrets.VPS_HOST }}
           username: ubuntu
           key:      ${{ secrets.VPS_SSH_KEY }}
-          script:   sudo systemctl stop crossworlds || true
+          source:   "build/crossworlds-server.tar.gz,tools/deploy-server.sh"
+          target:   /home/ubuntu/deploy/
+          strip_components: 0
 
-      - name: Upload server build to VPS
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host:             ${{ secrets.VPS_HOST }}
-          username:         ubuntu
-          key:              ${{ secrets.VPS_SSH_KEY }}
-          source:           "build/DedicatedServer/*"
-          target:           /game/incoming/
-          strip_components: 2
-
-      - name: Swap build and restart crossworlds
+      - name: Deploy on VPS (auto-rollback on failure)
         uses: appleboy/ssh-action@v1
         with:
           host:     ${{ secrets.VPS_HOST }}
           username: ubuntu
           key:      ${{ secrets.VPS_SSH_KEY }}
           script: |
-            rsync -a --delete /game/incoming/ /game/
-            rm -rf /game/incoming
-            chmod +x /game/Crossworlds.x86_64
-            sudo systemctl start crossworlds
-            sleep 5
-            sudo systemctl status crossworlds --no-pager
-            echo "--- last 10 log lines ---"
-            tail -10 /var/log/crossworlds.log
+            set -e
+            cp /home/ubuntu/deploy/build/crossworlds-server.tar.gz /home/ubuntu/crossworlds-server.tar.gz
+            cp /home/ubuntu/deploy/tools/deploy-server.sh           /home/ubuntu/deploy-server.sh
+            cd /home/ubuntu
+            sudo bash deploy-server.sh
+            echo "=== Health check ==="
+            curl -sf http://localhost:3000/api/health && echo "Auth API OK" || echo "Auth API not responding (non-fatal)"
 
-  # ── Windows Client ────────────────────────────────────────────────────────
+  # ── Windows Client → GitHub Release ─────────────────────────────────────
   build-client:
     name: Client → GitHub Release
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout (with LFS)
         uses: actions/checkout@v4
         with:
           lfs: true
@@ -128,5 +135,14 @@ jobs:
         run: |
           cd build/WindowsClient
           zip -r ../../Crossworlds-Windows.zip .
+          echo "Packed: $(du -sh ../../Crossworlds-Windows.zip | cut -f1)"
 
-      - name: Publis
+      - name: Publish to GitHub Releases (latest)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: "Latest Build"
+          prerelease: true
+          files: Crossworlds-Windows.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

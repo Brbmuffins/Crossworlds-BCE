@@ -61,3 +61,6 @@ Crossworlds Windows/
 # ── Debug symbols ─────────────────────────────────────────────────────────────
 *_BackUpThisFolder_ButDontShipItWithYourGame/
 CrossWorlds/README.md
+
+# ── Local CI/CD setup helper (one-shot, prompts for secrets — not for git) ───
+tools/ci-setup.sh
