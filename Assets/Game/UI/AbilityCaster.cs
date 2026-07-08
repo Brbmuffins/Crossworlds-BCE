@@ -26,6 +26,10 @@ public class AbilityDef
     public float cooldown = 3f;
     public Sprite icon;
 
+    [Header("Spell Timing")]
+    [Tooltip("Seconds after the cast animation starts before this spell applies damage, teleports, spawns, and impact VFX.")]
+    [Min(0f)] public float spellDelay = 0f;
+
     [Header("Charge")]
     public bool chargeable = false;
     public float maxChargeTime = 1.5f;
@@ -182,7 +186,7 @@ public class AbilityCaster : NetworkBehaviour
 
         // ── ARCANIST (indices 19–22) ───────────────────────────────────────────────────
         // [19] Arcane Step — teleport up to 10 units in aimed direction
-        new AbilityDef { abilityName = "Arcane Step",      shape = AbilityShape.Circle,    category = AbilityCategory.Support, range = 10f, indicatorSize = 3.5f, cooldown = 4f, damage = 10f, targetTag = "Enemy" },
+        new AbilityDef { abilityName = "Arcane Step",      shape = AbilityShape.Circle,    category = AbilityCategory.Support, range = 10f, indicatorSize = 3.5f, cooldown = 4f, spellDelay = 0.25f, damage = 10f, targetTag = "Enemy" },
         // [20] Void Maw — pull enemies to center for 3s then 20 AoE burst
         new AbilityDef { abilityName = "Void Maw",         shape = AbilityShape.Circle,    category = AbilityCategory.Damage,  range = 10f, indicatorSize = 8f, cooldown = 9f, damage = 20f, targetTag = "Enemy" },
         // [21] Forked Lightning — chain lightning, jumps up to 4 enemies (30/25/20/15 dmg)
@@ -271,6 +275,8 @@ public class AbilityCaster : NetworkBehaviour
         _bounty         = GetComponent<PassiveBountySystem>();
         _health         = GetComponent<Health>();
         _characterStats = GetComponent<CharacterStats>();
+        if (castAnimator == null)
+            castAnimator = GetComponent<CastAnimator>() ?? GetComponentInChildren<CastAnimator>(true);
 
         // Register this player with SnapshotSystem
         SnapshotSystem.Instance?.Track(gameObject);
@@ -1485,6 +1491,11 @@ public class AbilityCaster : NetworkBehaviour
         return cd;
     }
 
+    float SpellDelayFor(AbilityDef ability)
+    {
+        return ability != null ? Mathf.Max(0f, ability.spellDelay) : 0f;
+    }
+
     void FinalizeCast(AbilityDef ability, GameObject indicator, float aimTime)
     {
         if (ShouldRouteCastToServer())
@@ -1504,7 +1515,7 @@ public class AbilityCaster : NetworkBehaviour
             PlayLocalCastFeedback(ability, castPosition, castRotation);
 
             if (indicator != null)
-                Destroy(indicator, castDelay);
+                Destroy(indicator, SpellDelayFor(ability) + castDelay);
             return;
         }
 
@@ -1524,6 +1535,26 @@ public class AbilityCaster : NetworkBehaviour
             damageMultiplier *= _characterStats.DamageMultiplier;
 
         castAnimator?.PlayCast(ability.category);
+
+        StartCoroutine(ResolveCastAfterDelay(ability, indicator, aimTime, damageMultiplier, transform.position));
+    }
+
+    System.Collections.IEnumerator ResolveCastAfterDelay(AbilityDef ability, GameObject indicator, float aimTime, float damageMultiplier, Vector3 castOrigin)
+    {
+        float spellDelay = SpellDelayFor(ability);
+        if (spellDelay > 0f)
+            yield return new WaitForSeconds(spellDelay);
+
+        ResolveCastEffects(ability, indicator, aimTime, damageMultiplier, castOrigin);
+
+        if (indicator != null)
+            Destroy(indicator, castDelay);
+    }
+
+    void ResolveCastEffects(AbilityDef ability, GameObject indicator, float aimTime, float damageMultiplier, Vector3 castOrigin)
+    {
+        if (ability == null) return;
+
 #if UNITY_EDITOR || !UNITY_SERVER
         if (ability.category == AbilityCategory.Heal) OnHealCast?.Invoke();
 #endif
@@ -1540,10 +1571,10 @@ public class AbilityCaster : NetworkBehaviour
             float chargeFraction = GetChargeFraction(ability, aimTime);
             float damage = Mathf.Lerp(ability.damage, ability.maxChargeDamage, chargeFraction) * damageMultiplier;
             float coneRange = ability.range * indicator.transform.localScale.x;
-            ApplyConeDamage(ability, indicator, damage, coneRange);
+            ApplyConeDamage(ability, indicator, damage, coneRange, castOrigin);
 
             if (ability.fireVisual)
-                SpawnFireBurst(transform.position + indicator.transform.forward * coneRange + Vector3.up * 0.5f, indicator.transform.rotation, coneRange, ability.coneAngle);
+                SpawnFireBurst(castOrigin + indicator.transform.forward * coneRange + Vector3.up * 0.5f, indicator.transform.rotation, coneRange, ability.coneAngle);
         }
 
         if (ability.shape == AbilityShape.Circle && ability.damage > 0f && !IsArcaneStep(ability))
@@ -1565,7 +1596,7 @@ public class AbilityCaster : NetworkBehaviour
         if (ability.shape == AbilityShape.Cone && indicator != null)
         {
             float coneRange = ability.range * indicator.transform.localScale.x;
-            castPoint = transform.position + indicator.transform.forward * coneRange;
+            castPoint = castOrigin + indicator.transform.forward * coneRange;
         }
 
 #if UNITY_EDITOR || !UNITY_SERVER
@@ -1573,7 +1604,7 @@ public class AbilityCaster : NetworkBehaviour
         {
             if (ability.shape == AbilityShape.Rectangle && indicator != null)
                 StartCoroutine(TravelVFX(ability.castVFX,
-                    transform.position + Vector3.up * 1.2f,
+                    castOrigin + Vector3.up * 1.2f,
                     castPoint + Vector3.up * 0.5f,
                     castVfxRot, 0.3f));
             else
@@ -1581,9 +1612,6 @@ public class AbilityCaster : NetworkBehaviour
         }
 #endif
         DispatchAbility(ability, castPoint, damageMultiplier);
-
-        if (indicator != null)
-            Destroy(indicator, castDelay);
     }
 
     [Command]
@@ -1625,7 +1653,6 @@ public class AbilityCaster : NetworkBehaviour
         proxy.transform.position = position;
         proxy.transform.rotation = rotation;
         proxy.transform.localScale = scale;
-        Destroy(proxy, 1f);
         return proxy;
     }
 
@@ -1633,21 +1660,37 @@ public class AbilityCaster : NetworkBehaviour
     {
         if (ability == null) return;
         castAnimator?.PlayCast(ability.category);
+        StartCoroutine(PlayLocalCastVfxAfterDelay(ability, position, rotation, transform.position));
+    }
+
+    System.Collections.IEnumerator PlayLocalCastVfxAfterDelay(AbilityDef ability, Vector3 position, Quaternion rotation, Vector3 castOrigin)
+    {
+        float spellDelay = SpellDelayFor(ability);
+        if (spellDelay > 0f)
+            yield return new WaitForSeconds(spellDelay);
+
+        SpawnLocalCastVFX(ability, position, rotation, castOrigin);
+    }
+
+    void SpawnLocalCastVFX(AbilityDef ability, Vector3 position, Quaternion rotation, Vector3 castOrigin)
+    {
+        if (ability == null) return;
+
 #if UNITY_EDITOR || !UNITY_SERVER
         if (ability.category == AbilityCategory.Heal) OnHealCast?.Invoke();
 #endif
-        if (ability.castVFX != null)
-        {
+
+        if (ability.castVFX == null) return;
+
 #if UNITY_EDITOR || !UNITY_SERVER
-            if (ability.shape == AbilityShape.Rectangle)
-                StartCoroutine(TravelVFX(ability.castVFX,
-                    transform.position + Vector3.up * 1.2f,
-                    position + Vector3.up * 0.5f,
-                    rotation, 0.3f));
-            else
+        if (ability.shape == AbilityShape.Rectangle)
+            StartCoroutine(TravelVFX(ability.castVFX,
+                castOrigin + Vector3.up * 1.2f,
+                position + Vector3.up * 0.5f,
+                rotation, 0.3f));
+        else
 #endif
-                SpawnVFX(ability.castVFX, position + Vector3.up, rotation);
-        }
+            SpawnVFX(ability.castVFX, position + Vector3.up, rotation);
     }
 
     int FindSpellbookIndex(AbilityDef ability)
@@ -2251,15 +2294,15 @@ public class AbilityCaster : NetworkBehaviour
         }
     }
 
-    void ApplyConeDamage(AbilityDef ability, GameObject indicator, float damage, float coneRange)
+    void ApplyConeDamage(AbilityDef ability, GameObject indicator, float damage, float coneRange, Vector3 castOrigin)
     {
-        Collider[] hits = Physics.OverlapSphere(transform.position, coneRange);
+        Collider[] hits = Physics.OverlapSphere(castOrigin, coneRange);
 
         foreach (Collider hit in hits)
         {
             if (!hit.CompareTag(ability.targetTag)) continue;
 
-            Vector3 toHit = hit.transform.position - transform.position;
+            Vector3 toHit = hit.transform.position - castOrigin;
             toHit.y = 0;
 
             if (toHit.sqrMagnitude < 0.0001f) continue;
