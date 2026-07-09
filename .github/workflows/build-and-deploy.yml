@@ -74,9 +74,10 @@ jobs:
       - name: Pack server tarball
         run: |
           OUT=build/DedicatedServer
-          # game-ci builds inside Docker as root, so the output is root-owned;
-          # take ownership before we can rename/chmod/tar it (runner has sudo).
-          sudo chown -R "$(id -u):$(id -g)" "$OUT"
+          # game-ci builds inside Docker as root, so the whole build/ dir is
+          # root-owned; take ownership of it all before we rename/chmod the
+          # binary AND write the tarball into build/ (runner has sudo).
+          sudo chown -R "$(id -u):$(id -g)" build
           # Rename to the exact names /etc/systemd/system/crossworlds.service expects
           if [ -f "$OUT/Crossworlds.x86_64" ]; then
             mv "$OUT/Crossworlds.x86_64" "$OUT/CrossworldsBCE.x86_64"
