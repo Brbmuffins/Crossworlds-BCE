@@ -34,6 +34,10 @@ concurrency:
   group: build-and-deploy-${{ github.ref }}
   cancel-in-progress: true
 
+# GITHUB_TOKEN needs write access so the client job can create/update the Release.
+permissions:
+  contents: write
+
 jobs:
 
   # ── Dedicated Server → VPS ───────────────────────────────────────────────
@@ -70,6 +74,9 @@ jobs:
       - name: Pack server tarball
         run: |
           OUT=build/DedicatedServer
+          # game-ci builds inside Docker as root, so the output is root-owned;
+          # take ownership before we can rename/chmod/tar it (runner has sudo).
+          sudo chown -R "$(id -u):$(id -g)" "$OUT"
           # Rename to the exact names /etc/systemd/system/crossworlds.service expects
           if [ -f "$OUT/Crossworlds.x86_64" ]; then
             mv "$OUT/Crossworlds.x86_64" "$OUT/CrossworldsBCE.x86_64"
