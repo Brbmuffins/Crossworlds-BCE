@@ -47,7 +47,7 @@ public class HitstopManager : MonoBehaviour
         float dur = _defaults[(int)w];
         // Allow FeelConfig override when present
         if (FeelConfig.Instance != null)
-            dur = FeelConfig.Instance.HitstopDuration(w);
+            dur = FeelConfig.Instance.HitstopDuration((FeelConfig.HitstopWeight)(int)w);
         FreezeFor(dur);
     }
 

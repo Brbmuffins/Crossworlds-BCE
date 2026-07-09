@@ -29,15 +29,22 @@ public class FeelConfig : ScriptableObject
     public float hitstopHeavy    = 0.080f;
     public float hitstopKillBlow = 0.110f;
 
-    public float HitstopDuration(HitstopManager.Weight w)
+    /// <summary>
+    /// Hitstop weight tiers — defined here (not in HitstopManager) so that
+    /// server builds, which strip HitstopManager via #if, can still compile FeelConfig.
+    /// HitstopManager.Weight is a back-compat alias that casts to this enum.
+    /// </summary>
+    public enum HitstopWeight { Light = 0, Medium = 1, Heavy = 2, KillBlow = 3 }
+
+    public float HitstopDuration(HitstopWeight w)
     {
         return w switch
         {
-            HitstopManager.Weight.Light    => hitstopLight,
-            HitstopManager.Weight.Medium   => hitstopMedium,
-            HitstopManager.Weight.Heavy    => hitstopHeavy,
-            HitstopManager.Weight.KillBlow => hitstopKillBlow,
-            _                              => hitstopMedium,
+            HitstopWeight.Light    => hitstopLight,
+            HitstopWeight.Medium   => hitstopMedium,
+            HitstopWeight.Heavy    => hitstopHeavy,
+            HitstopWeight.KillBlow => hitstopKillBlow,
+            _                      => hitstopMedium,
         };
     }
 
