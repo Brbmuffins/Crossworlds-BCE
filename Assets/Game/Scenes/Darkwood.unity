@@ -204,6 +204,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1218426752}
     m_Modifications:
+    - target: {fileID: 1026529966594701380, guid: 8d00513ab01e6504db09f78668b5222c, type: 3}
+      propertyPath: enemyHealthBarFixedHeight
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1026529966594701380, guid: 8d00513ab01e6504db09f78668b5222c, type: 3}
+      propertyPath: enemyHealthBarHeightOffset
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8370612572378042503, guid: 8d00513ab01e6504db09f78668b5222c, type: 3}
       propertyPath: m_LocalScale.x
       value: 0.027054077
@@ -259,6 +267,10 @@ PrefabInstance:
     - target: {fileID: 9178814764543068733, guid: 8d00513ab01e6504db09f78668b5222c, type: 3}
       propertyPath: m_Name
       value: Cyclops (13)
+      objectReference: {fileID: 0}
+    - target: {fileID: 9178814764543068733, guid: 8d00513ab01e6504db09f78668b5222c, type: 3}
+      propertyPath: m_TagString
+      value: Enemy
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1100,6 +1112,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Cyclops Brute (1)
       objectReference: {fileID: 0}
+    - target: {fileID: 5736797934850521520, guid: 61c3538139657114e931845a9f361869, type: 3}
+      propertyPath: m_TagString
+      value: Enemy
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1168,6 +1184,10 @@ PrefabInstance:
     - target: {fileID: 5736797934850521520, guid: 61c3538139657114e931845a9f361869, type: 3}
       propertyPath: m_Name
       value: Cyclops Brute (2)
+      objectReference: {fileID: 0}
+    - target: {fileID: 5736797934850521520, guid: 61c3538139657114e931845a9f361869, type: 3}
+      propertyPath: m_TagString
+      value: Enemy
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1462,6 +1482,10 @@ PrefabInstance:
     - target: {fileID: 9178814764543068733, guid: 8d00513ab01e6504db09f78668b5222c, type: 3}
       propertyPath: m_Name
       value: Cyclops (9)
+      objectReference: {fileID: 0}
+    - target: {fileID: 9178814764543068733, guid: 8d00513ab01e6504db09f78668b5222c, type: 3}
+      propertyPath: m_TagString
+      value: Enemy
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1835,6 +1859,10 @@ PrefabInstance:
     - target: {fileID: 9178814764543068733, guid: 8d00513ab01e6504db09f78668b5222c, type: 3}
       propertyPath: m_Name
       value: Cyclops (11)
+      objectReference: {fileID: 0}
+    - target: {fileID: 9178814764543068733, guid: 8d00513ab01e6504db09f78668b5222c, type: 3}
+      propertyPath: m_TagString
+      value: Enemy
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -3508,6 +3536,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Cyclops Brute (3)
       objectReference: {fileID: 0}
+    - target: {fileID: 5736797934850521520, guid: 61c3538139657114e931845a9f361869, type: 3}
+      propertyPath: m_TagString
+      value: Enemy
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -4178,6 +4210,10 @@ PrefabInstance:
     - target: {fileID: 9178814764543068733, guid: 8d00513ab01e6504db09f78668b5222c, type: 3}
       propertyPath: m_Name
       value: Cyclops (7)
+      objectReference: {fileID: 0}
+    - target: {fileID: 9178814764543068733, guid: 8d00513ab01e6504db09f78668b5222c, type: 3}
+      propertyPath: m_TagString
+      value: Enemy
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -6233,6 +6269,10 @@ PrefabInstance:
     - target: {fileID: 9178814764543068733, guid: 8d00513ab01e6504db09f78668b5222c, type: 3}
       propertyPath: m_Name
       value: Cyclops (8)
+      objectReference: {fileID: 0}
+    - target: {fileID: 9178814764543068733, guid: 8d00513ab01e6504db09f78668b5222c, type: 3}
+      propertyPath: m_TagString
+      value: Enemy
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -9325,6 +9365,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Cyclops (14)
       objectReference: {fileID: 0}
+    - target: {fileID: 9178814764543068733, guid: 8d00513ab01e6504db09f78668b5222c, type: 3}
+      propertyPath: m_TagString
+      value: Enemy
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -9848,6 +9892,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Cyclops (12)
       objectReference: {fileID: 0}
+    - target: {fileID: 9178814764543068733, guid: 8d00513ab01e6504db09f78668b5222c, type: 3}
+      propertyPath: m_TagString
+      value: Enemy
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -9905,6 +9953,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1218426752}
     m_Modifications:
+    - target: {fileID: 1026529966594701380, guid: 8d00513ab01e6504db09f78668b5222c, type: 3}
+      propertyPath: enemyHealthBarFixedHeight
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1026529966594701380, guid: 8d00513ab01e6504db09f78668b5222c, type: 3}
+      propertyPath: enemyHealthBarHeightOffset
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8370612572378042503, guid: 8d00513ab01e6504db09f78668b5222c, type: 3}
       propertyPath: m_LocalScale.x
       value: 0.027054077
@@ -9960,6 +10016,10 @@ PrefabInstance:
     - target: {fileID: 9178814764543068733, guid: 8d00513ab01e6504db09f78668b5222c, type: 3}
       propertyPath: m_Name
       value: Cyclops (10)
+      objectReference: {fileID: 0}
+    - target: {fileID: 9178814764543068733, guid: 8d00513ab01e6504db09f78668b5222c, type: 3}
+      propertyPath: m_TagString
+      value: Enemy
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -10831,6 +10891,10 @@ PrefabInstance:
     - target: {fileID: 5736797934850521520, guid: 61c3538139657114e931845a9f361869, type: 3}
       propertyPath: m_Name
       value: Cyclops Brute (4)
+      objectReference: {fileID: 0}
+    - target: {fileID: 5736797934850521520, guid: 61c3538139657114e931845a9f361869, type: 3}
+      propertyPath: m_TagString
+      value: Enemy
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -13048,6 +13112,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Cyclops (6)
       objectReference: {fileID: 0}
+    - target: {fileID: 9178814764543068733, guid: 8d00513ab01e6504db09f78668b5222c, type: 3}
+      propertyPath: m_TagString
+      value: Enemy
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -13116,6 +13184,10 @@ PrefabInstance:
     - target: {fileID: 5736797934850521520, guid: 61c3538139657114e931845a9f361869, type: 3}
       propertyPath: m_Name
       value: Cyclops Brute
+      objectReference: {fileID: 0}
+    - target: {fileID: 5736797934850521520, guid: 61c3538139657114e931845a9f361869, type: 3}
+      propertyPath: m_TagString
+      value: Enemy
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
