@@ -61,6 +61,14 @@ public class EnemyController : NetworkBehaviour
     private Transform            _target;
     private Vector3              _spawnPos;
     private float                _attackTimer;
+    private Animator             _animator;
+    private bool                 _hasSpeedParam;
+    private bool                 _hasAttackParam;
+    private bool                 _hasDeathParam;
+
+    static readonly int SpeedHash = Animator.StringToHash("Speed");
+    static readonly int AttackHash = Animator.StringToHash("Attack");
+    static readonly int DeathHash = Animator.StringToHash("Death");
 
     // ─────────────────────────────────────────────────────────────────────────────
 
@@ -70,6 +78,8 @@ public class EnemyController : NetworkBehaviour
         _agent     = GetComponent<NavMeshAgent>();
         _status    = GetComponent<StatusEffectManager>();
         _baseSpeed = _agent != null ? _agent.speed : 0f;
+        _animator  = GetComponentInChildren<Animator>();
+        CacheAnimatorParameters();
     }
 
     public override void OnStartServer()
@@ -385,8 +395,10 @@ public class EnemyController : NetworkBehaviour
 
     void OnStateChanged(EnemyState _, EnemyState newState)
     {
-        // Hook animator here when animation rig is ready (Week 7)
-        // GetComponent<Animator>()?.SetInteger("state", (int)newState);
+        SetAnimatorSpeed(newState == EnemyState.Chase ? 1f : 0f);
+
+        if (newState == EnemyState.Dead)
+            TriggerAnimator(DeathHash, _hasDeathParam);
     }
 
     // ─────────────────────────────────────────────────────────────────────────────
@@ -397,6 +409,8 @@ public class EnemyController : NetworkBehaviour
     void RpcMeleeSwing(uint targetNetId)
     {
 #if UNITY_EDITOR || !UNITY_SERVER
+        TriggerAnimator(AttackHash, _hasAttackParam);
+
         bool isElite = CompareTag("Elite");
 
         // Sound plays for everyone (positional audio sells the hit universally)
@@ -418,6 +432,8 @@ public class EnemyController : NetworkBehaviour
     void RpcRangedShot(uint targetNetId)
     {
 #if UNITY_EDITOR || !UNITY_SERVER
+        TriggerAnimator(AttackHash, _hasAttackParam);
+
         CombatAudio.Instance?.PlayRangedHit();
         // Ranged: no hitstop; light shake only on the targeted player's client
         bool isLocalTarget = NetworkClient.localPlayer != null
@@ -430,6 +446,8 @@ public class EnemyController : NetworkBehaviour
     void RpcPlayDeathEffect()
     {
 #if UNITY_EDITOR || !UNITY_SERVER
+        TriggerAnimator(DeathHash, _hasDeathParam);
+
         // Layer 3 — Death sound
         CombatAudio.Instance?.PlayDeath();
 
@@ -449,6 +467,34 @@ public class EnemyController : NetworkBehaviour
     // ─────────────────────────────────────────────────────────────────────────────
     // Gizmos
     // ─────────────────────────────────────────────────────────────────────────────
+
+    void CacheAnimatorParameters()
+    {
+        if (_animator == null || _animator.runtimeAnimatorController == null)
+            return;
+
+        foreach (AnimatorControllerParameter parameter in _animator.parameters)
+        {
+            if (parameter.nameHash == SpeedHash && parameter.type == AnimatorControllerParameterType.Float)
+                _hasSpeedParam = true;
+            else if (parameter.nameHash == AttackHash && parameter.type == AnimatorControllerParameterType.Trigger)
+                _hasAttackParam = true;
+            else if (parameter.nameHash == DeathHash && parameter.type == AnimatorControllerParameterType.Trigger)
+                _hasDeathParam = true;
+        }
+    }
+
+    void SetAnimatorSpeed(float speed)
+    {
+        if (_animator != null && _hasSpeedParam)
+            _animator.SetFloat(SpeedHash, speed);
+    }
+
+    void TriggerAnimator(int hash, bool hasParameter)
+    {
+        if (_animator != null && hasParameter)
+            _animator.SetTrigger(hash);
+    }
 
     void OnDrawGizmosSelected()
     {
