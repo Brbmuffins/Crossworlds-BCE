@@ -34,6 +34,12 @@ public class FieldGoulAnimationDriver : MonoBehaviour
         if (_animator == null)
             return;
 
+        if (_deathTriggered)
+        {
+            _animator.SetFloat(speedParameter, 0f);
+            return;
+        }
+
         float actualSpeed = (transform.position - _lastPosition).magnitude / Mathf.Max(Time.deltaTime, 0.0001f);
         _lastPosition = transform.position;
 
@@ -56,6 +62,7 @@ public class FieldGoulAnimationDriver : MonoBehaviour
             return;
 
         _deathTriggered = true;
+        _animator.SetFloat(speedParameter, 0f);
         _animator.SetBool(isDeadParameter, true);
         _animator.SetTrigger(dieTrigger);
 
