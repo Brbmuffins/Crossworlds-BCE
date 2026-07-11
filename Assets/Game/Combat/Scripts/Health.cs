@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
@@ -23,6 +24,18 @@ public class Health : NetworkBehaviour
     float enemyHealthBarHeightOffset = 0.25f;
     [SerializeField, Tooltip("Optional fixed local Y height for the enemy health bar. Use -1 to auto-place from render/collider bounds.")]
     float enemyHealthBarFixedHeight = -1f;
+
+    [Header("Player Respawn")]
+    [SerializeField, Tooltip("Automatically revive player characters after they stay downed for the respawn delay.")]
+    bool autoRespawnPlayers = true;
+    [SerializeField, Min(0f), Tooltip("Seconds a player remains downed before automatic respawn. Set to 0 for immediate respawn.")]
+    float playerRespawnDelay = 10f;
+    [SerializeField, Range(0.01f, 1f), Tooltip("Health percent restored by the automatic respawn.")]
+    float playerRespawnHealthPercent = 1f;
+    [SerializeField, Tooltip("Move the player back to a Network Start Position before restoring health. If disabled, the player revives where they fell.")]
+    bool respawnAtStartPosition = false;
+    [SerializeField, Min(0f), Tooltip("Seconds of server-side invulnerability after automatic respawn.")]
+    float respawnInvulnerabilitySeconds = 2f;
 
     // ── Events ────────────────────────────────────────────────────
     public UnityEvent<float, float> onHealthChanged;    // (current, max)
@@ -86,6 +99,11 @@ public class Health : NetworkBehaviour
 
     // ── StatusEffect integration ───────────────────────────────────
     private StatusEffectManager _statusEffects;
+    private Coroutine _playerRespawnRoutine;
+    private Coroutine _respawnInvulnerabilityRoutine;
+    private bool _hasServerSpawnPoint;
+    private Vector3 _serverSpawnPosition;
+    private Quaternion _serverSpawnRotation;
 
     void Awake()
     {
@@ -101,8 +119,18 @@ public class Health : NetworkBehaviour
     public override void OnStartServer()
     {
         base.OnStartServer();
+        _serverSpawnPosition = transform.position;
+        _serverSpawnRotation = transform.rotation;
+        _hasServerSpawnPoint = true;
+
         if (currentHealth <= 0f)
             currentHealth = maxHealth;
+    }
+
+    void OnDisable()
+    {
+        StopPlayerRespawnRoutine();
+        StopRespawnInvulnerabilityRoutine();
     }
 
     public override void OnStartClient()
@@ -215,6 +243,7 @@ public class Health : NetworkBehaviour
     {
         if (!CanMutateCombatState()) return;
         if (!_isDowned) return;
+        StopPlayerRespawnRoutine();
         _isDowned     = false;
         currentHealth = maxHealth * Mathf.Clamp01(hpPercent);
         onDownedChanged?.Invoke(false);
@@ -323,6 +352,114 @@ public class Health : NetworkBehaviour
         onDownedChanged?.Invoke(newValue);
     }
 
+    void StartPlayerRespawnRoutine()
+    {
+        if (!autoRespawnPlayers || !isPlayer) return;
+
+        StopPlayerRespawnRoutine();
+        _playerRespawnRoutine = StartCoroutine(PlayerRespawnRoutine());
+    }
+
+    void StopPlayerRespawnRoutine()
+    {
+        if (_playerRespawnRoutine == null) return;
+
+        StopCoroutine(_playerRespawnRoutine);
+        _playerRespawnRoutine = null;
+    }
+
+    IEnumerator PlayerRespawnRoutine()
+    {
+        float delay = Mathf.Max(0f, playerRespawnDelay);
+        if (delay > 0f)
+            yield return new WaitForSeconds(delay);
+
+        _playerRespawnRoutine = null;
+        RespawnPlayer();
+    }
+
+    void RespawnPlayer()
+    {
+        if (!isPlayer || !_isDowned) return;
+
+        if (respawnAtStartPosition)
+            MoveToRespawnPoint();
+
+        Revive(playerRespawnHealthPercent);
+        StartRespawnInvulnerability();
+    }
+
+    void MoveToRespawnPoint()
+    {
+        Vector3 position = _hasServerSpawnPoint ? _serverSpawnPosition : transform.position;
+        Quaternion rotation = _hasServerSpawnPoint ? _serverSpawnRotation : transform.rotation;
+
+        Transform startPosition = NetworkManager.singleton != null
+            ? NetworkManager.singleton.GetStartPosition()
+            : null;
+
+        if (startPosition != null)
+        {
+            position = startPosition.position;
+            rotation = startPosition.rotation;
+        }
+
+        ApplyRespawnTransform(position, rotation);
+
+        var networkTransform = GetComponent<NetworkTransformBase>();
+        if (NetworkServer.active && networkTransform != null)
+            networkTransform.ServerTeleport(position, rotation);
+        else if (NetworkServer.active)
+            RpcApplyRespawnTransform(position, rotation);
+    }
+
+    [ClientRpc]
+    void RpcApplyRespawnTransform(Vector3 position, Quaternion rotation)
+    {
+        ApplyRespawnTransform(position, rotation);
+    }
+
+    void ApplyRespawnTransform(Vector3 position, Quaternion rotation)
+    {
+        var rb = GetComponent<Rigidbody>();
+        if (rb != null)
+        {
+            rb.linearVelocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+            rb.position = position;
+            rb.rotation = rotation;
+        }
+
+        transform.SetPositionAndRotation(position, rotation);
+        Physics.SyncTransforms();
+    }
+
+    void StartRespawnInvulnerability()
+    {
+        StopRespawnInvulnerabilityRoutine();
+
+        float duration = Mathf.Max(0f, respawnInvulnerabilitySeconds);
+        if (duration <= 0f) return;
+
+        isInvulnerable = true;
+        _respawnInvulnerabilityRoutine = StartCoroutine(RespawnInvulnerabilityRoutine(duration));
+    }
+
+    void StopRespawnInvulnerabilityRoutine()
+    {
+        if (_respawnInvulnerabilityRoutine == null) return;
+
+        StopCoroutine(_respawnInvulnerabilityRoutine);
+        _respawnInvulnerabilityRoutine = null;
+    }
+
+    IEnumerator RespawnInvulnerabilityRoutine(float duration)
+    {
+        yield return new WaitForSeconds(duration);
+        isInvulnerable = false;
+        _respawnInvulnerabilityRoutine = null;
+    }
+
     void ShowDamageFeedback(float amount)
     {
         if (!showFloatingNumbers || amount <= 0f) return;
@@ -402,6 +539,7 @@ public class Health : NetworkBehaviour
         {
             _isDowned = true;
             onDownedChanged?.Invoke(true);
+            StartPlayerRespawnRoutine();
             // Do NOT invoke onDeath for players — they are downed, not dead.
         }
         else

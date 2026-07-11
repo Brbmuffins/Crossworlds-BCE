@@ -31,6 +31,7 @@ public class EnemyHealthBar : MonoBehaviour
     Image   _fill;
     RectTransform _fillRect;
     Canvas  _canvas;
+    bool    _canRevealFromHealthChange;
 
     // ── Setup ─────────────────────────────────────────────────────────────────
     void Awake()
@@ -38,13 +39,22 @@ public class EnemyHealthBar : MonoBehaviour
         _health = GetComponent<Health>();
         if (_health == null) { enabled = false; return; }
 
-        BuildCanvas();
-
         _health.onHealthChanged.AddListener(OnHealthChanged);
+        _health.onDamageTaken.AddListener(OnDamageTaken);
         _health.onDeath.AddListener(OnDeath);
+    }
 
-        // Set initial fill
-        UpdateFill(_health.currentHealth, _health.maxHealth);
+    void Start()
+    {
+        _canRevealFromHealthChange = true;
+
+        if (_health != null
+            && _health.currentHealth > 0f
+            && _health.maxHealth > 0f
+            && _health.currentHealth < _health.maxHealth)
+        {
+            Reveal(_health.currentHealth, _health.maxHealth);
+        }
     }
 
     void OnDestroy()
@@ -52,6 +62,7 @@ public class EnemyHealthBar : MonoBehaviour
         if (_health != null)
         {
             _health.onHealthChanged.RemoveListener(OnHealthChanged);
+            _health.onDamageTaken.RemoveListener(OnDamageTaken);
             _health.onDeath.RemoveListener(OnDeath);
         }
     }
@@ -140,7 +151,7 @@ public class EnemyHealthBar : MonoBehaviour
     // ── Billboard — always face camera ────────────────────────────────────────
     void LateUpdate()
     {
-        if (_canvas == null) return;
+        if (_canvas == null || !_canvas.gameObject.activeSelf) return;
         _canvas.transform.localPosition = new Vector3(0f, GetBarHeight(), 0f);
 
         var cam = Camera.main;
@@ -150,11 +161,40 @@ public class EnemyHealthBar : MonoBehaviour
     }
 
     // ── Health events ─────────────────────────────────────────────────────────
-    void OnHealthChanged(float current, float max) => UpdateFill(current, max);
+    void OnHealthChanged(float current, float max)
+    {
+        if (current <= 0f)
+        {
+            OnDeath();
+            return;
+        }
+
+        if (_canRevealFromHealthChange && max > 0f && current < max)
+            Reveal(current, max);
+        else
+            UpdateFill(current, max);
+    }
+
+    void OnDamageTaken(float amount)
+    {
+        if (amount <= 0f || _health == null || _health.currentHealth <= 0f) return;
+        Reveal(_health.currentHealth, _health.maxHealth);
+    }
 
     void OnDeath()
     {
         if (_canvas != null) _canvas.gameObject.SetActive(false);
+    }
+
+    void Reveal(float current, float max)
+    {
+        if (_canvas == null)
+            BuildCanvas();
+
+        if (_canvas != null && !_canvas.gameObject.activeSelf)
+            _canvas.gameObject.SetActive(true);
+
+        UpdateFill(current, max);
     }
 
     void UpdateFill(float current, float max)

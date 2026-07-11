@@ -142,10 +142,21 @@ public class PlayerMovement : NetworkBehaviour
 
     void Update()
     {
+        if (health != null && health.IsDowned)
+        {
+            wantsMove = false;
+            jumpRequested = false;
+            SetAnimBool("isMoving", false);
+            SetAnimBool("isSprinting", false);
+            SetAnimBool("isBackwards", false);
+            return;
+        }
+
         // Yield all keyboard input to UI while player is typing
         if (IsTypingInUI())
         {
             wantsMove = false;
+            jumpRequested = false;
             return;
         }
 
@@ -217,6 +228,17 @@ public class PlayerMovement : NetworkBehaviour
     {
         if (rb == null)
             return;
+
+        if (health != null && health.IsDowned)
+        {
+            wantsMove = false;
+            jumpRequested = false;
+            Vector3 velocity = rb.linearVelocity;
+            velocity.x = 0f;
+            velocity.z = 0f;
+            rb.linearVelocity = velocity;
+            return;
+        }
 
         if (keepUpright)
             KeepBodyUpright();
@@ -313,7 +335,7 @@ public class PlayerMovement : NetworkBehaviour
 
         // Burst movement over the dodge window
         float elapsed = 0f;
-        while (elapsed < dodgeDuration)
+        while (elapsed < dodgeDuration && (health == null || !health.IsDowned))
         {
             rb.MovePosition(rb.position + dir * dodgeForce * Time.fixedDeltaTime);
             elapsed += Time.fixedDeltaTime;
