@@ -109,7 +109,12 @@ public class Health : NetworkBehaviour
     {
         _baseMaxHealth = maxHealth;
         if (!NetworkClient.active && !NetworkServer.active)
+        {
             currentHealth = maxHealth;
+            _serverSpawnPosition = transform.position;
+            _serverSpawnRotation = transform.rotation;
+            _hasServerSpawnPoint = true;
+        }
         _statusEffects = GetComponent<StatusEffectManager>();
 #if UNITY_EDITOR || !UNITY_SERVER
         TryAttachEnemyHealthBar();
@@ -437,6 +442,7 @@ public class Health : NetworkBehaviour
     void StartRespawnInvulnerability()
     {
         StopRespawnInvulnerabilityRoutine();
+        isInvulnerable = false;
 
         float duration = Mathf.Max(0f, respawnInvulnerabilitySeconds);
         if (duration <= 0f) return;
@@ -447,10 +453,13 @@ public class Health : NetworkBehaviour
 
     void StopRespawnInvulnerabilityRoutine()
     {
-        if (_respawnInvulnerabilityRoutine == null) return;
+        if (_respawnInvulnerabilityRoutine != null)
+        {
+            StopCoroutine(_respawnInvulnerabilityRoutine);
+            _respawnInvulnerabilityRoutine = null;
+        }
 
-        StopCoroutine(_respawnInvulnerabilityRoutine);
-        _respawnInvulnerabilityRoutine = null;
+        isInvulnerable = false;
     }
 
     IEnumerator RespawnInvulnerabilityRoutine(float duration)

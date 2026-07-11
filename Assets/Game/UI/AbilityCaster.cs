@@ -485,6 +485,17 @@ public class AbilityCaster : NetworkBehaviour
         if (!ShouldProcessLocalInput())
             return;
 
+        if (IsDowned())
+        {
+            if (heldAbilityIndex != -1)
+                CancelAim();
+
+            if (committedCastRoutine != null)
+                CancelCommittedCast();
+
+            return;
+        }
+
         // Smite-style: update AimDirection every frame so the character always faces
         // the cursor regardless of whether an ability indicator is active.
         RefreshAimDirection();
@@ -637,12 +648,20 @@ public class AbilityCaster : NetworkBehaviour
 
     bool WasCommittedCastInterrupted(Vector3 startPosition)
     {
+        if (IsDowned())
+            return true;
+
         if (HasMovementInput())
             return true;
 
         Vector3 delta = transform.position - startPosition;
         delta.y = 0f;
         return delta.sqrMagnitude > castMoveInterruptDistance * castMoveInterruptDistance;
+    }
+
+    bool IsDowned()
+    {
+        return _health != null && _health.IsDowned;
     }
 
     bool HasMovementInput()
