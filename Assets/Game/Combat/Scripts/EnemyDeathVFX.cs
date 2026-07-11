@@ -29,7 +29,7 @@ public class EnemyDeathVFX : MonoBehaviour
     void OnDied()
     {
         SpawnFX();
-        Destroy(gameObject, 0.1f);
+        enabled = false;
     }
 
     void SpawnFX()

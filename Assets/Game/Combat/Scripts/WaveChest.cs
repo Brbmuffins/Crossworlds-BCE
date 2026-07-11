@@ -120,6 +120,7 @@ public class WaveChest : MonoBehaviour
             Health h = enemy.GetComponent<Health>();
             if (h != null)
             {
+                h.SetSimpleEnemyRespawnEnabled(false);
                 h.onDeath.AddListener(() =>
                 {
                     _aliveCount--;

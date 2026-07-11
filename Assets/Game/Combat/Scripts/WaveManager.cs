@@ -281,6 +281,7 @@ public class WaveManager : MonoBehaviour
         var health = go.GetComponent<Health>();
         if (health != null)
         {
+            health.SetSimpleEnemyRespawnEnabled(false);
             health.maxHealth *= hpMult;
             // Reset current HP to match scaled max
             health.currentHealth = health.maxHealth;

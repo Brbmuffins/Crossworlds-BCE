@@ -66,7 +66,18 @@ public class CyclopsAnimationDriver : MonoBehaviour
         _animator.SetBool(isDeadParameter, true);
         _animator.SetTrigger(dieTrigger);
 
-        if (_enemyController != null)
-            _enemyController.enabled = false;
+    }
+
+    void OnEnemyRespawned()
+    {
+        _deathTriggered = false;
+        _lastPosition = transform.position;
+
+        if (_animator == null)
+            return;
+
+        _animator.ResetTrigger(dieTrigger);
+        _animator.SetBool(isDeadParameter, false);
+        _animator.SetFloat(speedParameter, 0f);
     }
 }

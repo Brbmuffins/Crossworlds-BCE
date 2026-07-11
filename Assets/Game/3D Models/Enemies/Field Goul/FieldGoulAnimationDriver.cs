@@ -69,4 +69,20 @@ public class FieldGoulAnimationDriver : MonoBehaviour
         if (_enemyAI != null)
             _enemyAI.enabled = false;
     }
+
+    void OnEnemyRespawned()
+    {
+        _deathTriggered = false;
+        _lastPosition = transform.position;
+
+        if (_enemyAI != null)
+            _enemyAI.enabled = true;
+
+        if (_animator == null)
+            return;
+
+        _animator.ResetTrigger(dieTrigger);
+        _animator.SetBool(isDeadParameter, false);
+        _animator.SetFloat(speedParameter, 0f);
+    }
 }

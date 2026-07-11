@@ -53,6 +53,14 @@ public class EnemyController : NetworkBehaviour
     [Header("Server")]
     public string enemyTemplateId = "grunt_basic";
 
+    [Header("Death / Respawn")]
+    [Tooltip("Seconds the dead model remains visible before it despawns.")]
+    public float deadModelVisibleSeconds = 3f;
+    [Tooltip("If enabled, this enemy despawns after death, waits, then respawns at its original spawn point.")]
+    public bool respawnAfterDeath = false;
+    [Tooltip("Seconds after despawn before this enemy respawns.")]
+    public float respawnDelay = 30f;
+
     // ── Private ──────────────────────────────────────────────────────────────────
     private Health               _health;
     private NavMeshAgent         _agent;
@@ -60,6 +68,7 @@ public class EnemyController : NetworkBehaviour
     private float                _baseSpeed;
     private Transform            _target;
     private Vector3              _spawnPos;
+    private Quaternion           _spawnRot;
     private float                _attackTimer;
     private Animator             _animator;
     private bool                 _hasSpeedParam;
@@ -86,6 +95,7 @@ public class EnemyController : NetworkBehaviour
     {
         base.OnStartServer();
         _spawnPos = transform.position;
+        _spawnRot = transform.rotation;
         _health.onDeath.AddListener(OnDeath);
         StartCoroutine(BehaviorLoop());
     }
@@ -301,7 +311,9 @@ public class EnemyController : NetworkBehaviour
             }
         }
 
-        yield return new WaitForSeconds(2.6f);
+        float remainingDeadModelTime = Mathf.Max(0f, deadModelVisibleSeconds - 0.4f);
+        if (remainingDeadModelTime > 0f)
+            yield return new WaitForSeconds(remainingDeadModelTime);
 
         // Notify clients of the kill so the LOCAL client can POST /api/combat/kill
         // with its own JWT. The server doesn't hold player JWTs — client-initiated
@@ -309,7 +321,20 @@ public class EnemyController : NetworkBehaviour
         if (!string.IsNullOrEmpty(enemyTemplateId))
             RpcNotifyEnemyKilled(enemyTemplateId);
 
-        NetworkServer.Destroy(gameObject);
+        if (!respawnAfterDeath)
+        {
+            NetworkServer.Destroy(gameObject);
+            yield break;
+        }
+
+        SetVisualsVisible(false);
+        RpcSetVisualsVisible(false);
+
+        float delay = Mathf.Max(0f, respawnDelay);
+        if (delay > 0f)
+            yield return new WaitForSeconds(delay);
+
+        RespawnAtSpawnPoint();
     }
 
     /// <summary>
@@ -376,6 +401,72 @@ public class EnemyController : NetworkBehaviour
         var comp = wi.GetComponent<WorldItem>();
         if (comp != null) { comp.itemId = itemId; comp.quantity = qty; }
         NetworkServer.Spawn(wi);
+    }
+
+    [Server]
+    void RespawnAtSpawnPoint()
+    {
+        transform.SetPositionAndRotation(_spawnPos, _spawnRot);
+        _target = null;
+        _attackTimer = 0f;
+        state = EnemyState.Idle;
+
+        _status?.RemoveAll();
+        _health.currentHealth = _health.maxHealth;
+        _health.onHealthChanged?.Invoke(_health.currentHealth, _health.maxHealth);
+
+        foreach (var col in GetComponents<Collider>())
+            col.enabled = true;
+
+        if (_agent != null)
+        {
+            _agent.enabled = true;
+            if (_agent.isOnNavMesh)
+            {
+                _agent.Warp(_spawnPos);
+                _agent.ResetPath();
+                _agent.velocity = Vector3.zero;
+                _agent.isStopped = false;
+                _agent.speed = _baseSpeed;
+            }
+        }
+
+        SetVisualsVisible(true);
+        ResetAnimators();
+        BroadcastMessage("OnEnemyRespawned", SendMessageOptions.DontRequireReceiver);
+        RpcRespawn(_spawnPos, _spawnRot);
+
+        StartCoroutine(BehaviorLoop());
+    }
+
+    [ClientRpc]
+    void RpcSetVisualsVisible(bool visible)
+    {
+        SetVisualsVisible(visible);
+    }
+
+    [ClientRpc]
+    void RpcRespawn(Vector3 position, Quaternion rotation)
+    {
+        transform.SetPositionAndRotation(position, rotation);
+        SetVisualsVisible(true);
+        ResetAnimators();
+        BroadcastMessage("OnEnemyRespawned", SendMessageOptions.DontRequireReceiver);
+    }
+
+    void SetVisualsVisible(bool visible)
+    {
+        foreach (var renderer in GetComponentsInChildren<Renderer>(true))
+            renderer.enabled = visible;
+    }
+
+    void ResetAnimators()
+    {
+        foreach (var animator in GetComponentsInChildren<Animator>(true))
+        {
+            animator.Rebind();
+            animator.Update(0f);
+        }
     }
 
     // ─────────────────────────────────────────────────────────────────────────────

@@ -1,6 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Text;
 using UnityEngine;
+using UnityEngine.AI;
 using UnityEngine.Events;
 using Mirror;
 
@@ -25,6 +27,14 @@ public class Health : NetworkBehaviour
     [SerializeField, Tooltip("Optional fixed local Y height for the enemy health bar. Use -1 to auto-place from render/collider bounds.")]
     float enemyHealthBarFixedHeight = -1f;
 
+    [Header("Enemy Hover Info")]
+    [SerializeField, Tooltip("Show a top-screen tooltip and hover highlight when the cursor is over this enemy.")]
+    bool showEnemyHoverInfo = true;
+    [SerializeField, Tooltip("Optional name shown in the enemy hover tooltip. Leave blank to use the object name.")]
+    string enemyDisplayName = "";
+    [SerializeField, Min(0), Tooltip("Optional enemy level shown in the hover tooltip. Use 0 to hide the level for now.")]
+    int enemyLevel = 0;
+
     [Header("Player Respawn")]
     [SerializeField, Tooltip("Automatically revive player characters after they stay downed for the respawn delay.")]
     bool autoRespawnPlayers = true;
@@ -36,6 +46,18 @@ public class Health : NetworkBehaviour
     bool respawnAtStartPosition = false;
     [SerializeField, Min(0f), Tooltip("Seconds of server-side invulnerability after automatic respawn.")]
     float respawnInvulnerabilitySeconds = 2f;
+
+    [Header("Simple Enemy Death / Respawn")]
+    [SerializeField, Tooltip("Fallback lifecycle for enemies without EnemyController/major boss scripts. Keeps corpse briefly, despawns it, then optionally respawns it.")]
+    bool manageSimpleEnemyDeathLifecycle = true;
+    [SerializeField, Min(0f), Tooltip("Seconds the dead model remains visible before despawning.")]
+    float simpleEnemyDeadModelSeconds = 3f;
+    [SerializeField, Tooltip("If enabled, this simple enemy reappears after the respawn delay. Wave systems disable this on their spawned enemies.")]
+    bool simpleEnemyRespawns = true;
+    [SerializeField, Min(0f), Tooltip("Seconds after despawn before this simple enemy reappears.")]
+    float simpleEnemyRespawnDelay = 30f;
+    [SerializeField, Tooltip("If respawn is off, destroy the dead enemy after the dead model timer.")]
+    bool destroySimpleEnemyIfRespawnDisabled = true;
 
     // ── Events ────────────────────────────────────────────────────
     public UnityEvent<float, float> onHealthChanged;    // (current, max)
@@ -96,11 +118,17 @@ public class Health : NetworkBehaviour
     public float Fraction => maxHealth > 0f ? currentHealth / maxHealth : 0f;
     public float EnemyHealthBarHeightOffset => enemyHealthBarHeightOffset;
     public float EnemyHealthBarFixedHeight => enemyHealthBarFixedHeight;
+    public bool ShowEnemyHoverInfo => showEnemyHoverInfo;
+    public int EnemyLevel => enemyLevel;
+    public bool HasEnemyLevel => enemyLevel > 0;
+    public string EnemyHoverDisplayName => GetEnemyHoverDisplayName();
+    public bool ShouldShowEnemyHoverInfo() => showEnemyHoverInfo && !isPlayer && IsEnemyLikeForHud();
 
     // ── StatusEffect integration ───────────────────────────────────
     private StatusEffectManager _statusEffects;
     private Coroutine _playerRespawnRoutine;
     private Coroutine _respawnInvulnerabilityRoutine;
+    private Coroutine _simpleEnemyDeathLifecycleRoutine;
     private bool _hasServerSpawnPoint;
     private Vector3 _serverSpawnPosition;
     private Quaternion _serverSpawnRotation;
@@ -136,6 +164,7 @@ public class Health : NetworkBehaviour
     {
         StopPlayerRespawnRoutine();
         StopRespawnInvulnerabilityRoutine();
+        StopSimpleEnemyDeathLifecycleRoutine();
     }
 
     public override void OnStartClient()
@@ -332,6 +361,11 @@ public class Health : NetworkBehaviour
         _shieldRemaining = Mathf.Min(_shieldRemaining + amount, 80f);
     }
 
+    public void SetSimpleEnemyRespawnEnabled(bool enabled)
+    {
+        simpleEnemyRespawns = enabled;
+    }
+
     // ── Private ───────────────────────────────────────────────────
     private bool CanMutateCombatState()
     {
@@ -355,6 +389,190 @@ public class Health : NetworkBehaviour
     void OnDownedSynced(bool oldValue, bool newValue)
     {
         onDownedChanged?.Invoke(newValue);
+    }
+
+    void StartSimpleEnemyDeathLifecycle()
+    {
+        if (!ShouldUseSimpleEnemyDeathLifecycle()) return;
+
+        StopSimpleEnemyDeathLifecycleRoutine();
+        SetSimpleEnemyCombatEnabled(false);
+        _simpleEnemyDeathLifecycleRoutine = StartCoroutine(SimpleEnemyDeathLifecycleRoutine());
+    }
+
+    void StopSimpleEnemyDeathLifecycleRoutine()
+    {
+        if (_simpleEnemyDeathLifecycleRoutine == null) return;
+
+        StopCoroutine(_simpleEnemyDeathLifecycleRoutine);
+        _simpleEnemyDeathLifecycleRoutine = null;
+    }
+
+    bool ShouldUseSimpleEnemyDeathLifecycle()
+    {
+        if (!manageSimpleEnemyDeathLifecycle || isPlayer) return false;
+        if (NetworkClient.active && !NetworkServer.active) return false;
+        if (!IsEnemyLike()) return false;
+
+        return GetComponent<EnemyController>() == null
+            && GetComponent<WorldBossController>() == null
+            && GetComponent<IronWardenController>() == null
+            && GetComponent<SiegeTurretBehaviour>() == null;
+    }
+
+    bool IsEnemyLike()
+    {
+        return IsEnemyLikeForHud();
+    }
+
+    bool IsEnemyLikeForHud()
+    {
+        return CompareTag("Enemy")
+            || GetComponent<EnemyAI>() != null
+            || GetComponent<FieldGhoulNPC>() != null
+            || GetComponent<EnemyController>() != null
+            || GetComponent<IronWardenController>() != null
+            || GetComponent<WorldBossController>() != null
+            || GetComponent<SiegeTurretBehaviour>() != null
+            || GetComponent<WispMob>() != null;
+    }
+
+    IEnumerator SimpleEnemyDeathLifecycleRoutine()
+    {
+        float corpseSeconds = Mathf.Max(0f, simpleEnemyDeadModelSeconds);
+        if (corpseSeconds > 0f)
+            yield return new WaitForSeconds(corpseSeconds);
+
+        SetSimpleEnemyVisible(false);
+        if (CanSendClientRpc())
+            RpcSetSimpleEnemyVisible(false);
+
+        if (!simpleEnemyRespawns)
+        {
+            _simpleEnemyDeathLifecycleRoutine = null;
+            if (destroySimpleEnemyIfRespawnDisabled)
+                DestroySimpleEnemyObject();
+            yield break;
+        }
+
+        float respawnSeconds = Mathf.Max(0f, simpleEnemyRespawnDelay);
+        if (respawnSeconds > 0f)
+            yield return new WaitForSeconds(respawnSeconds);
+
+        _simpleEnemyDeathLifecycleRoutine = null;
+        RespawnSimpleEnemy();
+    }
+
+    void DestroySimpleEnemyObject()
+    {
+        if (NetworkServer.active && netIdentity != null && netIdentity.netId != 0)
+            NetworkServer.Destroy(gameObject);
+        else
+            Destroy(gameObject);
+    }
+
+    void RespawnSimpleEnemy()
+    {
+        Vector3 position = _hasServerSpawnPoint ? _serverSpawnPosition : transform.position;
+        Quaternion rotation = _hasServerSpawnPoint ? _serverSpawnRotation : transform.rotation;
+
+        ApplySimpleEnemyRespawn(position, rotation);
+        if (CanSendClientRpc())
+            RpcRespawnSimpleEnemy(position, rotation);
+    }
+
+    bool CanSendClientRpc()
+    {
+        return NetworkServer.active
+            && netIdentity != null
+            && netIdentity.netId != 0;
+    }
+
+    [ClientRpc]
+    void RpcSetSimpleEnemyVisible(bool visible)
+    {
+        SetSimpleEnemyVisible(visible);
+    }
+
+    [ClientRpc]
+    void RpcRespawnSimpleEnemy(Vector3 position, Quaternion rotation)
+    {
+        ApplySimpleEnemyRespawn(position, rotation);
+    }
+
+    void ApplySimpleEnemyRespawn(Vector3 position, Quaternion rotation)
+    {
+        transform.SetPositionAndRotation(position, rotation);
+
+        var rb = GetComponent<Rigidbody>();
+        if (rb != null)
+        {
+            rb.linearVelocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+            rb.position = position;
+            rb.rotation = rotation;
+        }
+
+        _statusEffects?.RemoveAll();
+
+        if (!NetworkClient.active || NetworkServer.active)
+            currentHealth = maxHealth;
+
+        SetSimpleEnemyVisible(true);
+        SetSimpleEnemyCombatEnabled(true);
+        ResetSimpleEnemyAnimators();
+        BroadcastMessage("OnEnemyRespawned", SendMessageOptions.DontRequireReceiver);
+        onHealthChanged?.Invoke(currentHealth, maxHealth);
+        Physics.SyncTransforms();
+    }
+
+    void SetSimpleEnemyVisible(bool visible)
+    {
+        foreach (var renderer in GetComponentsInChildren<Renderer>(true))
+            renderer.enabled = visible;
+    }
+
+    void SetSimpleEnemyCombatEnabled(bool enabled)
+    {
+        foreach (var collider in GetComponentsInChildren<Collider>(true))
+            collider.enabled = enabled;
+
+        var agent = GetComponent<NavMeshAgent>();
+        if (agent != null)
+        {
+            if (!enabled)
+            {
+                if (agent.enabled && agent.isOnNavMesh)
+                {
+                    agent.ResetPath();
+                    agent.velocity = Vector3.zero;
+                    agent.isStopped = true;
+                }
+                agent.enabled = false;
+            }
+            else
+            {
+                agent.enabled = true;
+                if (agent.isOnNavMesh)
+                {
+                    agent.Warp(transform.position);
+                    agent.isStopped = false;
+                }
+            }
+        }
+
+        var enemyAI = GetComponent<EnemyAI>();
+        if (enemyAI != null)
+            enemyAI.enabled = enabled;
+    }
+
+    void ResetSimpleEnemyAnimators()
+    {
+        foreach (var animator in GetComponentsInChildren<Animator>(true))
+        {
+            animator.Rebind();
+            animator.Update(0f);
+        }
     }
 
     void StartPlayerRespawnRoutine()
@@ -522,6 +740,64 @@ public class Health : NetworkBehaviour
 #endif
     }
 
+    string GetEnemyHoverDisplayName()
+    {
+        if (!string.IsNullOrWhiteSpace(enemyDisplayName))
+            return enemyDisplayName.Trim();
+
+        return FormatObjectNameForDisplay(gameObject.name);
+    }
+
+    static string FormatObjectNameForDisplay(string rawName)
+    {
+        if (string.IsNullOrWhiteSpace(rawName))
+            return "Enemy";
+
+        string cleaned = rawName
+            .Replace("(Clone)", "")
+            .Replace("_", " ")
+            .Replace("-", " ")
+            .Trim();
+
+        if (cleaned.Length == 0)
+            return "Enemy";
+
+        var spaced = new StringBuilder(cleaned.Length + 8);
+        for (int i = 0; i < cleaned.Length; i++)
+        {
+            char c = cleaned[i];
+            if (i > 0
+                && char.IsUpper(c)
+                && !char.IsWhiteSpace(cleaned[i - 1])
+                && (char.IsLower(cleaned[i - 1])
+                    || (i + 1 < cleaned.Length && char.IsLower(cleaned[i + 1]))))
+            {
+                spaced.Append(' ');
+            }
+
+            spaced.Append(c);
+        }
+
+        bool upperNext = true;
+        for (int i = 0; i < spaced.Length; i++)
+        {
+            char c = spaced[i];
+            if (char.IsWhiteSpace(c))
+            {
+                upperNext = true;
+                continue;
+            }
+
+            if (upperNext)
+            {
+                spaced[i] = char.ToUpperInvariant(c);
+                upperNext = false;
+            }
+        }
+
+        return spaced.ToString();
+    }
+
 #if UNITY_EDITOR || !UNITY_SERVER
     void TryAttachEnemyHealthBar()
     {
@@ -534,11 +810,7 @@ public class Health : NetworkBehaviour
 
     bool ShouldShowEnemyHealthBar()
     {
-        return CompareTag("Enemy")
-            || GetComponent<EnemyAI>() != null
-            || GetComponent<EnemyController>() != null
-            || GetComponent<IronWardenController>() != null
-            || GetComponent<WorldBossController>() != null;
+        return IsEnemyLikeForHud();
     }
 #endif
 
@@ -555,6 +827,7 @@ public class Health : NetworkBehaviour
         {
             onDeath?.Invoke();
             onKilledBy?.Invoke(source);
+            StartSimpleEnemyDeathLifecycle();
         }
     }
 }

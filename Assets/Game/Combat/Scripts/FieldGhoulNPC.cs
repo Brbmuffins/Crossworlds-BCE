@@ -133,6 +133,30 @@ public class FieldGhoulNPC : MonoBehaviour
         }
     }
 
+    void OnEnemyRespawned()
+    {
+        _stoppedForDeath = false;
+        _origin = transform.position;
+
+        if (_agent == null)
+            _agent = GetComponent<NavMeshAgent>();
+
+        if (_agent != null)
+        {
+            _agent.enabled = true;
+            if (_agent.isOnNavMesh)
+            {
+                _agent.Warp(transform.position);
+                _agent.isStopped = false;
+            }
+        }
+
+        SetWalking(false);
+
+        if (_wanderRoutine == null && isActiveAndEnabled)
+            _wanderRoutine = StartCoroutine(WanderLoop());
+    }
+
     void SetWalking(bool walking)
     {
         if (_hasWalkParam && _anim != null)
