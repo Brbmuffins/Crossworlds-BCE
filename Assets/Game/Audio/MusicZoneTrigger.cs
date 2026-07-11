@@ -1,0 +1,118 @@
+using Mirror;
+using UnityEngine;
+
+/// <summary>
+/// Drop this on a trigger volume to change music when the local player enters a zone.
+/// The current track keeps playing until a zone trigger requests a different one.
+/// </summary>
+[RequireComponent(typeof(Collider))]
+[AddComponentMenu("BCE/Audio/Music Zone Trigger")]
+public class MusicZoneTrigger : MonoBehaviour
+{
+    [Header("Music")]
+    [SerializeField] private AudioClip zoneTrack;
+    [SerializeField] private bool stopMusicInstead = false;
+    [SerializeField] private bool restartIfAlreadyPlaying = false;
+
+    [Header("Fade")]
+    [Min(0f)]
+    [SerializeField] private float fadeSeconds = 1.5f;
+
+    [Header("Rules")]
+    [SerializeField] private bool localPlayerOnly = true;
+    [SerializeField] private bool triggerOnce = false;
+    [SerializeField] private float repeatDelay = 1f;
+
+    private bool _triggered;
+    private float _lastTriggerTime = -999f;
+
+    void Reset()
+    {
+        EnsureTrigger();
+    }
+
+    void OnValidate()
+    {
+        EnsureTrigger();
+    }
+
+    void OnTriggerEnter(Collider other)
+    {
+        if (triggerOnce && _triggered)
+            return;
+
+        if (Time.unscaledTime - _lastTriggerTime < repeatDelay)
+            return;
+
+        if (localPlayerOnly && !IsLocalPlayer(other))
+            return;
+
+        var controller = MusicController.Instance;
+        if (controller == null)
+        {
+            Debug.LogWarning($"[MusicZoneTrigger] '{name}' fired, but no MusicController exists in the scene.");
+            return;
+        }
+
+        if (!stopMusicInstead && zoneTrack == null)
+        {
+            Debug.LogWarning($"[MusicZoneTrigger] '{name}' has no zoneTrack assigned.");
+            return;
+        }
+
+        _triggered = true;
+        _lastTriggerTime = Time.unscaledTime;
+
+        if (stopMusicInstead)
+        {
+            controller.Stop(fadeSeconds);
+            return;
+        }
+
+        controller.FadeToTrack(zoneTrack, fadeSeconds, restartIfAlreadyPlaying);
+    }
+
+    private bool IsLocalPlayer(Collider other)
+    {
+        var identity = other.GetComponentInParent<NetworkIdentity>();
+        if (identity != null)
+            return identity.isLocalPlayer;
+
+        return other.CompareTag("Player") || other.GetComponentInParent<PlayerMovement>() != null;
+    }
+
+    private void EnsureTrigger()
+    {
+        var col = GetComponent<Collider>();
+        if (col != null)
+            col.isTrigger = true;
+    }
+
+#if UNITY_EDITOR
+    void OnDrawGizmosSelected()
+    {
+        var col = GetComponent<Collider>();
+        if (col == null)
+            return;
+
+        Gizmos.color = new Color(1f, 0.55f, 0.2f, 0.18f);
+        Gizmos.matrix = transform.localToWorldMatrix;
+
+        if (col is BoxCollider box)
+        {
+            Gizmos.DrawCube(box.center, box.size);
+            Gizmos.color = new Color(1f, 0.55f, 0.2f, 0.85f);
+            Gizmos.DrawWireCube(box.center, box.size);
+        }
+        else
+        {
+            Gizmos.matrix = Matrix4x4.identity;
+            Gizmos.DrawCube(col.bounds.center, col.bounds.size);
+            Gizmos.color = new Color(1f, 0.55f, 0.2f, 0.85f);
+            Gizmos.DrawWireCube(col.bounds.center, col.bounds.size);
+        }
+
+        Gizmos.matrix = Matrix4x4.identity;
+    }
+#endif
+}

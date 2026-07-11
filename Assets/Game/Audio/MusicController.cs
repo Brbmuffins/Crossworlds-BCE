@@ -45,6 +45,7 @@ public class MusicController : MonoBehaviour
     public float Volume => _volume;
     public bool Muted => _muted;
     public AudioClip CurrentTrack => _source != null ? _source.clip : null;
+    public bool IsPlaying => _source != null && _source.isPlaying;
 
     void Awake()
     {
@@ -92,9 +93,46 @@ public class MusicController : MonoBehaviour
         Play(fadeInSeconds);
     }
 
+    public void Play(float fadeSeconds)
+    {
+        if (_source == null || _source.clip == null)
+            return;
+
+        StopFade();
+        _source.loop = loopTrack;
+
+        if (fadeSeconds <= 0f)
+        {
+            ApplyVolumeImmediate();
+            _source.Play();
+            return;
+        }
+
+        _source.volume = 0f;
+        _source.Play();
+        _fadeRoutine = StartCoroutine(FadeVolumeRoutine(0f, EffectiveVolume(), fadeSeconds));
+    }
+
     public void Stop()
     {
         Stop(fadeOutSeconds);
+    }
+
+    public void Stop(float fadeSeconds)
+    {
+        if (_source == null || !_source.isPlaying)
+            return;
+
+        StopFade();
+
+        if (fadeSeconds <= 0f)
+        {
+            _source.Stop();
+            ApplyVolumeImmediate();
+            return;
+        }
+
+        _fadeRoutine = StartCoroutine(StopAfterFadeRoutine(fadeSeconds));
     }
 
     public void Pause()
@@ -114,6 +152,14 @@ public class MusicController : MonoBehaviour
         if (_source == null)
             return;
 
+        if (_source.clip == nextTrack)
+        {
+            ApplyVolumeImmediate();
+            if (playImmediately && !_source.isPlaying && nextTrack != null && !Application.isBatchMode)
+                Play(fadeInSeconds);
+            return;
+        }
+
         StopFade();
         _source.Stop();
         _source.clip = nextTrack;
@@ -131,8 +177,22 @@ public class MusicController : MonoBehaviour
 
     public void FadeToTrack(AudioClip nextTrack, float fadeSeconds)
     {
+        FadeToTrack(nextTrack, fadeSeconds, false);
+    }
+
+    public void FadeToTrack(AudioClip nextTrack, float fadeSeconds, bool restartIfSameTrack)
+    {
         if (_source == null)
             return;
+
+        if (_source.clip == nextTrack && !restartIfSameTrack)
+        {
+            if (!_source.isPlaying && nextTrack != null && !Application.isBatchMode)
+                Play(fadeInSeconds);
+            else
+                ApplyVolumeImmediate();
+            return;
+        }
 
         StopFade();
         _fadeRoutine = StartCoroutine(FadeToTrackRoutine(nextTrack, Mathf.Max(0f, fadeSeconds)));
@@ -168,43 +228,6 @@ public class MusicController : MonoBehaviour
         PlayerPrefs.SetFloat(VolumePrefKey, _volume);
         PlayerPrefs.SetInt(MutedPrefKey, _muted ? 1 : 0);
         PlayerPrefs.Save();
-    }
-
-    private void Play(float fadeSeconds)
-    {
-        if (_source == null || _source.clip == null)
-            return;
-
-        StopFade();
-        _source.loop = loopTrack;
-
-        if (fadeSeconds <= 0f)
-        {
-            ApplyVolumeImmediate();
-            _source.Play();
-            return;
-        }
-
-        _source.volume = 0f;
-        _source.Play();
-        _fadeRoutine = StartCoroutine(FadeVolumeRoutine(0f, EffectiveVolume(), fadeSeconds));
-    }
-
-    private void Stop(float fadeSeconds)
-    {
-        if (_source == null || !_source.isPlaying)
-            return;
-
-        StopFade();
-
-        if (fadeSeconds <= 0f)
-        {
-            _source.Stop();
-            ApplyVolumeImmediate();
-            return;
-        }
-
-        _fadeRoutine = StartCoroutine(StopAfterFadeRoutine(fadeSeconds));
     }
 
     private void ConfigureSource()
