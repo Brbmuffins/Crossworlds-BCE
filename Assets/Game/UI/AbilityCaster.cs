@@ -27,8 +27,8 @@ public class AbilityDef
     public Sprite icon;
 
     [Header("Spell Timing")]
-    [Tooltip("Seconds after the cast animation starts before this spell applies damage, teleports, spawns, and impact VFX.")]
-    [Min(0f)] public float spellDelay = 0f;
+    [Tooltip("Seconds after committing the aim before this spell fires. Moving during this window cancels the cast without starting cooldown.")]
+    [Min(0f)] public float castTime = 0.6f;
 
     [Header("Charge")]
     public bool chargeable = false;
@@ -84,7 +84,10 @@ public class AbilityCaster : NetworkBehaviour
     public Camera cam;
     public Inventory inventory;
     public CastAnimator castAnimator;
-    public float castDelay = 0.3f;
+
+    [Header("Cast Time")]
+    [Tooltip("Horizontal movement beyond this distance interrupts a committed cast. Movement input interrupts immediately.")]
+    [SerializeField, Min(0f)] float castMoveInterruptDistance = 0.035f;
 
     [Header("Class")]
     [Tooltip("Assign the chosen class's ClassAbilityPool asset before play starts.")]
@@ -186,7 +189,7 @@ public class AbilityCaster : NetworkBehaviour
 
         // ── ARCANIST (indices 19–22) ───────────────────────────────────────────────────
         // [19] Arcane Step — teleport up to 10 units in aimed direction
-        new AbilityDef { abilityName = "Arcane Step",      shape = AbilityShape.Circle,    category = AbilityCategory.Support, range = 10f, indicatorSize = 3.5f, cooldown = 4f, spellDelay = 0.25f, damage = 10f, targetTag = "Enemy" },
+        new AbilityDef { abilityName = "Arcane Step",      shape = AbilityShape.Circle,    category = AbilityCategory.Support, range = 10f, indicatorSize = 3.5f, cooldown = 4f, castTime = 0.25f, damage = 10f, targetTag = "Enemy" },
         // [20] Void Maw — pull enemies to center for 3s then 20 AoE burst
         new AbilityDef { abilityName = "Void Maw",         shape = AbilityShape.Circle,    category = AbilityCategory.Damage,  range = 10f, indicatorSize = 8f, cooldown = 9f, damage = 20f, targetTag = "Enemy" },
         // [21] Forked Lightning — chain lightning, jumps up to 4 enemies (30/25/20/15 dmg)
@@ -235,6 +238,12 @@ public class AbilityCaster : NetworkBehaviour
     private GameObject activeIndicator;
     private GameObject _rangeRingGO;
     private float aimTimer = 0f;
+    private Coroutine committedCastRoutine;
+    private int committedCastSlot = -1;
+    private GameObject committedCastIndicator;
+    private AbilityDef committedCastAbility;
+    private float committedCastDuration;
+    private float committedCastElapsed;
 
     // Read by CameraFollow to suspend orbit while an indicator is active
     public static bool    IsAimingLocally { get; private set; }
@@ -253,6 +262,11 @@ public class AbilityCaster : NetworkBehaviour
     private CharacterStats       _characterStats;  // gear/attunement bonuses
 
     public int HeldAbilityIndex => heldAbilityIndex;
+    public bool IsCommittedCasting => committedCastRoutine != null && committedCastAbility != null && committedCastDuration > 0f;
+    public string CommittedCastName => committedCastAbility != null ? committedCastAbility.abilityName : "";
+    public AbilityCategory CommittedCastCategory => committedCastAbility != null ? committedCastAbility.category : AbilityCategory.Damage;
+    public float CommittedCastProgress => committedCastDuration > 0f ? Mathf.Clamp01(committedCastElapsed / committedCastDuration) : 0f;
+    public float CommittedCastRemaining => Mathf.Max(0f, committedCastDuration - committedCastElapsed);
 
     void Awake()
     {
@@ -389,6 +403,9 @@ public class AbilityCaster : NetworkBehaviour
         if (ShouldRouteCastToServer())
             CmdEquipSpell(spellbookIndex, slot);
 
+        if (committedCastSlot == slot)
+            CancelCommittedCast();
+
         if (heldAbilityIndex == slot)
             CancelAim();
 
@@ -472,6 +489,9 @@ public class AbilityCaster : NetworkBehaviour
         // the cursor regardless of whether an ability indicator is active.
         RefreshAimDirection();
 
+        if (committedCastRoutine != null)
+            return;
+
         for (int i = 0; i < 4; i++)
         {
             if (abilities[i] == null) continue;
@@ -487,12 +507,11 @@ public class AbilityCaster : NetworkBehaviour
 
             if (key.wasPressedThisFrame && cooldownTimers[i] <= 0f && hasTurretAvailable)
             {
-                // Instant-cast abilities (shield absorb, range 0) fire on keypress with no aiming
+                // Self-cast shields skip aiming but still respect cast time.
                 if (abilities[i].shieldAbsorb > 0f && abilities[i].range <= 0f)
                 {
                     if (heldAbilityIndex != -1) CancelAim();
-                    FinalizeCast(abilities[i], null, 0f);
-                    cooldownTimers[i] = CooldownFor(abilities[i]);
+                    BeginCommittedCast(i, abilities[i], null, 0f);
                 }
                 else if (heldAbilityIndex == i)
                 {
@@ -528,8 +547,7 @@ public class AbilityCaster : NetworkBehaviour
             }
             else if (Mouse.current.leftButton.wasPressedThisFrame)
             {
-                FinalizeCast(abilities[heldAbilityIndex], activeIndicator, aimTimer);
-                cooldownTimers[heldAbilityIndex] = CooldownFor(abilities[heldAbilityIndex]);
+                BeginCommittedCast(heldAbilityIndex, abilities[heldAbilityIndex], activeIndicator, aimTimer);
 
                 IsAimingLocally = false;
                 heldAbilityIndex = -1;
@@ -548,6 +566,206 @@ public class AbilityCaster : NetworkBehaviour
         DestroyRangeRing();
         heldAbilityIndex = -1;
         // Cursor stays free — CameraFollow resumes ownership
+    }
+
+    void BeginCommittedCast(int slot, AbilityDef ability, GameObject indicator, float aimTime)
+    {
+        if (ability == null)
+        {
+            if (indicator != null) Destroy(indicator);
+            return;
+        }
+
+        if (committedCastRoutine != null)
+            CancelCommittedCast();
+
+        PlayCommittedCastAnimation(ability);
+        BroadcastCommittedCastAnimation(ability);
+
+        float castTime = CastTimeFor(ability);
+        Debug.Log($"[CastTime] {ability.abilityName} committed with castTime={castTime:0.###}s.", this);
+        if (castTime <= 0f)
+        {
+            if (FinalizeCast(ability, indicator, aimTime))
+                StartCooldown(slot, ability);
+            else if (indicator != null)
+                Destroy(indicator);
+            return;
+        }
+
+        committedCastSlot = slot;
+        committedCastIndicator = indicator;
+        committedCastAbility = ability;
+        committedCastDuration = castTime;
+        committedCastElapsed = 0f;
+        committedCastRoutine = StartCoroutine(CommittedCastRoutine(slot, ability, indicator, aimTime, castTime));
+    }
+
+    System.Collections.IEnumerator CommittedCastRoutine(int slot, AbilityDef ability, GameObject indicator, float aimTime, float castTime)
+    {
+        Vector3 startPosition = transform.position;
+        float elapsed = 0f;
+
+        while (elapsed < castTime)
+        {
+            if (WasCommittedCastInterrupted(startPosition))
+            {
+                Debug.Log($"Cast interrupted: {ability.abilityName}");
+                bool preferMovementState = HasMovementInput();
+                CancelCommittedCastAnimation(ability, preferMovementState);
+                BroadcastCommittedCastAnimationCancelled(ability, preferMovementState);
+                if (indicator != null) Destroy(indicator);
+                ClearCommittedCast();
+                yield break;
+            }
+
+            elapsed = Mathf.Min(castTime, elapsed + Time.deltaTime);
+            committedCastElapsed = elapsed;
+            yield return null;
+        }
+
+        committedCastElapsed = castTime;
+        bool castStarted = FinalizeCast(ability, indicator, aimTime);
+        Debug.Log($"[CastTime] {ability.abilityName} resolved after {castTime:0.###}s.", this);
+        if (castStarted)
+            StartCooldown(slot, ability);
+        else if (indicator != null)
+            Destroy(indicator);
+
+        ClearCommittedCast();
+    }
+
+    bool WasCommittedCastInterrupted(Vector3 startPosition)
+    {
+        if (HasMovementInput())
+            return true;
+
+        Vector3 delta = transform.position - startPosition;
+        delta.y = 0f;
+        return delta.sqrMagnitude > castMoveInterruptDistance * castMoveInterruptDistance;
+    }
+
+    bool HasMovementInput()
+    {
+        Keyboard keyboard = Keyboard.current;
+        if (keyboard == null) return false;
+
+        return keyboard.wKey.isPressed
+            || keyboard.aKey.isPressed
+            || keyboard.sKey.isPressed
+            || keyboard.dKey.isPressed
+            || keyboard.upArrowKey.isPressed
+            || keyboard.downArrowKey.isPressed
+            || keyboard.leftArrowKey.isPressed
+            || keyboard.rightArrowKey.isPressed
+            || keyboard.spaceKey.wasPressedThisFrame
+            || keyboard.leftAltKey.wasPressedThisFrame
+            || keyboard.vKey.wasPressedThisFrame;
+    }
+
+    void CancelCommittedCast()
+    {
+        if (committedCastSlot >= 0 && committedCastSlot < abilities.Length)
+        {
+            AbilityDef ability = abilities[committedCastSlot];
+            CancelCommittedCastAnimation(ability, false);
+            BroadcastCommittedCastAnimationCancelled(ability, false);
+        }
+
+        if (committedCastRoutine != null)
+            StopCoroutine(committedCastRoutine);
+
+        if (committedCastIndicator != null)
+            Destroy(committedCastIndicator);
+
+        ClearCommittedCast();
+    }
+
+    void ClearCommittedCast()
+    {
+        committedCastRoutine = null;
+        committedCastSlot = -1;
+        committedCastIndicator = null;
+        committedCastAbility = null;
+        committedCastDuration = 0f;
+        committedCastElapsed = 0f;
+    }
+
+    void StartCooldown(int slot, AbilityDef ability)
+    {
+        if (slot < 0 || slot >= cooldownTimers.Length || ability == null) return;
+        cooldownTimers[slot] = CooldownFor(ability);
+    }
+
+    void PlayCommittedCastAnimation(AbilityDef ability)
+    {
+        if (ability == null) return;
+        castAnimator?.PlayCast(ability.category);
+    }
+
+    void BroadcastCommittedCastAnimation(AbilityDef ability)
+    {
+        int spellbookIndex = FindSpellbookIndex(ability);
+        if (spellbookIndex < 0) return;
+
+        if (ShouldRouteCastToServer())
+            CmdCommittedCastAnimationStarted(spellbookIndex);
+        else if (NetworkServer.active)
+            RpcCommittedCastAnimationStarted(spellbookIndex);
+    }
+
+    [Command]
+    void CmdCommittedCastAnimationStarted(int spellbookIndex)
+    {
+        if (spellbookIndex < 0 || spellbookIndex >= spellbook.Length) return;
+        int equippedSlot = FindEquippedSlotForSpellbookIndex(spellbookIndex);
+        if (equippedSlot < 0) return;
+        if (cooldownTimers[equippedSlot] > 0f) return;
+
+        RpcCommittedCastAnimationStarted(spellbookIndex);
+    }
+
+    [ClientRpc]
+    void RpcCommittedCastAnimationStarted(int spellbookIndex)
+    {
+        if (isLocalPlayer) return;
+        if (spellbookIndex < 0 || spellbookIndex >= spellbook.Length) return;
+        PlayCommittedCastAnimation(spellbook[spellbookIndex]);
+    }
+
+    void CancelCommittedCastAnimation(AbilityDef ability, bool preferMovementState)
+    {
+        if (ability == null) return;
+        castAnimator?.CancelCast(preferMovementState);
+    }
+
+    void BroadcastCommittedCastAnimationCancelled(AbilityDef ability, bool preferMovementState)
+    {
+        int spellbookIndex = FindSpellbookIndex(ability);
+        if (spellbookIndex < 0) return;
+
+        if (ShouldRouteCastToServer())
+            CmdCommittedCastAnimationCancelled(spellbookIndex, preferMovementState);
+        else if (NetworkServer.active)
+            RpcCommittedCastAnimationCancelled(spellbookIndex, preferMovementState);
+    }
+
+    [Command]
+    void CmdCommittedCastAnimationCancelled(int spellbookIndex, bool preferMovementState)
+    {
+        if (spellbookIndex < 0 || spellbookIndex >= spellbook.Length) return;
+        int equippedSlot = FindEquippedSlotForSpellbookIndex(spellbookIndex);
+        if (equippedSlot < 0) return;
+
+        RpcCommittedCastAnimationCancelled(spellbookIndex, preferMovementState);
+    }
+
+    [ClientRpc]
+    void RpcCommittedCastAnimationCancelled(int spellbookIndex, bool preferMovementState)
+    {
+        if (isLocalPlayer) return;
+        if (spellbookIndex < 0 || spellbookIndex >= spellbook.Length) return;
+        CancelCommittedCastAnimation(spellbook[spellbookIndex], preferMovementState);
     }
 
     public float GetCooldownFraction(int slot)
@@ -1491,20 +1709,22 @@ public class AbilityCaster : NetworkBehaviour
         return cd;
     }
 
-    float SpellDelayFor(AbilityDef ability)
+    float CastTimeFor(AbilityDef ability)
     {
-        return ability != null ? Mathf.Max(0f, ability.spellDelay) : 0f;
+        return ability != null ? Mathf.Max(0f, ability.castTime) : 0f;
     }
 
-    void FinalizeCast(AbilityDef ability, GameObject indicator, float aimTime)
+    bool FinalizeCast(AbilityDef ability, GameObject indicator, float aimTime)
     {
+        if (ability == null) return false;
+
         if (ShouldRouteCastToServer())
         {
             int spellbookIndex = FindSpellbookIndex(ability);
             if (spellbookIndex < 0)
             {
                 Debug.LogWarning($"[COMBAT] Could not route unknown ability '{ability?.abilityName}' to server.");
-                return;
+                return false;
             }
 
             Vector3    castPosition = indicator != null ? indicator.transform.position : transform.position;
@@ -1512,11 +1732,11 @@ public class AbilityCaster : NetworkBehaviour
             Vector3    castScale    = indicator != null ? indicator.transform.localScale : Vector3.one;
 
             CmdFinalizeCast(spellbookIndex, castPosition, castRotation, castScale, aimTime);
-            PlayLocalCastFeedback(ability, castPosition, castRotation);
+            PlayLocalCastVFX(ability, castPosition, castRotation);
 
             if (indicator != null)
-                Destroy(indicator, SpellDelayFor(ability) + castDelay);
-            return;
+                Destroy(indicator);
+            return true;
         }
 
         Debug.Log("Cast ability: " + ability.abilityName);
@@ -1534,21 +1754,10 @@ public class AbilityCaster : NetworkBehaviour
         if (_characterStats != null)
             damageMultiplier *= _characterStats.DamageMultiplier;
 
-        castAnimator?.PlayCast(ability.category);
-
-        StartCoroutine(ResolveCastAfterDelay(ability, indicator, aimTime, damageMultiplier, transform.position));
-    }
-
-    System.Collections.IEnumerator ResolveCastAfterDelay(AbilityDef ability, GameObject indicator, float aimTime, float damageMultiplier, Vector3 castOrigin)
-    {
-        float spellDelay = SpellDelayFor(ability);
-        if (spellDelay > 0f)
-            yield return new WaitForSeconds(spellDelay);
-
-        ResolveCastEffects(ability, indicator, aimTime, damageMultiplier, castOrigin);
-
+        ResolveCastEffects(ability, indicator, aimTime, damageMultiplier, transform.position);
         if (indicator != null)
-            Destroy(indicator, castDelay);
+            Destroy(indicator);
+        return true;
     }
 
     void ResolveCastEffects(AbilityDef ability, GameObject indicator, float aimTime, float damageMultiplier, Vector3 castOrigin)
@@ -1631,7 +1840,12 @@ public class AbilityCaster : NetworkBehaviour
         if (cooldownTimers[equippedSlot] > 0f) return;
 
         GameObject serverIndicator = CreateServerCastProxy(ability, castPosition, castRotation, castScale);
-        FinalizeCast(ability, serverIndicator, aimTime);
+        if (!FinalizeCast(ability, serverIndicator, aimTime))
+        {
+            if (serverIndicator != null) Destroy(serverIndicator);
+            return;
+        }
+
         cooldownTimers[equippedSlot] = CooldownFor(ability);
 
         RpcCastConfirmed(spellbookIndex, castPosition, castRotation);
@@ -1642,7 +1856,7 @@ public class AbilityCaster : NetworkBehaviour
     {
         if (isLocalPlayer) return;
         if (spellbookIndex < 0 || spellbookIndex >= spellbook.Length) return;
-        PlayLocalCastFeedback(spellbook[spellbookIndex], position, rotation);
+        PlayLocalCastVFX(spellbook[spellbookIndex], position, rotation);
     }
 
     GameObject CreateServerCastProxy(AbilityDef ability, Vector3 position, Quaternion rotation, Vector3 scale)
@@ -1656,20 +1870,10 @@ public class AbilityCaster : NetworkBehaviour
         return proxy;
     }
 
-    void PlayLocalCastFeedback(AbilityDef ability, Vector3 position, Quaternion rotation)
+    void PlayLocalCastVFX(AbilityDef ability, Vector3 position, Quaternion rotation)
     {
         if (ability == null) return;
-        castAnimator?.PlayCast(ability.category);
-        StartCoroutine(PlayLocalCastVfxAfterDelay(ability, position, rotation, transform.position));
-    }
-
-    System.Collections.IEnumerator PlayLocalCastVfxAfterDelay(AbilityDef ability, Vector3 position, Quaternion rotation, Vector3 castOrigin)
-    {
-        float spellDelay = SpellDelayFor(ability);
-        if (spellDelay > 0f)
-            yield return new WaitForSeconds(spellDelay);
-
-        SpawnLocalCastVFX(ability, position, rotation, castOrigin);
+        SpawnLocalCastVFX(ability, position, rotation, transform.position);
     }
 
     void SpawnLocalCastVFX(AbilityDef ability, Vector3 position, Quaternion rotation, Vector3 castOrigin)

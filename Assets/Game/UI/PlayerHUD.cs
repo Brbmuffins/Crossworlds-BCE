@@ -80,6 +80,13 @@ public class PlayerHUD : MonoBehaviour
     TextMeshProUGUI[]   _slotCdText   = new TextMeshProUGUI[Slots];   // live cooldown countdown
     int                 _activeSlot   = 0;
 
+    // Cast bar
+    GameObject          _castBarRoot;
+    Image               _castBarFill;
+    RectTransform       _castBarFillRect;
+    TextMeshProUGUI     _castBarName;
+    TextMeshProUGUI     _castBarTime;
+
     // Spellbook
     GameObject          _spellbookPanel;
     bool                _spellbookOpen = false;
@@ -130,6 +137,7 @@ public class PlayerHUD : MonoBehaviour
 
         TickHpBar();
         TickAbilityBar();
+        TickCastBar();
         TickSpellbook();
     }
 
@@ -184,6 +192,7 @@ public class PlayerHUD : MonoBehaviour
         _canvas = MakeCanvas(100);
         BuildHpBar();
         BuildAbilityBar();
+        BuildCastBar();
 
         _floatCanvas  = MakeCanvas(110);
         _spellbookCanvas = MakeCanvas(120);
@@ -452,6 +461,81 @@ public class PlayerHUD : MonoBehaviour
     }
 
     // ── Spellbook ─────────────────────────────────────────────────────────────
+
+    void BuildCastBar()
+    {
+        var root = Rt(_canvas.transform, "CastBar");
+        root.anchorMin        = new Vector2(0.5f, 0f);
+        root.anchorMax        = new Vector2(0.5f, 0f);
+        root.pivot            = new Vector2(0.5f, 0f);
+        root.anchoredPosition = new Vector2(0f, 164f);
+        root.sizeDelta        = new Vector2(380f, 42f);
+        _castBarRoot = root.gameObject;
+
+        var bg = Img(root, "Bg", new Color(0.04f, 0.04f, 0.07f, 0.92f));
+        Stretch(bg.rectTransform);
+
+        var track = Img(root, "Track", new Color(0.11f, 0.11f, 0.15f, 0.96f));
+        track.rectTransform.anchorMin = new Vector2(0.035f, 0.18f);
+        track.rectTransform.anchorMax = new Vector2(0.965f, 0.70f);
+        track.rectTransform.offsetMin = track.rectTransform.offsetMax = Vector2.zero;
+
+        _castBarFill = Img(track.rectTransform, "Fill", SlotActive);
+        _castBarFill.type = Image.Type.Simple;
+        _castBarFillRect = _castBarFill.rectTransform;
+        _castBarFillRect.anchorMin = Vector2.zero;
+        _castBarFillRect.anchorMax = new Vector2(0f, 1f);
+        _castBarFillRect.offsetMin = _castBarFillRect.offsetMax = Vector2.zero;
+
+        _castBarName = Lbl(root, "Name", "", 11f);
+        _castBarName.fontStyle = FontStyles.Bold;
+        _castBarName.color     = TextPrimary;
+        _castBarName.enableAutoSizing = true;
+        _castBarName.fontSizeMin = 8f;
+        _castBarName.fontSizeMax = 11f;
+        _castBarName.rectTransform.anchorMin = new Vector2(0.04f, 0.70f);
+        _castBarName.rectTransform.anchorMax = new Vector2(0.74f, 0.99f);
+        _castBarName.rectTransform.offsetMin = _castBarName.rectTransform.offsetMax = Vector2.zero;
+        _castBarName.alignment = TextAlignmentOptions.MidlineLeft;
+
+        _castBarTime = Lbl(root, "Time", "", 11f);
+        _castBarTime.fontStyle = FontStyles.Bold;
+        _castBarTime.color     = TextDim;
+        _castBarTime.rectTransform.anchorMin = new Vector2(0.74f, 0.70f);
+        _castBarTime.rectTransform.anchorMax = new Vector2(0.96f, 0.99f);
+        _castBarTime.rectTransform.offsetMin = _castBarTime.rectTransform.offsetMax = Vector2.zero;
+        _castBarTime.alignment = TextAlignmentOptions.MidlineRight;
+
+        _castBarRoot.SetActive(false);
+    }
+
+    void TickCastBar()
+    {
+        bool casting = _caster != null && _caster.IsCommittedCasting;
+        if (_castBarRoot != null && _castBarRoot.activeSelf != casting)
+            _castBarRoot.SetActive(casting);
+        if (!casting)
+        {
+            SetCastBarProgress(0f);
+            return;
+        }
+
+        float progress = _caster.CommittedCastProgress;
+        float remaining = _caster.CommittedCastRemaining;
+        Color tint = CategoryTint(_caster.CommittedCastCategory);
+
+        SetCastBarProgress(progress);
+        _castBarFill.color = Color.Lerp(tint, Color.white, 0.16f);
+        _castBarName.text = _caster.CommittedCastName.ToUpperInvariant();
+        _castBarTime.text = $"{remaining:0.0}s";
+    }
+
+    void SetCastBarProgress(float progress)
+    {
+        if (_castBarFillRect == null) return;
+        _castBarFillRect.anchorMax = new Vector2(Mathf.Clamp01(progress), 1f);
+        _castBarFillRect.offsetMin = _castBarFillRect.offsetMax = Vector2.zero;
+    }
 
     GameObject BuildSpellbookPanel()
     {
