@@ -2245,6 +2245,7 @@ public class AbilityCaster : NetworkBehaviour
             var s = go.GetComponent<SingularityBehaviour>();
             if (s == null) return;
             s.burstDamage     *= dmgMult;
+            s.pulseDamage      = isEventHorizon ? 0f : s.pulseDamage * dmgMult;
             s.applyExposed     = isEventHorizon;
             s.owner            = gameObject;
             // Check for Phase Relay bonus
