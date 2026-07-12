@@ -9,6 +9,7 @@ public class TurretController : MonoBehaviour
     public string targetTag = "Enemy";
     [Tooltip("How often (s) the turret rescans for a new target when it has none. Cheap perf win — keeps the per-frame tag scan from running every frame.")]
     public float retargetInterval = 0.2f;
+    [HideInInspector] public GameObject owner;
 
     [Header("Visuals (optional - auto-created if left empty)")]
     public Transform barrel;
@@ -155,7 +156,7 @@ public class TurretController : MonoBehaviour
             float mult = _outputMultiplier;
             if (!_overloaded && DeployableManager.Instance != null)
                 mult = DeployableManager.Instance.GetMultiplier(gameObject);
-            targetHealth.TakeDamage(damage * mult);
+            targetHealth.TakeDamage(damage * mult, owner != null ? owner : gameObject);
         }
 
         barrel.localPosition = barrelRestLocalPos - Vector3.forward * recoilDistance;

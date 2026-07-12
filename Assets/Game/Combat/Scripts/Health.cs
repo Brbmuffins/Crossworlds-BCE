@@ -63,6 +63,7 @@ public class Health : NetworkBehaviour
     public UnityEvent<float, float> onHealthChanged;    // (current, max)
     public UnityEvent               onDeath;
     public UnityEvent<float>        onDamageTaken;      // raw final damage (after shield, after redirect)
+    public UnityEvent<GameObject>   onDamagedBy = new UnityEvent<GameObject>(); // source that caused the damage, when known
     public UnityEvent<float>        onHealApplied;      // heal amount (for Triage Loop)
     public UnityEvent<bool>         onDownedChanged;    // true = just went down, false = revived
     public UnityEvent<GameObject>   onKilledBy;         // who dealt the killing blow (for BountySystem)
@@ -238,6 +239,7 @@ public class Health : NetworkBehaviour
         {
             _absorbedAmount += amount;
             onDamageTaken?.Invoke(amount);
+            onDamagedBy?.Invoke(source);
             return; // absorbed — no HP lost
         }
 
@@ -254,6 +256,7 @@ public class Health : NetworkBehaviour
         currentHealth = Mathf.Max(0f, currentHealth - amount);
         onHealthChanged?.Invoke(currentHealth, maxHealth);
         onDamageTaken?.Invoke(amount);
+        onDamagedBy?.Invoke(source);
         ShowDamageFeedback(amount);
 
         if (currentHealth <= 0f)
@@ -473,12 +476,33 @@ public class Health : NetworkBehaviour
 
     void RespawnSimpleEnemy()
     {
-        Vector3 position = _hasServerSpawnPoint ? _serverSpawnPosition : transform.position;
-        Quaternion rotation = _hasServerSpawnPoint ? _serverSpawnRotation : transform.rotation;
+        GetSimpleEnemyRespawnTransform(out Vector3 position, out Quaternion rotation);
 
         ApplySimpleEnemyRespawn(position, rotation);
         if (CanSendClientRpc())
             RpcRespawnSimpleEnemy(position, rotation);
+    }
+
+    void GetSimpleEnemyRespawnTransform(out Vector3 position, out Quaternion rotation)
+    {
+        FieldGhoulNPC fieldMob = GetComponent<FieldGhoulNPC>();
+        if (fieldMob != null && fieldMob.HasLeashReturnPoint)
+        {
+            position = fieldMob.LeashReturnPosition;
+            rotation = fieldMob.LeashReturnRotation;
+            return;
+        }
+
+        EnemyAI enemyAI = GetComponent<EnemyAI>();
+        if (enemyAI != null)
+        {
+            position = enemyAI.HomePosition;
+            rotation = enemyAI.HomeRotation;
+            return;
+        }
+
+        position = _hasServerSpawnPoint ? _serverSpawnPosition : transform.position;
+        rotation = _hasServerSpawnPoint ? _serverSpawnRotation : transform.rotation;
     }
 
     bool CanSendClientRpc()

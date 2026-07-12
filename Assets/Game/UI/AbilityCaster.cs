@@ -77,6 +77,8 @@ public class AbilityCaster : NetworkBehaviour
     const string DefaultDecalMaterialPath = "Packages/com.unity.render-pipelines.universal/Runtime/Materials/Decal.mat";
     const int ArcaneStepPulseCount = 4;
     const float ArcaneStepPulseInterval = 1f;
+    const int VoidMawPulseCount = 4;
+    const float VoidMawPulseInterval = 1f;
     static readonly Vector3 GroundDecalPivot = new Vector3(0f, 0f, 0.5f);
     static bool s_warnedInvalidRectDecal;
     static bool s_loggedRectIndicatorPath;
@@ -114,6 +116,10 @@ public class AbilityCaster : NetworkBehaviour
     public GameObject lastBastionPrefab;
     [Tooltip("NullFieldZone prefab (Silence Ward) — curse fog")]
     public GameObject nullFieldPrefab;
+
+    [Header("Void Maw")]
+    [SerializeField, Min(0.05f), Tooltip("How long each Plexus AoE pulse VFX stays visible. Four pulses spawn 1s apart, so total visible time is roughly this plus 3 seconds.")]
+    float voidMawPulseVFXLifetime = 1f;
 
     [Header("Cleric VFX")]
     [Tooltip("ClericHealVFX component on the Cleric prefab — triggers particle burst on heal casts")]
@@ -190,7 +196,7 @@ public class AbilityCaster : NetworkBehaviour
         // ── ARCANIST (indices 19–22) ───────────────────────────────────────────────────
         // [19] Arcane Step — teleport up to 10 units in aimed direction
         new AbilityDef { abilityName = "Arcane Step",      shape = AbilityShape.Circle,    category = AbilityCategory.Support, range = 10f, indicatorSize = 3.5f, cooldown = 4f, castTime = 0.25f, damage = 10f, targetTag = "Enemy" },
-        // [20] Void Maw — pull enemies to center for 3s then 20 AoE burst
+        // [20] Void Maw — pull enemies to center and pulse damage 4 times
         new AbilityDef { abilityName = "Void Maw",         shape = AbilityShape.Circle,    category = AbilityCategory.Damage,  range = 10f, indicatorSize = 8f, cooldown = 9f, damage = 20f, targetTag = "Enemy" },
         // [21] Forked Lightning — chain lightning, jumps up to 4 enemies (30/25/20/15 dmg)
         new AbilityDef { abilityName = "Forked Lightning",  shape = AbilityShape.Circle,    category = AbilityCategory.Damage,  range = 10f, indicatorSize = 1.5f, cooldown = 7f, damage = 30f, targetTag = "Enemy" },
@@ -1689,9 +1695,14 @@ public class AbilityCaster : NetworkBehaviour
 
     void SpawnVFX(GameObject prefab, Vector3 position, Quaternion rotation)
     {
+        SpawnVFX(prefab, position, rotation, 4f);
+    }
+
+    void SpawnVFX(GameObject prefab, Vector3 position, Quaternion rotation, float lifetime)
+    {
         if (prefab == null) return;
         GameObject fx = Instantiate(prefab, position, rotation);
-        Destroy(fx, 4f);
+        Destroy(fx, Mathf.Max(0.05f, lifetime));
     }
 
 #if UNITY_EDITOR || !UNITY_SERVER
@@ -1805,7 +1816,7 @@ public class AbilityCaster : NetworkBehaviour
                 SpawnFireBurst(castOrigin + indicator.transform.forward * coneRange + Vector3.up * 0.5f, indicator.transform.rotation, coneRange, ability.coneAngle);
         }
 
-        if (ability.shape == AbilityShape.Circle && ability.damage > 0f && !IsArcaneStep(ability))
+        if (ability.shape == AbilityShape.Circle && ability.damage > 0f && !IsArcaneStep(ability) && !IsVoidMaw(ability))
         {
             ApplyCircleDamage(ability, indicator, damageMultiplier);
         }
@@ -1938,6 +1949,11 @@ public class AbilityCaster : NetworkBehaviour
         return ability != null && ability.abilityName == "Arcane Step";
     }
 
+    static bool IsVoidMaw(AbilityDef ability)
+    {
+        return ability != null && ability.abilityName == "Void Maw";
+    }
+
     void DispatchAbility(AbilityDef ability, Vector3 castPoint, float dmgMult)
     {
         switch (ability.abilityName)
@@ -1997,6 +2013,7 @@ public class AbilityCaster : NetworkBehaviour
 
             case "Void Maw":
                 CastSingularity(ability, castPoint, false, dmgMult);
+                StartCoroutine(VoidMawPulseDamage(ability, castPoint, dmgMult));
                 break;
 
             case "Forked Lightning":
@@ -2064,7 +2081,20 @@ public class AbilityCaster : NetworkBehaviour
         }
     }
 
-    void ApplyPulseDamage(Vector3 centre, float radius, float damage, string targetTag, GameObject hitVFX)
+    System.Collections.IEnumerator VoidMawPulseDamage(AbilityDef ability, Vector3 centre, float damageMultiplier)
+    {
+        float radius = ability.indicatorSize > 0f ? ability.indicatorSize * 0.5f : 4f;
+        float damage = (ability.damage > 0f ? ability.damage : 20f) * damageMultiplier;
+
+        for (int pulse = 0; pulse < VoidMawPulseCount; pulse++)
+        {
+            ApplyPulseDamage(centre, radius, damage, ability.targetTag, ability.hitVFX, voidMawPulseVFXLifetime);
+            if (pulse < VoidMawPulseCount - 1)
+                yield return new WaitForSeconds(VoidMawPulseInterval);
+        }
+    }
+
+    void ApplyPulseDamage(Vector3 centre, float radius, float damage, string targetTag, GameObject hitVFX, float hitVFXLifetime = 4f)
     {
         Collider[] hits = Physics.OverlapSphere(centre, radius);
         var damaged = new System.Collections.Generic.HashSet<Health>();
@@ -2080,7 +2110,7 @@ public class AbilityCaster : NetworkBehaviour
 
             damaged.Add(health);
             health.TakeDamage(damage, gameObject);
-            SpawnVFX(hitVFX, health.transform.position + Vector3.up * 0.5f, Quaternion.identity);
+            SpawnVFX(hitVFX, health.transform.position + Vector3.up * 0.5f, Quaternion.identity, hitVFXLifetime);
         }
     }
 
@@ -2244,8 +2274,7 @@ public class AbilityCaster : NetworkBehaviour
         {
             var s = go.GetComponent<SingularityBehaviour>();
             if (s == null) return;
-            s.burstDamage     *= dmgMult;
-            s.pulseDamage      = isEventHorizon ? 0f : s.pulseDamage * dmgMult;
+            s.burstDamage      = isEventHorizon ? s.burstDamage * dmgMult : 0f;
             s.applyExposed     = isEventHorizon;
             s.owner            = gameObject;
             // Check for Phase Relay bonus
@@ -2362,6 +2391,7 @@ public class AbilityCaster : NetworkBehaviour
             if (s == null) return;
             s.targetHealth = targetH;
             s.target       = targetT;
+            s.owner        = gameObject;
             if (ability.healAmount > 0f) s.healAmount = ability.healAmount;
         });
     }
@@ -2484,7 +2514,7 @@ public class AbilityCaster : NetworkBehaviour
             Health health = hit.GetComponent<Health>();
             if (health != null)
             {
-                health.TakeDamage(ability.damage * damageMultiplier);
+                health.TakeDamage(ability.damage * damageMultiplier, gameObject);
                 SpawnVFX(ability.hitVFX, hit.transform.position + Vector3.up * 0.5f, Quaternion.identity);
             }
         }
@@ -2512,7 +2542,7 @@ public class AbilityCaster : NetworkBehaviour
             Health health = hit.GetComponent<Health>();
             if (health != null)
             {
-                health.TakeDamage(damage);
+                health.TakeDamage(damage, gameObject);
                 SpawnVFX(ability.hitVFX, hit.transform.position + Vector3.up * 0.5f, Quaternion.identity);
             }
         }
@@ -2537,7 +2567,7 @@ public class AbilityCaster : NetworkBehaviour
             Health health = hit.GetComponent<Health>();
             if (health != null)
             {
-                health.TakeDamage(damage);
+                health.TakeDamage(damage, gameObject);
                 SpawnVFX(ability.hitVFX, hit.transform.position + Vector3.up * 0.5f, Quaternion.identity);
             }
         }
@@ -2568,8 +2598,11 @@ public class AbilityCaster : NetworkBehaviour
             GameObject turret = Instantiate(ability.turretPrefab, position, Quaternion.identity);
             turret.name = "Turret";
 
-            if (turret.GetComponent<TurretController>() == null)
-                turret.AddComponent<TurretController>();
+            TurretController turretController = turret.GetComponent<TurretController>();
+            if (turretController == null)
+                turretController = turret.AddComponent<TurretController>();
+
+            turretController.owner = gameObject;
 
             if (ability.turretItem != null && inventory != null)
             {
@@ -2589,7 +2622,8 @@ public class AbilityCaster : NetworkBehaviour
             turret.name = "Turret (Placeholder)";
             turret.transform.position = position;
             turret.transform.localScale = new Vector3(0.6f, 1f, 0.6f);
-            turret.AddComponent<TurretController>();
+            TurretController turretController = turret.AddComponent<TurretController>();
+            turretController.owner = gameObject;
         }
     }
 

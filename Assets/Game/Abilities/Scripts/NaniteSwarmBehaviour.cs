@@ -28,6 +28,7 @@ public class NaniteSwarmBehaviour : MonoBehaviour
     // Set by AbilityCaster
     [HideInInspector] public Health targetHealth;
     [HideInInspector] public Transform target;
+    [HideInInspector] public GameObject owner;
 
     private float _chipTimer;
     private GameObject _trail;
@@ -61,7 +62,7 @@ public class NaniteSwarmBehaviour : MonoBehaviour
             foreach (var col in hits)
             {
                 if (!col.CompareTag(enemyTag)) continue;
-                col.GetComponent<Health>()?.TakeDamage(chipDamage);
+                col.GetComponent<Health>()?.TakeDamage(chipDamage, owner);
             }
         }
 

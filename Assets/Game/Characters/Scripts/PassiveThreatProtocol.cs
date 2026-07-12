@@ -71,8 +71,14 @@ public class PassiveThreatProtocol : ClassPassive
         foreach (var col in hits)
         {
             if (!col.CompareTag(enemyTag)) continue;
-            EnemyAI ai = col.GetComponent<EnemyAI>();
+            EnemyAI ai = col.GetComponentInParent<EnemyAI>();
             ai?.SetAggroTarget(transform);
+
+            EnemyController enemy = col.GetComponentInParent<EnemyController>();
+            enemy?.SetAggroTarget(transform);
+
+            FieldGhoulNPC fieldMob = col.GetComponentInParent<FieldGhoulNPC>();
+            fieldMob?.SetAggroTarget(transform);
         }
 
         // Apply DR

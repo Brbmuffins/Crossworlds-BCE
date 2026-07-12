@@ -27,6 +27,8 @@ public class EnemyController : NetworkBehaviour
     [Header("Detection")]
     public float aggroRadius = 8f;
     public float leashRadius = 20f;
+    public bool aggroWhenDamaged = true;
+    [Min(0f)] public float retaliationRadius = 20f;
 
     // ── Combat ───────────────────────────────────────────────────────────────────
     [Header("Combat")]
@@ -74,6 +76,7 @@ public class EnemyController : NetworkBehaviour
     private bool                 _hasSpeedParam;
     private bool                 _hasAttackParam;
     private bool                 _hasDeathParam;
+    private bool                 _returningHome;
 
     static readonly int SpeedHash = Animator.StringToHash("Speed");
     static readonly int AttackHash = Animator.StringToHash("Attack");
@@ -97,7 +100,29 @@ public class EnemyController : NetworkBehaviour
         _spawnPos = transform.position;
         _spawnRot = transform.rotation;
         _health.onDeath.AddListener(OnDeath);
+        _health.onDamagedBy.AddListener(OnDamagedByServer);
         StartCoroutine(BehaviorLoop());
+    }
+
+    public override void OnStopServer()
+    {
+        if (_health != null)
+        {
+            _health.onDeath.RemoveListener(OnDeath);
+            _health.onDamagedBy.RemoveListener(OnDamagedByServer);
+        }
+
+        base.OnStopServer();
+    }
+
+    public void SetAggroTarget(Transform target)
+    {
+        if (NetworkClient.active && !NetworkServer.active) return;
+        if (state == EnemyState.Dead) return;
+
+        _target = target;
+        _returningHome = false;
+        state = _target != null ? EnemyState.Chase : EnemyState.Idle;
     }
 
     // ─────────────────────────────────────────────────────────────────────────────
@@ -132,6 +157,8 @@ public class EnemyController : NetworkBehaviour
     [Server]
     void TickIdle()
     {
+        TickReturnHomeFacing();
+
         var hits = Physics.OverlapSphere(transform.position, aggroRadius);
         float     nearest = float.MaxValue;
         Transform found   = null;
@@ -145,7 +172,116 @@ public class EnemyController : NetworkBehaviour
             if (d < nearest) { nearest = d; found = col.transform; }
         }
 
-        if (found != null) { _target = found; state = EnemyState.Chase; }
+        if (found != null) SetAggroTarget(found);
+    }
+
+    [Server]
+    void OnDamagedByServer(GameObject source)
+    {
+        if (!aggroWhenDamaged || state == EnemyState.Dead) return;
+
+        Transform attacker = ResolvePlayerTransform(source);
+        if (attacker == null)
+            attacker = FindNearestPlayer(Mathf.Max(aggroRadius, retaliationRadius));
+
+        if (attacker == null) return;
+
+        SetAggroTarget(attacker);
+    }
+
+    Transform ResolvePlayerTransform(GameObject source)
+    {
+        if (source == null) return null;
+
+        Transform current = source.transform;
+        while (current != null)
+        {
+            if (current.CompareTag("Player"))
+                return current;
+
+            Health sourceHealth = current.GetComponent<Health>();
+            if (sourceHealth != null && sourceHealth.isPlayer && sourceHealth.IsAlive)
+                return sourceHealth.transform;
+
+            current = current.parent;
+        }
+
+        return null;
+    }
+
+    Transform FindNearestPlayer(float radius)
+    {
+        GameObject[] players = GameObject.FindGameObjectsWithTag("Player");
+        float radiusSqr = radius > 0f ? radius * radius : Mathf.Infinity;
+        float best = Mathf.Infinity;
+        Transform found = null;
+
+        foreach (var player in players)
+        {
+            if (player == null) continue;
+
+            Health playerHealth = player.GetComponent<Health>();
+            if (playerHealth != null && !playerHealth.IsAlive) continue;
+
+            float sqrDist = (player.transform.position - transform.position).sqrMagnitude;
+            if (sqrDist > radiusSqr || sqrDist >= best) continue;
+
+            best = sqrDist;
+            found = player.transform;
+        }
+
+        return found;
+    }
+
+    [Server]
+    void ReturnToSpawnPoint()
+    {
+        if (_agent == null || !_agent.isActiveAndEnabled) return;
+
+        _returningHome = true;
+        _agent.isStopped = false;
+        _agent.speed = _baseSpeed;
+        _agent.SetDestination(_spawnPos);
+        FaceMoveDirection(_spawnPos);
+    }
+
+    [Server]
+    void TickReturnHomeFacing()
+    {
+        if (!_returningHome) return;
+
+        if (Vector3.Distance(transform.position, _spawnPos) <= 0.25f)
+        {
+            _returningHome = false;
+            if (_agent != null && _agent.isActiveAndEnabled)
+            {
+                _agent.ResetPath();
+                _agent.velocity = Vector3.zero;
+            }
+            transform.rotation = _spawnRot;
+            return;
+        }
+
+        FaceMoveDirection(_spawnPos);
+    }
+
+    void FaceMoveDirection(Vector3 fallbackTarget)
+    {
+        Vector3 dir = Vector3.zero;
+
+        if (_agent != null && _agent.isActiveAndEnabled)
+        {
+            dir = _agent.desiredVelocity.sqrMagnitude > 0.01f
+                ? _agent.desiredVelocity
+                : _agent.velocity;
+        }
+
+        if (dir.sqrMagnitude <= 0.01f)
+            dir = fallbackTarget - transform.position;
+
+        dir.y = 0f;
+        if (dir.sqrMagnitude > 0.01f)
+            transform.rotation = Quaternion.LookRotation(dir);
     }
 
     [Server]
@@ -155,6 +291,7 @@ public class EnemyController : NetworkBehaviour
         if (_target == null || !(_target.GetComponent<Health>()?.IsAlive ?? false))
         {
             ResetToIdle();
+            ReturnToSpawnPoint();
             return;
         }
 
@@ -162,7 +299,7 @@ public class EnemyController : NetworkBehaviour
         if (Vector3.Distance(transform.position, _spawnPos) > leashRadius)
         {
             ResetToIdle();
-            _agent?.SetDestination(_spawnPos);
+            ReturnToSpawnPoint();
             return;
         }
 
@@ -280,6 +417,7 @@ public class EnemyController : NetworkBehaviour
     void OnDeath()
     {
         state = EnemyState.Dead;
+        _returningHome = false;
         StopAllCoroutines();
 
         if (_agent != null && _agent.isActiveAndEnabled) _agent.enabled = false;
@@ -409,6 +547,7 @@ public class EnemyController : NetworkBehaviour
         transform.SetPositionAndRotation(_spawnPos, _spawnRot);
         _target = null;
         _attackTimer = 0f;
+        _returningHome = false;
         state = EnemyState.Idle;
 
         _status?.RemoveAll();

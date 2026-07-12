@@ -3708,6 +3708,17 @@ MonoBehaviour:
   wanderRadius: 8
   minWaitTime: 2
   maxWaitTime: 5
+  enableAggro: 1
+  playerTag: Player
+  aggroRadius: 8
+  leashRadius: 20
+  aggroWhenDamaged: 1
+  retaliationRadius: 20
+  targetSearchInterval: 0.25
+  chaseSpeed: 2.5
+  attackRange: 1.8
+  attackDamage: 8
+  attackRate: 1
   walkBoolParam: isMoving
 --- !u!195 &622840903
 NavMeshAgent:
@@ -3797,6 +3808,9 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   onDamageTaken:
+    m_PersistentCalls:
+      m_Calls: []
+  onDamagedBy:
     m_PersistentCalls:
       m_Calls: []
   onHealApplied:
@@ -5502,6 +5516,17 @@ MonoBehaviour:
   wanderRadius: 8
   minWaitTime: 2
   maxWaitTime: 5
+  enableAggro: 1
+  playerTag: Player
+  aggroRadius: 8
+  leashRadius: 60
+  aggroWhenDamaged: 1
+  retaliationRadius: 20
+  targetSearchInterval: 0.25
+  chaseSpeed: 2.5
+  attackRange: 1.8
+  attackDamage: 8
+  attackRate: 3
   walkBoolParam: isMoving
 --- !u!195 &887525645
 NavMeshAgent:
@@ -5572,15 +5597,15 @@ MonoBehaviour:
   enemyHealthBarHeightOffset: 0
   enemyHealthBarFixedHeight: 1
   showEnemyHoverInfo: 1
-  enemyDisplayName: 
-  enemyLevel: 0
+  enemyDisplayName: Gunda
+  enemyLevel: 10
   autoRespawnPlayers: 1
   playerRespawnDelay: 10
   playerRespawnHealthPercent: 1
   respawnAtStartPosition: 0
   respawnInvulnerabilitySeconds: 2
   manageSimpleEnemyDeathLifecycle: 1
-  simpleEnemyDeadModelSeconds: 3
+  simpleEnemyDeadModelSeconds: 10
   simpleEnemyRespawns: 1
   simpleEnemyRespawnDelay: 30
   destroySimpleEnemyIfRespawnDisabled: 1
@@ -5591,6 +5616,9 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   onDamageTaken:
+    m_PersistentCalls:
+      m_Calls: []
+  onDamagedBy:
     m_PersistentCalls:
       m_Calls: []
   onHealApplied:
