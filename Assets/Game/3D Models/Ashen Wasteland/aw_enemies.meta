@@ -1,10 +1,6 @@
-fileFormatVersion: 2
-<<<<<<<< HEAD:Assets/Game/3D Models/Ashen Wasteland/aw_enemies.meta
-guid: 16803a6f72828cb4484cce0e97884f11
+﻿fileFormatVersion: 2
+guid: 42f7fc2f34845d4419252c4231827a1c
 folderAsset: yes
-========
-guid: 01134bbbb3462c541bc7da67e013434e
->>>>>>>> d929ece2feec15cf717be992151470a4dfee10f1:Assets/brbmuffins Trails/brbmuffins Trails VFX/VFX/Shaders/Vefects_Trails_VFX_URP_2D_Shaders_Materials.unitypackage.meta
 DefaultImporter:
   externalObjects: {}
   userData: 
