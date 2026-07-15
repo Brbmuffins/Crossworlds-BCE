@@ -2,35 +2,44 @@
 * text=auto
 
 # ── Git LFS — large binary assets ────────────────────────────────────────────
+# Extension patterns use case-insensitive character classes (e.g. [Pp][Nn][Gg])
+# so UPPERCASE extensions from external tools are caught too — Tripo exports
+# .JPEG/.PNG, some asset packs ship .TIF/.FBX. Do NOT revert these to plain
+# lowercase globs or those files silently land in regular git and bloat the repo.
+
 # Models
-*.fbx filter=lfs diff=lfs merge=lfs -text
-*.FBX filter=lfs diff=lfs merge=lfs -text
-*.obj filter=lfs diff=lfs merge=lfs -text
-*.blend filter=lfs diff=lfs merge=lfs -text
-*.3ds filter=lfs diff=lfs merge=lfs -text
-*.dae filter=lfs diff=lfs merge=lfs -text
+*.[Ff][Bb][Xx] filter=lfs diff=lfs merge=lfs -text
+*.[Oo][Bb][Jj] filter=lfs diff=lfs merge=lfs -text
+*.[Bb][Ll][Ee][Nn][Dd] filter=lfs diff=lfs merge=lfs -text
+*.3[Dd][Ss] filter=lfs diff=lfs merge=lfs -text
+*.[Dd][Aa][Ee] filter=lfs diff=lfs merge=lfs -text
+*.[Gg][Ll][Bb] filter=lfs diff=lfs merge=lfs -text
+*.[Gg][Ll][Tt][Ff] filter=lfs diff=lfs merge=lfs -text
 
 # Textures
-*.png filter=lfs diff=lfs merge=lfs -text
-*.jpg filter=lfs diff=lfs merge=lfs -text
-*.jpeg filter=lfs diff=lfs merge=lfs -text
-*.tga filter=lfs diff=lfs merge=lfs -text
-*.psd filter=lfs diff=lfs merge=lfs -text
-*.tiff filter=lfs diff=lfs merge=lfs -text
-*.exr filter=lfs diff=lfs merge=lfs -text
-*.hdr filter=lfs diff=lfs merge=lfs -text
+*.[Pp][Nn][Gg] filter=lfs diff=lfs merge=lfs -text
+*.[Jj][Pp][Gg] filter=lfs diff=lfs merge=lfs -text
+*.[Jj][Pp][Ee][Gg] filter=lfs diff=lfs merge=lfs -text
+*.[Tt][Gg][Aa] filter=lfs diff=lfs merge=lfs -text
+*.[Pp][Ss][Dd] filter=lfs diff=lfs merge=lfs -text
+*.[Tt][Ii][Ff] filter=lfs diff=lfs merge=lfs -text
+*.[Tt][Ii][Ff][Ff] filter=lfs diff=lfs merge=lfs -text
+*.[Ee][Xx][Rr] filter=lfs diff=lfs merge=lfs -text
+*.[Hh][Dd][Rr] filter=lfs diff=lfs merge=lfs -text
+*.[Ww][Ee][Bb][Pp] filter=lfs diff=lfs merge=lfs -text
+*.[Bb][Mm][Pp] filter=lfs diff=lfs merge=lfs -text
 
 # Audio
-*.wav filter=lfs diff=lfs merge=lfs -text
-*.mp3 filter=lfs diff=lfs merge=lfs -text
-*.ogg filter=lfs diff=lfs merge=lfs -text
-*.aiff filter=lfs diff=lfs merge=lfs -text
+*.[Ww][Aa][Vv] filter=lfs diff=lfs merge=lfs -text
+*.[Mm][Pp]3 filter=lfs diff=lfs merge=lfs -text
+*.[Oo][Gg][Gg] filter=lfs diff=lfs merge=lfs -text
+*.[Aa][Ii][Ff][Ff] filter=lfs diff=lfs merge=lfs -text
 
 # Video
-*.mp4 filter=lfs diff=lfs merge=lfs -text
-*.mov filter=lfs diff=lfs merge=lfs -text
+*.[Mm][Pp]4 filter=lfs diff=lfs merge=lfs -text
+*.[Mm][Oo][Vv] filter=lfs diff=lfs merge=lfs -text
 
-# Unity binary assets
+# Unity binary assets (Unity always writes these lowercase)
 *.unitypackage filter=lfs diff=lfs merge=lfs -text
 *.asset filter=lfs diff=lfs merge=lfs -text
 *.prefab filter=lfs diff=lfs merge=lfs -text
