@@ -39,6 +39,8 @@ public class NullFieldZone : MonoBehaviour
 
     void OnTriggerEnter(Collider other)
     {
+        // Server applies the silence/curse; client copies just show the fog.
+        if (!DeployableNet.IsAuthority) return;
         if (!other.CompareTag(enemyTag)) return;
         var sem = other.GetComponent<StatusEffectManager>();
         if (sem == null) return;
@@ -59,8 +61,9 @@ public class NullFieldZone : MonoBehaviour
 
     IEnumerator Expire()
     {
+        if (!DeployableNet.IsAuthority) yield break;
         yield return new WaitForSeconds(duration);
-        Destroy(gameObject);
+        DeployableNet.Despawn(gameObject);
     }
 
     void OnDestroy()

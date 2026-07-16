@@ -26,7 +26,9 @@ public class LastBastionWall : MonoBehaviour
 
     private IEnumerator Expire()
     {
+        // Only the authority times out and despawns; the despawn replicates to clients.
+        if (!DeployableNet.IsAuthority) yield break;
         yield return new WaitForSeconds(duration);
-        Destroy(gameObject);
+        DeployableNet.Despawn(gameObject);
     }
 }

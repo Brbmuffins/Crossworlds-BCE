@@ -41,9 +41,13 @@ public class NaniteSwarmBehaviour : MonoBehaviour
 
     void Update()
     {
+        // Server drives movement/heal/chip; NetworkTransform replicates the drift to
+        // clients, and `target` is only set server-side. Client copies render only.
+        if (!DeployableNet.IsAuthority) return;
+
         if (target == null)
         {
-            Destroy(gameObject);
+            DeployableNet.Despawn(gameObject);
             return;
         }
 
@@ -77,7 +81,7 @@ public class NaniteSwarmBehaviour : MonoBehaviour
                 Destroy(fx, 2f);
             }
 
-            Destroy(gameObject);
+            DeployableNet.Despawn(gameObject);
         }
     }
 }

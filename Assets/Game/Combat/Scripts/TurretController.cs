@@ -83,6 +83,10 @@ public class TurretController : MonoBehaviour
 
     void Update()
     {
+        // Server owns targeting + firing; the turret's NetworkTransform replicates its
+        // aim rotation to clients. (Muzzle flash / tracer are authority-side eye candy.)
+        if (!DeployableNet.IsAuthority) return;
+
         // Drone Command focus expires?
         if (_focusTarget != null && Time.time >= _focusExpiry) _focusTarget = null;
 

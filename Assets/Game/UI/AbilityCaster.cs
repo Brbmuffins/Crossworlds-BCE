@@ -1723,6 +1723,48 @@ public class AbilityCaster : NetworkBehaviour
     }
 #endif
 
+    // ── Networked hit VFX ─────────────────────────────────────────────────────
+    // Damage resolves server-side, so a plain SpawnVFX at an impact point would only
+    // appear on the (headless) server. EmitHitVFX broadcasts the impact to every
+    // client via ClientRpc instead, mirroring RpcCastConfirmed. Offline/solo falls
+    // back to a direct local spawn.
+    void EmitHitVFX(GameObject hitVFXPrefab, Vector3 position, float lifetime = 4f)
+    {
+        if (hitVFXPrefab == null) return;
+
+        if (NetworkServer.active)
+        {
+            int idx = ResolveHitVfxIndex(hitVFXPrefab);
+            if (idx >= 0) RpcPlayHitVFX(idx, position, lifetime);
+        }
+        else if (!NetworkClient.active)
+        {
+            // Offline / solo editor play — no network, spawn locally.
+            SpawnVFX(hitVFXPrefab, position, Quaternion.identity, lifetime);
+        }
+    }
+
+    // Resolve a hitVFX prefab to a spellbook index so it can be sent over the RPC.
+    // Any index whose hitVFX matches works — the client re-looks-up the same prefab.
+    int ResolveHitVfxIndex(GameObject hitVFXPrefab)
+    {
+        if (spellbook == null) return -1;
+        for (int i = 0; i < spellbook.Length; i++)
+            if (spellbook[i] != null && spellbook[i].hitVFX == hitVFXPrefab) return i;
+        return -1;
+    }
+
+    [ClientRpc]
+    void RpcPlayHitVFX(int spellbookIndex, Vector3 position, float lifetime)
+    {
+        if (spellbookIndex < 0 || spellbookIndex >= spellbook.Length) return;
+        AbilityDef ability = spellbook[spellbookIndex];
+        if (ability == null) return;
+#if UNITY_EDITOR || !UNITY_SERVER
+        SpawnVFX(ability.hitVFX, position, Quaternion.identity, lifetime);
+#endif
+    }
+
     // Called by BountySystem passive when a kill is registered.
     public void ReduceAllCooldowns(float seconds)
     {
@@ -2110,7 +2152,7 @@ public class AbilityCaster : NetworkBehaviour
 
             damaged.Add(health);
             health.TakeDamage(damage, gameObject);
-            SpawnVFX(hitVFX, health.transform.position + Vector3.up * 0.5f, Quaternion.identity, hitVFXLifetime);
+            EmitHitVFX(hitVFX, health.transform.position + Vector3.up * 0.5f, hitVFXLifetime);
         }
     }
 
@@ -2199,8 +2241,7 @@ public class AbilityCaster : NetworkBehaviour
             if (h == null || h == _health) continue;
             h.Heal(healAmt);
             col.GetComponent<StatusEffectManager>()?.RemoveAll();   // clears 1 debuff
-            if (ability.hitVFX != null)
-                SpawnVFX(ability.hitVFX, col.transform.position + Vector3.up, Quaternion.identity);
+            EmitHitVFX(ability.hitVFX, col.transform.position + Vector3.up);
             break;
         }
     }
@@ -2299,8 +2340,7 @@ public class AbilityCaster : NetworkBehaviour
             Health h = nearest.GetComponent<Health>();
             h?.TakeDamage(Mathf.Max(1f, dmg), gameObject);
 
-            if (ability.hitVFX != null)
-                SpawnVFX(ability.hitVFX, nearest.transform.position + Vector3.up * 0.5f, Quaternion.identity);
+            EmitHitVFX(ability.hitVFX, nearest.transform.position + Vector3.up * 0.5f);
 
             // Draw lightning between jumps (quick LineRenderer)
             Vector3 from = last != null ? last.position + Vector3.up * 0.8f
@@ -2407,8 +2447,7 @@ public class AbilityCaster : NetworkBehaviour
             if (h != null && h.IsDowned)
             {
                 h.Revive(0.30f);
-                if (ability.hitVFX != null)
-                    SpawnVFX(ability.hitVFX, col.transform.position + Vector3.up, Quaternion.identity);
+                EmitHitVFX(ability.hitVFX, col.transform.position + Vector3.up);
                 return;
             }
         }
@@ -2422,8 +2461,7 @@ public class AbilityCaster : NetworkBehaviour
             if (h == null || !h.isRobotic) continue;
             float dmg = (ability.damage > 0f ? ability.damage : 60f) * dmgMult;
             h.TakeDamage(dmg, gameObject);
-            if (ability.hitVFX != null)
-                SpawnVFX(ability.hitVFX, col.transform.position + Vector3.up, Quaternion.identity);
+            EmitHitVFX(ability.hitVFX, col.transform.position + Vector3.up);
         }
     }
 
@@ -2479,19 +2517,28 @@ public class AbilityCaster : NetworkBehaviour
             {
                 float dmg = baseDmg * stacks * dmgMult;
                 col.GetComponent<Health>()?.TakeDamage(dmg, gameObject);
-                if (ability.hitVFX != null)
-                    SpawnVFX(ability.hitVFX, col.transform.position + Vector3.up * 0.5f, Quaternion.identity);
+                EmitHitVFX(ability.hitVFX, col.transform.position + Vector3.up * 0.5f);
             }
         }
     }
 
     // Generic helper: instantiate a deployable prefab, run optional init, register it.
+    // Runs server-side in networked play (called from CmdFinalizeCast → ResolveCastEffects),
+    // so NetworkServer.Spawn replicates the deployable — and its Start()-spawned ambient
+    // VFX — to every client. init runs before Spawn so owner/target fields are set first.
     void SpawnDeployableAt(GameObject prefab, Vector3 pos, System.Action<GameObject> init,
                             Quaternion? rot = null)
     {
         if (prefab == null) return;
         GameObject go = Instantiate(prefab, pos, rot ?? Quaternion.identity);
         init?.Invoke(go);
+
+        // Replicate to clients when authoritative. Guard on NetworkIdentity so this
+        // degrades to a server-local object (old behaviour) if the prefab hasn't been
+        // given a NetworkIdentity yet — run BCE ▶ Setup ▶ 4d to add them.
+        if (NetworkServer.active && go.GetComponent<NetworkIdentity>() != null)
+            NetworkServer.Spawn(go);
+
         DeployableManager.Instance?.Register(go, gameObject.GetInstanceID(),
             classPool != null ? GetClassDeployableLimit() : 1);
     }
@@ -2515,7 +2562,7 @@ public class AbilityCaster : NetworkBehaviour
             if (health != null)
             {
                 health.TakeDamage(ability.damage * damageMultiplier, gameObject);
-                SpawnVFX(ability.hitVFX, hit.transform.position + Vector3.up * 0.5f, Quaternion.identity);
+                EmitHitVFX(ability.hitVFX, hit.transform.position + Vector3.up * 0.5f);
             }
         }
     }
@@ -2543,7 +2590,7 @@ public class AbilityCaster : NetworkBehaviour
             if (health != null)
             {
                 health.TakeDamage(damage, gameObject);
-                SpawnVFX(ability.hitVFX, hit.transform.position + Vector3.up * 0.5f, Quaternion.identity);
+                EmitHitVFX(ability.hitVFX, hit.transform.position + Vector3.up * 0.5f);
             }
         }
     }
@@ -2568,7 +2615,7 @@ public class AbilityCaster : NetworkBehaviour
             if (health != null)
             {
                 health.TakeDamage(damage, gameObject);
-                SpawnVFX(ability.hitVFX, hit.transform.position + Vector3.up * 0.5f, Quaternion.identity);
+                EmitHitVFX(ability.hitVFX, hit.transform.position + Vector3.up * 0.5f);
             }
         }
     }
@@ -2603,6 +2650,12 @@ public class AbilityCaster : NetworkBehaviour
                 turretController = turret.AddComponent<TurretController>();
 
             turretController.owner = gameObject;
+
+            // Replicate to clients so other players see the sentinel (rotation syncs via
+            // its NetworkTransform). Guard on NetworkIdentity — degrades to server-local
+            // if the turret prefab hasn't been networked yet (BCE ▶ Setup ▶ 4d).
+            if (NetworkServer.active && turret.GetComponent<NetworkIdentity>() != null)
+                NetworkServer.Spawn(turret);
 
             if (ability.turretItem != null && inventory != null)
             {

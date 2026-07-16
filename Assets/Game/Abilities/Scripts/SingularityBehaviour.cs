@@ -48,6 +48,10 @@ public class SingularityBehaviour : MonoBehaviour
 
     private IEnumerator Run()
     {
+        // Server owns the pull + burst; client copies render the replicated vortex
+        // (ambient VFX spawned in Start) while NetworkTransform holds its position.
+        if (!DeployableNet.IsAuthority) yield break;
+
         float total = pullDuration + pullDurationBonus;
         float elapsed = 0f;
 
@@ -98,6 +102,6 @@ public class SingularityBehaviour : MonoBehaviour
             Destroy(fx, 4f);
         }
 
-        Destroy(gameObject);
+        DeployableNet.Despawn(gameObject);
     }
 }

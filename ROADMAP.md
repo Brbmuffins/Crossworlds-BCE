@@ -172,6 +172,35 @@ Highest-value phase: every piece exists, only glue is missing.
   exist; `RodNetworkManager` hardcodes `LoginScene`. Confirm `Login.unity` is dead, then
   delete. *Deps:* owner confirm.
 
+- **2.5 — Ambient NPCs are damageable but not networked. ⚠ DECISION — KNOWN DEBT, deferred
+  2026-07-15.** `Health` is a `NetworkBehaviour`, but `Editor/FieldGhoulSetupBuilder.cs`
+  deliberately strips `NetworkIdentity` from the Field Ghouls (its comment: NetworkIdentity
+  hides scene objects when no server is running) while still adding `Health`. Consequences:
+  (a) Mirror logs `Health on <name> requires a NetworkIdentity` at load/import for every such
+  object — currently the ogre `3D Models/Enemies/Ogres/O'gar Brute/Idle.prefab` (Darkwood) and
+  the Hub ghouls; (b) damage on them is client-local with no server authority, so each client
+  kills their own copy — a Mirror-discipline violation, not just console noise. Options: make
+  them real server-auth enemies (NetworkIdentity + NetworkTransform, accept editor-hidden
+  without a server), or split a non-networked `DummyHealth` for pure scenery. Owner chose to
+  leave as-is for now. *Deps:* owner decision.
+
+- **2.6 — GUID churn from out-of-editor asset moves. DONE 2026-07-15 (needs editor confirm).**
+  *Culprit:* commit `b0aec3c1` "aw_assets buidout" (Todd King, 2026-07-15 15:44), merged in via
+  `cdf4bb83` — it regenerated **124 `.meta` GUIDs** under `Assets/TripoModels/Incoming Batch/`,
+  dangling every reference authored against the old ones. This is why Darkwood and LoginScene
+  "worked yesterday" and broke today. (`527fb6b7` did the same earlier; guids have ping-ponged
+  across several commits, so *always* diff against the specific pre-churn commit.)
+  *Repair:* restored the pre-churn GUIDs into the current metas — 33 files, verified safe on five
+  conditions each (guid actually churned; current meta still holds the churn guid; old-vs-current
+  meta differs **only** on the guid line, so importer settings and internal fileIDs are identical;
+  no current meta owns the old guid; nothing references the new guid; the old guid *is* actually
+  referenced). The other 88 churned metas were skipped as harmless — nothing referenced their old
+  guids. Script kept at `tools/guid_restore.py`; re-point `BEFORE`/`AFTER` at the next churn pair
+  and dry-run before `--apply`.
+  *Prevention:* move assets from inside Unity's Project window, or move the `.meta` with the file.
+  Worth telling Todd — an out-of-editor reorganization will do this again.
+  *Accept:* open Darkwood + LoginScene with a cleared console → no "Missing Prefab" errors.
+
 ---
 
 ## Phase 3 — Player-Facing Completion (legacy roadmap Weeks 5–7)

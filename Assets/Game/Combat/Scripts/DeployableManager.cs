@@ -39,7 +39,9 @@ public class DeployableManager : MonoBehaviour
             list.RemoveAt(0);
             _stacks.Remove(oldest);
             _multiplier.Remove(oldest);
-            if (oldest != null) Destroy(oldest);
+            // Network-safe: unspawns across clients when networked. Register only runs
+            // on the authority, so this eviction is always authoritative too.
+            if (oldest != null) DeployableNet.Despawn(oldest);
         }
 
         list.Add(deployable);
