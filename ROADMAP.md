@@ -172,6 +172,47 @@ Highest-value phase: every piece exists, only glue is missing.
   exist; `RodNetworkManager` hardcodes `LoginScene`. Confirm `Login.unity` is dead, then
   delete. *Deps:* owner confirm.
 
+- **2.5 — Ambient NPCs are damageable but not networked. PARTIALLY RESOLVED 2026-07-15.**
+  `Health` is a `NetworkBehaviour`, but `Editor/FieldGhoulSetupBuilder.cs` deliberately strips
+  `NetworkIdentity` from the Field Ghouls (its comment: NetworkIdentity hides scene objects when
+  no server is running) while still adding `Health`. Consequences: (a) Mirror logs
+  `Health on <name> requires a NetworkIdentity` at load/import; (b) damage is client-local with
+  no server authority, so each client kills their own copy — a Mirror-discipline violation, not
+  just console noise.
+
+  **Ogre: done.** Owner reversed the earlier defer and chose to network the O'gar Brute
+  (`3D Models/Enemies/Ogres/O'gar Brute/Idle.prefab`, placed in Darkwood). New builder
+  `Editor/OgreNetworkSetupBuilder.cs` → **BCE/Setup/4o** adds NetworkIdentity +
+  NetworkTransformUnreliable (ServerToClient) + NetworkAnimator (server authority), matching the
+  Enemy_Grunt/Ranged/Elite config in `NetworkSyncFixer` (4n). No AI changes were needed:
+  `FieldGhoulNPC` already gates Update/WanderLoop/OnDamagedBy behind `CanRunServerSide()`, so the
+  NavMesh wander runs server-only and won't fight the NetworkTransform. *Editor steps:* run 4o,
+  then **open Darkwood.unity and save it** (Mirror bakes the scene-object sceneId on save — the
+  placed ogre won't spawn for clients otherwise), then rebuild/redeploy the server.
+
+  **Hub ghouls: still open. ⚠ DECISION.** They keep the strip-identity shape and remain
+  damageable-but-unnetworked. Options: give them the 4o treatment (accept editor-hidden without
+  a server), or split a non-networked `DummyHealth` for pure scenery. Deliberately not touched —
+  `FieldGhoulSetupBuilder` is a working system and the owner asked only for the ogre.
+  *Deps:* owner decision.
+
+- **2.6 — GUID churn from out-of-editor asset moves. DONE 2026-07-15 (needs editor confirm).**
+  *Culprit:* commit `b0aec3c1` "aw_assets buidout" (Todd King, 2026-07-15 15:44), merged in via
+  `cdf4bb83` — it regenerated **124 `.meta` GUIDs** under `Assets/TripoModels/Incoming Batch/`,
+  dangling every reference authored against the old ones. This is why Darkwood and LoginScene
+  "worked yesterday" and broke today. (`527fb6b7` did the same earlier; guids have ping-ponged
+  across several commits, so *always* diff against the specific pre-churn commit.)
+  *Repair:* restored the pre-churn GUIDs into the current metas — 33 files, verified safe on five
+  conditions each (guid actually churned; current meta still holds the churn guid; old-vs-current
+  meta differs **only** on the guid line, so importer settings and internal fileIDs are identical;
+  no current meta owns the old guid; nothing references the new guid; the old guid *is* actually
+  referenced). The other 88 churned metas were skipped as harmless — nothing referenced their old
+  guids. Script kept at `tools/guid_restore.py`; re-point `BEFORE`/`AFTER` at the next churn pair
+  and dry-run before `--apply`.
+  *Prevention:* move assets from inside Unity's Project window, or move the `.meta` with the file.
+  Worth telling Todd — an out-of-editor reorganization will do this again.
+  *Accept:* open Darkwood + LoginScene with a cleared console → no "Missing Prefab" errors.
+
 ---
 
 ## Phase 3 — Player-Facing Completion (legacy roadmap Weeks 5–7)

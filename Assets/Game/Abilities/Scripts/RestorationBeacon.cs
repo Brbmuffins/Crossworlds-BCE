@@ -30,14 +30,19 @@ public class RestorationBeacon : MonoBehaviour
         if (idleVFX != null)
             Instantiate(idleVFX, transform.position, Quaternion.identity, transform);
 
-        if (DeployableManager.Instance != null)
+        // Deployable tracking (limit enforcement) is server-authoritative — only the
+        // authority registers, so it never despawns a client's local copy.
+        if (DeployableNet.IsAuthority && DeployableManager.Instance != null)
             DeployableManager.Instance.Register(gameObject, ownerID, 1);
     }
 
     void Update()
     {
+        // Server drives healing pulses + lifetime; client copies render the idle VFX.
+        if (!DeployableNet.IsAuthority) return;
+
         _lifetimeTimer += Time.deltaTime;
-        if (_lifetimeTimer >= lifetime) { Destroy(gameObject); return; }
+        if (_lifetimeTimer >= lifetime) { DeployableNet.Despawn(gameObject); return; }
 
         _pulseTimer += Time.deltaTime;
         if (_pulseTimer < pulseInterval) return;

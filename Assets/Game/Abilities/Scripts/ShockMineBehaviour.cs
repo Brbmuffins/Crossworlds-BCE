@@ -47,6 +47,8 @@ public class ShockMineBehaviour : MonoBehaviour
 
     void OnTriggerEnter(Collider other)
     {
+        // Server owns detonation; client copies just render the replicated mine + VFX.
+        if (!DeployableNet.IsAuthority) return;
         if (!_armed) return;
         if (!other.CompareTag(targetTag)) return;
 
@@ -73,6 +75,6 @@ public class ShockMineBehaviour : MonoBehaviour
         if (DeployableManager.Instance != null)
             DeployableManager.Instance.Unregister(gameObject);
 
-        Destroy(gameObject);
+        DeployableNet.Despawn(gameObject);
     }
 }
