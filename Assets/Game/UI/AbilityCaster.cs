@@ -1804,8 +1804,16 @@ public class AbilityCaster : NetworkBehaviour
     void SpawnVFX(GameObject prefab, Vector3 position, Quaternion rotation, float lifetime)
     {
         if (prefab == null) return;
-        GameObject fx = Instantiate(prefab, position, rotation);
+        GameObject fx = Instantiate(prefab, position, GetVFXSpawnRotation(prefab, rotation));
         Destroy(fx, Mathf.Max(0.05f, lifetime));
+    }
+
+    static Quaternion GetVFXSpawnRotation(GameObject prefab, Quaternion requestedRotation)
+    {
+        if (prefab != null && prefab.name == "Ice freeze skill")
+            return requestedRotation * prefab.transform.rotation;
+
+        return requestedRotation;
     }
 
 #if UNITY_EDITOR || !UNITY_SERVER
@@ -1813,7 +1821,7 @@ public class AbilityCaster : NetworkBehaviour
                                              Quaternion rotation, float duration)
     {
         if (prefab == null) yield break;
-        GameObject fx = Instantiate(prefab, from, rotation);
+        GameObject fx = Instantiate(prefab, from, GetVFXSpawnRotation(prefab, rotation));
         float elapsed = 0f;
         while (elapsed < duration)
         {
