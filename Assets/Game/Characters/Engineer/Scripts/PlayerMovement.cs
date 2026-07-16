@@ -21,6 +21,10 @@ public class PlayerMovement : NetworkBehaviour
     [Header("Physics Stability")]
     public bool keepUpright = true;
 
+    [Header("Movement Locks")]
+    [Tooltip("Debug readout: movement is temporarily frozen by another system, such as spell commit.")]
+    [SerializeField] private bool movementLocked = false;
+
     // ── Dodge Roll ────────────────────────────────────────────────
     [Header("Dodge Roll")]
     public float dodgeForce       = 14f;   // burst speed during dodge
@@ -52,6 +56,7 @@ public class PlayerMovement : NetworkBehaviour
     private bool wantsMove = false;
     private bool jumpRequested = false;
     private float currentSpeed;
+    private float movementLockUntil = -1f;
 
     void Start()
     {
@@ -142,23 +147,35 @@ public class PlayerMovement : NetworkBehaviour
             || (RodChatManager.Instance != null && RodChatManager.Instance.IsOpen);
     }
 
+    public void RequestMovementLock(float duration)
+    {
+        if (duration <= 0f)
+            return;
+
+        movementLockUntil = Mathf.Max(movementLockUntil, Time.time + duration);
+        movementLocked = true;
+        ClearMovementIntent();
+        StopHorizontalMotion();
+    }
+
     void Update()
     {
         if (health != null && health.IsDowned)
         {
-            wantsMove = false;
-            jumpRequested = false;
-            SetAnimBool("isMoving", false);
-            SetAnimBool("isSprinting", false);
-            SetAnimBool("isBackwards", false);
+            ClearMovementIntent();
             return;
         }
 
         // Yield all keyboard input to UI while player is typing
         if (IsTypingInUI())
         {
-            wantsMove = false;
-            jumpRequested = false;
+            ClearMovementIntent();
+            return;
+        }
+
+        if (IsMovementLocked())
+        {
+            ClearMovementIntent();
             return;
         }
 
@@ -233,17 +250,20 @@ public class PlayerMovement : NetworkBehaviour
 
         if (health != null && health.IsDowned)
         {
-            wantsMove = false;
-            jumpRequested = false;
-            Vector3 velocity = rb.linearVelocity;
-            velocity.x = 0f;
-            velocity.z = 0f;
-            rb.linearVelocity = velocity;
+            ClearMovementIntent();
+            StopHorizontalMotion();
             return;
         }
 
         if (keepUpright)
             KeepBodyUpright();
+
+        if (IsMovementLocked())
+        {
+            ClearMovementIntent();
+            StopHorizontalMotion();
+            return;
+        }
 
         if (jumpRequested)
         {
@@ -319,6 +339,34 @@ public class PlayerMovement : NetworkBehaviour
     static Quaternion UprightRotation(Quaternion rotation)
     {
         return Quaternion.Euler(0f, rotation.eulerAngles.y, 0f);
+    }
+
+    bool IsMovementLocked()
+    {
+        movementLocked = Time.time < movementLockUntil;
+        return movementLocked;
+    }
+
+    void ClearMovementIntent()
+    {
+        wantsMove = false;
+        jumpRequested = false;
+        SetAnimBool("isMoving", false);
+        SetAnimBool("isSprinting", false);
+        SetAnimBool("isBackwards", false);
+    }
+
+    void StopHorizontalMotion()
+    {
+        if (rb == null)
+            rb = GetComponent<Rigidbody>();
+        if (rb == null)
+            return;
+
+        Vector3 velocity = rb.linearVelocity;
+        velocity.x = 0f;
+        velocity.z = 0f;
+        rb.linearVelocity = velocity;
     }
 
     // ── Dodge Roll ────────────────────────────────────────────────

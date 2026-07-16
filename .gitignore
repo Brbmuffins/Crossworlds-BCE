@@ -41,6 +41,10 @@ desktop.ini
 *.aab
 *.unitypackage
 *.app
+*.apk.meta
+*.aab.meta
+*.unitypackage.meta
+*.app.meta
 
 # ── Crash reports ─────────────────────────────────────────────────────────────
 sysinfo.txt
@@ -51,6 +55,7 @@ ServerBuild/
 
 # ── Test zips / scratch ───────────────────────────────────────────────────────
 *.zip
+*.zip.meta
 TestDemo*
 
 # ── Shareable builds (distribute via download page, not git) ─────────────────
