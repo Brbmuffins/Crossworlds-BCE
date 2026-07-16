@@ -56,7 +56,9 @@ public static class WorldBossBuilder
     {
         var scene = EditorSceneManager.GetActiveScene();
 
-        if (UnityEngine.Object.FindFirstObjectByType<WorldBossController>() != null &&
+        // FindAny, not FindFirst: we only care whether one exists, and FindFirst is
+        // deprecated for relying on instance-ID ordering.
+        if (UnityEngine.Object.FindAnyObjectByType<WorldBossController>() != null &&
             !EditorUtility.DisplayDialog("Boss Already Present",
                 $"'{scene.name}' already contains a WorldBossController.\n\nAdd another?",
                 "Add Another", "Cancel"))
