@@ -172,17 +172,29 @@ Highest-value phase: every piece exists, only glue is missing.
   exist; `RodNetworkManager` hardcodes `LoginScene`. Confirm `Login.unity` is dead, then
   delete. *Deps:* owner confirm.
 
-- **2.5 — Ambient NPCs are damageable but not networked. ⚠ DECISION — KNOWN DEBT, deferred
-  2026-07-15.** `Health` is a `NetworkBehaviour`, but `Editor/FieldGhoulSetupBuilder.cs`
-  deliberately strips `NetworkIdentity` from the Field Ghouls (its comment: NetworkIdentity
-  hides scene objects when no server is running) while still adding `Health`. Consequences:
-  (a) Mirror logs `Health on <name> requires a NetworkIdentity` at load/import for every such
-  object — currently the ogre `3D Models/Enemies/Ogres/O'gar Brute/Idle.prefab` (Darkwood) and
-  the Hub ghouls; (b) damage on them is client-local with no server authority, so each client
-  kills their own copy — a Mirror-discipline violation, not just console noise. Options: make
-  them real server-auth enemies (NetworkIdentity + NetworkTransform, accept editor-hidden
-  without a server), or split a non-networked `DummyHealth` for pure scenery. Owner chose to
-  leave as-is for now. *Deps:* owner decision.
+- **2.5 — Ambient NPCs are damageable but not networked. PARTIALLY RESOLVED 2026-07-15.**
+  `Health` is a `NetworkBehaviour`, but `Editor/FieldGhoulSetupBuilder.cs` deliberately strips
+  `NetworkIdentity` from the Field Ghouls (its comment: NetworkIdentity hides scene objects when
+  no server is running) while still adding `Health`. Consequences: (a) Mirror logs
+  `Health on <name> requires a NetworkIdentity` at load/import; (b) damage is client-local with
+  no server authority, so each client kills their own copy — a Mirror-discipline violation, not
+  just console noise.
+
+  **Ogre: done.** Owner reversed the earlier defer and chose to network the O'gar Brute
+  (`3D Models/Enemies/Ogres/O'gar Brute/Idle.prefab`, placed in Darkwood). New builder
+  `Editor/OgreNetworkSetupBuilder.cs` → **BCE/Setup/4o** adds NetworkIdentity +
+  NetworkTransformUnreliable (ServerToClient) + NetworkAnimator (server authority), matching the
+  Enemy_Grunt/Ranged/Elite config in `NetworkSyncFixer` (4n). No AI changes were needed:
+  `FieldGhoulNPC` already gates Update/WanderLoop/OnDamagedBy behind `CanRunServerSide()`, so the
+  NavMesh wander runs server-only and won't fight the NetworkTransform. *Editor steps:* run 4o,
+  then **open Darkwood.unity and save it** (Mirror bakes the scene-object sceneId on save — the
+  placed ogre won't spawn for clients otherwise), then rebuild/redeploy the server.
+
+  **Hub ghouls: still open. ⚠ DECISION.** They keep the strip-identity shape and remain
+  damageable-but-unnetworked. Options: give them the 4o treatment (accept editor-hidden without
+  a server), or split a non-networked `DummyHealth` for pure scenery. Deliberately not touched —
+  `FieldGhoulSetupBuilder` is a working system and the owner asked only for the ogre.
+  *Deps:* owner decision.
 
 - **2.6 — GUID churn from out-of-editor asset moves. DONE 2026-07-15 (needs editor confirm).**
   *Culprit:* commit `b0aec3c1` "aw_assets buidout" (Todd King, 2026-07-15 15:44), merged in via
