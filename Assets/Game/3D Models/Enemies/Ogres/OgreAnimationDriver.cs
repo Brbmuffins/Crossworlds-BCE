@@ -25,6 +25,18 @@ public class OgreAnimationDriver : MonoBehaviour
     [Tooltip("Keep the ogre root fixed in place while the death animation plays.")]
     public bool pinRootOnDeath = true;
 
+    [Tooltip("Vertical offset applied to the pinned root while the ogre is dead.")]
+    public float deathRootYOffset = -1.6f;
+
+    [Tooltip("After death, adjust the pinned root so the visible corpse rests on the ground.")]
+    public bool snapCorpseToGroundOnDeath = true;
+
+    public LayerMask groundMask = ~0;
+    public float groundProbeHeight = 5f;
+    public float groundProbeDistance = 12f;
+    public float corpseGroundOffset = 0.03f;
+    public float corpseGroundSnapSeconds = 1.5f;
+
     Animator _animator;
     Health _health;
     StatusEffectManager _status;
@@ -34,6 +46,7 @@ public class OgreAnimationDriver : MonoBehaviour
     bool _deathTriggered;
     bool _stunnedTriggered;
     int _attackIndex;
+    float _deathStartedAt;
 
     bool _hadRigidbody;
     bool _originalUseGravity;
@@ -119,6 +132,9 @@ public class OgreAnimationDriver : MonoBehaviour
         if (!_deathTriggered || !pinRootOnDeath)
             return;
 
+        if (snapCorpseToGroundOnDeath && Time.time - _deathStartedAt <= corpseGroundSnapSeconds)
+            SnapCorpseToGround();
+
         transform.position = _deathPosition;
 
         if (_rigidbody != null)
@@ -157,7 +173,8 @@ public class OgreAnimationDriver : MonoBehaviour
             return;
 
         _deathTriggered = true;
-        _deathPosition = transform.position;
+        _deathStartedAt = Time.time;
+        _deathPosition = transform.position + Vector3.up * deathRootYOffset;
         FreezeBodyForDeath();
         SetSpeed(0f);
 
@@ -175,6 +192,7 @@ public class OgreAnimationDriver : MonoBehaviour
         _deathTriggered = false;
         _stunnedTriggered = false;
         _lastPosition = transform.position;
+        _deathStartedAt = 0f;
         RestoreBodyAfterRespawn();
 
         if (_animator == null)
@@ -260,6 +278,72 @@ public class OgreAnimationDriver : MonoBehaviour
             _rigidbody.linearVelocity = Vector3.zero;
             _rigidbody.angularVelocity = Vector3.zero;
         }
+    }
+
+    void SnapCorpseToGround()
+    {
+        if (!TryFindGroundY(out float groundY) || !TryFindRendererBottomY(out float bottomY))
+            return;
+
+        float targetBottomY = groundY + corpseGroundOffset;
+        float deltaY = targetBottomY - bottomY;
+        if (Mathf.Abs(deltaY) <= 0.01f)
+            return;
+
+        _deathPosition.y += deltaY;
+    }
+
+    bool TryFindGroundY(out float groundY)
+    {
+        groundY = 0f;
+
+        Vector3 origin = _deathPosition + Vector3.up * groundProbeHeight;
+        float distance = groundProbeHeight + groundProbeDistance;
+        RaycastHit[] hits = Physics.RaycastAll(
+            origin,
+            Vector3.down,
+            distance,
+            groundMask,
+            QueryTriggerInteraction.Ignore);
+
+        if (hits == null || hits.Length == 0)
+            return false;
+
+        System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+        foreach (RaycastHit hit in hits)
+        {
+            if (hit.collider == null)
+                continue;
+
+            if (hit.collider.transform.IsChildOf(transform))
+                continue;
+
+            groundY = hit.point.y;
+            return true;
+        }
+
+        return false;
+    }
+
+    bool TryFindRendererBottomY(out float bottomY)
+    {
+        bottomY = float.PositiveInfinity;
+        bool found = false;
+
+        Renderer[] renderers = GetComponentsInChildren<Renderer>(true);
+        foreach (Renderer renderer in renderers)
+        {
+            if (renderer == null || !renderer.enabled)
+                continue;
+
+            if (!(renderer is SkinnedMeshRenderer) && !(renderer is MeshRenderer))
+                continue;
+
+            bottomY = Mathf.Min(bottomY, renderer.bounds.min.y);
+            found = true;
+        }
+
+        return found;
     }
 
     void Trigger(string triggerName, bool hasTrigger)

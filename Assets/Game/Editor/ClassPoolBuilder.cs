@@ -33,7 +33,7 @@ public static class ClassPoolBuilder
 
         CreatePool("Arcanist",
             availableIndices: new[] { 0,1,2,3,4,5,6,7,19,20,21,22,34 },  // +34 Ether Lance
-            defaultEquipped:  new[] { 19,20,21,22 });        // Step, Maw, Lightning, Void
+            defaultEquipped:  new[] { 3,20,21,22 });         // Storm Lash, Maw, Lightning, Void
 
         CreatePool("Cleric",
             availableIndices: new[] { 0,1,2,3,4,5,6,7,23,24,25,26,27,28 },
