@@ -79,6 +79,7 @@ public class AbilityCaster : NetworkBehaviour
     const float ArcaneStepPulseInterval = 1f;
     const int VoidMawPulseCount = 4;
     const float VoidMawPulseInterval = 1f;
+    const int RectCornerCount = 4;
     static readonly Vector3 GroundDecalPivot = new Vector3(0f, 0f, 0.5f);
     static bool s_warnedInvalidRectDecal;
     static bool s_loggedRectIndicatorPath;
@@ -90,6 +91,8 @@ public class AbilityCaster : NetworkBehaviour
     [Header("Cast Time")]
     [Tooltip("Horizontal movement beyond this distance interrupts a committed cast. Movement input interrupts immediately.")]
     [SerializeField, Min(0f)] float castMoveInterruptDistance = 0.035f;
+    [Tooltip("Briefly freezes player movement when an aim is committed so leftover physics drift cannot move the locked spell target.")]
+    [SerializeField, Min(0f)] float commitMovementLockDuration = 0.08f;
 
     [Header("Class")]
     [Tooltip("Assign the chosen class's ClassAbilityPool asset before play starts.")]
@@ -596,6 +599,9 @@ public class AbilityCaster : NetworkBehaviour
         if (committedCastRoutine != null)
             CancelCommittedCast();
 
+        RequestCommitMovementLock();
+        SnapshotCommittedIndicator(indicator);
+
         PlayCommittedCastAnimation(ability);
         BroadcastCommittedCastAnimation(ability);
 
@@ -616,6 +622,24 @@ public class AbilityCaster : NetworkBehaviour
         committedCastDuration = castTime;
         committedCastElapsed = 0f;
         committedCastRoutine = StartCoroutine(CommittedCastRoutine(slot, ability, indicator, aimTime, castTime));
+    }
+
+    void RequestCommitMovementLock()
+    {
+        if (commitMovementLockDuration <= 0f)
+            return;
+
+        PlayerMovement movement = GetComponent<PlayerMovement>();
+        if (movement != null)
+            movement.RequestMovementLock(commitMovementLockDuration);
+    }
+
+    void SnapshotCommittedIndicator(GameObject indicator)
+    {
+        if (indicator == null)
+            return;
+
+        indicator.transform.SetParent(null, true);
     }
 
     System.Collections.IEnumerator CommittedCastRoutine(int slot, AbilityDef ability, GameObject indicator, float aimTime, float castTime)
@@ -922,6 +946,7 @@ public class AbilityCaster : NetworkBehaviour
         else // Rectangle
         {
             // Directional shapes read better as an outline than a stretched circle texture
+            indicator.AddComponent<RectangleAimData>();
             BuildOutlineLR(indicator, ability, c);
             if (!BuildProjectedRectDecal(indicator, c))
                 BuildProjectedRectFill(indicator, c);
@@ -1162,12 +1187,13 @@ public class AbilityCaster : NetworkBehaviour
 
             indicator.transform.position   = mid;
             indicator.transform.rotation   = Quaternion.LookRotation(groundForward, groundNormal);
-            // Keep localScale so ApplyRectangleDamage still works
+            // Keep localScale for VFX, server proxies, and the damage fallback path.
             indicator.transform.localScale = new Vector3(ability.rectWidth * widthMul, 1f, aimDistance);
 
-            if (lr != null) SetRectPoints(lr, mid, groundForward, groundNormal, hw, aimDistance / 2f);
-            UpdateProjectedRectDecal(indicator, mid, groundForward, groundNormal, ability.rectWidth * widthMul, aimDistance);
-            UpdateProjectedRectFill(indicator);
+            RectangleAimData rectData = UpdateRectangleAimData(indicator, mid, groundForward, groundNormal, hw, aimDistance / 2f);
+            if (lr != null) SetRectPoints(lr, rectData);
+            UpdateProjectedRectDecal(indicator, rectData);
+            UpdateProjectedRectFill(indicator, rectData);
         }
         else if (ability.shape == AbilityShape.Cone)
         {
@@ -1268,14 +1294,98 @@ public class AbilityCaster : NetworkBehaviour
             Mathf.Clamp01(Mathf.Max(color.a, 0.95f)));
     }
 
-    void SetRectPoints(LineRenderer lr, Vector3 centre, Vector3 fwd, Vector3 up, float hw, float hl)
+    // The orange outline corners are the source of truth for rectangle fill and hits.
+    RectangleAimData UpdateRectangleAimData(GameObject indicator, Vector3 centre, Vector3 fwd, Vector3 up, float hw, float hl)
     {
-        if (lr.positionCount != 4) { lr.positionCount = 4; lr.loop = true; }
-        Vector3 right = Vector3.Cross(up, fwd).normalized;
-        lr.SetPosition(0, ProjectToGround(centre - right * hw - fwd * hl));
-        lr.SetPosition(1, ProjectToGround(centre + right * hw - fwd * hl));
-        lr.SetPosition(2, ProjectToGround(centre + right * hw + fwd * hl));
-        lr.SetPosition(3, ProjectToGround(centre - right * hw + fwd * hl));
+        RectangleAimData data = indicator.GetComponent<RectangleAimData>();
+        if (data == null)
+            data = indicator.AddComponent<RectangleAimData>();
+
+        data.EnsureCorners();
+
+        Vector3 right = Vector3.Cross(up, fwd);
+        if (right.sqrMagnitude < 0.0001f)
+            right = Vector3.Cross(Vector3.up, fwd);
+        if (right.sqrMagnitude < 0.0001f)
+            right = transform.right;
+        right.Normalize();
+
+        data.corners[0] = ProjectToGround(centre - right * hw - fwd * hl);
+        data.corners[1] = ProjectToGround(centre + right * hw - fwd * hl);
+        data.corners[2] = ProjectToGround(centre + right * hw + fwd * hl);
+        data.corners[3] = ProjectToGround(centre - right * hw + fwd * hl);
+
+        Vector3 nearCenter = (data.corners[0] + data.corners[1]) * 0.5f;
+        Vector3 farCenter = (data.corners[3] + data.corners[2]) * 0.5f;
+        Vector3 leftCenter = (data.corners[0] + data.corners[3]) * 0.5f;
+        Vector3 rightCenter = (data.corners[1] + data.corners[2]) * 0.5f;
+
+        Vector3 visualForward = farCenter - nearCenter;
+        Vector3 visualRight = rightCenter - leftCenter;
+        float visualLength = visualForward.magnitude;
+        float visualWidth = visualRight.magnitude;
+
+        if (visualForward.sqrMagnitude < 0.0001f)
+        {
+            visualForward = fwd;
+            visualLength = hl * 2f;
+        }
+        if (visualRight.sqrMagnitude < 0.0001f)
+        {
+            visualRight = right;
+            visualWidth = hw * 2f;
+        }
+
+        visualForward.Normalize();
+        visualRight = Vector3.ProjectOnPlane(visualRight, visualForward);
+        if (visualRight.sqrMagnitude < 0.0001f)
+            visualRight = Vector3.Cross(Vector3.up, visualForward);
+        if (visualRight.sqrMagnitude < 0.0001f)
+            visualRight = right;
+        visualRight.Normalize();
+
+        Vector3 visualNormal = Vector3.Cross(visualForward, visualRight);
+        if (visualNormal.sqrMagnitude < 0.0001f)
+            visualNormal = up.sqrMagnitude > 0.0001f ? up : Vector3.up;
+        visualNormal.Normalize();
+        if (Vector3.Dot(visualNormal, Vector3.up) < 0f)
+            visualNormal = -visualNormal;
+
+        Vector3 damageForward = new Vector3(visualForward.x, 0f, visualForward.z);
+        if (damageForward.sqrMagnitude < 0.0001f)
+            damageForward = new Vector3(fwd.x, 0f, fwd.z);
+        if (damageForward.sqrMagnitude < 0.0001f)
+            damageForward = transform.forward;
+        damageForward.Normalize();
+
+        Vector3 flatForwardSpan = new Vector3(farCenter.x - nearCenter.x, 0f, farCenter.z - nearCenter.z);
+        Vector3 flatRightSpan = new Vector3(rightCenter.x - leftCenter.x, 0f, rightCenter.z - leftCenter.z);
+        float damageLength = flatForwardSpan.sqrMagnitude > 0.0001f ? flatForwardSpan.magnitude : hl * 2f;
+        float damageWidth = flatRightSpan.sqrMagnitude > 0.0001f ? flatRightSpan.magnitude : hw * 2f;
+
+        data.valid = true;
+        data.visualCenter = (data.corners[0] + data.corners[1] + data.corners[2] + data.corners[3]) * 0.25f;
+        data.visualRight = visualRight;
+        data.visualForward = visualForward;
+        data.visualNormal = visualNormal;
+        data.visualWidth = Mathf.Max(0.05f, visualWidth);
+        data.visualLength = Mathf.Max(0.05f, visualLength);
+        data.damageCenter = data.visualCenter;
+        data.damageRotation = Quaternion.LookRotation(damageForward, Vector3.up);
+        data.damageHalfExtents = new Vector3(Mathf.Max(0.05f, damageWidth) * 0.5f, 1f, Mathf.Max(0.05f, damageLength) * 0.5f);
+
+        return data;
+    }
+
+    void SetRectPoints(LineRenderer lr, RectangleAimData data)
+    {
+        if (lr == null || data == null || !data.valid)
+            return;
+
+        data.EnsureCorners();
+        if (lr.positionCount != RectCornerCount) { lr.positionCount = RectCornerCount; lr.loop = true; }
+        for (int i = 0; i < RectCornerCount; i++)
+            lr.SetPosition(i, data.corners[i]);
     }
 
     void BuildProjectedRectFill(GameObject indicator, Color color)
@@ -1485,17 +1595,17 @@ public class AbilityCaster : NetworkBehaviour
         }
     }
 
-    void UpdateProjectedRectDecal(GameObject indicator, Vector3 centre, Vector3 forward, Vector3 normal, float width, float length)
+    void UpdateProjectedRectDecal(GameObject indicator, RectangleAimData data)
     {
         DecalProjector projector = indicator.GetComponentInChildren<DecalProjector>();
-        if (projector == null)
+        if (projector == null || data == null || !data.valid)
             return;
 
         Transform decalTransform = projector.transform;
-        decalTransform.position = centre;
-        decalTransform.rotation = Quaternion.LookRotation(-normal, forward);
+        decalTransform.position = data.visualCenter;
+        decalTransform.rotation = Quaternion.LookRotation(-data.visualNormal, data.visualForward);
         projector.pivot = GroundDecalPivot;
-        projector.size = new Vector3(width, length, indicatorDecalProjectionDepth);
+        projector.size = new Vector3(data.visualWidth, data.visualLength, indicatorDecalProjectionDepth);
     }
 
     void SetProjectedRectColor(GameObject indicator, Color color)
@@ -1558,7 +1668,7 @@ public class AbilityCaster : NetworkBehaviour
         mesh.RecalculateNormals();
     }
 
-    void UpdateProjectedRectFill(GameObject indicator)
+    void UpdateProjectedRectFill(GameObject indicator, RectangleAimData data)
     {
         MeshFilter mf = null;
         MeshFilter[] filters = indicator.GetComponentsInChildren<MeshFilter>();
@@ -1571,25 +1681,18 @@ public class AbilityCaster : NetworkBehaviour
             }
         }
 
-        if (mf == null || mf.sharedMesh == null) return;
+        if (mf == null || mf.sharedMesh == null || data == null || !data.valid) return;
 
         Mesh mesh = mf.sharedMesh;
         Vector3[] vertices = mesh.vertices;
         Vector2[] uv = mesh.uv;
         if (uv == null || uv.Length != vertices.Length) return;
 
-        Transform indicatorTransform = indicator.transform;
-        Vector3 centre = indicatorTransform.position;
-        Vector3 right = indicatorTransform.right;
-        Vector3 forward = indicatorTransform.forward;
-        Vector3 scale = indicatorTransform.localScale;
-        Vector3 fillOffset = mf.transform.localPosition;
-
         for (int i = 0; i < vertices.Length; i++)
         {
-            float localX = (uv[i].x - 0.5f) * scale.x + fillOffset.x;
-            float localZ = (uv[i].y - 0.5f) * scale.z + fillOffset.z;
-            Vector3 world = centre + right * localX + forward * localZ;
+            float localX = (uv[i].x - 0.5f) * data.visualWidth;
+            float localZ = (uv[i].y - 0.5f) * data.visualLength;
+            Vector3 world = data.visualCenter + data.visualRight * localX + data.visualForward * localZ;
             vertices[i] = mf.transform.InverseTransformPoint(ProjectToGround(world));
         }
 
@@ -1897,6 +2000,19 @@ public class AbilityCaster : NetworkBehaviour
         proxy.transform.position = position;
         proxy.transform.rotation = rotation;
         proxy.transform.localScale = scale;
+
+        if (ability.shape == AbilityShape.Rectangle)
+        {
+            proxy.AddComponent<RectangleAimData>();
+            UpdateRectangleAimData(
+                proxy,
+                position,
+                rotation * Vector3.forward,
+                rotation * Vector3.up,
+                Mathf.Abs(scale.x) * 0.5f,
+                Mathf.Abs(scale.z) * 0.5f);
+        }
+
         return proxy;
     }
 
@@ -2522,17 +2638,33 @@ public class AbilityCaster : NetworkBehaviour
 
     void ApplyRectangleDamage(AbilityDef ability, GameObject indicator, float damage)
     {
-        float rectangleLength = indicator.transform.localScale.z;
-        Vector3 halfExtents = new Vector3(
-            indicator.transform.localScale.x / 2f,
-            1f,
-            rectangleLength / 2f
-        );
+        RectangleAimData rectData = indicator.GetComponent<RectangleAimData>();
+        Vector3 center;
+        Vector3 halfExtents;
+        Quaternion rotation;
+
+        if (rectData != null && rectData.valid)
+        {
+            center = rectData.damageCenter;
+            halfExtents = rectData.damageHalfExtents;
+            rotation = rectData.damageRotation;
+        }
+        else
+        {
+            float rectangleLength = indicator.transform.localScale.z;
+            center = indicator.transform.position;
+            halfExtents = new Vector3(
+                indicator.transform.localScale.x / 2f,
+                1f,
+                rectangleLength / 2f
+            );
+            rotation = indicator.transform.rotation;
+        }
 
         Collider[] hits = Physics.OverlapBox(
-            indicator.transform.position,
+            center,
             halfExtents,
-            indicator.transform.rotation
+            rotation
         );
 
         foreach (Collider hit in hits)
@@ -2704,5 +2836,28 @@ public class AbilityCaster : NetworkBehaviour
         mf.mesh = mesh;
 
         return go;
+    }
+}
+
+internal class RectangleAimData : MonoBehaviour
+{
+    const int CornerCount = 4;
+
+    public bool valid;
+    public Vector3[] corners = new Vector3[CornerCount];
+    public Vector3 visualCenter;
+    public Vector3 visualRight;
+    public Vector3 visualForward;
+    public Vector3 visualNormal;
+    public float visualWidth;
+    public float visualLength;
+    public Vector3 damageCenter;
+    public Quaternion damageRotation;
+    public Vector3 damageHalfExtents;
+
+    public void EnsureCorners()
+    {
+        if (corners == null || corners.Length != CornerCount)
+            corners = new Vector3[CornerCount];
     }
 }
