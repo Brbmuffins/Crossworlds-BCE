@@ -34,7 +34,7 @@ public class CameraFollow : MonoBehaviour
     public float heightOffset = 1.6f;
 
     [Header("Collision")]
-    public bool      cameraCollision     = false;
+    public bool      cameraCollision     = true;
     public LayerMask collisionMask       = ~0;
     public float     collisionRadius     = 0.28f;
     public float     collisionBuffer     = 0.15f;

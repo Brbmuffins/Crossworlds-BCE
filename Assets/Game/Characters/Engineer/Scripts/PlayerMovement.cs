@@ -99,6 +99,8 @@ public class PlayerMovement : NetworkBehaviour
             var follow = FindFirstObjectByType<CameraFollow>();
             if (follow == null)
                 follow = cam.gameObject.AddComponent<CameraFollow>();
+            follow.cameraCollision = true;
+            follow.collisionMask = ~0;
             follow.target = transform; // setter calls SnapToTarget() automatically
         }
 
@@ -250,13 +252,28 @@ public class PlayerMovement : NetworkBehaviour
             SetAnimBool("isGrounded", false);
             SetAnimTrigger("Jump");
 
-            rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
+            Vector3 velocity = rb.linearVelocity;
+            if (velocity.y < 0f)
+            {
+                velocity.y = 0f;
+                rb.linearVelocity = velocity;
+            }
+
+            rb.AddForce(Vector3.up * jumpForce, ForceMode.VelocityChange);
         }
 
-        if (wantsMove)
+        if (!_isDodging)
         {
-            Vector3 targetPosition = rb.position + moveDirection * currentSpeed * Time.fixedDeltaTime;
-            rb.MovePosition(targetPosition);
+            Vector3 velocity = rb.linearVelocity;
+            if (wantsMove)
+            {
+                Vector3 horizontalVelocity = moveDirection * currentSpeed;
+                rb.linearVelocity = new Vector3(horizontalVelocity.x, velocity.y, horizontalVelocity.z);
+            }
+            else if (isGrounded)
+            {
+                rb.linearVelocity = new Vector3(0f, velocity.y, 0f);
+            }
         }
 
         if (lockCharacterRotation)
