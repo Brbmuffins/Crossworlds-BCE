@@ -213,6 +213,34 @@ Highest-value phase: every piece exists, only glue is missing.
   Worth telling Todd — an out-of-editor reorganization will do this again.
   *Accept:* open Darkwood + LoginScene with a cleared console → no "Missing Prefab" errors.
 
+- **2.7 — The ability deployables were never built. ⚠ BLOCKS "see AOE spells in the world".**
+  Discovered 2026-07-15 while verifying 4d, and it corrects an earlier claim that this was
+  "code done, pending one editor step". The CODE is done and committed (`DeployableNet`,
+  `AbilityCaster.SpawnDeployableAt` → `NetworkServer.Spawn` guarded on NetworkIdentity, all 7
+  behaviours gated to authority). **The PREFABS do not exist.** Evidence:
+  - No prefab anywhere references ShockMineBehaviour / SingularityBehaviour / LastBastionWall /
+    NullFieldZone / RestorationBeacon / NaniteSwarmBehaviour / TurretController. 4d searches for
+    prefabs carrying those behaviours, so it finds and fixes nothing.
+  - Every dedicated slot on AbilityCaster is null (`{fileID: 0}`): shockMinePrefab,
+    naniteSwarmPrefab, singularityPrefab, eventHorizonPrefab, lastBastionPrefab, nullFieldPrefab,
+    beaconPrefab, phaseRelayPrefab, shadowRelayPrefab.
+  - The `ability.deployablePrefab` fallbacks that ARE set (13 of 36 on Arcanist) point at raw
+    brbmuffins VFX: Magic circle, Freeze circle, Healing circle, Death magic circle, Ground
+    spikes, Mana wall — all `Identity=0`, and all but one `scripts=0`. `SpawnDeployableAt` does
+    `go.GetComponent<ShockMineBehaviour>()` and silently gets null, so they are cosmetic circles
+    with no gameplay and no replication. `turretPrefab` points at an FBX, not a prefab.
+
+  *Consequence:* deployable abilities currently spawn a decorative circle on the server that no
+  client ever sees. Cast VFX, cast anims, hit VFX and damage DO replicate (RpcCastConfirmed /
+  RpcPlayHitVFX / server-side ApplyCircle etc.), so the spells still read as "working" in play.
+
+  *Task:* build one prefab per deployable type — VFX visual (reuse the brbmuffins circle already
+  referenced) + the matching behaviour + NetworkIdentity + trigger collider — then assign them to
+  the AbilityCaster slots on the 5 hero prefabs and register in RodNetworkManager. Scriptable as a
+  builder (`SerializedObject` can write the Inspector refs); needs design input on radius/duration
+  per deployable. *Accept:* two clients both see a mine/wall/zone appear and it damages/blocks.
+  *Deps:* none — 4d already handles the identity step once the prefabs exist. **READY**
+
 ---
 
 ## Phase 3 — Player-Facing Completion (legacy roadmap Weeks 5–7)
