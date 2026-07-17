@@ -63,6 +63,21 @@ public class AbilityDef
     public float pullRadius   = 0f;        // Magnetize, Singularity, Event Horizon
     public float pullDuration = 0f;        // Singularity pull phase
 
+    [Header("Pulse Damage")]
+    [UnityEngine.Serialization.FormerlySerializedAs("overridePulseSettings")]
+    [Tooltip("Turn on to add pulse damage to this spell, or to customize built-in pulses for spells like Void Maw.")]
+    public bool usePulseDamage = false;
+    [Tooltip("How many damage pulses happen after the spell lands. Set to 0 to disable custom pulses.")]
+    [Min(0)] public int pulseCount = 0;
+    [Tooltip("Seconds between each pulse. Leave at 0 to use the default 1 second.")]
+    [Min(0f)] public float pulseInterval = 0f;
+    [Tooltip("Damage radius for each pulse. Leave at 0 to use half of the spell indicator size.")]
+    [Min(0f)] public float pulseRadius = 0f;
+    [Tooltip("Damage dealt by each pulse before character damage bonuses. Leave at 0 to use this spell's Damage value.")]
+    [Min(0f)] public float pulseDamage = 0f;
+    [Tooltip("How long each pulse hit VFX stays visible. Leave at 0 to use the default.")]
+    [Min(0f)] public float pulseVFXLifetime = 0f;
+
     [Header("Deployable Scene Prefab")]
     // The runtime object spawned in the world by this ability (mine, wall, zone, etc.)
     public GameObject deployablePrefab;
@@ -79,6 +94,7 @@ public class AbilityCaster : NetworkBehaviour
     const float ArcaneStepPulseInterval = 1f;
     const int VoidMawPulseCount = 4;
     const float VoidMawPulseInterval = 1f;
+    const float DefaultVoidMawPulseVFXLifetime = 1f;
     const int RectCornerCount = 4;
     static readonly Vector3 GroundDecalPivot = new Vector3(0f, 0f, 0.5f);
     static bool s_warnedInvalidRectDecal;
@@ -119,10 +135,6 @@ public class AbilityCaster : NetworkBehaviour
     public GameObject lastBastionPrefab;
     [Tooltip("NullFieldZone prefab (Silence Ward) — curse fog")]
     public GameObject nullFieldPrefab;
-
-    [Header("Void Maw")]
-    [SerializeField, Min(0.05f), Tooltip("How long each Plexus AoE pulse VFX stays visible. Four pulses spawn 1s apart, so total visible time is roughly this plus 3 seconds.")]
-    float voidMawPulseVFXLifetime = 1f;
 
     [Header("Cleric VFX")]
     [Tooltip("ClericHealVFX component on the Cleric prefab — triggers particle burst on heal casts")]
@@ -198,9 +210,9 @@ public class AbilityCaster : NetworkBehaviour
 
         // ── ARCANIST (indices 19–22) ───────────────────────────────────────────────────
         // [19] Arcane Step — teleport up to 10 units in aimed direction
-        new AbilityDef { abilityName = "Arcane Step",      shape = AbilityShape.Circle,    category = AbilityCategory.Support, range = 10f, indicatorSize = 3.5f, cooldown = 4f, castTime = 0.25f, damage = 10f, targetTag = "Enemy" },
+        new AbilityDef { abilityName = "Arcane Step",      shape = AbilityShape.Circle,    category = AbilityCategory.Support, range = 10f, indicatorSize = 3.5f, cooldown = 4f, castTime = 0.25f, damage = 10f, targetTag = "Enemy", pulseCount = ArcaneStepPulseCount, pulseInterval = ArcaneStepPulseInterval, pulseDamage = 10f },
         // [20] Void Maw — pull enemies to center and pulse damage 4 times
-        new AbilityDef { abilityName = "Void Maw",         shape = AbilityShape.Circle,    category = AbilityCategory.Damage,  range = 10f, indicatorSize = 8f, cooldown = 9f, damage = 20f, targetTag = "Enemy" },
+        new AbilityDef { abilityName = "Void Maw",         shape = AbilityShape.Circle,    category = AbilityCategory.Damage,  range = 10f, indicatorSize = 8f, cooldown = 9f, damage = 20f, targetTag = "Enemy", pulseCount = VoidMawPulseCount, pulseInterval = VoidMawPulseInterval, pulseDamage = 20f, pulseVFXLifetime = DefaultVoidMawPulseVFXLifetime },
         // [21] Forked Lightning — chain lightning, jumps up to 4 enemies (30/25/20/15 dmg)
         new AbilityDef { abilityName = "Forked Lightning",  shape = AbilityShape.Circle,    category = AbilityCategory.Damage,  range = 10f, indicatorSize = 1.5f, cooldown = 7f, damage = 30f, targetTag = "Enemy" },
         // [22] Collapsing Void (Arcanist Ultimate) — 12-unit pull, 3s collapse, 60 AoE + Weakened window
@@ -323,6 +335,53 @@ public class AbilityCaster : NetworkBehaviour
             else StartCoroutine(AcquireCameraRetry());
         }
     }
+
+#if UNITY_EDITOR
+    void OnValidate()
+    {
+        BackfillSpellBehaviorDefaults();
+    }
+
+    void BackfillSpellBehaviorDefaults()
+    {
+        if (spellbook == null) return;
+
+        foreach (AbilityDef ability in spellbook)
+        {
+            if (ability == null || ability.usePulseDamage)
+                continue;
+
+            switch (ability.abilityName)
+            {
+                case "Arcane Step":
+                    BackfillPulseDefaults(
+                        ability,
+                        ArcaneStepPulseCount,
+                        ArcaneStepPulseInterval,
+                        ability.damage > 0f ? ability.damage : 10f,
+                        0f);
+                    break;
+
+                case "Void Maw":
+                    BackfillPulseDefaults(
+                        ability,
+                        VoidMawPulseCount,
+                        VoidMawPulseInterval,
+                        ability.damage > 0f ? ability.damage : 20f,
+                        DefaultVoidMawPulseVFXLifetime);
+                    break;
+            }
+        }
+    }
+
+    static void BackfillPulseDefaults(AbilityDef ability, int count, float interval, float damage, float vfxLifetime)
+    {
+        if (ability.pulseCount <= 0) ability.pulseCount = count;
+        if (ability.pulseInterval <= 0f) ability.pulseInterval = interval;
+        if (ability.pulseDamage <= 0f) ability.pulseDamage = damage;
+        if (ability.pulseVFXLifetime <= 0f) ability.pulseVFXLifetime = vfxLifetime;
+    }
+#endif
 
     // Mirror fires this exactly once per local player object, after isLocalPlayer is
     // confirmed — the safe place for any local-player-only setup.
@@ -2004,6 +2063,7 @@ public class AbilityCaster : NetworkBehaviour
         }
 #endif
         DispatchAbility(ability, castPoint, damageMultiplier);
+        StartPulseDamageIfNeeded(ability, castPoint, damageMultiplier);
     }
 
     [Command]
@@ -2174,12 +2234,10 @@ public class AbilityCaster : NetworkBehaviour
             // ─ Arcanist ──────────────────────────────────────────
             case "Arcane Step":
                 dashHandler?.PhaseShift(castPoint);
-                StartCoroutine(ArcaneStepPulseDamage(ability, castPoint, dmgMult));
                 break;
 
             case "Void Maw":
                 CastSingularity(ability, castPoint, false, dmgMult);
-                StartCoroutine(VoidMawPulseDamage(ability, castPoint, dmgMult));
                 break;
 
             case "Forked Lightning":
@@ -2235,29 +2293,119 @@ public class AbilityCaster : NetworkBehaviour
 
     // ── New ability methods ──────────────────────────────────────
 
-    System.Collections.IEnumerator ArcaneStepPulseDamage(AbilityDef ability, Vector3 centre, float damageMultiplier)
+    void StartPulseDamageIfNeeded(AbilityDef ability, Vector3 centre, float damageMultiplier)
     {
-        float radius = ability.indicatorSize > 0f ? ability.indicatorSize * 0.5f : 1.75f;
-        float damage = (ability.damage > 0f ? ability.damage : 10f) * damageMultiplier;
+        if (!ShouldRunPulseDamage(ability))
+            return;
 
-        for (int pulse = 0; pulse < ArcaneStepPulseCount; pulse++)
+        StartCoroutine(PulseDamage(ability, centre, damageMultiplier));
+    }
+
+    static bool ShouldRunPulseDamage(AbilityDef ability)
+    {
+        if (ability == null)
+            return false;
+
+        if (IsArcaneStep(ability) || IsVoidMaw(ability))
+            return true;
+
+        return ability.usePulseDamage && ability.pulseCount > 0;
+    }
+
+    System.Collections.IEnumerator PulseDamage(AbilityDef ability, Vector3 centre, float damageMultiplier)
+    {
+        int pulseCount = GetPulseCount(ability, GetDefaultPulseCount(ability));
+        if (pulseCount <= 0)
+            yield break;
+
+        float radius = GetPulseRadius(ability, GetDefaultPulseRadius(ability));
+        float damage = GetPulseDamage(ability, GetDefaultPulseDamage(ability), damageMultiplier);
+        float interval = GetPulseInterval(ability, GetDefaultPulseInterval(ability));
+        float vfxLifetime = GetPulseVFXLifetime(ability, GetDefaultPulseVFXLifetime(ability));
+
+        for (int pulse = 0; pulse < pulseCount; pulse++)
         {
-            ApplyPulseDamage(centre, radius, damage, ability.targetTag, ability.hitVFX);
-            yield return new WaitForSeconds(ArcaneStepPulseInterval);
+            ApplyPulseDamage(centre, radius, damage, ability.targetTag, ability.hitVFX, vfxLifetime);
+            if (pulse < pulseCount - 1)
+                yield return new WaitForSeconds(interval);
         }
     }
 
-    System.Collections.IEnumerator VoidMawPulseDamage(AbilityDef ability, Vector3 centre, float damageMultiplier)
+    static int GetDefaultPulseCount(AbilityDef ability)
     {
-        float radius = ability.indicatorSize > 0f ? ability.indicatorSize * 0.5f : 4f;
-        float damage = (ability.damage > 0f ? ability.damage : 20f) * damageMultiplier;
+        if (IsArcaneStep(ability)) return ArcaneStepPulseCount;
+        if (IsVoidMaw(ability)) return VoidMawPulseCount;
+        return 0;
+    }
 
-        for (int pulse = 0; pulse < VoidMawPulseCount; pulse++)
-        {
-            ApplyPulseDamage(centre, radius, damage, ability.targetTag, ability.hitVFX, voidMawPulseVFXLifetime);
-            if (pulse < VoidMawPulseCount - 1)
-                yield return new WaitForSeconds(VoidMawPulseInterval);
-        }
+    static float GetDefaultPulseInterval(AbilityDef ability)
+    {
+        if (IsArcaneStep(ability)) return ArcaneStepPulseInterval;
+        if (IsVoidMaw(ability)) return VoidMawPulseInterval;
+        return 1f;
+    }
+
+    static float GetDefaultPulseRadius(AbilityDef ability)
+    {
+        if (ability == null) return 1.5f;
+        if (IsArcaneStep(ability)) return ability.indicatorSize > 0f ? ability.indicatorSize * 0.5f : 1.75f;
+        if (IsVoidMaw(ability)) return ability.indicatorSize > 0f ? ability.indicatorSize * 0.5f : 4f;
+        return ability.indicatorSize > 0f ? ability.indicatorSize * 0.5f : 1.5f;
+    }
+
+    static float GetDefaultPulseDamage(AbilityDef ability)
+    {
+        if (ability == null) return 0f;
+        if (IsArcaneStep(ability)) return ability.damage > 0f ? ability.damage : 10f;
+        if (IsVoidMaw(ability)) return ability.damage > 0f ? ability.damage : 20f;
+        return ability.damage > 0f ? ability.damage : 0f;
+    }
+
+    static float GetDefaultPulseVFXLifetime(AbilityDef ability)
+    {
+        if (IsVoidMaw(ability)) return DefaultVoidMawPulseVFXLifetime;
+        return 4f;
+    }
+
+    static int GetPulseCount(AbilityDef ability, int fallback)
+    {
+        if (ability != null && ability.usePulseDamage)
+            return Mathf.Max(0, ability.pulseCount);
+
+        return fallback;
+    }
+
+    static float GetPulseInterval(AbilityDef ability, float fallback)
+    {
+        if (ability != null && ability.usePulseDamage && ability.pulseInterval > 0f)
+            return ability.pulseInterval;
+
+        return fallback;
+    }
+
+    static float GetPulseRadius(AbilityDef ability, float fallback)
+    {
+        if (ability != null && ability.usePulseDamage && ability.pulseRadius > 0f)
+            return ability.pulseRadius;
+
+        return fallback;
+    }
+
+    static float GetPulseDamage(AbilityDef ability, float fallback, float damageMultiplier)
+    {
+        float damage = fallback;
+        if (ability != null && ability.usePulseDamage && ability.pulseDamage > 0f)
+            damage = ability.pulseDamage;
+
+        return damage * damageMultiplier;
+    }
+
+    static float GetPulseVFXLifetime(AbilityDef ability, float fallback)
+    {
+        if (ability != null && ability.usePulseDamage && ability.pulseVFXLifetime > 0f)
+            return ability.pulseVFXLifetime;
+
+        return fallback;
     }
 
     void ApplyPulseDamage(Vector3 centre, float radius, float damage, string targetTag, GameObject hitVFX, float hitVFXLifetime = 4f)
