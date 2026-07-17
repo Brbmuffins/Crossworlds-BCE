@@ -95,6 +95,8 @@ public class AbilityCaster : NetworkBehaviour
     const int VoidMawPulseCount = 4;
     const float VoidMawPulseInterval = 1f;
     const float DefaultVoidMawPulseVFXLifetime = 1f;
+    const int ConeArcSegments = 36;
+    const int ConeRadialSegments = 12;
     const int RectCornerCount = 4;
     static readonly Vector3 GroundDecalPivot = new Vector3(0f, 0f, 0.5f);
     static bool s_warnedInvalidRectDecal;
@@ -978,12 +980,9 @@ public class AbilityCaster : NetworkBehaviour
 
         if (ability.shape == AbilityShape.Cone)
         {
-            var fan  = CreateConeIndicator(ability.range, ability.coneAngle);
-            fan.transform.SetParent(indicator.transform, false);
-            var rend = fan.GetComponent<Renderer>();
-            var mat  = new Material(Shader.Find("Sprites/Default"));
-            mat.color = new Color(c.r, c.g, c.b, 0.30f);
-            rend.material = mat;
+            indicator.AddComponent<ConeAimData>();
+            BuildConeOutline(indicator, c);
+            BuildProjectedConeFill(indicator, c);
         }
         else if (ability.shape == AbilityShape.Circle)
         {
@@ -1110,6 +1109,19 @@ public class AbilityCaster : NetworkBehaviour
         lr.useWorldSpace = true;
         lr.loop = true;
         lr.startWidth = lr.endWidth = 0.12f;
+        lr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        lr.receiveShadows = false;
+        lr.material = new Material(Shader.Find("Sprites/Default"));
+        lr.startColor = lr.endColor = BrightOutlineColor(color);
+        lr.positionCount = 0;
+    }
+
+    void BuildConeOutline(GameObject indicator, Color color)
+    {
+        LineRenderer lr = indicator.AddComponent<LineRenderer>();
+        lr.useWorldSpace = true;
+        lr.loop = true;
+        lr.startWidth = lr.endWidth = 0.10f;
         lr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         lr.receiveShadows = false;
         lr.material = new Material(Shader.Find("Sprites/Default"));
@@ -1257,12 +1269,23 @@ public class AbilityCaster : NetworkBehaviour
         else if (ability.shape == AbilityShape.Cone)
         {
             float chargeMul   = Mathf.Lerp(1f, ability.maxChargeSizeMultiplier, chargeFraction);
-            float distanceMul = aimDistance / ability.range;
+            float distanceMul = ability.range > 0f ? aimDistance / ability.range : 1f;
+            float visualRange = ability.range * distanceMul * chargeMul;
             // Pull origin 0.5 units behind the player so the character body sits
             // inside the fan rather than at the very tip.
-            indicator.transform.position   = ProjectToGround(transform.position - aimDir * 0.5f);
-            indicator.transform.rotation   = Quaternion.LookRotation(aimDir);
+            Vector3 coneOrigin = ProjectToGround(transform.position - aimDir * 0.5f, out Vector3 groundNormal);
+            Vector3 groundForward = Vector3.ProjectOnPlane(aimDir, groundNormal);
+            if (groundForward.sqrMagnitude < 0.0001f)
+                groundForward = aimDir;
+            groundForward.Normalize();
+
+            indicator.transform.position   = coneOrigin;
+            indicator.transform.rotation   = Quaternion.LookRotation(aimDir, Vector3.up);
             indicator.transform.localScale = Vector3.one * distanceMul * chargeMul;
+
+            ConeAimData coneData = UpdateConeAimData(indicator, coneOrigin, groundForward, groundNormal, visualRange, ability.coneAngle * 0.5f);
+            if (lr != null) SetConeOutlinePoints(lr, coneData);
+            UpdateProjectedConeFill(indicator, coneData);
         }
 
         // Charge tint — apply to LR (circle/rect) or renderer (cone)
@@ -1281,6 +1304,10 @@ public class AbilityCaster : NetworkBehaviour
             else if (ability.shape == AbilityShape.Circle)
             {
                 SetCircleIndicatorColor(indicator, c);
+            }
+            else if (ability.shape == AbilityShape.Cone)
+            {
+                SetConeIndicatorColor(indicator, c);
             }
             else
             {
@@ -1351,6 +1378,74 @@ public class AbilityCaster : NetworkBehaviour
             Mathf.Clamp01(color.g * 1.5f + 0.2f),
             Mathf.Clamp01(color.b * 1.5f + 0.2f),
             Mathf.Clamp01(Mathf.Max(color.a, 0.95f)));
+    }
+
+    ConeAimData UpdateConeAimData(GameObject indicator, Vector3 origin, Vector3 fwd, Vector3 up, float range, float halfAngle)
+    {
+        ConeAimData data = indicator.GetComponent<ConeAimData>();
+        if (data == null)
+            data = indicator.AddComponent<ConeAimData>();
+
+        data.EnsurePoints(ConeArcSegments);
+
+        Vector3 visualNormal = up.sqrMagnitude > 0.0001f ? up.normalized : Vector3.up;
+        if (Vector3.Dot(visualNormal, Vector3.up) < 0f)
+            visualNormal = -visualNormal;
+
+        Vector3 visualForward = Vector3.ProjectOnPlane(fwd, visualNormal);
+        if (visualForward.sqrMagnitude < 0.0001f)
+            visualForward = new Vector3(fwd.x, 0f, fwd.z);
+        if (visualForward.sqrMagnitude < 0.0001f)
+            visualForward = transform.forward;
+        visualForward.Normalize();
+
+        data.valid = true;
+        data.origin = origin;
+        data.visualForward = visualForward;
+        data.visualNormal = visualNormal;
+        data.visualRange = Mathf.Max(0.05f, range);
+        data.halfAngle = Mathf.Max(0f, halfAngle);
+
+        data.outlinePoints[0] = origin;
+        for (int i = 0; i <= ConeArcSegments; i++)
+        {
+            float t = i / (float)ConeArcSegments;
+            float angle = Mathf.Lerp(-data.halfAngle, data.halfAngle, t);
+            Vector3 dir = Quaternion.AngleAxis(angle, data.visualNormal) * data.visualForward;
+            data.outlinePoints[i + 1] = ProjectToGround(origin + dir * data.visualRange);
+        }
+
+        return data;
+    }
+
+    void SetConeOutlinePoints(LineRenderer lr, ConeAimData data)
+    {
+        if (lr == null || data == null || !data.valid)
+            return;
+
+        data.EnsurePoints(ConeArcSegments);
+        if (lr.positionCount != data.outlinePoints.Length)
+        {
+            lr.positionCount = data.outlinePoints.Length;
+            lr.loop = true;
+        }
+
+        for (int i = 0; i < data.outlinePoints.Length; i++)
+            lr.SetPosition(i, data.outlinePoints[i]);
+    }
+
+    void SetConeIndicatorColor(GameObject indicator, Color color)
+    {
+        MeshRenderer renderer = GetProjectedConeFillRenderer(indicator);
+        if (renderer != null && renderer.material != null)
+        {
+            float alpha = Mathf.Lerp(RectFillAlpha, RectFillChargedAlpha, Mathf.InverseLerp(0.55f, 0.95f, color.a));
+            renderer.material.color = new Color(color.r, color.g, color.b, alpha);
+        }
+
+        LineRenderer outline = indicator.GetComponent<LineRenderer>();
+        if (outline != null)
+            outline.startColor = outline.endColor = BrightOutlineColor(color);
     }
 
     // The orange outline corners are the source of truth for rectangle fill and hits.
@@ -1505,6 +1600,62 @@ public class AbilityCaster : NetworkBehaviour
         mesh.vertices = vertices;
         mesh.uv = uv;
         mesh.triangles = triangles;
+        mesh.RecalculateNormals();
+        mf.sharedMesh = mesh;
+    }
+
+    void BuildProjectedConeFill(GameObject indicator, Color color)
+    {
+        var fill = new GameObject("ProjectedConeFill");
+        fill.transform.SetParent(indicator.transform, false);
+
+        var mf = fill.AddComponent<MeshFilter>();
+        var mr = fill.AddComponent<MeshRenderer>();
+        mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        mr.receiveShadows = false;
+
+        var mat = CreateTransparentIndicatorMaterial();
+        mat.color = new Color(color.r, color.g, color.b, RectFillAlpha);
+        mat.renderQueue = 3000;
+        mr.material = mat;
+
+        Vector3[] vertices = new Vector3[(ConeRadialSegments + 1) * (ConeArcSegments + 1)];
+        Vector2[] uv = new Vector2[vertices.Length];
+        int[] triangles = new int[ConeRadialSegments * ConeArcSegments * 6];
+
+        int v = 0;
+        for (int r = 0; r <= ConeRadialSegments; r++)
+        {
+            float radial = r / (float)ConeRadialSegments;
+            for (int a = 0; a <= ConeArcSegments; a++)
+            {
+                float arc = a / (float)ConeArcSegments;
+                vertices[v] = Vector3.zero;
+                uv[v] = new Vector2(radial, arc);
+                v++;
+            }
+        }
+
+        int t = 0;
+        int stride = ConeArcSegments + 1;
+        for (int r = 0; r < ConeRadialSegments; r++)
+        for (int a = 0; a < ConeArcSegments; a++)
+        {
+            int i = r * stride + a;
+            triangles[t++] = i;
+            triangles[t++] = i + stride;
+            triangles[t++] = i + 1;
+            triangles[t++] = i + 1;
+            triangles[t++] = i + stride;
+            triangles[t++] = i + stride + 1;
+        }
+
+        Mesh mesh = new Mesh { name = "ProjectedConeIndicator" };
+        mesh.MarkDynamic();
+        mesh.vertices = vertices;
+        mesh.uv = uv;
+        mesh.triangles = triangles;
+        mesh.RecalculateBounds();
         mesh.RecalculateNormals();
         mf.sharedMesh = mesh;
     }
@@ -1758,6 +1909,50 @@ public class AbilityCaster : NetworkBehaviour
         mesh.vertices = vertices;
         mesh.RecalculateBounds();
         mesh.RecalculateNormals();
+    }
+
+    void UpdateProjectedConeFill(GameObject indicator, ConeAimData data)
+    {
+        MeshFilter mf = GetProjectedConeFillFilter(indicator);
+        if (mf == null || mf.sharedMesh == null || data == null || !data.valid) return;
+
+        Mesh mesh = mf.sharedMesh;
+        Vector3[] vertices = mesh.vertices;
+        Vector2[] uv = mesh.uv;
+        if (uv == null || uv.Length != vertices.Length) return;
+
+        for (int i = 0; i < vertices.Length; i++)
+        {
+            float radial = uv[i].x;
+            float angle = Mathf.Lerp(-data.halfAngle, data.halfAngle, uv[i].y);
+            Vector3 dir = Quaternion.AngleAxis(angle, data.visualNormal) * data.visualForward;
+            Vector3 world = data.origin + dir * (radial * data.visualRange);
+            vertices[i] = mf.transform.InverseTransformPoint(ProjectToGround(world));
+        }
+
+        mesh.vertices = vertices;
+        mesh.RecalculateBounds();
+        mesh.RecalculateNormals();
+    }
+
+    MeshFilter GetProjectedConeFillFilter(GameObject indicator)
+    {
+        MeshFilter[] filters = indicator.GetComponentsInChildren<MeshFilter>();
+        foreach (MeshFilter filter in filters)
+            if (filter != null && filter.gameObject.name == "ProjectedConeFill")
+                return filter;
+
+        return null;
+    }
+
+    MeshRenderer GetProjectedConeFillRenderer(GameObject indicator)
+    {
+        MeshRenderer[] renderers = indicator.GetComponentsInChildren<MeshRenderer>();
+        foreach (MeshRenderer renderer in renderers)
+            if (renderer != null && renderer.gameObject.name == "ProjectedConeFill")
+                return renderer;
+
+        return null;
     }
 
     Vector3 ProjectToGround(Vector3 point)
@@ -3011,40 +3206,23 @@ public class AbilityCaster : NetworkBehaviour
         Destroy(go, main.duration + main.startLifetime.constantMax + 0.5f);
     }
 
-    GameObject CreateConeIndicator(float range, float angle)
+}
+
+internal class ConeAimData : MonoBehaviour
+{
+    public bool valid;
+    public Vector3 origin;
+    public Vector3 visualForward;
+    public Vector3 visualNormal;
+    public float visualRange;
+    public float halfAngle;
+    public Vector3[] outlinePoints;
+
+    public void EnsurePoints(int arcSegments)
     {
-        GameObject go = new GameObject("ConeIndicator");
-        MeshFilter mf = go.AddComponent<MeshFilter>();
-        go.AddComponent<MeshRenderer>();
-
-        int segments = 20;
-        Vector3[] vertices = new Vector3[segments + 2];
-        int[] triangles = new int[segments * 3];
-
-        vertices[0] = Vector3.zero;
-        float startAngle = -angle / 2f;
-        float step = angle / segments;
-
-        for (int i = 0; i <= segments; i++)
-        {
-            float a = (startAngle + step * i) * Mathf.Deg2Rad;
-            vertices[i + 1] = new Vector3(Mathf.Sin(a), 0f, Mathf.Cos(a)) * range;
-        }
-
-        for (int i = 0; i < segments; i++)
-        {
-            triangles[i * 3] = 0;
-            triangles[i * 3 + 1] = i + 1;
-            triangles[i * 3 + 2] = i + 2;
-        }
-
-        Mesh mesh = new Mesh();
-        mesh.vertices = vertices;
-        mesh.triangles = triangles;
-        mesh.RecalculateNormals();
-        mf.mesh = mesh;
-
-        return go;
+        int required = Mathf.Max(1, arcSegments) + 2;
+        if (outlinePoints == null || outlinePoints.Length != required)
+            outlinePoints = new Vector3[required];
     }
 }
 
