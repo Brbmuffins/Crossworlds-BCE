@@ -10,6 +10,9 @@ public static class SceneNames
     public const string CharacterSelect = "CharacterSelect";
     public const string Hub             = "Darkwood";   // scene renamed from Hub
     public const string ArenaCopper     = "Arena_Copper";
+    public const string ToujamBasin     = "Toujam Basin";
+    public const string AshenWastelands = "Ashen Wastelands";
+    public const string GMIsland        = "GM Island";
     public const string VoidDungeon     = "VoidDungeon";   // placeholder — future dungeon build
 
     // ── Full asset paths (used by editor scripts and Mirror scene fields) ─
@@ -17,5 +20,8 @@ public static class SceneNames
     public const string CharacterSelectPath = "Assets/Game/Scenes/CharacterSelect.unity";
     public const string HubPath             = "Assets/Game/Scenes/Darkwood.unity";
     public const string ArenaCopperPath     = "Assets/Game/Scenes/Arena_Copper.unity";
+    public const string ToujamBasinPath     = "Assets/Game/Scenes/Toujam Basin.unity";
+    public const string AshenWastelandsPath = "Assets/Game/Scenes/Ashen Wastelands.unity";
+    public const string GMIslandPath        = "Assets/Game/Scenes/GM Island.unity";
     public const string VoidDungeonPath     = "Assets/Game/Scenes/VoidDungeon.unity";
 }
