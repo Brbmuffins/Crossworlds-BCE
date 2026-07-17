@@ -33,6 +33,10 @@ public class EscMenu : MonoBehaviour
     // ── UI ────────────────────────────────────────────────────────────────
     Canvas      _canvas;
     GameObject  _panel;
+    GameObject  _mainView;
+    GameObject  _optionsView;
+    Slider      _musicSlider;
+    TextMeshProUGUI _musicValueLabel;
     bool        _open;
 
     // ── Lifecycle ─────────────────────────────────────────────────────────
@@ -68,12 +72,31 @@ public class EscMenu : MonoBehaviour
             return;
         }
 
+        if (_open && _optionsView != null && _optionsView.activeSelf)
+        {
+            ShowMainMenu();
+            return;
+        }
+
         SetOpen(!_open);
     }
 
     // ── Actions ───────────────────────────────────────────────────────────
 
     void Resume()   => SetOpen(false);
+
+    void ShowOptions()
+    {
+        RefreshMusicSlider();
+        _mainView.SetActive(false);
+        _optionsView.SetActive(true);
+    }
+
+    void ShowMainMenu()
+    {
+        _optionsView.SetActive(false);
+        _mainView.SetActive(true);
+    }
 
     void Logout()
     {
@@ -116,6 +139,8 @@ public class EscMenu : MonoBehaviour
 
         if (open)
         {
+            ShowMainMenu();
+            RefreshMusicSlider();
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible   = true;
         }
@@ -151,7 +176,7 @@ public class EscMenu : MonoBehaviour
 
         // Centred card (also child of _panel)
         var card = MakeRect("Card", _panel.GetComponent<RectTransform>(),
-            new Vector2(0.35f, 0.3f), new Vector2(0.65f, 0.7f));
+            new Vector2(0.34f, 0.24f), new Vector2(0.66f, 0.76f));
         Img(card, new Color(0.04f, 0.03f, 0.12f, 0.97f));
         var cardRt = card.GetComponent<RectTransform>();
 
@@ -169,22 +194,106 @@ public class EscMenu : MonoBehaviour
             new Vector2(0.05f, 0.76f), new Vector2(0.95f, 0.77f));
         Img(div, new Color(0.2f, 0.2f, 0.35f, 1f));
 
+        _mainView = MakeRect("MainView", cardRt, Vector2.zero, Vector2.one);
+        var mainRt = _mainView.GetComponent<RectTransform>();
+
+        _optionsView = MakeRect("OptionsView", cardRt, Vector2.zero, Vector2.one);
+        var optionsRt = _optionsView.GetComponent<RectTransform>();
+
         // Buttons
-        MakeButton("Resume",   cardRt, new Vector2(0.1f, 0.54f), new Vector2(0.9f, 0.68f),
+        MakeButton("Resume",   mainRt, new Vector2(0.1f, 0.58f), new Vector2(0.9f, 0.70f),
             new Color(0.08f, 0.5f, 0.18f), Resume);
 
-        MakeButton("Logout",   cardRt, new Vector2(0.1f, 0.35f), new Vector2(0.9f, 0.49f),
+        MakeButton("Options", mainRt, new Vector2(0.1f, 0.43f), new Vector2(0.9f, 0.55f),
+            new Color(0.08f, 0.25f, 0.5f), ShowOptions);
+
+        MakeButton("Logout",   mainRt, new Vector2(0.1f, 0.28f), new Vector2(0.9f, 0.40f),
             new Color(0.45f, 0.35f, 0.05f), Logout);
 
-        MakeButton("Quit Game", cardRt, new Vector2(0.1f, 0.15f), new Vector2(0.9f, 0.29f),
+        MakeButton("Quit Game", mainRt, new Vector2(0.1f, 0.13f), new Vector2(0.9f, 0.25f),
             new Color(0.5f, 0.05f, 0.05f), Quit);
 
+        BuildOptionsView(optionsRt);
+        _optionsView.SetActive(false);
         _panel.SetActive(false);
 
         // Belt-and-suspenders: also disable raycasts on the canvas itself when hidden
         var cg = cgo.GetComponent<CanvasGroup>();
         cg.blocksRaycasts = false;
         cg.interactable   = false;
+    }
+
+    void BuildOptionsView(RectTransform parent)
+    {
+        var header = MakeTmp("OptionsHeader", parent,
+            new Vector2(0.1f, 0.61f), new Vector2(0.9f, 0.70f));
+        header.text      = "OPTIONS";
+        header.fontSize  = 16f;
+        header.color     = new Color(0.5f, 0.8f, 1f);
+        header.fontStyle = FontStyles.Bold;
+        header.alignment = TextAlignmentOptions.Center;
+
+        var label = MakeTmp("MusicVolumeLabel", parent,
+            new Vector2(0.1f, 0.48f), new Vector2(0.58f, 0.56f));
+        label.text      = "MUSIC";
+        label.fontSize  = 13f;
+        label.color     = Color.white;
+        label.fontStyle = FontStyles.Bold;
+        label.alignment = TextAlignmentOptions.MidlineLeft;
+
+        _musicValueLabel = MakeTmp("MusicVolumeValue", parent,
+            new Vector2(0.6f, 0.48f), new Vector2(0.9f, 0.56f));
+        _musicValueLabel.fontSize  = 13f;
+        _musicValueLabel.color     = new Color(0.75f, 0.9f, 1f);
+        _musicValueLabel.fontStyle = FontStyles.Bold;
+        _musicValueLabel.alignment = TextAlignmentOptions.MidlineRight;
+
+        _musicSlider = MakeSlider("MusicVolumeSlider", parent,
+            new Vector2(0.1f, 0.38f), new Vector2(0.9f, 0.45f));
+        _musicSlider.onValueChanged.AddListener(OnMusicVolumeChanged);
+
+        MakeButton("Back", parent, new Vector2(0.1f, 0.13f), new Vector2(0.9f, 0.25f),
+            new Color(0.16f, 0.16f, 0.26f), ShowMainMenu);
+
+        RefreshMusicSlider();
+    }
+
+    void RefreshMusicSlider()
+    {
+        if (_musicSlider == null) return;
+
+        float volume = MusicController.Instance != null
+            ? MusicController.Instance.Volume
+            : PlayerPrefs.GetFloat(MusicController.VolumePrefKey, 0.6f);
+
+        _musicSlider.SetValueWithoutNotify(Mathf.Clamp01(volume));
+        UpdateMusicValueLabel(volume);
+    }
+
+    void OnMusicVolumeChanged(float value)
+    {
+        value = Mathf.Clamp01(value);
+
+        if (MusicController.Instance != null)
+        {
+            MusicController.Instance.SetMuted(value <= 0.001f);
+            MusicController.Instance.SetVolume(value);
+            MusicController.Instance.SavePreferences();
+        }
+        else
+        {
+            PlayerPrefs.SetFloat(MusicController.VolumePrefKey, value);
+            PlayerPrefs.SetInt(MusicController.MutedPrefKey, value <= 0.001f ? 1 : 0);
+            PlayerPrefs.Save();
+        }
+
+        UpdateMusicValueLabel(value);
+    }
+
+    void UpdateMusicValueLabel(float value)
+    {
+        if (_musicValueLabel != null)
+            _musicValueLabel.text = $"{Mathf.RoundToInt(Mathf.Clamp01(value) * 100f)}%";
     }
 
     // ── UI helpers ────────────────────────────────────────────────────────
@@ -236,5 +345,36 @@ public class EscMenu : MonoBehaviour
         colors.pressedColor     = bgColor * 0.7f;
         btn.colors = colors;
         btn.onClick.AddListener(onClick);
+    }
+
+    Slider MakeSlider(string name, RectTransform parent,
+        Vector2 anchorMin, Vector2 anchorMax)
+    {
+        var go = MakeRect(name, parent, anchorMin, anchorMax);
+        var bg = go.AddComponent<Image>();
+        bg.color = new Color(0.02f, 0.02f, 0.07f, 1f);
+
+        var fillArea = MakeRect("FillArea", go.GetComponent<RectTransform>(),
+            new Vector2(0.02f, 0.25f), new Vector2(0.98f, 0.75f));
+        var fill = MakeRect("Fill", fillArea.GetComponent<RectTransform>(),
+            Vector2.zero, Vector2.one);
+        Img(fill, new Color(0.2f, 0.65f, 1f, 1f));
+
+        var handleArea = MakeRect("HandleArea", go.GetComponent<RectTransform>(),
+            new Vector2(0.02f, 0f), new Vector2(0.98f, 1f));
+        var handle = MakeRect("Handle", handleArea.GetComponent<RectTransform>(),
+            new Vector2(0f, 0.05f), new Vector2(0.06f, 0.95f));
+        Img(handle, new Color(0.9f, 0.95f, 1f, 1f));
+
+        var slider = go.AddComponent<Slider>();
+        slider.minValue = 0f;
+        slider.maxValue = 1f;
+        slider.wholeNumbers = false;
+        slider.transition = Selectable.Transition.ColorTint;
+        slider.fillRect = fill.GetComponent<RectTransform>();
+        slider.handleRect = handle.GetComponent<RectTransform>();
+        slider.targetGraphic = handle.GetComponent<Image>();
+        slider.direction = Slider.Direction.LeftToRight;
+        return slider;
     }
 }

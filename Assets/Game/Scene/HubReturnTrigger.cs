@@ -50,6 +50,11 @@ public class HubReturnTrigger : NetworkBehaviour
     public bool saveProgressBeforeReturn = true;
     public bool runArenaCleanup = true;
 
+    [Header("Hub Arrival")]
+    public bool placePlayerAtHubArrival = true;
+    public string hubArrivalSpawnId = HubReturnSpawnPoint.DefaultSpawnId;
+    public bool useHubArrivalRotation = true;
+
     bool _returning;
     bool _playerNear;
     Transform _localPlayer;
@@ -136,6 +141,8 @@ public class HubReturnTrigger : NetworkBehaviour
         if (saveProgressBeforeReturn)
             PlayerProgressManager.Local?.SaveProgress();
 
+        PrepareHubArrival(hubSceneName);
+
         if (NetworkServer.active)
         {
             EndArenaSessionIfNeeded();
@@ -148,6 +155,10 @@ public class HubReturnTrigger : NetworkBehaviour
             CmdRequestReturnToHub(hubSceneName);
             return;
         }
+
+        Transform localPlayer = _localPlayer != null ? _localPlayer : FindLocalPlayer();
+        if (localPlayer != null)
+            HubReturnArrival.CarryLocalPlayer(localPlayer.gameObject);
 
         SceneManager.LoadScene(hubSceneName);
     }
@@ -162,7 +173,15 @@ public class HubReturnTrigger : NetworkBehaviour
         }
 
         EndArenaSessionIfNeeded();
+        PrepareHubArrival(requestedHubSceneName);
         ChangeToHubScene(requestedHubSceneName);
+    }
+
+    void PrepareHubArrival(string sceneName)
+    {
+        if (!placePlayerAtHubArrival) return;
+
+        HubReturnArrival.Request(sceneName, hubArrivalSpawnId, useHubArrivalRotation);
     }
 
     void EndArenaSessionIfNeeded()
