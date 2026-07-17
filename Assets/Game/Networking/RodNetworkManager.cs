@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Mirror;
 using UnityEngine;
 
@@ -40,6 +41,8 @@ public class RodNetworkManager : NetworkManager
     [Header("Auth Server")]
     [Tooltip("Must match RodNetworkAuthenticator.authServerURL")]
     public string authServerURL = "http://15.204.243.36:3000";
+
+    readonly Dictionary<int, CreatePlayerMessage> _lastCreatePlayerMessages = new Dictionary<int, CreatePlayerMessage>();
 
     // ── Self-configure ────────────────────────────────────────────────────────
 
@@ -157,6 +160,8 @@ public class RodNetworkManager : NetworkManager
 
     void OnCreatePlayer(NetworkConnectionToClient conn, CreatePlayerMessage msg)
     {
+        _lastCreatePlayerMessages[conn.connectionId] = msg;
+
         if (classPrefabs == null || classPrefabs.Length == 0)
         {
             Debug.LogError("[RodNM] classPrefabs is empty — run BCE ▶ Setup ▶ 4.");
@@ -224,6 +229,7 @@ public class RodNetworkManager : NetworkManager
         {
             identity.playerName = username;
             identity.classIndex = classIndex;
+            identity.characterId = auth != null ? auth.characterId : -1;
         }
 
         // Attach position saver — saves back to DB on disconnect or app quit
@@ -240,8 +246,191 @@ public class RodNetworkManager : NetworkManager
                   $"(fromDB={auth?.fromDB}, hasSavedPos={hasSavedPos})");
     }
 
+    public override void OnServerSceneChanged(string sceneName)
+    {
+        base.OnServerSceneChanged(sceneName);
+
+        if (PlaceHubReturnPlayers(sceneName))
+            return;
+
+        RespawnMissingPlayersAfterSceneChange(sceneName);
+    }
+
+    bool PlaceHubReturnPlayers(string sceneName)
+    {
+        if (!HubReturnArrival.TryGetRequestForScene(sceneName, out string spawnId, out bool applySpawnRotation))
+            return false;
+
+        Transform spawnPoint = HubReturnSpawnPoint.Find(spawnId);
+        if (spawnPoint == null)
+        {
+            Debug.LogWarning($"[RodNM] Hub return spawn '{spawnId}' was not found in {sceneName}. Falling back to normal scene spawns.");
+            HubReturnArrival.Clear();
+            RespawnMissingPlayersAfterSceneChange(sceneName);
+            return true;
+        }
+
+        int total = CountAuthenticatedConnections();
+        int index = 0;
+        int moved = 0;
+        int respawned = 0;
+
+        foreach (NetworkConnectionToClient conn in NetworkServer.connections.Values)
+        {
+            if (conn == null || !conn.isAuthenticated)
+                continue;
+
+            Vector3 offset = HubReturnArrival.OffsetForPlayer(spawnPoint, index, total);
+            index++;
+
+            if (conn.identity != null)
+            {
+                HubReturnArrival.PlacePlayer(conn.identity.gameObject, spawnPoint, offset, applySpawnRotation);
+                moved++;
+                continue;
+            }
+
+            Quaternion rotation = applySpawnRotation ? spawnPoint.rotation : Quaternion.identity;
+            if (SpawnPlayerForSceneChange(
+                    conn,
+                    spawnPoint.position + offset,
+                    rotation,
+                    "hub return"))
+            {
+                respawned++;
+            }
+        }
+
+        HubReturnArrival.Clear();
+        Debug.Log($"[RodNM] Hub return landed {moved} existing player(s) and respawned {respawned} player(s) at {spawnPoint.name}.");
+        return true;
+    }
+
+    void RespawnMissingPlayersAfterSceneChange(string sceneName)
+    {
+        int respawned = 0;
+
+        foreach (NetworkConnectionToClient conn in NetworkServer.connections.Values)
+        {
+            if (conn == null || !conn.isAuthenticated || conn.identity != null)
+                continue;
+
+            if (SpawnPlayerForSceneChange(conn, null, null, $"scene change to {sceneName}"))
+                respawned++;
+        }
+
+        if (respawned > 0)
+            Debug.Log($"[RodNM] Respawned {respawned} player(s) after scene change to {sceneName}.");
+    }
+
+    bool SpawnPlayerForSceneChange(
+        NetworkConnectionToClient conn,
+        Vector3? forcedSpawnPos,
+        Quaternion? forcedSpawnRotation,
+        string context)
+    {
+        if (classPrefabs == null || classPrefabs.Length == 0)
+        {
+            Debug.LogError("[RodNM] classPrefabs is empty; cannot respawn player after scene change.");
+            return false;
+        }
+
+        if (conn.identity != null)
+            return false;
+
+        var auth = conn.authenticationData as RodPlayerAuth;
+        CreatePlayerMessage msg = GetRememberedCreatePlayerMessage(conn);
+
+        int classIndex = (auth != null && auth.fromDB)
+            ? Mathf.Clamp(auth.classIndex, 0, classPrefabs.Length - 1)
+            : Mathf.Clamp(msg.selectedClass, 0, classPrefabs.Length - 1);
+
+        GameObject prefab = classPrefabs[classIndex];
+        if (prefab == null)
+        {
+            Debug.LogError($"[RodNM] No prefab for class {classIndex}; falling back to 0.");
+            prefab = classPrefabs[0];
+        }
+
+        Vector3 spawnPos;
+        Quaternion spawnRot = forcedSpawnRotation ?? Quaternion.identity;
+        if (forcedSpawnPos.HasValue)
+        {
+            spawnPos = forcedSpawnPos.Value;
+        }
+        else
+        {
+            Transform startPos = GetStartPosition();
+            if (startPos != null)
+            {
+                spawnPos = startPos.position;
+                if (!forcedSpawnRotation.HasValue)
+                    spawnRot = startPos.rotation;
+            }
+            else
+            {
+                float angle = UnityEngine.Random.Range(0f, Mathf.PI * 2f);
+                spawnPos = new Vector3(Mathf.Sin(angle) * 3f, 1f, Mathf.Cos(angle) * 3f);
+            }
+        }
+
+        string username = (auth != null && !string.IsNullOrEmpty(auth.username))
+            ? auth.username : msg.username;
+        if (string.IsNullOrWhiteSpace(username))
+            username = "Player";
+
+        GameObject player = Instantiate(prefab, spawnPos, spawnRot);
+        player.name = username;
+
+        var identity = player.GetComponent<PlayerIdentity>();
+        if (identity != null)
+        {
+            identity.playerName = username;
+            identity.classIndex = classIndex;
+            identity.characterId = auth != null ? auth.characterId : -1;
+        }
+
+        if (auth != null && auth.characterId > 0)
+        {
+            var saver = player.AddComponent<RodPositionSaver>();
+            saver.characterId = auth.characterId;
+            saver.authServerURL = authServerURL;
+            saver.jwt = auth.jwt;
+        }
+
+        NetworkServer.AddPlayerForConnection(conn, player);
+        Debug.Log($"[RodNM] Spawned {username} as class {classIndex} for {context} at {spawnPos}.");
+        return true;
+    }
+
+    int CountAuthenticatedConnections()
+    {
+        int count = 0;
+        foreach (NetworkConnectionToClient conn in NetworkServer.connections.Values)
+        {
+            if (conn != null && conn.isAuthenticated)
+                count++;
+        }
+
+        return count;
+    }
+
+    CreatePlayerMessage GetRememberedCreatePlayerMessage(NetworkConnectionToClient conn)
+    {
+        if (_lastCreatePlayerMessages.TryGetValue(conn.connectionId, out CreatePlayerMessage msg))
+            return msg;
+
+        var auth = conn.authenticationData as RodPlayerAuth;
+        return new CreatePlayerMessage
+        {
+            username = auth != null && !string.IsNullOrEmpty(auth.username) ? auth.username : "Player",
+            selectedClass = auth != null ? auth.classIndex : 0,
+        };
+    }
+
     public override void OnServerDisconnect(NetworkConnectionToClient conn)
     {
         base.OnServerDisconnect(conn);
+        _lastCreatePlayerMessages.Remove(conn.connectionId);
     }
 }
