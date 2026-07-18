@@ -834,14 +834,14 @@ MonoBehaviour:
     description: Placeholder basin zone.
   - id: ashen
     displayName: ASHEN WASTELAND
-    subtitle: unwritten
+    subtitle: burned and blighted
     sceneName: Ashen Wastelands
-    unlocked: 0
+    unlocked: 1
     normalizedPosition: {x: 0.94, y: 0.74}
     labelOffset: {x: 0, y: -40}
-    color: {r: 0.72, g: 0.66, b: 0.66, a: 1}
+    color: {r: 0.85, g: 0.42, b: 0.18, a: 1}
     icon: {fileID: 0}
-    description: Placeholder ashen region.
+    description: A scorched wasteland consumed by ancient fire.
   connections:
   - fromNodeId: sw
     toNodeId: gathering
@@ -863,6 +863,10 @@ MonoBehaviour:
     toNodeId: toujam
     dashed: 0
     color: {r: 0.55, g: 0.5, b: 0.44, a: 0.65}
+  - fromNodeId: toujam
+    toNodeId: ashen
+    dashed: 0
+    color: {r: 0.85, g: 0.42, b: 0.18, a: 0.85}
   - fromNodeId: neimos
     toNodeId: darkwood
     dashed: 1

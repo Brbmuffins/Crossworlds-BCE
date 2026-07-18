@@ -335,13 +335,13 @@ public sealed class WaypointMapTrigger : NetworkBehaviour
             {
                 id = "ashen",
                 displayName = "ASHEN WASTELAND",
-                subtitle = "unwritten",
+                subtitle = "burned and blighted",
                 sceneName = SceneNames.AshenWastelands,
-                unlocked = false,
+                unlocked = true,
                 normalizedPosition = new Vector2(0.94f, 0.74f),
                 labelOffset = new Vector2(0f, -40f),
-                color = new Color(0.72f, 0.66f, 0.66f, 1f),
-                description = "Placeholder ashen region."
+                color = new Color(0.85f, 0.42f, 0.18f, 1f),
+                description = "A scorched wasteland consumed by ancient fire."
             },
         };
     }
@@ -355,6 +355,7 @@ public sealed class WaypointMapTrigger : NetworkBehaviour
             new WaypointMapConnection { fromNodeId = "gathering", toNodeId = "darkwood" },
             new WaypointMapConnection { fromNodeId = "brightwood", toNodeId = "darkwood" },
             new WaypointMapConnection { fromNodeId = "darkwood", toNodeId = "toujam" },
+            new WaypointMapConnection { fromNodeId = "toujam", toNodeId = "ashen" },
             new WaypointMapConnection { fromNodeId = "neimos", toNodeId = "darkwood", dashed = true },
         };
     }
