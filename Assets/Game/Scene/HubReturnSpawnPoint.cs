@@ -28,7 +28,7 @@ public sealed class HubReturnSpawnPoint : MonoBehaviour
         if (points.Length > 0)
             return points[0].transform;
 
-        Transform namedPoint = FindNamedFallback();
+        Transform namedPoint = FindNamedFallback(id);
         if (namedPoint != null)
             return namedPoint;
 
@@ -41,15 +41,26 @@ public sealed class HubReturnSpawnPoint : MonoBehaviour
         return string.IsNullOrWhiteSpace(value) ? DefaultSpawnId : value.Trim();
     }
 
-    static Transform FindNamedFallback()
+    static Transform FindNamedFallback(string requestedSpawnId)
     {
+        if (!string.IsNullOrWhiteSpace(requestedSpawnId))
+        {
+            GameObject exactMatch = GameObject.Find(requestedSpawnId);
+            if (exactMatch != null)
+                return exactMatch.transform;
+        }
+
         string[] names =
         {
             "HubReturnSpawn",
             "Hub Return Spawn",
             "HubWaypoint",
             "Hub Waypoint",
-            "Hub"
+            "Hub",
+            "PlayerSpawnPoint",
+            "Player Spawn Point",
+            "SpawnPoint",
+            "SpawnPoint_0"
         };
 
         foreach (string name in names)

@@ -1502,7 +1502,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1115755714417172130, guid: e1d277ab18e0fb94ab41769537ac1c41, type: 3}
       propertyPath: m_Name
-      value: Ashen Wastelands Waystone
+      value: ToAshenWastelandsWaystone
       objectReference: {fileID: 0}
     - target: {fileID: 1475783855953493879, guid: e1d277ab18e0fb94ab41769537ac1c41, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
@@ -1558,17 +1558,17 @@ MonoBehaviour:
     m_Bits: 4294967295
   clickRaycastDistance: 200
   showWorldPrompt: 1
-  promptText: 
+  promptText: Click to Travel to Ashen Wastelands
   promptOffset: {x: 0, y: 3.2, z: 0}
   askForConfirmation: 1
   confirmationTitle: Travel to The Ashen Wastelands
   confirmationMessage: Leave this area and go to The Ashen Wastelands?
-  confirmButtonText: Return
+  confirmButtonText: Travel
   cancelButtonText: Stay
   saveProgressBeforeReturn: 1
   runArenaCleanup: 1
   placePlayerAtHubArrival: 1
-  hubArrivalSpawnId: DarkwoodSpawnLocation
+  hubArrivalSpawnId: Spawnpoint
   useHubArrivalRotation: 1
 --- !u!114 &1895840187
 MonoBehaviour:
@@ -1637,7 +1637,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1115755714417172130, guid: e1d277ab18e0fb94ab41769537ac1c41, type: 3}
       propertyPath: m_Name
-      value: Waystone
+      value: ToDarkwoodWaystone
       objectReference: {fileID: 0}
     - target: {fileID: 1475783855953493879, guid: e1d277ab18e0fb94ab41769537ac1c41, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
@@ -1688,12 +1688,12 @@ MonoBehaviour:
     m_Bits: 4294967295
   clickRaycastDistance: 200
   showWorldPrompt: 1
-  promptText: Click to Return to HUB
+  promptText: Click to Travel to Darkwood
   promptOffset: {x: 0, y: 3.2, z: 0}
   askForConfirmation: 1
-  confirmationTitle: Return to Darkwood?
-  confirmationMessage: Leave this area and return to Dakrwood?
-  confirmButtonText: Return
+  confirmationTitle: Travel to Darkwood?
+  confirmationMessage: Leave the Hub and travel to Darkwood?
+  confirmButtonText: Travel
   cancelButtonText: Stay
   saveProgressBeforeReturn: 1
   runArenaCleanup: 1
