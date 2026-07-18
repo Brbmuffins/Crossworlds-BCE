@@ -757,7 +757,7 @@ MonoBehaviour:
   syncDirection: 0
   syncMode: 0
   syncInterval: 0
-  interactionRange: 6
+  interactionRange: 10
   allowKeyboardInteract: 1
   interactKey: 19
   allowMouseClick: 1
@@ -2130,7 +2130,7 @@ MonoBehaviour:
   syncDirection: 0
   syncMode: 0
   syncInterval: 0
-  interactionRange: 6
+  interactionRange: 10
   allowKeyboardInteract: 1
   interactKey: 19
   allowMouseClick: 1
