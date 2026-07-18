@@ -99,18 +99,37 @@ public class MusicController : MonoBehaviour
             return;
 
         StopFade();
+        _fadeRoutine = StartCoroutine(PlayWhenReadyRoutine(_source.clip, fadeSeconds));
+    }
+
+    private IEnumerator PlayWhenReadyRoutine(AudioClip clip, float fadeSeconds)
+    {
+        EnsureGlobalAudioEnabled();
+        yield return EnsureClipLoaded(clip);
+
+        if (clip != null && clip.loadState == AudioDataLoadState.Failed)
+            Debug.LogWarning($"[MusicController] Could not load music clip '{clip.name}'. Check the audio import settings.");
+
+        if (_source == null || clip == null || _source.clip != clip || clip.loadState == AudioDataLoadState.Failed)
+        {
+            _fadeRoutine = null;
+            yield break;
+        }
+
         _source.loop = loopTrack;
 
         if (fadeSeconds <= 0f)
         {
             ApplyVolumeImmediate();
             _source.Play();
-            return;
+            _fadeRoutine = null;
+            yield break;
         }
 
         _source.volume = 0f;
         _source.Play();
-        _fadeRoutine = StartCoroutine(FadeVolumeRoutine(0f, EffectiveVolume(), fadeSeconds));
+        yield return FadeVolumeRoutine(0f, EffectiveVolume(), fadeSeconds);
+        _fadeRoutine = null;
     }
 
     public void Stop()
@@ -248,7 +267,7 @@ public class MusicController : MonoBehaviour
         if (!loadSavedPreferences)
             return;
 
-        _volume = PlayerPrefs.GetFloat(VolumePrefKey, defaultVolume);
+        _volume = Mathf.Clamp01(PlayerPrefs.GetFloat(VolumePrefKey, defaultVolume));
         _muted = PlayerPrefs.GetInt(MutedPrefKey, startMuted ? 1 : 0) == 1;
     }
 
@@ -261,6 +280,25 @@ public class MusicController : MonoBehaviour
     private float EffectiveVolume()
     {
         return _muted ? 0f : Mathf.Clamp01(_volume);
+    }
+
+    private void EnsureGlobalAudioEnabled()
+    {
+        AudioListener.pause = false;
+        if (AudioListener.volume <= 0.001f)
+            AudioListener.volume = 1f;
+    }
+
+    private IEnumerator EnsureClipLoaded(AudioClip clip)
+    {
+        if (clip == null)
+            yield break;
+
+        if (clip.loadState == AudioDataLoadState.Unloaded)
+            clip.LoadAudioData();
+
+        while (clip.loadState == AudioDataLoadState.Loading)
+            yield return null;
     }
 
     private void StopFade()
@@ -292,6 +330,15 @@ public class MusicController : MonoBehaviour
 
         if (nextTrack != null && !Application.isBatchMode)
         {
+            yield return EnsureClipLoaded(nextTrack);
+            if (nextTrack.loadState == AudioDataLoadState.Failed)
+            {
+                Debug.LogWarning($"[MusicController] Could not load music clip '{nextTrack.name}'. Check the audio import settings.");
+                ApplyVolumeImmediate();
+                _fadeRoutine = null;
+                yield break;
+            }
+
             _source.volume = 0f;
             _source.Play();
             yield return FadeVolumeRoutine(0f, EffectiveVolume(), fadeInSeconds);

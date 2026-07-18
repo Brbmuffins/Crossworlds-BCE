@@ -3128,17 +3128,7 @@ public class AbilityCaster : NetworkBehaviour
             GameObject turret = Instantiate(ability.turretPrefab, position, Quaternion.identity);
             turret.name = "Turret";
 
-            TurretController turretController = turret.GetComponent<TurretController>();
-            if (turretController == null)
-                turretController = turret.AddComponent<TurretController>();
-
-            turretController.owner = gameObject;
-
-            // Replicate to clients so other players see the sentinel (rotation syncs via
-            // its NetworkTransform). Guard on NetworkIdentity — degrades to server-local
-            // if the turret prefab hasn't been networked yet (BCE ▶ Setup ▶ 4d).
-            if (NetworkServer.active && turret.GetComponent<NetworkIdentity>() != null)
-                NetworkServer.Spawn(turret);
+            ConfigureSpawnedTurret(turret);
 
             if (ability.turretItem != null && inventory != null)
             {
@@ -3158,9 +3148,34 @@ public class AbilityCaster : NetworkBehaviour
             turret.name = "Turret (Placeholder)";
             turret.transform.position = position;
             turret.transform.localScale = new Vector3(0.6f, 1f, 0.6f);
-            TurretController turretController = turret.AddComponent<TurretController>();
-            turretController.owner = gameObject;
+            ConfigureSpawnedTurret(turret);
         }
+    }
+
+    void ConfigureSpawnedTurret(GameObject turret)
+    {
+        if (turret == null)
+            return;
+
+        TurretController turretController = turret.GetComponent<TurretController>();
+        if (turretController == null)
+            turretController = turret.AddComponent<TurretController>();
+
+        turretController.owner = gameObject;
+
+        GuardianFollower guardian = turret.GetComponent<GuardianFollower>();
+        if (guardian != null)
+            guardian.BindToOwner(transform);
+
+        // Replicate to clients so other players see the sentinel/guardian. Guard on
+        // NetworkIdentity: non-networked prefabs still work in solo/editor play.
+        if (NetworkServer.active && turret.GetComponent<NetworkIdentity>() != null)
+            NetworkServer.Spawn(turret);
+
+        DeployableManager.Instance?.Register(
+            turret,
+            gameObject.GetInstanceID(),
+            classPool != null ? GetClassDeployableLimit() : 1);
     }
 
     void SpawnFireBurst(Vector3 position, Quaternion rotation, float coneRange, float coneAngle)

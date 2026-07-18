@@ -40,6 +40,14 @@ public sealed class SpanBridgeCollisionGuard : MonoBehaviour
             if (!filter.gameObject.name.Contains("brige_road") || filter.sharedMesh == null)
                 continue;
 
+            if (!filter.sharedMesh.isReadable)
+            {
+                Debug.LogWarning(
+                    $"Span bridge road mesh '{filter.sharedMesh.name}' is not readable; leaving existing bridge collision bounds unchanged.",
+                    filter);
+                continue;
+            }
+
             var bounds = filter.sharedMesh.bounds;
             var minimumDeckHeight = bounds.min.y + (bounds.size.y * 0.2f);
             var samples = new Dictionary<int, int>();

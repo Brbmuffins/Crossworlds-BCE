@@ -1170,6 +1170,80 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1388378502}
   m_Mesh: {fileID: 10206, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1001 &1701940637
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1895840185}
+    m_Modifications:
+    - target: {fileID: 7794434344400499106, guid: 10ab2236705f20249aee7efbaf01a468, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.05168288
+      objectReference: {fileID: 0}
+    - target: {fileID: 7794434344400499106, guid: 10ab2236705f20249aee7efbaf01a468, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.05168288
+      objectReference: {fileID: 0}
+    - target: {fileID: 7794434344400499106, guid: 10ab2236705f20249aee7efbaf01a468, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.05168288
+      objectReference: {fileID: 0}
+    - target: {fileID: 7794434344400499106, guid: 10ab2236705f20249aee7efbaf01a468, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0.028040107
+      objectReference: {fileID: 0}
+    - target: {fileID: 7794434344400499106, guid: 10ab2236705f20249aee7efbaf01a468, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.097164065
+      objectReference: {fileID: 0}
+    - target: {fileID: 7794434344400499106, guid: 10ab2236705f20249aee7efbaf01a468, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -0.31938246
+      objectReference: {fileID: 0}
+    - target: {fileID: 7794434344400499106, guid: 10ab2236705f20249aee7efbaf01a468, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7794434344400499106, guid: 10ab2236705f20249aee7efbaf01a468, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7794434344400499106, guid: 10ab2236705f20249aee7efbaf01a468, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7794434344400499106, guid: 10ab2236705f20249aee7efbaf01a468, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7794434344400499106, guid: 10ab2236705f20249aee7efbaf01a468, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7794434344400499106, guid: 10ab2236705f20249aee7efbaf01a468, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7794434344400499106, guid: 10ab2236705f20249aee7efbaf01a468, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8014839874731768979, guid: 10ab2236705f20249aee7efbaf01a468, type: 3}
+      propertyPath: m_Name
+      value: HubSpawnLocationAW
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 10ab2236705f20249aee7efbaf01a468, type: 3}
+--- !u!4 &1701940638 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 7794434344400499106, guid: 10ab2236705f20249aee7efbaf01a468, type: 3}
+  m_PrefabInstance: {fileID: 1701940637}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1754748486
 GameObject:
   m_ObjectHideFlags: 0
@@ -1378,6 +1452,141 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1856837076}
   m_Mesh: {fileID: 10206, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1001 &1895840183
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 301782156525618200, guid: e1d277ab18e0fb94ab41769537ac1c41, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 639.8
+      objectReference: {fileID: 0}
+    - target: {fileID: 301782156525618200, guid: e1d277ab18e0fb94ab41769537ac1c41, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 411.44
+      objectReference: {fileID: 0}
+    - target: {fileID: 301782156525618200, guid: e1d277ab18e0fb94ab41769537ac1c41, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 502.78964
+      objectReference: {fileID: 0}
+    - target: {fileID: 301782156525618200, guid: e1d277ab18e0fb94ab41769537ac1c41, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 301782156525618200, guid: e1d277ab18e0fb94ab41769537ac1c41, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 301782156525618200, guid: e1d277ab18e0fb94ab41769537ac1c41, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 301782156525618200, guid: e1d277ab18e0fb94ab41769537ac1c41, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 301782156525618200, guid: e1d277ab18e0fb94ab41769537ac1c41, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 301782156525618200, guid: e1d277ab18e0fb94ab41769537ac1c41, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 301782156525618200, guid: e1d277ab18e0fb94ab41769537ac1c41, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1115755714417172130, guid: e1d277ab18e0fb94ab41769537ac1c41, type: 3}
+      propertyPath: m_Name
+      value: ToAshenWastelandsWaystone
+      objectReference: {fileID: 0}
+    - target: {fileID: 1475783855953493879, guid: e1d277ab18e0fb94ab41769537ac1c41, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 0208ea08a1ae63743843026b4e83a811, type: 2}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: 301782156525618200, guid: e1d277ab18e0fb94ab41769537ac1c41, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1701940638}
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1115755714417172130, guid: e1d277ab18e0fb94ab41769537ac1c41, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1895840187}
+    - targetCorrespondingSourceObject: {fileID: 1115755714417172130, guid: e1d277ab18e0fb94ab41769537ac1c41, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1895840186}
+  m_SourcePrefab: {fileID: 100100000, guid: e1d277ab18e0fb94ab41769537ac1c41, type: 3}
+--- !u!1 &1895840184 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1115755714417172130, guid: e1d277ab18e0fb94ab41769537ac1c41, type: 3}
+  m_PrefabInstance: {fileID: 1895840183}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &1895840185 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 301782156525618200, guid: e1d277ab18e0fb94ab41769537ac1c41, type: 3}
+  m_PrefabInstance: {fileID: 1895840183}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1895840186
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1895840184}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ddd1921818150ff418cee94ff292beb4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HubReturnTrigger
+  syncDirection: 0
+  syncMode: 0
+  syncInterval: 0
+  hubSceneName: Ashen Wastelands
+  interactionRange: 5
+  allowMouseClick: 1
+  allowKeyboardInteract: 1
+  interactKey: 19
+  returnOnTriggerEnter: 0
+  clickableLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  clickRaycastDistance: 200
+  showWorldPrompt: 1
+  promptText: Click to Travel to Ashen Wastelands
+  promptOffset: {x: 0, y: 3.2, z: 0}
+  askForConfirmation: 1
+  confirmationTitle: Travel to The Ashen Wastelands
+  confirmationMessage: Leave this area and go to The Ashen Wastelands?
+  confirmButtonText: Travel
+  cancelButtonText: Stay
+  saveProgressBeforeReturn: 1
+  runArenaCleanup: 1
+  placePlayerAtHubArrival: 1
+  hubArrivalSpawnId: Spawnpoint
+  useHubArrivalRotation: 1
+--- !u!114 &1895840187
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1895840184}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9b91ecbcc199f4492b9a91e820070131, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Mirror::Mirror.NetworkIdentity
+  sceneId: 2117976103
+  _assetId: 3459023575
+  serverOnly: 0
+  visibility: 0
+  hasSpawned: 0
 --- !u!1001 &1943876386
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1428,7 +1637,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1115755714417172130, guid: e1d277ab18e0fb94ab41769537ac1c41, type: 3}
       propertyPath: m_Name
-      value: Waystone
+      value: ToDarkwoodWaystone
       objectReference: {fileID: 0}
     - target: {fileID: 1475783855953493879, guid: e1d277ab18e0fb94ab41769537ac1c41, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
@@ -1479,12 +1688,12 @@ MonoBehaviour:
     m_Bits: 4294967295
   clickRaycastDistance: 200
   showWorldPrompt: 1
-  promptText: Click to Return to HUB
+  promptText: Click to Travel to Darkwood
   promptOffset: {x: 0, y: 3.2, z: 0}
   askForConfirmation: 1
-  confirmationTitle: Return to Darkwood?
-  confirmationMessage: Leave this area and return to Dakrwood?
-  confirmButtonText: Return
+  confirmationTitle: Travel to Darkwood?
+  confirmationMessage: Leave the Hub and travel to Darkwood?
+  confirmButtonText: Travel
   cancelButtonText: Stay
   saveProgressBeforeReturn: 1
   runArenaCleanup: 1
@@ -1605,6 +1814,109 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &6120000001
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6120000002}
+  - component: {fileID: 6120000003}
+  - component: {fileID: 6120000004}
+  - component: {fileID: 6120000005}
+  m_Layer: 0
+  m_Name: Waystone Map
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6120000002
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6120000001}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 639.8, y: 1, z: 300}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!135 &6120000003
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6120000001}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Radius: 6
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &6120000004
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6120000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9b91ecbcc199f4492b9a91e820070131, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Mirror::Mirror.NetworkIdentity
+  sceneId: 6120000004
+  _assetId: 0
+  serverOnly: 0
+  visibility: 0
+  hasSpawned: 0
+--- !u!114 &6120000005
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6120000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2a58cc92eccb4758ab6403ee53fc4a17, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WaypointMapTrigger
+  syncDirection: 0
+  syncMode: 0
+  syncInterval: 0
+  interactionRange: 6
+  allowKeyboardInteract: 1
+  interactKey: 19
+  allowMouseClick: 1
+  clickableLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  clickRaycastDistance: 200
+  showWorldPrompt: 1
+  promptText: '[E] Open World Map'
+  promptOffset: {x: 0, y: 3.2, z: 0}
+  mapTitle: WORLD MAP
+  mapBackground: {fileID: 0}
+  closeMapAfterTravelRequest: 1
+  nodes: []
+  connections: []
 --- !u!1001 &5070887840991851742
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1667,7 +1979,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8014839874731768979, guid: 10ab2236705f20249aee7efbaf01a468, type: 3}
       propertyPath: m_Name
-      value: HubSpawnLocation
+      value: HubSpawnLocationDW
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1688,4 +2000,6 @@ SceneRoots:
   - {fileID: 1754748489}
   - {fileID: 797698619}
   - {fileID: 1943876386}
+  - {fileID: 1895840183}
   - {fileID: 1174062475}
+  - {fileID: 6120000002}

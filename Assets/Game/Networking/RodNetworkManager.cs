@@ -38,6 +38,11 @@ public class RodNetworkManager : NetworkManager
              "Assign: Enemy_Grunt, Enemy_Ranged, Enemy_Elite, WorldItem, Wisp_Mob, Wraith.")]
     public GameObject[] worldPrefabs;
 
+    [Header("Persistent Networked Objects")]
+    [Tooltip("ChatManager prefab (NetworkIdentity + RodChatManager). Run BCE/Setup/4p to create and wire. " +
+             "Spawned once on the server at startup; persists across ServerChangeScene via DontDestroyOnLoad.")]
+    public GameObject chatManagerPrefab;
+
     [Header("Auth Server")]
     [Tooltip("Must match RodNetworkAuthenticator.authServerURL")]
     public string authServerURL = "http://15.204.243.36:3000";
@@ -54,8 +59,8 @@ public class RodNetworkManager : NetworkManager
         // Wire scenes in code so they're never mis-set in the Inspector.
         // Mirror uses offlineScene to auto-navigate back to login on disconnect —
         // this is what makes Logout and chat teardown work correctly.
-        offlineScene = "Assets/Game/Scenes/LoginScene.unity";
-        onlineScene  = "Assets/Game/Scenes/Darkwood.unity";   // renamed from Hub.unity
+        offlineScene = SceneNames.LoginPath;
+        onlineScene  = SceneNames.HubPath;
 
         if (transport == null)
             transport = GetComponent<Mirror.Transport>();
@@ -104,12 +109,16 @@ public class RodNetworkManager : NetworkManager
         // built-in RegisterPrefab pass picks them all up in one shot.
         RegisterIntoSpawnList(classPrefabs);
         RegisterIntoSpawnList(worldPrefabs);
+        if (chatManagerPrefab != null)
+            RegisterIntoSpawnList(new[] { chatManagerPrefab });
 
         base.OnStartClient(); // registers everything now in spawnPrefabs
 
         // Belt-and-suspenders direct registration for non-editor builds
         DirectRegister(classPrefabs);
         DirectRegister(worldPrefabs);
+        if (chatManagerPrefab != null)
+            DirectRegister(new[] { chatManagerPrefab });
     }
 
     void RegisterIntoSpawnList(GameObject[] prefabs)
@@ -150,6 +159,22 @@ public class RodNetworkManager : NetworkManager
     {
         base.OnStartServer();
         NetworkServer.RegisterHandler<CreatePlayerMessage>(OnCreatePlayer);
+
+        // Spawn a single persistent ChatManager that survives ServerChangeScene.
+        // DontDestroyOnLoad moves it out of any scene so Mirror won't destroy it on
+        // scene transitions; clients receive it via the normal spawn message.
+        if (chatManagerPrefab != null)
+        {
+            var chatGO = Instantiate(chatManagerPrefab);
+            DontDestroyOnLoad(chatGO);
+            NetworkServer.Spawn(chatGO);
+            Debug.Log("[RodNM] ChatManager spawned and marked DontDestroyOnLoad.");
+        }
+        else
+        {
+            Debug.LogWarning("[RodNM] chatManagerPrefab not assigned — chat will not work. " +
+                             "Run BCE/Setup/4p with LoginScene open to fix.");
+        }
     }
 
     public override void OnServerConnect(NetworkConnectionToClient conn)
@@ -241,6 +266,7 @@ public class RodNetworkManager : NetworkManager
             saver.jwt           = auth.jwt;
         }
 
+        EnsureHostClientReadyForAddPlayer(conn);
         NetworkServer.AddPlayerForConnection(conn, player);
         Debug.Log($"[RodNM] Spawned {username} as class {classIndex} at {spawnPos} " +
                   $"(fromDB={auth?.fromDB}, hasSavedPos={hasSavedPos})");
@@ -398,9 +424,19 @@ public class RodNetworkManager : NetworkManager
             saver.jwt = auth.jwt;
         }
 
+        EnsureHostClientReadyForAddPlayer(conn);
         NetworkServer.AddPlayerForConnection(conn, player);
         Debug.Log($"[RodNM] Spawned {username} as class {classIndex} for {context} at {spawnPos}.");
         return true;
+    }
+
+    static void EnsureHostClientReadyForAddPlayer(NetworkConnectionToClient conn)
+    {
+        if (!(conn is LocalConnectionToClient)) return;
+        if (!NetworkClient.active || NetworkClient.ready) return;
+        if (NetworkClient.connection == null || !NetworkClient.connection.isAuthenticated) return;
+
+        NetworkClient.Ready();
     }
 
     int CountAuthenticatedConnections()
