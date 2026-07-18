@@ -37,15 +37,15 @@ public static class CharacterModelSwapper
 
     static readonly Entry[] Map =
     {
-        new Entry { className = "Ironclad",    prefabPath = "Assets/Game/Prefabs/Ironclad.prefab",    modelPath = "Assets/Game/Heroes/Guardian/Guardian.fbx" },
-        new Entry { className = "Shadowblade", prefabPath = "Assets/Game/Prefabs/Shadowblade.prefab", modelPath = "Assets/Game/Heroes/Bogar/Bogar.fbx" },
-        new Entry { className = "Cleric",      prefabPath = "Assets/Game/Prefabs/Cleric.prefab",      modelPath = "Assets/Game/Heroes/Brandalf/Brandalf.fbx" },
+        new Entry { className = "Ironclad",    prefabPath = "Assets/Game/Game_Prefabs/Ironclad.prefab",    modelPath = "Assets/Game/3D Models/Heroes/Guardian/Guardian.fbx" },
+        new Entry { className = "Shadowblade", prefabPath = "Assets/Game/Game_Prefabs/Shadowblade.prefab", modelPath = "Assets/Game/3D Models/Heroes/Bogar/Bogar.fbx" },
+        new Entry { className = "Cleric",      prefabPath = "Assets/Game/Game_Prefabs/Cleric.prefab",      modelPath = "Assets/Game/3D Models/Heroes/Brandalf/Brandalf.fbx" },
         new Entry
         {
             className = "Arcanist",
-            prefabPath = "Assets/Game/Prefabs/Arcanist.prefab",
-            modelPath = "Assets/Game/Heroes/Dravos/fantasy_goblin_3d_model/Idle.fbx",
-            controllerPath = "Assets/Game/Heroes/Dravos/fantasy_goblin_3d_model/Dravos.controller"
+            prefabPath = "Assets/Game/Game_Prefabs/Arcanist.prefab",
+            modelPath = "Assets/Game/3D Models/Heroes/Dravos/fantasy_goblin_3d_model/Idle.fbx",
+            controllerPath = "Assets/Game/3D Models/Heroes/Dravos/fantasy_goblin_3d_model/Dravos.controller"
         },
     };
 

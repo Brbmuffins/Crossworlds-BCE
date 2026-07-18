@@ -1,0 +1,69 @@
+# ═══════════════════════════════════════════════════════════════════════════
+#  Crossworlds BCE — Meta GUID Guard
+#
+#  Fails when a commit reassigns a .meta GUID that scenes/prefabs still
+#  reference. Unity does this on a duplicate-asset collision (an unzipped pack,
+#  a re-run Tripo import, a folder copied in outside Unity) — the assets look
+#  untouched, only the guid line moves, and every reference silently dangles.
+#
+#  Without this, the break surfaces days later on whoever next opens the scene
+#  (it has hit main three times: 527fb6b7, b0aec3c1, da3711c6). This puts the
+#  failure on the commit that caused it, in about a minute, with no Unity.
+#
+#  Repair: tools/guid_restore.py (set BEFORE/AFTER, dry-run, then --apply).
+# ═══════════════════════════════════════════════════════════════════════════
+
+name: Meta GUID Guard
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  guid-guard:
+    name: Check for reassigned meta GUIDs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (full history, no LFS)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: false   # guard reads text metas + YAML refs only; LFS blobs are dead weight
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Resolve diff range
+        id: range
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE="${{ github.event.pull_request.base.sha }}"
+          else
+            BASE="${{ github.event.before }}"
+          fi
+          # New branch / first push / force-push: `before` is all-zeros or unreachable.
+          if [ -z "$BASE" ] || [ "$BASE" = "0000000000000000000000000000000000000000" ] \
+             || ! git cat-file -e "$BASE^{commit}" 2>/dev/null; then
+            BASE="$(git rev-parse HEAD~1 2>/dev/null || echo '')"
+          fi
+          echo "base=$BASE" >> "$GITHUB_OUTPUT"
+
+      # Runs even if the GUID guard fails — two independent invariants, and seeing both
+      # results in one run beats fixing one and rediscovering the other.
+      - name: Meta invariant (every asset has its .meta)
+        if: always()
+        run: python tools/meta_guard.py
+
+      - name: Reassigned GUID check
+        if: always()
+        run: |
+          if [ -z "${{ steps.range.outputs.base }}" ]; then
+            echo "No usable base commit (root commit?) — nothing to compare."
+            exit 0
+          fi
+          python tools/guid_guard.py --base "${{ steps.range.outputs.base }}" --head "${{ github.sha }}"

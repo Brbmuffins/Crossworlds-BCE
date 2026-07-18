@@ -169,7 +169,10 @@ public class CharacterSelectUI : MonoBehaviour
         Destroy(plat.GetComponent<Collider>());
         plat.transform.SetPositionAndRotation(new Vector3(0f, -0.06f, 0f), Quaternion.identity);
         plat.transform.localScale = new Vector3(1.7f, 0.04f, 1.7f);
-        plat.GetComponent<Renderer>().material.color = new Color(0.06f, 0.06f, 0.12f);
+        var platMat = plat.GetComponent<Renderer>().material;
+        var urpShader = Shader.Find("Universal Render Pipeline/Lit");
+        if (urpShader != null) platMat.shader = urpShader;
+        platMat.color = new Color(0.06f, 0.06f, 0.12f);
         SetLayer(plat, PREV_LAY);
 
         // Ring
@@ -178,7 +181,9 @@ public class CharacterSelectUI : MonoBehaviour
         Destroy(ring.GetComponent<Collider>());
         ring.transform.SetPositionAndRotation(new Vector3(0f, -0.07f, 0f), Quaternion.identity);
         ring.transform.localScale = new Vector3(2.0f, 0.02f, 2.0f);
-        ring.GetComponent<Renderer>().material.color = new Color(0.08f, 0.08f, 0.16f);
+        var ringMat = ring.GetComponent<Renderer>().material;
+        if (urpShader != null) ringMat.shader = urpShader;
+        ringMat.color = new Color(0.08f, 0.08f, 0.16f);
         SetLayer(ring, PREV_LAY);
 
         // Spawn point + rotation root

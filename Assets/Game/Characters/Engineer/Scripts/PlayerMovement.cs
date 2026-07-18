@@ -108,6 +108,8 @@ public class PlayerMovement : NetworkBehaviour
             var follow = FindFirstObjectByType<CameraFollow>();
             if (follow == null)
                 follow = cam.gameObject.AddComponent<CameraFollow>();
+            // Always ensure collision is on — a scene-placed CameraFollow may have
+            // cameraCollision:0 serialized (e.g. Hub scene), which causes camera clipping.
             follow.cameraCollision = true;
             follow.collisionMask = ~0;
             follow.target = transform; // setter calls SnapToTarget() automatically

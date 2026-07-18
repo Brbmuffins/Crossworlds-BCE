@@ -53,12 +53,15 @@ public sealed class WaypointMapTrigger : NetworkBehaviour
 
     void Start()
     {
+#if UNITY_EDITOR || !UNITY_SERVER
         if (showWorldPrompt)
             BuildWorldPrompt();
+#endif
     }
 
     void Update()
     {
+#if UNITY_EDITOR || !UNITY_SERVER
         if (_loading) return;
 
         if (_localPlayer == null)
@@ -78,12 +81,15 @@ public sealed class WaypointMapTrigger : NetworkBehaviour
 
         if (allowMouseClick && WasClicked())
             OpenMap();
+#endif
     }
 
+#if UNITY_EDITOR || !UNITY_SERVER
     void OpenMap()
     {
         WaypointMapUI.Show(mapTitle, mapBackground, nodes, connections, HandleNodeSelected);
     }
+#endif
 
     void HandleNodeSelected(WaypointMapNode node)
     {
@@ -92,21 +98,27 @@ public sealed class WaypointMapTrigger : NetworkBehaviour
 
         if (!node.CanTravel)
         {
+#if UNITY_EDITOR || !UNITY_SERVER
             WaypointMapUI.SetStatus($"{node.displayName} is not available yet.");
+#endif
             return;
         }
 
         string sceneName = node.sceneName.Trim();
         if (!CanLoadScene(sceneName))
         {
+#if UNITY_EDITOR || !UNITY_SERVER
             WaypointMapUI.SetStatus($"{node.displayName} scene is not in Build Settings yet.");
+#endif
             return;
         }
 
         _loading = true;
+#if UNITY_EDITOR || !UNITY_SERVER
         WaypointMapUI.SetStatus($"Traveling to {node.displayName}...");
         if (closeMapAfterTravelRequest)
             WaypointMapUI.Hide();
+#endif
 
         if (NetworkServer.active)
         {
@@ -143,7 +155,9 @@ public sealed class WaypointMapTrigger : NetworkBehaviour
     void TargetTravelRejected(NetworkConnectionToClient target, string message)
     {
         _loading = false;
+#if UNITY_EDITOR || !UNITY_SERVER
         WaypointMapUI.SetStatus(message);
+#endif
     }
 
     static void ChangeScene(string sceneName)
@@ -164,6 +178,7 @@ public sealed class WaypointMapTrigger : NetworkBehaviour
                 string.Equals(SceneManager.GetActiveScene().name, sceneName, StringComparison.OrdinalIgnoreCase));
     }
 
+#if UNITY_EDITOR || !UNITY_SERVER
     bool WasInteractPressed()
     {
         var keyboard = Keyboard.current;
@@ -238,6 +253,7 @@ public sealed class WaypointMapTrigger : NetworkBehaviour
         if (_promptObject != null && _promptObject.activeSelf != visible)
             _promptObject.SetActive(visible);
     }
+#endif // UNITY_EDITOR || !UNITY_SERVER
 
     static WaypointMapNode[] DefaultNodes()
     {

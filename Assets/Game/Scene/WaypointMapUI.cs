@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
+#if UNITY_EDITOR || !UNITY_SERVER
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.UI;
 using UnityEngine.UI;
@@ -405,3 +406,4 @@ public sealed class WaypointMapUI : MonoBehaviour
             eventSystem.gameObject.AddComponent<InputSystemUIInputModule>();
     }
 }
+#endif // UNITY_EDITOR || !UNITY_SERVER
