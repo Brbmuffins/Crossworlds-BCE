@@ -12,7 +12,7 @@ using UnityEngine;
 /// other players SEE spell objects appear in the world.
 ///
 /// The deployable behaviours (ShockMine, NaniteSwarm, Singularity, LastBastionWall,
-/// NullFieldZone, RestorationBeacon, TurretController) were plain MonoBehaviours on
+/// NullFieldZone, RestorationBeacon, TurretController, GuardianFollower) were plain MonoBehaviours on
 /// prefabs with no NetworkIdentity, and AbilityCaster spawned them with plain
 /// Instantiate — so they existed only on the server and were invisible to clients.
 ///
@@ -21,7 +21,8 @@ using UnityEngine;
 /// This tool supplies the missing prefab components + spawn registration:
 ///   • NetworkIdentity on every deployable/turret prefab (required to replicate).
 ///   • NetworkTransformUnreliable (server authority) on the movers — NaniteSwarm
-///     (drifts) and TurretController (rotates to aim) — so their motion replicates.
+    ///     (drifts), TurretController (rotates to aim), and GuardianFollower
+    ///     (follows owner) — so their motion replicates.
 ///     Static deployables need none: NetworkServer.Spawn already sends their pose.
 ///   • Registers all of them in RodNetworkManager.worldPrefabs + spawnPrefabs so
 ///     clients can instantiate the incoming spawns.
@@ -43,7 +44,7 @@ public static class DeployableNetworkFixer
     // Movers also get a NetworkTransform so their server-driven motion replicates.
     static readonly Type[] MovingDeployables =
     {
-        typeof(NaniteSwarmBehaviour), typeof(TurretController),
+        typeof(NaniteSwarmBehaviour), typeof(TurretController), typeof(GuardianFollower),
     };
 
     [MenuItem("BCE/Setup/4d ▶ Network Deployables + Turret", priority = 8)]

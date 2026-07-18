@@ -54,8 +54,8 @@ public class RodNetworkManager : NetworkManager
         // Wire scenes in code so they're never mis-set in the Inspector.
         // Mirror uses offlineScene to auto-navigate back to login on disconnect —
         // this is what makes Logout and chat teardown work correctly.
-        offlineScene = "Assets/Game/Scenes/LoginScene.unity";
-        onlineScene  = "Assets/Game/Scenes/Darkwood.unity";   // renamed from Hub.unity
+        offlineScene = SceneNames.LoginPath;
+        onlineScene  = SceneNames.HubPath;
 
         if (transport == null)
             transport = GetComponent<Mirror.Transport>();
@@ -241,6 +241,7 @@ public class RodNetworkManager : NetworkManager
             saver.jwt           = auth.jwt;
         }
 
+        EnsureHostClientReadyForAddPlayer(conn);
         NetworkServer.AddPlayerForConnection(conn, player);
         Debug.Log($"[RodNM] Spawned {username} as class {classIndex} at {spawnPos} " +
                   $"(fromDB={auth?.fromDB}, hasSavedPos={hasSavedPos})");
@@ -398,9 +399,19 @@ public class RodNetworkManager : NetworkManager
             saver.jwt = auth.jwt;
         }
 
+        EnsureHostClientReadyForAddPlayer(conn);
         NetworkServer.AddPlayerForConnection(conn, player);
         Debug.Log($"[RodNM] Spawned {username} as class {classIndex} for {context} at {spawnPos}.");
         return true;
+    }
+
+    static void EnsureHostClientReadyForAddPlayer(NetworkConnectionToClient conn)
+    {
+        if (!(conn is LocalConnectionToClient)) return;
+        if (!NetworkClient.active || NetworkClient.ready) return;
+        if (NetworkClient.connection == null || !NetworkClient.connection.isAuthenticated) return;
+
+        NetworkClient.Ready();
     }
 
     int CountAuthenticatedConnections()

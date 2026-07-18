@@ -1284,7 +1284,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 5b7a49c3dd85728409b5ad646e504c0e, type: 3}
       propertyPath: m_Name
-      value: Waystone
+      value: Darkwood Waystone
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 5b7a49c3dd85728409b5ad646e504c0e, type: 3}
       propertyPath: m_TagString
@@ -3298,7 +3298,7 @@ MonoBehaviour:
   saveProgressBeforeReturn: 1
   runArenaCleanup: 1
   placePlayerAtHubArrival: 1
-  hubArrivalSpawnId: HubSpawnLocation
+  hubArrivalSpawnId: HubSpawnLocationDW
   useHubArrivalRotation: 1
 --- !u!114 &629785736
 MonoBehaviour:

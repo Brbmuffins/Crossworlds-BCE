@@ -296,12 +296,12 @@ public sealed class WaypointMapTrigger : NetworkBehaviour
                 id = "darkwood",
                 displayName = "DARKWOOD",
                 subtitle = "",
-                sceneName = SceneNames.Hub,
+                sceneName = SceneNames.Darkwood,
                 unlocked = true,
                 normalizedPosition = new Vector2(0.44f, 0.45f),
                 labelOffset = new Vector2(0f, -36f),
                 color = new Color(0.78f, 0.35f, 0.28f, 1f),
-                description = "Current hub region."
+                description = "Darkwood region."
             },
             new WaypointMapNode
             {

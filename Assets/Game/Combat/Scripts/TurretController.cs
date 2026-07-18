@@ -30,12 +30,15 @@ public class TurretController : MonoBehaviour
     private LineRenderer tracer;
     private float tracerTimer = 0f;
     private Vector3 barrelRestLocalPos;
+    private bool _canRecoilBarrel;
 
     void Awake()
     {
         _baseFireRate = fireRate;
         if (barrel == null) barrel = transform;
-        barrelRestLocalPos = barrel.localPosition;
+        _canRecoilBarrel = barrel != null && barrel != transform;
+        if (_canRecoilBarrel)
+            barrelRestLocalPos = barrel.localPosition;
 
         if (muzzleFlash == null) muzzleFlash = CreateDefaultMuzzleFlash();
 
@@ -47,6 +50,12 @@ public class TurretController : MonoBehaviour
         tracer.endColor = new Color(0.4f, 1f, 1f, 0f);
         tracer.positionCount = 2;
         tracer.enabled = false;
+    }
+
+    void OnDestroy()
+    {
+        if (DeployableNet.IsAuthority)
+            DeployableManager.Instance?.Unregister(gameObject);
     }
 
     // ── Public API ────────────────────────────────────────────────
@@ -92,7 +101,8 @@ public class TurretController : MonoBehaviour
 
         FindTarget();
 
-        barrel.localPosition = Vector3.Lerp(barrel.localPosition, barrelRestLocalPos, recoilRecoverySpeed * Time.deltaTime);
+        if (_canRecoilBarrel)
+            barrel.localPosition = Vector3.Lerp(barrel.localPosition, barrelRestLocalPos, recoilRecoverySpeed * Time.deltaTime);
 
         if (tracer.enabled)
         {
@@ -163,11 +173,12 @@ public class TurretController : MonoBehaviour
             targetHealth.TakeDamage(damage * mult, owner != null ? owner : gameObject);
         }
 
-        barrel.localPosition = barrelRestLocalPos - Vector3.forward * recoilDistance;
+        if (_canRecoilBarrel)
+            barrel.localPosition = barrelRestLocalPos - Vector3.forward * recoilDistance;
 
         if (muzzleFlash != null) muzzleFlash.Play();
 
-        Vector3 origin = muzzlePoint != null ? muzzlePoint.position : barrel.position;
+        Vector3 origin = muzzlePoint != null ? muzzlePoint.position : (barrel != null ? barrel.position : transform.position);
         Vector3 target = currentTarget.position + Vector3.up * 0.5f;
         tracer.SetPosition(0, origin);
         tracer.SetPosition(1, target);

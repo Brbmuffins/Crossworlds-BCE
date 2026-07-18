@@ -456,7 +456,7 @@ MonoBehaviour:
   - {fileID: 4515746899207060477, guid: 2ab35200bba8384449966902eaed9cab, type: 3}
   - {fileID: 2286457734563818783, guid: d228dda3426926b41ae915d331560f12, type: 3}
   - {fileID: 5383663458828750495, guid: ee265e874399c4643b9b9e77a5bc83c6, type: 3}
-  - {fileID: 2500953069177823676, guid: 6a13aec1807a81c44b1ef19b74bbb966, type: 3}
+  - {fileID: 7044732009718663101, guid: f2f18204026d32e418e80ae36363d3d3, type: 3}
   - {fileID: 4577330360238886047, guid: e9b165cca9a40fe47bdda9b21d407720, type: 3}
   - {fileID: 8204671760820388417, guid: 05ca882c1b18d70449cfc3fbde6fc614, type: 3}
   - {fileID: 5551267369004884409, guid: b4c4d40894b065142ac7e320545e40e6, type: 3}
@@ -481,7 +481,7 @@ MonoBehaviour:
   - {fileID: 4515746899207060477, guid: 2ab35200bba8384449966902eaed9cab, type: 3}
   - {fileID: 2286457734563818783, guid: d228dda3426926b41ae915d331560f12, type: 3}
   - {fileID: 5383663458828750495, guid: ee265e874399c4643b9b9e77a5bc83c6, type: 3}
-  - {fileID: 2500953069177823676, guid: 6a13aec1807a81c44b1ef19b74bbb966, type: 3}
+  - {fileID: 7044732009718663101, guid: f2f18204026d32e418e80ae36363d3d3, type: 3}
   worldPrefabs: []
   authServerURL: http://15.204.243.36:3000
 --- !u!114 &286295840
@@ -1511,7 +1511,7 @@ MonoBehaviour:
   startingTrack: {fileID: 8300000, guid: 3925f20045060a0469a535e28b375e67, type: 3}
   playOnStart: 1
   loopTrack: 1
-  defaultVolume: 0.169
+  defaultVolume: 0.6
   startMuted: 0
   fadeInSeconds: 1.5
   fadeOutSeconds: 0.5
