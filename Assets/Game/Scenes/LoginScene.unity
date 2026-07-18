@@ -1511,7 +1511,7 @@ MonoBehaviour:
   startingTrack: {fileID: 8300000, guid: 3925f20045060a0469a535e28b375e67, type: 3}
   playOnStart: 1
   loopTrack: 1
-  defaultVolume: 0.169
+  defaultVolume: 0.6
   startMuted: 0
   fadeInSeconds: 1.5
   fadeOutSeconds: 0.5

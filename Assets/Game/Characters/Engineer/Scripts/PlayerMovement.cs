@@ -13,6 +13,10 @@ public class PlayerMovement : NetworkBehaviour
     public float rotationSpeed = 12f;
     public Camera cam;
 
+    [Header("Animation")]
+    [Tooltip("Disable for characters that turn around instead of playing a backward-walk clip.")]
+    public bool useBackwardMovementAnimation = true;
+
     [Header("Rotation Lock")]
     public bool lockCharacterRotation = false;
     public bool captureStartRotationAsLock = true;
@@ -193,7 +197,7 @@ public class PlayerMovement : NetworkBehaviour
 
         bool isSprinting = Keyboard.current.leftShiftKey.isPressed && input.sqrMagnitude > 0 && !pressingS;
         bool isMoving = input.sqrMagnitude > 0;
-        bool isBackwards = pressingS;
+        bool isBackwards = useBackwardMovementAnimation && pressingS && !pressingW;
 
         SetAnimBool("isMoving", isMoving);
         SetAnimBool("isSprinting", isSprinting);
