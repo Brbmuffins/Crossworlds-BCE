@@ -483,7 +483,7 @@ MonoBehaviour:
   - {fileID: 5383663458828750495, guid: ee265e874399c4643b9b9e77a5bc83c6, type: 3}
   - {fileID: 7044732009718663101, guid: f2f18204026d32e418e80ae36363d3d3, type: 3}
   worldPrefabs: []
-  chatManagerPrefab: {fileID: 100100000, guid: a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6, type: 3}
+  chatManagerPrefab: {fileID: 1000000000000000001, guid: 0b8a9bdc07f1a3146a8481bbae0fb2fe, type: 3}
   authServerURL: http://15.204.243.36:3000
 --- !u!114 &286295840
 MonoBehaviour:

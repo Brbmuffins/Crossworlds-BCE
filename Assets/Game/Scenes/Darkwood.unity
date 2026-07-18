@@ -444,6 +444,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: b21f8f0500f20914ca0a8dd7dc86b589, type: 3}
       insertIndex: -1
       addedObject: {fileID: 213523441}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: b21f8f0500f20914ca0a8dd7dc86b589, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 213523448}
   m_SourcePrefab: {fileID: 100100000, guid: b21f8f0500f20914ca0a8dd7dc86b589, type: 3}
 --- !u!1 &27850319 stripped
 GameObject:
@@ -1001,6 +1004,7 @@ MonoBehaviour:
   jumpForce: 15
   rotationSpeed: 12
   cam: {fileID: 0}
+  useBackwardMovementAnimation: 1
   lockCharacterRotation: 0
   captureStartRotationAsLock: 1
   lockedRotationEuler: {x: 0, y: 0, z: 0}
@@ -1078,6 +1082,23 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerFallReset
   fallYThreshold: -20
   resetPosition: {x: 4.03, y: 0.98, z: -4.63}
+--- !u!114 &213523448
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 213523440}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9b91ecbcc199f4492b9a91e820070131, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Mirror::Mirror.NetworkIdentity
+  sceneId: 19824599
+  _assetId: 3845325793
+  serverOnly: 0
+  visibility: 0
+  hasSpawned: 0
 --- !u!1001 &229562157
 PrefabInstance:
   m_ObjectHideFlags: 0
