@@ -2219,8 +2219,10 @@ public class AbilityCaster : NetworkBehaviour
             float coneRange = ability.range * indicator.transform.localScale.x;
             ApplyConeDamage(ability, indicator, damage, coneRange, castOrigin);
 
+#if UNITY_EDITOR || !UNITY_SERVER
             if (ability.fireVisual)
                 SpawnFireBurst(castOrigin + indicator.transform.forward * coneRange + Vector3.up * 0.5f, indicator.transform.rotation, coneRange, ability.coneAngle);
+#endif
         }
 
         if (ability.shape == AbilityShape.Circle && ability.damage > 0f && !IsArcaneStep(ability) && !IsVoidMaw(ability))
@@ -3178,6 +3180,7 @@ public class AbilityCaster : NetworkBehaviour
             classPool != null ? GetClassDeployableLimit() : 1);
     }
 
+#if UNITY_EDITOR || !UNITY_SERVER
     void SpawnFireBurst(Vector3 position, Quaternion rotation, float coneRange, float coneAngle)
     {
         GameObject go = new GameObject("FireBurst");
@@ -3220,6 +3223,7 @@ public class AbilityCaster : NetworkBehaviour
         ps.Play();
         Destroy(go, main.duration + main.startLifetime.constantMax + 0.5f);
     }
+#endif // UNITY_EDITOR || !UNITY_SERVER
 
 }
 
