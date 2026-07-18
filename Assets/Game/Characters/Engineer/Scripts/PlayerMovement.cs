@@ -276,6 +276,16 @@ public class PlayerMovement : NetworkBehaviour
         if (rb == null)
             return;
 
+        // Void rescue safety net: if we fall deep into the void, teleport back to safety
+        if (transform.position.y < -30f)
+        {
+            var startPos = FindFirstObjectByType<NetworkStartPosition>();
+            Vector3 rescuePos = startPos != null ? startPos.transform.position : new Vector3(0f, 2f, 0f);
+            rb.linearVelocity = Vector3.zero;
+            transform.position = rescuePos;
+            Debug.LogWarning("[Void Rescue] Player fell below -30 Y! Teleporting to safety.");
+        }
+
         if (health != null && health.IsDowned)
         {
             ClearMovementIntent();

@@ -34,6 +34,7 @@ public class RodNetworkAuthenticator : NetworkAuthenticator
     {
         public string jwt;
         public string username;
+        public int    selectedClass;
     }
 
     public struct AuthResponseMessage : NetworkMessage
@@ -117,8 +118,19 @@ public class RodNetworkAuthenticator : NetworkAuthenticator
         }
 
         CharacterResponse character = null;
-        try { character = JsonUtility.FromJson<CharacterResponse>(req.downloadHandler.text); }
-        catch { }
+        try 
+        { 
+            string rawText = req.downloadHandler.text.Trim();
+            if (rawText.StartsWith("[") && rawText.EndsWith("]"))
+            {
+                rawText = rawText.Substring(1, rawText.Length - 2).Trim();
+            }
+            character = JsonUtility.FromJson<CharacterResponse>(rawText); 
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogError("[RodAuth] Failed to parse character response: " + ex.Message);
+        }
 
         if (character == null || character.id == 0)
         {
@@ -132,7 +144,7 @@ public class RodNetworkAuthenticator : NetworkAuthenticator
         {
             username    = msg.username,
             jwt         = msg.jwt,
-            classIndex  = character.class_index,
+            classIndex  = Mathf.Clamp(msg.selectedClass, 0, 4),
             characterId = character.id,
             spawnX      = character.pos_x,
             spawnY      = character.pos_y,
@@ -173,12 +185,11 @@ public class RodNetworkAuthenticator : NetworkAuthenticator
 
     public override void OnClientAuthenticate()
     {
-        // Class is no longer sent here — server fetches it from DB.
-        // Only JWT and username are needed for identity.
         NetworkClient.Send(new AuthRequestMessage
         {
-            jwt      = devMode ? "dev" : PlayerPrefs.GetString("jwt_token", ""),
-            username = PlayerPrefs.GetString("username", "DevPlayer"),
+            jwt           = devMode ? "dev" : PlayerPrefs.GetString("jwt_token", ""),
+            username      = PlayerPrefs.GetString("username", "DevPlayer"),
+            selectedClass = PlayerPrefs.GetInt("SelectedCharacter", 0),
         });
     }
 

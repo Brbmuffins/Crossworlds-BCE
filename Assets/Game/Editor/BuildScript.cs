@@ -27,14 +27,24 @@ public static class BuildScript
     [MenuItem("BCE/Build/Dedicated Server (Linux)")]
     public static void BuildDedicatedServer()
     {
-        var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
+        bool prevEnable = Unity.Multiplayer.Editor.EditorMultiplayerRolesManager.EnableMultiplayerRoles;
+        BuildReport report;
+        try
         {
-            scenes              = SCENES,
-            locationPathName    = "build/DedicatedServer/Crossworlds.x86_64",
-            target              = BuildTarget.StandaloneLinux64,
-            subtarget           = (int)StandaloneBuildSubtarget.Server,
-            options             = BuildOptions.None,
-        });
+            Unity.Multiplayer.Editor.EditorMultiplayerRolesManager.EnableMultiplayerRoles = false;
+            report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
+            {
+                scenes              = SCENES,
+                locationPathName    = "build/DedicatedServer/Crossworlds.x86_64",
+                target              = BuildTarget.StandaloneLinux64,
+                subtarget           = (int)StandaloneBuildSubtarget.Server,
+                options             = BuildOptions.None,
+            });
+        }
+        finally
+        {
+            Unity.Multiplayer.Editor.EditorMultiplayerRolesManager.EnableMultiplayerRoles = prevEnable;
+        }
 
         bool ok = report.summary.result == BuildResult.Succeeded;
         Debug.Log(ok
@@ -50,13 +60,24 @@ public static class BuildScript
     [MenuItem("BCE/Build/Windows Client")]
     public static void BuildWindowsClient()
     {
-        var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
+        bool prevEnable = Unity.Multiplayer.Editor.EditorMultiplayerRolesManager.EnableMultiplayerRoles;
+        BuildReport report;
+        try
         {
-            scenes              = SCENES,
-            locationPathName    = "build/WindowsClient/Crossworlds.exe",
-            target              = BuildTarget.StandaloneWindows64,
-            options             = BuildOptions.None,
-        });
+            Unity.Multiplayer.Editor.EditorMultiplayerRolesManager.EnableMultiplayerRoles = false;
+            report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
+            {
+                scenes              = SCENES,
+                locationPathName    = "build/WindowsClient/Crossworlds.exe",
+                target              = BuildTarget.StandaloneWindows64,
+                subtarget           = (int)StandaloneBuildSubtarget.Player,
+                options             = BuildOptions.None,
+            });
+        }
+        finally
+        {
+            Unity.Multiplayer.Editor.EditorMultiplayerRolesManager.EnableMultiplayerRoles = prevEnable;
+        }
 
         bool ok = report.summary.result == BuildResult.Succeeded;
         Debug.Log(ok

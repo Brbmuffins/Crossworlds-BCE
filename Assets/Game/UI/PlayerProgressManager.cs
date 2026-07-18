@@ -151,7 +151,12 @@ public class PlayerProgressManager : MonoBehaviour
 
         try
         {
-            var r = JsonUtility.FromJson<CharacterFetchResponse>(req.downloadHandler.text);
+            string rawText = req.downloadHandler.text.Trim();
+            if (rawText.StartsWith("[") && rawText.EndsWith("]"))
+            {
+                rawText = rawText.Substring(1, rawText.Length - 2).Trim();
+            }
+            var r = JsonUtility.FromJson<CharacterFetchResponse>(rawText);
             int prevLevel = Level;
             Level    = Mathf.Max(1, r.level);
             Xp       = r.xp;

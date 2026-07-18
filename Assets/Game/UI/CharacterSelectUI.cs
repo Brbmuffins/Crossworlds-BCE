@@ -741,11 +741,13 @@ public class CharacterSelectUI : MonoBehaviour
     IEnumerator PostCharacterThenConnect(int classIndex)
     {
         string jwt      = PlayerPrefs.GetString("jwt_token", "");
-        string serverIP = PlayerPrefs.GetString("game_server_ip", serverAddress);
+        string serverIP = PlayerPrefs.GetString("game_server_ip", serverAddress).Trim();
         string url      = $"http://{serverIP}:3000/character";
         string json     = $"{{\"class_index\":{classIndex}}}";
 
-        using var req = new UnityWebRequest(url, "POST");
+        using var req = new UnityWebRequest();
+        req.url = url;
+        req.method = "POST";
         req.uploadHandler   = new UploadHandlerRaw(Encoding.UTF8.GetBytes(json));
         req.downloadHandler = new DownloadHandlerBuffer();
         req.SetRequestHeader("Content-Type", "application/json");

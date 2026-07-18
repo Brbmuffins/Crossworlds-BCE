@@ -219,9 +219,11 @@ public class RodNetworkManager : NetworkManager
         // Spawn position: DB saved position, or Mirror start position, or safe default.
         // Guard: if DB coords are all zero the character has never saved a position
         // (first login). Treat that as a fresh spawn so players don't pile up at origin.
+        // Also guard against characters that disconnected while falling through the map (Y < -20).
         Vector3 spawnPos;
         bool hasSavedPos = auth != null && auth.fromDB
-                           && (auth.spawnX != 0f || auth.spawnY != 0f || auth.spawnZ != 0f);
+                           && (auth.spawnX != 0f || auth.spawnY != 0f || auth.spawnZ != 0f)
+                           && auth.spawnY > -20f;
 
         if (hasSavedPos)
         {
