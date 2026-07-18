@@ -13,9 +13,11 @@ using UnityEngine;
 ///
 /// Warden, Ironclad, Shadowblade, and Cleric currently have _assetId: 0 in
 /// their .prefab files (visible in raw YAML).  Arcanist has a correct
-/// non-zero value.  In built clients, Mirror uses only the serialized value
-/// and cannot fall back to a GUID-based computation, so those four classes
-/// fail to spawn for non-host clients — which is why "only Arcanist works".
+/// non-zero value.  ChatManager.prefab also has _assetId: 0 which breaks
+/// chat for non-host clients (RPC delivery and UI never exist on their end).
+/// In built clients, Mirror uses only the serialized value and cannot fall
+/// back to a GUID-based computation, so those prefabs fail to spawn for
+/// non-host clients — which is why "only Arcanist works" and chat is broken.
 ///
 /// Running this menu item force-reimports all 5 class prefabs so
 /// NetworkIdentity.OnValidate() fires and writes the correct _assetId.
@@ -27,6 +29,10 @@ public static class ClassPrefabFixer
 
     static readonly string[] ClassNames =
         { "Warden", "Ironclad", "Shadowblade", "Cleric", "Arcanist" };
+
+    // Additional networked prefabs (not class heroes) that also need a valid assetId.
+    static readonly string[] ExtraPrefabs =
+        { "Assets/Game/Networking/ChatManager.prefab" };
 
     [MenuItem("BCE/Setup/4z ▶ Fix Class Prefab Asset IDs", priority = 47)]
     static void FixAssetIds()
@@ -60,6 +66,18 @@ public static class ClassPrefabFixer
             Debug.Log($"[BCE] Reimported {name}.prefab — _assetId will be written by Mirror.");
         }
 
+        // Also reimport extra networked prefabs (ChatManager, etc.)
+        foreach (var path in ExtraPrefabs)
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+            if (prefab == null) { Debug.LogWarning($"[BCE] Extra prefab not found: {path}"); missing++; continue; }
+            var netId = prefab.GetComponent<Mirror.NetworkIdentity>();
+            if (netId == null) { Debug.LogWarning($"[BCE] {path} has no NetworkIdentity — skipping."); missing++; continue; }
+            AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
+            fixed_++;
+            Debug.Log($"[BCE] Reimported {path}");
+        }
+
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
 
@@ -74,6 +92,16 @@ public static class ClassPrefabFixer
             uint id = netId != null ? netId.assetId : 0;
             string status = id != 0 ? "✅" : "❌ still 0 — check Mirror version";
             report += $"  {name}: assetId={id}  {status}\n";
+        }
+        foreach (var path in ExtraPrefabs)
+        {
+            string shortName = System.IO.Path.GetFileNameWithoutExtension(path);
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+            if (prefab == null) { report += $"  {shortName}: NOT FOUND\n"; continue; }
+            var netId = prefab.GetComponent<Mirror.NetworkIdentity>();
+            uint id = netId != null ? netId.assetId : 0;
+            string status = id != 0 ? "✅" : "❌ still 0 — check Mirror version";
+            report += $"  {shortName}: assetId={id}  {status}\n";
         }
 
         string msg = fixed_ > 0
