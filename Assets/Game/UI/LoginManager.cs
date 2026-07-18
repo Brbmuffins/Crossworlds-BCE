@@ -76,6 +76,9 @@ public class LoginManager : MonoBehaviour
 
     void Start()
     {
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible   = true;
+
         // Set defaults after the canvas is fully initialized.
         // Awake builds the fields; Start is the earliest safe time to assign text values.
         if (_serverInput != null)
@@ -402,6 +405,7 @@ public class LoginManager : MonoBehaviour
         lbl.color            = new Color(AccentCyan.r, AccentCyan.g, AccentCyan.b, 0.7f);
         lbl.characterSpacing = 4f;
         lbl.fontStyle        = FontStyles.Bold;
+        lbl.raycastTarget    = false;
         var lrt = label.GetComponent<RectTransform>();
         lrt.anchorMin = new Vector2(0.03f, 0.7f);
         lrt.anchorMax = new Vector2(0.97f, 1.0f);
@@ -456,6 +460,9 @@ public class LoginManager : MonoBehaviour
 
         // Focus highlight — brighter background + full-brightness underline when selected
         Image bgImg    = go.GetComponent<Image>();
+        bgImg.raycastTarget = true;
+        field.targetGraphic = bgImg;
+
         Image ulImg    = underline.GetComponent<Image>();
         Color normalBg = InputBG;
         Color focusBg  = new Color(0.14f, 0.10f, 0.26f, 0.98f);
@@ -475,7 +482,9 @@ public class LoginManager : MonoBehaviour
     {
         GameObject go = new GameObject("Btn_" + label, typeof(RectTransform), typeof(Image), typeof(Button));
         go.transform.SetParent(parent, false);
-        go.GetComponent<Image>().color = color;
+        var baseImg = go.GetComponent<Image>();
+        baseImg.color = color;
+        baseImg.raycastTarget = true;
         var rt = go.GetComponent<RectTransform>();
         rt.anchorMin = anchorMin;
         rt.anchorMax = anchorMax;
@@ -484,7 +493,9 @@ public class LoginManager : MonoBehaviour
         // Thin top border on button for depth
         GameObject border = new GameObject("TopBorder", typeof(RectTransform), typeof(Image));
         border.transform.SetParent(go.transform, false);
-        border.GetComponent<Image>().color = new Color(AccentCyan.r, AccentCyan.g, AccentCyan.b, 0.5f);
+        var borderImg = border.GetComponent<Image>();
+        borderImg.color = new Color(AccentCyan.r, AccentCyan.g, AccentCyan.b, 0.5f);
+        borderImg.raycastTarget = false;
         var brt = border.GetComponent<RectTransform>();
         brt.anchorMin = new Vector2(0f, 0.9f);
         brt.anchorMax = new Vector2(1f, 1f);
@@ -499,6 +510,7 @@ public class LoginManager : MonoBehaviour
         t.color          = TextPrimary;
         t.alignment      = TextAlignmentOptions.Center;
         t.characterSpacing = 4f;
+        t.raycastTarget  = false;
         var trt = txt.GetComponent<RectTransform>();
         trt.anchorMin = Vector2.zero;
         trt.anchorMax = Vector2.one;
@@ -518,7 +530,9 @@ public class LoginManager : MonoBehaviour
     {
         GameObject go = new GameObject("FlatBtn_" + label, typeof(RectTransform), typeof(Image), typeof(Button));
         go.transform.SetParent(parent, false);
-        go.GetComponent<Image>().color = Color.clear;
+        var baseImg = go.GetComponent<Image>();
+        baseImg.color = Color.clear;
+        baseImg.raycastTarget = true;
         var rt = go.GetComponent<RectTransform>();
         rt.anchorMin = anchorMin;
         rt.anchorMax = anchorMax;
@@ -532,6 +546,7 @@ public class LoginManager : MonoBehaviour
         t.fontSize  = 12f;
         t.color     = TextDim;
         t.alignment = TextAlignmentOptions.Center;
+        t.raycastTarget = false;
         var trt = txt.GetComponent<RectTransform>();
         trt.anchorMin = Vector2.zero;
         trt.anchorMax = Vector2.one;
@@ -716,6 +731,7 @@ public class LoginManager : MonoBehaviour
         go.transform.SetParent(parent, false);
         var img = go.GetComponent<Image>();
         img.color = color;
+        img.raycastTarget = false;
         var rt = go.GetComponent<RectTransform>();
         rt.anchorMin = anchorMin;
         rt.anchorMax = anchorMax;
@@ -733,6 +749,7 @@ public class LoginManager : MonoBehaviour
         t.fontSize  = size;
         t.fontStyle = style;
         t.color     = color;
+        t.raycastTarget = false;
         return t;
     }
 
@@ -749,6 +766,7 @@ public class LoginManager : MonoBehaviour
         go.transform.SetParent(parent, false);
         var img = go.GetComponent<Image>();
         img.color = color;
+        img.raycastTarget = false;
         var rt = go.GetComponent<RectTransform>();
         rt.anchorMin = Vector2.zero;
         rt.anchorMax = Vector2.one;

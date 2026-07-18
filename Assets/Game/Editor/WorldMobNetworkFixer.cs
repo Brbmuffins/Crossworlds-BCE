@@ -46,14 +46,14 @@ public static class WorldMobNetworkFixer
     // ("Idle" is the ogre, after its source Idle.fbx).
     static readonly string[] MobPrefabPaths =
     {
-        "Assets/Game/3D Models/Enemies/Ogres/O'gar Brute/Idle.prefab",
+        "Assets/Game/3D Models/Enemies/Ogres/O'gar Brute/Prefab_OgreBrute.prefab",
         "Assets/Game/3D Models/Enemies/Cyclops/Cyclops Brute/Prefab/Cyclops Brute.prefab",
         "Assets/Game/3D Models/Enemies/Field Goul/Prefab/Gunda.prefab",
         "Assets/Game/Game_Prefabs/Prefab_TrainingDummy.prefab",
     };
 
     [MenuItem("BCE/Setup/4o ▶ Network World Mobs (Ogre, Cyclops, Gunda, Dummy)", priority = 8)]
-    static void NetworkWorldMobs()
+    public static void NetworkWorldMobs()
     {
         var report = new List<string>();
 

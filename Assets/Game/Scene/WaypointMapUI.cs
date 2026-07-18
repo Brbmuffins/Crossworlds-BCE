@@ -455,7 +455,7 @@ public sealed class WaypointMapUI : MonoBehaviour
         EventSystem eventSystem = EventSystem.current;
         if (eventSystem == null)
         {
-            var go = new GameObject("EventSystem", typeof(EventSystem), typeof(InputSystemUIInputModule));
+            var go = new GameObject("EventSystem", typeof(EventSystem), typeof(InputSystemUIInputModule), typeof(SingleEventSystem));
             DontDestroyOnLoad(go);
             return;
         }

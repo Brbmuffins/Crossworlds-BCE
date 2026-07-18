@@ -106,7 +106,8 @@ public class RodChatManager : NetworkBehaviour
 
         var go = new GameObject("EventSystem",
             typeof(EventSystem),
-            typeof(InputSystemUIInputModule));
+            typeof(InputSystemUIInputModule),
+            typeof(SingleEventSystem));
 
         // Don't destroy across scenes — Mirror may load scenes mid-session
         DontDestroyOnLoad(go);

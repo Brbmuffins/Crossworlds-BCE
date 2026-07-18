@@ -402,8 +402,19 @@ public class AbilityCaster : NetworkBehaviour
         UnityEngine.SceneManagement.SceneManager.sceneLoaded -= OnSceneLoaded;
     }
 
+    void OnDestroy()
+    {
+        UnityEngine.SceneManagement.SceneManager.sceneLoaded -= OnSceneLoaded;
+    }
+
     void OnSceneLoaded(UnityEngine.SceneManagement.Scene scene, UnityEngine.SceneManagement.LoadSceneMode mode)
     {
+        if (this == null)
+        {
+            UnityEngine.SceneManagement.SceneManager.sceneLoaded -= OnSceneLoaded;
+            return;
+        }
+
         // Scene is fully loaded by the time this callback fires.
         Camera sceneCam = Camera.main;
         if (sceneCam != null)

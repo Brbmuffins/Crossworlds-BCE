@@ -75,6 +75,15 @@ public class EnemyAI : MonoBehaviour
 
     void Start()
     {
+        if (_agent != null && !_agent.isOnNavMesh)
+        {
+            if (NavMesh.SamplePosition(transform.position, out NavMeshHit hit, 5f, NavMesh.AllAreas))
+            {
+                _agent.Warp(hit.position);
+                Debug.Log($"[EnemyAI] Snapped '{gameObject.name}' to NavMesh at {hit.position}");
+            }
+        }
+
         _homePosition = transform.position;
         _homeRotation = transform.rotation;
     }

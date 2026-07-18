@@ -551,7 +551,7 @@ sealed class HubReturnConfirmationUI : MonoBehaviour
     {
         if (EventSystem.current != null) return;
 
-        var go = new GameObject("EventSystem", typeof(EventSystem), typeof(InputSystemUIInputModule));
+        var go = new GameObject("EventSystem", typeof(EventSystem), typeof(InputSystemUIInputModule), typeof(SingleEventSystem));
         DontDestroyOnLoad(go);
     }
 }
