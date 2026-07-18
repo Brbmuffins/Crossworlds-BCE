@@ -281,7 +281,7 @@ public class LoginManager : MonoBehaviour
         regLink.color = TextDim;
         regLink.fontSize = 11f;
 
-#if UNITY_EDITOR
+#if false // UNITY_EDITOR (Disabled for production-ready verification)
         // Dev HOST button — editor only, bypasses auth for local testing
         BuildButton(panelRt, "> HOST (DEV)", new Color(0.08f, 0.35f, 0.12f, 1f),
             new Vector2(0.05f, -0.22f), new Vector2(0.95f, -0.07f), OnHostClicked);

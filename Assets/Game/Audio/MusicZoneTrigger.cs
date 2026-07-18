@@ -54,6 +54,10 @@ public class MusicZoneTrigger : MonoBehaviour
             return;
         }
 
+        // Avoid re-triggering if the correct track is already playing
+        if (!stopMusicInstead && controller.CurrentTrack == zoneTrack && !restartIfAlreadyPlaying)
+            return;
+
         if (!stopMusicInstead && zoneTrack == null)
         {
             Debug.LogWarning($"[MusicZoneTrigger] '{name}' has no zoneTrack assigned.");
@@ -70,6 +74,11 @@ public class MusicZoneTrigger : MonoBehaviour
         }
 
         controller.FadeToTrack(zoneTrack, fadeSeconds, restartIfAlreadyPlaying);
+    }
+
+    void OnTriggerStay(Collider other)
+    {
+        OnTriggerEnter(other);
     }
 
     private bool IsLocalPlayer(Collider other)
