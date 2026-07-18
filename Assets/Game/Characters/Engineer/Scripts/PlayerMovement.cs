@@ -86,9 +86,11 @@ public class PlayerMovement : NetworkBehaviour
 
     // Mirror calls this exactly once, after isLocalPlayer is confirmed.
     // Also covers solo editor play via the Start() → InitLocal() path above.
+    // Re-enables the component in case Start() ran before isLocalPlayer was set.
     public override void OnStartLocalPlayer()
     {
         base.OnStartLocalPlayer();
+        enabled = true;
         InitLocal();
     }
 
