@@ -50,7 +50,7 @@ public static class RodEditorSetup
         foreach (string path in required)
         {
             if (!File.Exists(path)) continue;
-            bool alreadyIn = current.Exists(s => s.path == path);
+            bool alreadyIn = current.Exists(s => string.Equals(s.path, path, System.StringComparison.OrdinalIgnoreCase));
             if (!alreadyIn)
             {
                 current.Add(new EditorBuildSettingsScene(path, true));
@@ -65,7 +65,7 @@ public static class RodEditorSetup
 
     const string LOGIN_SCENE_PATH       = "Assets/Game/Scenes/LoginScene.unity";
     const string CHAR_SELECT_SCENE_PATH = "Assets/Game/Scenes/CharacterSelect.unity";
-    const string HUB_SCENE_PATH         = "Assets/Game/Scenes/Hub.unity";
+    const string HUB_SCENE_PATH         = "Assets/Game/Scenes/HUB.unity";
     const string GAME_WORLD_PATH        = "Assets/brbmuffins Skybox/Scenes/GameWorld.unity"; // legacy ref
     const string SERVER_ADDRESS         = "15.204.243.36";
 
