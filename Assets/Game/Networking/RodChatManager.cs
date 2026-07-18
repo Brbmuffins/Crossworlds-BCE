@@ -76,6 +76,23 @@ public class RodChatManager : NetworkBehaviour
         EnsureEventSystem();
         BuildUI();
         AddSystemMessage("Connected to Hub.");
+
+        // Keep chat visible across all ServerChangeScene transitions.
+        UnityEngine.SceneManagement.SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+
+    public override void OnStopClient()
+    {
+        base.OnStopClient();
+        UnityEngine.SceneManagement.SceneManager.sceneLoaded -= OnSceneLoaded;
+    }
+
+    void OnSceneLoaded(UnityEngine.SceneManagement.Scene scene,
+                       UnityEngine.SceneManagement.LoadSceneMode mode)
+    {
+        // Re-wire EventSystem in case the new scene destroyed the one we made.
+        EnsureEventSystem();
+        AddSystemMessage($"Entered {scene.name}.");
     }
 
     /// <summary>
@@ -310,6 +327,9 @@ public class RodChatManager : NetworkBehaviour
         // ── Canvas ────────────────────────────────────────────────────────
         var cgo = new GameObject("ChatCanvas",
             typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster), typeof(CanvasGroup));
+        // Mark persistent so the overlay survives ServerChangeScene (the ChatManager
+        // GO already has DontDestroyOnLoad, but the canvas is a separate object).
+        DontDestroyOnLoad(cgo);
         _canvas = cgo.GetComponent<Canvas>();
         _canvas.renderMode   = RenderMode.ScreenSpaceOverlay;
         _canvas.sortingOrder = 100;
