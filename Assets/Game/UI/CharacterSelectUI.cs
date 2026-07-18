@@ -249,10 +249,10 @@ public class CharacterSelectUI : MonoBehaviour
         // 3D preview
         if (_previewInstance != null) Destroy(_previewInstance);
         GameObject prefab = d.previewPrefab != null ? d.previewPrefab : d.prefab;
-        if (prefab != null && previewSpawnPoint != null)
+        Transform spawnParent = _previewRoot != null ? _previewRoot.transform : previewSpawnPoint;
+        if (prefab != null && spawnParent != null)
         {
-            _previewInstance = Instantiate(prefab,
-                _previewRoot != null ? _previewRoot.transform : previewSpawnPoint);
+            _previewInstance = Instantiate(prefab, spawnParent);
             _previewInstance.transform.localPosition = Vector3.zero;
             _previewInstance.transform.localRotation = Quaternion.identity;
             _previewInstance.transform.localScale    = Vector3.one;
