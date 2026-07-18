@@ -107,8 +107,8 @@ public class AbilityCaster : NetworkBehaviour
     public CastAnimator castAnimator;
 
     [Header("Cast Time")]
-    [Tooltip("Horizontal movement beyond this distance interrupts a committed cast. Movement input interrupts immediately.")]
-    [SerializeField, Min(0f)] float castMoveInterruptDistance = 0.035f;
+    [Tooltip("Horizontal movement beyond this distance (metres) interrupts a committed cast. Set high enough to tolerate Mirror position corrections on a dedicated server (~0.5 m recommended).")]
+    [SerializeField, Min(0f)] float castMoveInterruptDistance = 0.5f;
     [Tooltip("Briefly freezes player movement when an aim is committed so leftover physics drift cannot move the locked spell target.")]
     [SerializeField, Min(0f)] float commitMovementLockDuration = 0.08f;
 
@@ -742,9 +742,10 @@ public class AbilityCaster : NetworkBehaviour
         if (IsDowned())
             return true;
 
-        if (HasMovementInput())
-            return true;
-
+        // On a dedicated server Mirror can nudge the client's position by a few cm
+        // (lag-compensation correction). Using key.isPressed caused false interrupts
+        // whenever WASD was held at click time. Rely on actual position displacement
+        // only — the threshold (Inspector) should be large enough to tolerate jitter.
         Vector3 delta = transform.position - startPosition;
         delta.y = 0f;
         return delta.sqrMagnitude > castMoveInterruptDistance * castMoveInterruptDistance;
