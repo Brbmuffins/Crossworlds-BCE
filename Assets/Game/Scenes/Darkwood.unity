@@ -3298,7 +3298,7 @@ MonoBehaviour:
   saveProgressBeforeReturn: 1
   runArenaCleanup: 1
   placePlayerAtHubArrival: 1
-  hubArrivalSpawnId: HubSpawnLocation
+  hubArrivalSpawnId: HubSpawnLocationDW
   useHubArrivalRotation: 1
 --- !u!114 &629785736
 MonoBehaviour:

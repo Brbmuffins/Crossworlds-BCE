@@ -469,8 +469,99 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1115755714417172130, guid: e1d277ab18e0fb94ab41769537ac1c41, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 125418453}
+    - targetCorrespondingSourceObject: {fileID: 6305963025444668029, guid: e1d277ab18e0fb94ab41769537ac1c41, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 125418455}
+    - targetCorrespondingSourceObject: {fileID: 6305963025444668029, guid: e1d277ab18e0fb94ab41769537ac1c41, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 125418454}
   m_SourcePrefab: {fileID: 100100000, guid: e1d277ab18e0fb94ab41769537ac1c41, type: 3}
+--- !u!1 &125418451 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1115755714417172130, guid: e1d277ab18e0fb94ab41769537ac1c41, type: 3}
+  m_PrefabInstance: {fileID: 125418450}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &125418452 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 6305963025444668029, guid: e1d277ab18e0fb94ab41769537ac1c41, type: 3}
+  m_PrefabInstance: {fileID: 125418450}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &125418453
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 125418451}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9b91ecbcc199f4492b9a91e820070131, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Mirror::Mirror.NetworkIdentity
+  sceneId: 2137308568
+  _assetId: 3459023575
+  serverOnly: 0
+  visibility: 0
+  hasSpawned: 0
+--- !u!114 &125418454
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 125418452}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ddd1921818150ff418cee94ff292beb4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HubReturnTrigger
+  syncDirection: 0
+  syncMode: 0
+  syncInterval: 0
+  hubSceneName: Hub
+  interactionRange: 5
+  allowMouseClick: 1
+  allowKeyboardInteract: 1
+  interactKey: 19
+  returnOnTriggerEnter: 0
+  clickableLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  clickRaycastDistance: 200
+  showWorldPrompt: 1
+  promptText: Click to Return to HUB
+  promptOffset: {x: 0, y: 3.2, z: 0}
+  askForConfirmation: 1
+  confirmationTitle: Return to HUB?
+  confirmationMessage: Leave this area and return to HUB?
+  confirmButtonText: Return
+  cancelButtonText: Stay
+  saveProgressBeforeReturn: 1
+  runArenaCleanup: 1
+  placePlayerAtHubArrival: 1
+  hubArrivalSpawnId: HubSpawnLocationDW
+  useHubArrivalRotation: 1
+--- !u!114 &125418455
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 125418452}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9b91ecbcc199f4492b9a91e820070131, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Mirror::Mirror.NetworkIdentity
+  sceneId: 791969772
+  _assetId: 3459023575
+  serverOnly: 0
+  visibility: 0
+  hasSpawned: 0
 --- !u!4 &156202303 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4430340635691708, guid: bb98861c48ad2024ca93498c7dd93a6c, type: 3}
