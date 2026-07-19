@@ -37,6 +37,7 @@ public static class ZoneSceneSetupBuilder
     const string GruntPrefab    = "Enemy_Grunt";
     const string RangedPrefab   = "Enemy_Ranged";
     const string ElitePrefab    = "Enemy_Elite";
+    const string WispPrefabPath = "Assets/Game/Game_Prefabs/Muffin Junk/Wisp_Mob.prefab";
 
     [MenuItem("BCE/Setup/8 ▶ Zone Combat Setup (active scene)", priority = 48)]
     static void SetupZoneScene()
@@ -117,9 +118,12 @@ public static class ZoneSceneSetupBuilder
         if (ranged != null) ws.enemyPrefabs.Add(ranged);
         if (elite  != null) ws.elitePrefab = elite;
 
+        var wisp = AssetDatabase.LoadAssetAtPath<GameObject>(WispPrefabPath);
+        if (wisp  != null) { ws.wispPrefab = wisp; ws.wispEveryNWaves = 2; ws.wispCountPerSwarm = 3; }
+
         int wired = (grunt != null ? 1 : 0) + (ranged != null ? 1 : 0) + (elite != null ? 1 : 0);
         report.AppendLine(wired > 0
-            ? $"  ✓ WaveSpawner wired: {wired}/3 enemy prefabs found"
+            ? $"  ✓ WaveSpawner wired: {wired}/3 ground enemies + wisp={wisp != null}"
             : $"  ⚠ WaveSpawner: no enemy prefabs found in {PrefabDir} — assign manually");
 
         // Wave tuning — escalates per zone difficulty (tweak in Inspector)

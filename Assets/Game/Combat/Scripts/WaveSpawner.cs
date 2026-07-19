@@ -18,6 +18,14 @@ public class WaveSpawner : NetworkBehaviour
     public List<GameObject> enemyPrefabs = new List<GameObject>();
     public GameObject elitePrefab;
 
+    [Header("Wisp Swarm")]
+    [Tooltip("Floating swarm mob (WispCombat). Spawns as a group every wispEveryNWaves waves.")]
+    public GameObject wispPrefab;
+    [Tooltip("0 = disabled. 2 = wisps on even waves, 3 = every 3rd wave, etc.")]
+    public int wispEveryNWaves   = 2;
+    [Tooltip("How many wisps per swarm.")]
+    public int wispCountPerSwarm = 3;
+
     [Header("Spawn Points")]
     public List<Transform> spawnPoints = new List<Transform>();
 
@@ -118,8 +126,11 @@ public class WaveSpawner : NetworkBehaviour
         bool spawnElite = eliteEveryNWaves > 0
                           && wave % eliteEveryNWaves == 0
                           && elitePrefab != null;
+        bool spawnWisps = wispPrefab != null
+                          && wispEveryNWaves > 0
+                          && wave % wispEveryNWaves == 0;
 
-        int total = count + (spawnElite ? 1 : 0);
+        int total = count + (spawnElite ? 1 : 0) + (spawnWisps ? wispCountPerSwarm : 0);
         RpcAnnounce($"Wave {wave} — {total} enemies incoming!");
         yield return new WaitForSeconds(1.5f);
 
@@ -137,6 +148,18 @@ public class WaveSpawner : NetworkBehaviour
             yield return new WaitForSeconds(1f);
             SpawnEnemy(elitePrefab);
             RpcAnnounce("ELITE has arrived!");
+        }
+
+        if (spawnWisps)
+        {
+            yield return new WaitForSeconds(0.8f);
+            for (int w = 0; w < wispCountPerSwarm; w++)
+            {
+                if (!_running) yield break;
+                SpawnEnemy(wispPrefab);
+                yield return new WaitForSeconds(0.3f);
+            }
+            RpcAnnounce("Wisps — watch your flanks!");
         }
 
         // Wait until all enemies are dead
