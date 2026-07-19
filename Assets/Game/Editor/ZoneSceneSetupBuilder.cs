@@ -203,7 +203,7 @@ public static class ZoneSceneSetupBuilder
         }
 
         // Fall back to the bounding center of all renderers
-        var renderers = Object.FindObjectsByType<Renderer>(FindObjectsSortMode.None);
+        var renderers = Object.FindObjectsByType<Renderer>(FindObjectsInactive.Exclude);
         if (renderers.Length > 0)
         {
             Bounds b = renderers[0].bounds;
@@ -219,7 +219,7 @@ public static class ZoneSceneSetupBuilder
         int added = 0;
 
         // Add NavMeshSurface to every Terrain that doesn't already have one
-        foreach (var terrain in Object.FindObjectsByType<Terrain>(FindObjectsSortMode.None))
+        foreach (var terrain in Object.FindObjectsByType<Terrain>(FindObjectsInactive.Exclude))
         {
             if (terrain.GetComponent<NavMeshSurface>() != null) continue;
             var surf = terrain.gameObject.AddComponent<NavMeshSurface>();
@@ -236,7 +236,7 @@ public static class ZoneSceneSetupBuilder
             float best = 0f;
             MeshFilter bigMesh = null;
 
-            foreach (var mf in Object.FindObjectsByType<MeshFilter>(FindObjectsSortMode.None))
+            foreach (var mf in Object.FindObjectsByType<MeshFilter>(FindObjectsInactive.Exclude))
             {
                 if (mf.sharedMesh == null) continue;
                 string n = mf.gameObject.name.ToLower();
@@ -270,7 +270,7 @@ public static class ZoneSceneSetupBuilder
 
     static int PatchExistingEnemies(StringBuilder report)
     {
-        var enemies = Object.FindObjectsByType<EnemyController>(FindObjectsSortMode.None);
+        var enemies = Object.FindObjectsByType<EnemyController>(FindObjectsInactive.Exclude);
         int added = 0;
 
         foreach (var ec in enemies)

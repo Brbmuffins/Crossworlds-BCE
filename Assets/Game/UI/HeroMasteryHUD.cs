@@ -60,7 +60,6 @@ public class HeroMasteryHUD : MonoBehaviour
     float _flashTimer  = 0f;
     const float FlashDuration = 0.6f;
 
-    int   _lastLevel   = -1;
     int   _lastClass   = -1;
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────

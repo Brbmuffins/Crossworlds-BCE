@@ -61,7 +61,7 @@ public class HeroMasteryManager : MonoBehaviour
     int    _characterId   = -1;
     string _jwt           = "";
     bool   _loaded        = false;
-    bool   _bonusesPending = false;  // bonuses fetched but player not yet spawned
+
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
     void Start()
@@ -249,11 +249,9 @@ public class HeroMasteryManager : MonoBehaviour
         if (localStats != null)
         {
             localStats.SetMasteryBonuses(dmg, heal, cdr, maxHp);
-            _bonusesPending = false;
         }
         else
         {
-            _bonusesPending = true;
             StartCoroutine(RetryApplyBonuses());
         }
     }
