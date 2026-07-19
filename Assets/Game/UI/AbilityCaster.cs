@@ -2482,6 +2482,14 @@ public class AbilityCaster : NetworkBehaviour
                 SnapshotSystem.Instance?.Rollback(5f);
                 break;
 
+            case "Restoration Beacon":
+                SpawnDeployableAt(beaconPrefab ?? ability.deployablePrefab, castPoint, go =>
+                {
+                    var rb = go.GetComponent<RestorationBeacon>();
+                    if (rb != null) { rb.ownerID = gameObject.GetInstanceID(); rb.owner = gameObject; }
+                });
+                break;
+
             // ─ Shadowblade ───────────────────────────────────────
             case "Shadow Veil":
             {
