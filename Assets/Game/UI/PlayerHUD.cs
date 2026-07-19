@@ -644,6 +644,7 @@ public class PlayerHUD : MonoBehaviour
 
         for (int i = 0; i < pool.Length; i++)
         {
+            if (pool[i] == null) continue;
             int idx = i;
             BuildSpellCard(_spellbookGridParent, pool[i], idx);
         }

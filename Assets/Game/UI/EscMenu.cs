@@ -37,6 +37,7 @@ public class EscMenu : MonoBehaviour
     GameObject  _optionsView;
     Slider      _musicSlider;
     TextMeshProUGUI _musicValueLabel;
+    TextMeshProUGUI _variantModeValueLabel;
     bool        _open;
 
     // ── Lifecycle ─────────────────────────────────────────────────────────
@@ -88,6 +89,7 @@ public class EscMenu : MonoBehaviour
     void ShowOptions()
     {
         RefreshMusicSlider();
+        RefreshVariantModeLabel();
         _mainView.SetActive(false);
         _optionsView.SetActive(true);
     }
@@ -233,13 +235,13 @@ public class EscMenu : MonoBehaviour
         header.fontStyle = FontStyles.Bold;
         header.alignment = TextAlignmentOptions.Center;
 
-        var label = MakeTmp("MusicVolumeLabel", parent,
+        var musicLabel = MakeTmp("MusicVolumeLabel", parent,
             new Vector2(0.1f, 0.48f), new Vector2(0.58f, 0.56f));
-        label.text      = "MUSIC";
-        label.fontSize  = 13f;
-        label.color     = Color.white;
-        label.fontStyle = FontStyles.Bold;
-        label.alignment = TextAlignmentOptions.MidlineLeft;
+        musicLabel.text      = "MUSIC";
+        musicLabel.fontSize  = 13f;
+        musicLabel.color     = Color.white;
+        musicLabel.fontStyle = FontStyles.Bold;
+        musicLabel.alignment = TextAlignmentOptions.MidlineLeft;
 
         _musicValueLabel = MakeTmp("MusicVolumeValue", parent,
             new Vector2(0.6f, 0.48f), new Vector2(0.9f, 0.56f));
@@ -252,10 +254,31 @@ public class EscMenu : MonoBehaviour
             new Vector2(0.1f, 0.38f), new Vector2(0.9f, 0.45f));
         _musicSlider.onValueChanged.AddListener(OnMusicVolumeChanged);
 
+        // Variant zone selector mode
+        var variantLabel = MakeTmp("VariantModeLabel", parent,
+            new Vector2(0.1f, 0.29f), new Vector2(0.58f, 0.37f));
+        variantLabel.text      = "ABILITY ZONE";
+        variantLabel.fontSize  = 13f;
+        variantLabel.color     = Color.white;
+        variantLabel.fontStyle = FontStyles.Bold;
+        variantLabel.alignment = TextAlignmentOptions.MidlineLeft;
+
+        // Clickable value — toggles between MOUSE and SCROLL WHEEL
+        var variantValueGo = MakeRect("VariantModeValueBtn", parent,
+            new Vector2(0.58f, 0.29f), new Vector2(0.9f, 0.37f));
+        _variantModeValueLabel = variantValueGo.AddComponent<TextMeshProUGUI>();
+        _variantModeValueLabel.fontSize  = 13f;
+        _variantModeValueLabel.color     = new Color(0.75f, 0.9f, 1f);
+        _variantModeValueLabel.fontStyle = FontStyles.Bold;
+        _variantModeValueLabel.alignment = TextAlignmentOptions.MidlineRight;
+        var variantBtn = variantValueGo.AddComponent<Button>();
+        variantBtn.onClick.AddListener(ToggleVariantMode);
+
         MakeButton("Back", parent, new Vector2(0.1f, 0.13f), new Vector2(0.9f, 0.25f),
             new Color(0.16f, 0.16f, 0.26f), ShowMainMenu);
 
         RefreshMusicSlider();
+        RefreshVariantModeLabel();
     }
 
     void RefreshMusicSlider()
@@ -294,6 +317,27 @@ public class EscMenu : MonoBehaviour
     {
         if (_musicValueLabel != null)
             _musicValueLabel.text = $"{Mathf.RoundToInt(Mathf.Clamp01(value) * 100f)}%";
+    }
+
+    void ToggleVariantMode()
+    {
+        bool current = PlayerPrefs.GetInt("VariantScrollMode", 0) == 1;
+        bool next = !current;
+        PlayerPrefs.SetInt("VariantScrollMode", next ? 1 : 0);
+        PlayerPrefs.Save();
+        RefreshVariantModeLabel();
+
+        // Apply immediately to the local player's AbilityCaster if in-game
+        var caster = FindFirstObjectByType<AbilityCaster>();
+        if (caster != null)
+            caster.useScrollWheelVariants = next;
+    }
+
+    void RefreshVariantModeLabel()
+    {
+        if (_variantModeValueLabel == null) return;
+        bool scroll = PlayerPrefs.GetInt("VariantScrollMode", 0) == 1;
+        _variantModeValueLabel.text = scroll ? "SCROLL WHEEL" : "MOUSE DISTANCE";
     }
 
     // ── UI helpers ────────────────────────────────────────────────────────

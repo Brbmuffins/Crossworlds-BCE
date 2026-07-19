@@ -10,6 +10,39 @@ using UnityEditor;
 public enum AbilityShape { Circle, Cone, Rectangle }
 public enum AbilityCategory { Damage, Heal, Support }
 
+// One zone outcome for a variant-spell. Cursor distance picks the active zone.
+[System.Serializable]
+public class AbilityVariant
+{
+    public string variantName = "Variant";
+    [Tooltip("Indicator tint while this zone is active.")]
+    public Color  indicatorTint = new Color(0.2f, 1f, 0.3f, 0.7f);
+
+    [Header("Instant Heal")]
+    public float healAmount;
+
+    [Header("Heal over Time")]
+    public float hotTickAmount;
+    public int   hotTicks;
+    [Min(0.1f)] public float hotInterval = 1f;
+
+    [Header("Shield")]
+    public float shieldAbsorb;
+    public float shieldDuration = 5f;
+
+    [Header("Damage")]
+    public float damage;
+
+    [Header("Status on hit")]
+    public StatusEffectType statusEffect;
+    public float            statusDuration;
+    public float            statusValue;
+
+    [Header("VFX (null = inherit from AbilityDef)")]
+    public GameObject castVFX;
+    public GameObject hitVFX;
+}
+
 [System.Serializable]
 public class AbilityDef
 {
@@ -81,6 +114,10 @@ public class AbilityDef
     [Header("Deployable Scene Prefab")]
     // The runtime object spawned in the world by this ability (mine, wall, zone, etc.)
     public GameObject deployablePrefab;
+
+    [Header("Charge Variants (cursor distance selects zone; overrides sweetspot for this spell)")]
+    [Tooltip("2–4 zones ordered near→far. Empty array = legacy behaviour unchanged.")]
+    public AbilityVariant[] variants;
 }
 
 public class AbilityCaster : NetworkBehaviour
@@ -155,6 +192,10 @@ public class AbilityCaster : NetworkBehaviour
 
     [Header("Mouse Aim")]
     public float minimumAimDistance = 1f;
+
+    [Header("Variant Selection")]
+    [Tooltip("When ON: scroll wheel steps through zone variants while aiming. When OFF: cursor distance from caster picks the zone.")]
+    public bool useScrollWheelVariants = false;
 
     [Header("Ground Projection")]
     [SerializeField] float indicatorGroundOffset = 0.02f;
@@ -247,6 +288,14 @@ public class AbilityCaster : NetworkBehaviour
         new AbilityDef { abilityName = "Fan of Blades",    shape = AbilityShape.Cone,      category = AbilityCategory.Damage,  range = 6f, coneAngle = 70f, cooldown = 5f, chargeable = true, maxChargeTime = 1.2f, damage = 12f, maxChargeDamage = 30f, maxChargeSizeMultiplier = 1.4f, targetTag = "Enemy", chargedTint = new Color(0.4f, 0.1f, 0.8f, 0.9f) },
         // [34] Ether Lance (Arcanist) — piercing line of void energy; hold to charge
         new AbilityDef { abilityName = "Ether Lance",      shape = AbilityShape.Rectangle, category = AbilityCategory.Damage,  range = 12f, rectWidth = 1.2f, cooldown = 5f, chargeable = true, maxChargeTime = 1.5f, damage = 15f, maxChargeDamage = 40f, maxChargeSizeMultiplier = 1.6f, targetTag = "Enemy" },
+        // [35] Healing Cone (Cleric) — healing cone with multi-layer sweet spots: HPS / Burst (close), HoT (mid), Shield (far)
+        new AbilityDef { abilityName = "Healing Cone",     shape = AbilityShape.Cone,      category = AbilityCategory.Heal,    range = 10f, coneAngle = 60f, cooldown = 5f, targetTag = "Player", healAmount = 25f, shieldAbsorb = 30f },
+        // [36] Mending Beam (Cleric) — healing beam with multi-layer sweet spots
+        new AbilityDef { abilityName = "Mending Beam",     shape = AbilityShape.Rectangle, category = AbilityCategory.Heal,    range = 12f, rectWidth = 2.0f, cooldown = 6f, targetTag = "Player", healAmount = 25f, shieldAbsorb = 30f },
+        // [37] Conflagration Cone (Arcanist) — fire cone with multi-layer sweet spots: Burst (close), Burn DoT (mid), Slow/Weakened (far)
+        new AbilityDef { abilityName = "Conflagration Cone", shape = AbilityShape.Cone,     category = AbilityCategory.Damage,  range = 10f, coneAngle = 60f, cooldown = 5f, targetTag = "Enemy", damage = 20f },
+        // [38] Ember Beam (Arcanist) — fire beam with multi-layer sweet spots
+        new AbilityDef { abilityName = "Ember Beam",       shape = AbilityShape.Rectangle, category = AbilityCategory.Damage,  range = 12f, rectWidth = 2.0f, cooldown = 6f, targetTag = "Enemy", damage = 25f },
     };
 
     [Header("Equipped slots (indices into spellbook)")]
@@ -277,6 +326,10 @@ public class AbilityCaster : NetworkBehaviour
     private GameObject activeShieldVFX;
     private float shieldVFXTimer = 0f;
 
+    // Variant zone selection — updated every frame while aiming, snapshotted at commit.
+    private int   _activeVariantIndex = 0;
+    private float _currentAimFraction = 0f;
+
     // ── Cached component refs ──────────────────────────────────────
     private ClassPassive         _passive;
     private PassivePhaseCharge   _phaseCharge;
@@ -305,7 +358,11 @@ public class AbilityCaster : NetworkBehaviour
                 equippedIndices[i] = (i < classPool.defaultEquipped.Length)
                     ? classPool.defaultEquipped[i] : -1;
 
+        useScrollWheelVariants = PlayerPrefs.GetInt("VariantScrollMode", 0) == 1;
+
+        BackfillMissingSpellbookEntries(); // must run before Sync so class-pool indices exist
         SyncEquippedFromSpellbook();
+        BackfillVariantDefaults();
 
         _passive        = GetComponent<ClassPassive>();
         _phaseCharge    = GetComponent<PassivePhaseCharge>();
@@ -603,7 +660,7 @@ public class AbilityCaster : NetworkBehaviour
                 if (abilities[i].shieldAbsorb > 0f && abilities[i].range <= 0f)
                 {
                     if (heldAbilityIndex != -1) CancelAim();
-                    BeginCommittedCast(i, abilities[i], null, 0f);
+                    BeginCommittedCast(i, abilities[i], null, 0f, 0);
                 }
                 else if (heldAbilityIndex == i)
                 {
@@ -616,6 +673,8 @@ public class AbilityCaster : NetworkBehaviour
 
                     heldAbilityIndex = i;
                     aimTimer = 0f;
+                    _activeVariantIndex = 0;
+                    _currentAimFraction = 0f;
                     activeIndicator = CreateIndicator(abilities[i]);
                     IsAimingLocally = true;
 
@@ -639,11 +698,14 @@ public class AbilityCaster : NetworkBehaviour
             }
             else if (Mouse.current.leftButton.wasPressedThisFrame)
             {
-                BeginCommittedCast(heldAbilityIndex, abilities[heldAbilityIndex], activeIndicator, aimTimer);
+                // Snapshot the variant index at commit time so it survives the cast-time window.
+                BeginCommittedCast(heldAbilityIndex, abilities[heldAbilityIndex], activeIndicator, aimTimer, _activeVariantIndex);
 
                 IsAimingLocally = false;
                 heldAbilityIndex = -1;
                 activeIndicator = null;
+                _activeVariantIndex = 0;
+                _currentAimFraction = 0f;
                 DestroyRangeRing();
                 // Cursor stays free — CameraFollow owns lock state when not aiming
             }
@@ -657,10 +719,12 @@ public class AbilityCaster : NetworkBehaviour
         activeIndicator = null;
         DestroyRangeRing();
         heldAbilityIndex = -1;
+        _activeVariantIndex = 0;
+        _currentAimFraction = 0f;
         // Cursor stays free — CameraFollow resumes ownership
     }
 
-    void BeginCommittedCast(int slot, AbilityDef ability, GameObject indicator, float aimTime)
+    void BeginCommittedCast(int slot, AbilityDef ability, GameObject indicator, float aimTime, int variantIndex = 0)
     {
         if (ability == null)
         {
@@ -681,7 +745,7 @@ public class AbilityCaster : NetworkBehaviour
         Debug.Log($"[CastTime] {ability.abilityName} committed with castTime={castTime:0.###}s.", this);
         if (castTime <= 0f)
         {
-            if (FinalizeCast(ability, indicator, aimTime))
+            if (FinalizeCast(ability, indicator, aimTime, variantIndex))
                 StartCooldown(slot, ability);
             else if (indicator != null)
                 Destroy(indicator);
@@ -693,7 +757,7 @@ public class AbilityCaster : NetworkBehaviour
         committedCastAbility = ability;
         committedCastDuration = castTime;
         committedCastElapsed = 0f;
-        committedCastRoutine = StartCoroutine(CommittedCastRoutine(slot, ability, indicator, aimTime, castTime));
+        committedCastRoutine = StartCoroutine(CommittedCastRoutine(slot, ability, indicator, aimTime, castTime, variantIndex));
     }
 
     void RequestCommitMovementLock()
@@ -714,7 +778,7 @@ public class AbilityCaster : NetworkBehaviour
         indicator.transform.SetParent(null, true);
     }
 
-    System.Collections.IEnumerator CommittedCastRoutine(int slot, AbilityDef ability, GameObject indicator, float aimTime, float castTime)
+    System.Collections.IEnumerator CommittedCastRoutine(int slot, AbilityDef ability, GameObject indicator, float aimTime, float castTime, int variantIndex = 0)
     {
         Vector3 startPosition = transform.position;
         float elapsed = 0f;
@@ -738,7 +802,7 @@ public class AbilityCaster : NetworkBehaviour
         }
 
         committedCastElapsed = castTime;
-        bool castStarted = FinalizeCast(ability, indicator, aimTime);
+        bool castStarted = FinalizeCast(ability, indicator, aimTime, variantIndex);
         Debug.Log($"[CastTime] {ability.abilityName} resolved after {castTime:0.###}s.", this);
         if (castStarted)
             StartCooldown(slot, ability);
@@ -995,6 +1059,25 @@ public class AbilityCaster : NetworkBehaviour
             indicator.AddComponent<ConeAimData>();
             BuildConeOutline(indicator, c);
             BuildProjectedConeFill(indicator, c);
+
+            // Zone arc dividers for variant spells.
+            if (ability.variants != null && ability.variants.Length > 1)
+            {
+                for (int z = 1; z < ability.variants.Length; z++)
+                {
+                    var arcGO = new GameObject($"ZoneArc_{z}");
+                    arcGO.transform.SetParent(indicator.transform, false);
+                    var arcLR = arcGO.AddComponent<LineRenderer>();
+                    arcLR.useWorldSpace = true;
+                    arcLR.loop = false;
+                    arcLR.startWidth = arcLR.endWidth = 0.06f;
+                    arcLR.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                    arcLR.receiveShadows = false;
+                    arcLR.material = new Material(Shader.Find("Sprites/Default"));
+                    arcLR.startColor = arcLR.endColor = new Color(0.5f, 1f, 0.5f, 0.45f);
+                    arcLR.positionCount = 0;
+                }
+            }
         }
         else if (ability.shape == AbilityShape.Circle)
         {
@@ -1020,6 +1103,25 @@ public class AbilityCaster : NetworkBehaviour
             BuildOutlineLR(indicator, ability, c);
             if (!BuildProjectedRectDecal(indicator, c))
                 BuildProjectedRectFill(indicator, c);
+
+            // Zone crossbar dividers for variant rect spells.
+            if (ability.variants != null && ability.variants.Length > 1)
+            {
+                for (int z = 1; z < ability.variants.Length; z++)
+                {
+                    var barGO = new GameObject($"RectZone_{z}");
+                    barGO.transform.SetParent(indicator.transform, false);
+                    var barLR = barGO.AddComponent<LineRenderer>();
+                    barLR.useWorldSpace = true;
+                    barLR.loop = false;
+                    barLR.startWidth = barLR.endWidth = 0.06f;
+                    barLR.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                    barLR.receiveShadows = false;
+                    barLR.material = new Material(Shader.Find("Sprites/Default"));
+                    barLR.startColor = barLR.endColor = new Color(1f, 0.7f, 0.2f, 0.45f);
+                    barLR.positionCount = 2;
+                }
+            }
         }
 
         // Range ring: only for Circle/Rectangle — cone length already shows the range
@@ -1260,9 +1362,13 @@ public class AbilityCaster : NetworkBehaviour
         }
         else if (ability.shape == AbilityShape.Rectangle)
         {
+            bool hasVariants = ability.variants != null && ability.variants.Length > 0;
+
             float widthMul = Mathf.Lerp(1f, ability.maxChargeSizeMultiplier, chargeFraction);
             float hw = ability.rectWidth * widthMul / 2f;
-            Vector3 mid = ProjectToGround(transform.position + aimDir * (aimDistance / 2f), out Vector3 groundNormal);
+            // Variant rects always show at full range; cursor distance picks zone.
+            float rectLength = hasVariants ? ability.range : aimDistance;
+            Vector3 mid = ProjectToGround(transform.position + aimDir * (rectLength / 2f), out Vector3 groundNormal);
             Vector3 groundForward = Vector3.ProjectOnPlane(aimDir, groundNormal);
             if (groundForward.sqrMagnitude < 0.0001f)
                 groundForward = aimDir;
@@ -1271,17 +1377,47 @@ public class AbilityCaster : NetworkBehaviour
             indicator.transform.position   = mid;
             indicator.transform.rotation   = Quaternion.LookRotation(groundForward, groundNormal);
             // Keep localScale for VFX, server proxies, and the damage fallback path.
-            indicator.transform.localScale = new Vector3(ability.rectWidth * widthMul, 1f, aimDistance);
+            indicator.transform.localScale = new Vector3(ability.rectWidth * widthMul, 1f, rectLength);
 
-            RectangleAimData rectData = UpdateRectangleAimData(indicator, mid, groundForward, groundNormal, hw, aimDistance / 2f);
+            RectangleAimData rectData = UpdateRectangleAimData(indicator, mid, groundForward, groundNormal, hw, rectLength / 2f);
             if (lr != null) SetRectPoints(lr, rectData);
             UpdateProjectedRectDecal(indicator, rectData);
             UpdateProjectedRectFill(indicator, rectData);
+
+            if (hasVariants)
+            {
+                if (useScrollWheelVariants)
+                {
+                    float scroll = Mouse.current?.scroll.y.ReadValue() ?? 0f;
+                    if (scroll > 0f) _activeVariantIndex = Mathf.Min(_activeVariantIndex + 1, ability.variants.Length - 1);
+                    else if (scroll < 0f) _activeVariantIndex = Mathf.Max(_activeVariantIndex - 1, 0);
+                    _currentAimFraction = ability.variants.Length > 1
+                        ? (float)_activeVariantIndex / (ability.variants.Length - 1)
+                        : 0f;
+                }
+                else
+                {
+                    _currentAimFraction = ability.range > 0f
+                        ? Mathf.Clamp01(aimDistance / ability.range)
+                        : 0f;
+                    _activeVariantIndex = Mathf.Clamp(
+                        Mathf.FloorToInt(_currentAimFraction * ability.variants.Length),
+                        0, ability.variants.Length - 1);
+                }
+
+                UpdateRectZoneMarkers(indicator, ability, rectData);
+                Color vc = ability.variants[_activeVariantIndex].indicatorTint;
+                if (lr != null) lr.startColor = lr.endColor = vc;
+                SetProjectedRectColor(indicator, vc);
+            }
         }
         else if (ability.shape == AbilityShape.Cone)
         {
+            bool hasVariants = ability.variants != null && ability.variants.Length > 0;
+
             float chargeMul   = Mathf.Lerp(1f, ability.maxChargeSizeMultiplier, chargeFraction);
-            float distanceMul = ability.range > 0f ? aimDistance / ability.range : 1f;
+            // Variant spells: always show at full range; cursor distance only picks zone.
+            float distanceMul = hasVariants ? 1f : (ability.range > 0f ? aimDistance / ability.range : 1f);
             float visualRange = ability.range * distanceMul * chargeMul;
             // Pull origin 0.5 units behind the player so the character body sits
             // inside the fan rather than at the very tip.
@@ -1298,6 +1434,31 @@ public class AbilityCaster : NetworkBehaviour
             ConeAimData coneData = UpdateConeAimData(indicator, coneOrigin, groundForward, groundNormal, visualRange, ability.coneAngle * 0.5f);
             if (lr != null) SetConeOutlinePoints(lr, coneData);
             UpdateProjectedConeFill(indicator, coneData);
+
+            if (hasVariants)
+            {
+                if (useScrollWheelVariants)
+                {
+                    float scroll = Mouse.current?.scroll.y.ReadValue() ?? 0f;
+                    if (scroll > 0f) _activeVariantIndex = Mathf.Min(_activeVariantIndex + 1, ability.variants.Length - 1);
+                    else if (scroll < 0f) _activeVariantIndex = Mathf.Max(_activeVariantIndex - 1, 0);
+                    _currentAimFraction = ability.variants.Length > 1
+                        ? (float)_activeVariantIndex / (ability.variants.Length - 1)
+                        : 0f;
+                }
+                else
+                {
+                    _currentAimFraction = ability.range > 0f
+                        ? Mathf.Clamp01(aimDistance / ability.range)
+                        : 0f;
+                    _activeVariantIndex = Mathf.Clamp(
+                        Mathf.FloorToInt(_currentAimFraction * ability.variants.Length),
+                        0, ability.variants.Length - 1);
+                }
+
+                UpdateConeZoneArcs(indicator, ability, coneData);
+                SetConeIndicatorColor(indicator, ability.variants[_activeVariantIndex].indicatorTint);
+            }
         }
 
         // Charge tint — apply to LR (circle/rect) or renderer (cone)
@@ -2163,7 +2324,7 @@ public class AbilityCaster : NetworkBehaviour
         return ability != null ? Mathf.Max(0f, ability.castTime) : 0f;
     }
 
-    bool FinalizeCast(AbilityDef ability, GameObject indicator, float aimTime)
+    bool FinalizeCast(AbilityDef ability, GameObject indicator, float aimTime, int variantIndex = 0)
     {
         if (ability == null) return false;
 
@@ -2180,7 +2341,7 @@ public class AbilityCaster : NetworkBehaviour
             Quaternion castRotation = indicator != null ? indicator.transform.rotation : transform.rotation;
             Vector3    castScale    = indicator != null ? indicator.transform.localScale : Vector3.one;
 
-            CmdFinalizeCast(spellbookIndex, castPosition, castRotation, castScale, aimTime);
+            CmdFinalizeCast(spellbookIndex, castPosition, castRotation, castScale, aimTime, variantIndex);
             PlayLocalCastVFX(ability, castPosition, castRotation);
 
             if (indicator != null)
@@ -2203,28 +2364,45 @@ public class AbilityCaster : NetworkBehaviour
         if (_characterStats != null)
             damageMultiplier *= _characterStats.DamageMultiplier;
 
-        ResolveCastEffects(ability, indicator, aimTime, damageMultiplier, transform.position);
+        ResolveCastEffects(ability, indicator, aimTime, damageMultiplier, transform.position, variantIndex);
         if (indicator != null)
             Destroy(indicator);
         return true;
     }
 
-    void ResolveCastEffects(AbilityDef ability, GameObject indicator, float aimTime, float damageMultiplier, Vector3 castOrigin)
+    void ResolveCastEffects(AbilityDef ability, GameObject indicator, float aimTime, float damageMultiplier, Vector3 castOrigin, int variantIndex = 0)
     {
         if (ability == null) return;
 
 #if UNITY_EDITOR || !UNITY_SERVER
-        if (ability.category == AbilityCategory.Heal) OnHealCast?.Invoke();
+        // Variant spells raise OnHealCast inside ResolveVariantCast to avoid double-fire.
+        if (ability.category == AbilityCategory.Heal && (ability.variants == null || ability.variants.Length == 0))
+            OnHealCast?.Invoke();
 #endif
 
-        if (ability.shape == AbilityShape.Rectangle && ability.damage > 0f && indicator != null)
+        // Variant spells: route to variant resolution and skip legacy sweetspot paths.
+        if (ability.variants != null && ability.variants.Length > 0)
+        {
+            int clampedIdx = Mathf.Clamp(variantIndex, 0, ability.variants.Length - 1);
+            ResolveVariantCast(ability, indicator, ability.variants[clampedIdx], damageMultiplier, castOrigin);
+            // Still dispatch special behaviours (e.g. Arcane Step teleport) and VFX below.
+        }
+        else if (ability.abilityName == "Healing Cone" || ability.abilityName == "Mending Beam" ||
+            ability.abilityName == "Conflagration Cone" || ability.abilityName == "Ember Beam")
+        {
+            ApplySweetSpotEffects(ability, indicator, damageMultiplier, castOrigin);
+        }
+
+        bool isVariantSpell = ability.variants != null && ability.variants.Length > 0;
+
+        if (!isVariantSpell && ability.shape == AbilityShape.Rectangle && ability.damage > 0f && indicator != null)
         {
             float chargeFraction = GetChargeFraction(ability, aimTime);
             float damage = Mathf.Lerp(ability.damage, ability.maxChargeDamage, chargeFraction) * damageMultiplier;
             ApplyRectangleDamage(ability, indicator, damage);
         }
 
-        if (ability.shape == AbilityShape.Cone && ability.damage > 0f && indicator != null)
+        if (!isVariantSpell && ability.shape == AbilityShape.Cone && ability.damage > 0f && indicator != null)
         {
             float chargeFraction = GetChargeFraction(ability, aimTime);
             float damage = Mathf.Lerp(ability.damage, ability.maxChargeDamage, chargeFraction) * damageMultiplier;
@@ -2242,7 +2420,8 @@ public class AbilityCaster : NetworkBehaviour
             ApplyCircleDamage(ability, indicator, damageMultiplier);
         }
 
-        if (ability.shieldAbsorb > 0f)
+        // Variant spells handle shields via their BUBBLE zone; skip the self-shield path.
+        if (ability.shieldAbsorb > 0f && (ability.variants == null || ability.variants.Length == 0))
             CastMagicShield(ability);
 
         if (ability.spawnTurret && indicator != null)
@@ -2276,7 +2455,7 @@ public class AbilityCaster : NetworkBehaviour
     }
 
     [Command]
-    void CmdFinalizeCast(int spellbookIndex, Vector3 castPosition, Quaternion castRotation, Vector3 castScale, float aimTime)
+    void CmdFinalizeCast(int spellbookIndex, Vector3 castPosition, Quaternion castRotation, Vector3 castScale, float aimTime, int variantIndex)
     {
         if (spellbookIndex < 0 || spellbookIndex >= spellbook.Length) return;
 
@@ -2292,7 +2471,7 @@ public class AbilityCaster : NetworkBehaviour
         if (cooldownTimers[equippedSlot] > 0f) return;
 
         GameObject serverIndicator = CreateServerCastProxy(ability, castPosition, castRotation, castScale);
-        if (!FinalizeCast(ability, serverIndicator, aimTime))
+        if (!FinalizeCast(ability, serverIndicator, aimTime, variantIndex))
         {
             if (serverIndicator != null) Destroy(serverIndicator);
             return;
@@ -3125,6 +3304,178 @@ public class AbilityCaster : NetworkBehaviour
         }
     }
 
+    void ApplySweetSpotEffects(AbilityDef ability, GameObject indicator, float damageMultiplier, Vector3 castOrigin)
+    {
+        if (indicator == null) return;
+
+        System.Collections.Generic.List<Collider> hitColliders = new System.Collections.Generic.List<Collider>();
+        float maxRange = ability.range;
+
+        if (ability.shape == AbilityShape.Cone)
+        {
+            maxRange = ability.range * indicator.transform.localScale.x;
+            Collider[] sphereHits = Physics.OverlapSphere(castOrigin, maxRange);
+            foreach (var hit in sphereHits)
+            {
+                if (!hit.CompareTag(ability.targetTag)) continue;
+                Vector3 toHit = hit.transform.position - castOrigin;
+                toHit.y = 0;
+                if (toHit.sqrMagnitude < 0.0001f) continue;
+
+                float angle = Vector3.Angle(indicator.transform.forward, toHit);
+                if (angle > ability.coneAngle / 2f) continue;
+                hitColliders.Add(hit);
+            }
+        }
+        else if (ability.shape == AbilityShape.Rectangle)
+        {
+            RectangleAimData rectData = indicator.GetComponent<RectangleAimData>();
+            Vector3 center;
+            Vector3 halfExtents;
+            Quaternion rotation;
+
+            if (rectData != null && rectData.valid)
+            {
+                center = rectData.damageCenter;
+                halfExtents = rectData.damageHalfExtents;
+                rotation = rectData.damageRotation;
+                maxRange = halfExtents.z * 2f;
+            }
+            else
+            {
+                float rectangleLength = indicator.transform.localScale.z;
+                center = indicator.transform.position;
+                halfExtents = new Vector3(
+                    indicator.transform.localScale.x / 2f,
+                    1f,
+                    rectangleLength / 2f
+                );
+                rotation = indicator.transform.rotation;
+                maxRange = rectangleLength;
+            }
+
+            Collider[] boxHits = Physics.OverlapBox(center, halfExtents, rotation);
+            foreach (var hit in boxHits)
+            {
+                if (!hit.CompareTag(ability.targetTag)) continue;
+                hitColliders.Add(hit);
+            }
+        }
+
+        foreach (Collider hit in hitColliders)
+        {
+            Health targetHealth = hit.GetComponent<Health>();
+            if (targetHealth == null) continue;
+
+            Vector3 toTarget = hit.transform.position - castOrigin;
+            toTarget.y = 0;
+
+            float distance = 0f;
+            if (ability.shape == AbilityShape.Cone)
+            {
+                distance = toTarget.magnitude;
+            }
+            else if (ability.shape == AbilityShape.Rectangle)
+            {
+                distance = Vector3.Dot(toTarget, indicator.transform.forward);
+            }
+
+            float fraction = Mathf.Clamp01(distance / maxRange);
+
+            if (ability.category == AbilityCategory.Heal)
+            {
+                if (fraction <= 0.33f)
+                {
+                    // Zone 1: HPS / Instant Burst
+                    float healVal = (ability.healAmount > 0f ? ability.healAmount : 25f) * 1.5f;
+                    targetHealth.Heal(healVal);
+                    EmitHitVFX(ability.hitVFX, hit.transform.position + Vector3.up * 0.5f);
+                    FloatingDamageText.Spawn(hit.transform.position + Vector3.up * 1.5f, healVal, FloatingDamageText.DamageType.HealCrit);
+                }
+                else if (fraction <= 0.66f)
+                {
+                    // Zone 2: HoT / Healing over Time
+                    float instantHeal = (ability.healAmount > 0f ? ability.healAmount : 25f) * 0.5f;
+                    targetHealth.Heal(instantHeal);
+
+                    float tickAmount = (ability.healAmount > 0f ? ability.healAmount : 25f) * 0.25f;
+                    StartCoroutine(ApplyHealOverTime(targetHealth, tickAmount, 5, 1f));
+
+                    EmitHitVFX(ability.hitVFX, hit.transform.position + Vector3.up * 0.5f);
+                    FloatingDamageText.Spawn(hit.transform.position + Vector3.up * 1.5f, instantHeal, FloatingDamageText.DamageType.Heal);
+                }
+                else
+                {
+                    // Zone 3: Bubble / Shield
+                    float shieldAmount = ability.shieldAbsorb > 0f ? ability.shieldAbsorb : 30f;
+                    targetHealth.ApplyShield(shieldAmount);
+
+                    EmitHitVFX(ability.hitVFX, hit.transform.position + Vector3.up * 0.5f);
+                    FloatingDamageText.Spawn(hit.transform.position + Vector3.up * 1.5f, shieldAmount, FloatingDamageText.DamageType.Shield);
+                }
+            }
+            else
+            {
+                if (fraction <= 0.33f)
+                {
+                    // Zone 1: Burst Damage + Stagger
+                    float dmgVal = (ability.damage > 0f ? ability.damage : 20f) * 1.6f * damageMultiplier;
+                    targetHealth.TakeDamage(dmgVal, gameObject);
+
+                    StatusEffectManager sem = hit.GetComponent<StatusEffectManager>();
+                    if (sem != null)
+                    {
+                        sem.AddEffect(new StatusEffect(StatusEffectType.Stagger, 0.8f, 0f, gameObject));
+                    }
+
+                    EmitHitVFX(ability.hitVFX, hit.transform.position + Vector3.up * 0.5f);
+                }
+                else if (fraction <= 0.66f)
+                {
+                    // Zone 2: Burn DoT (Cursed effect)
+                    float instantDmg = (ability.damage > 0f ? ability.damage : 20f) * 0.6f * damageMultiplier;
+                    targetHealth.TakeDamage(instantDmg, gameObject);
+
+                    StatusEffectManager sem = hit.GetComponent<StatusEffectManager>();
+                    if (sem != null)
+                    {
+                        float dps = (ability.damage > 0f ? ability.damage : 20f) * 0.3f;
+                        sem.AddEffect(new StatusEffect(StatusEffectType.Cursed, 6f, dps, gameObject));
+                    }
+
+                    EmitHitVFX(ability.hitVFX, hit.transform.position + Vector3.up * 0.5f);
+                }
+                else
+                {
+                    // Zone 3: Slow & Weakened
+                    float dmgVal = (ability.damage > 0f ? ability.damage : 20f) * 0.8f * damageMultiplier;
+                    targetHealth.TakeDamage(dmgVal, gameObject);
+
+                    StatusEffectManager sem = hit.GetComponent<StatusEffectManager>();
+                    if (sem != null)
+                    {
+                        sem.AddEffect(new StatusEffect(StatusEffectType.Slow, 4f, 0.4f, gameObject));
+                        sem.AddEffect(new StatusEffect(StatusEffectType.Weakened, 4f, 0.25f, gameObject));
+                    }
+
+                    EmitHitVFX(ability.hitVFX, hit.transform.position + Vector3.up * 0.5f);
+                }
+            }
+        }
+    }
+
+    System.Collections.IEnumerator ApplyHealOverTime(Health target, float tickAmount, int ticks, float interval)
+    {
+        for (int i = 0; i < ticks; i++)
+        {
+            yield return new UnityEngine.WaitForSeconds(interval);
+            if (target != null && target.IsAlive)
+            {
+                target.Heal(tickAmount);
+            }
+        }
+    }
+
     void CastMagicShield(AbilityDef ability)
     {
         Health health = GetComponent<Health>();
@@ -3244,6 +3595,273 @@ public class AbilityCaster : NetworkBehaviour
         Destroy(go, main.duration + main.startLifetime.constantMax + 0.5f);
     }
 #endif // UNITY_EDITOR || !UNITY_SERVER
+
+    // ── Charge-variant system ────────────────────────────────────────────────
+
+    // Expands a stale serialized spellbook that was saved before entries 35-38 existed.
+    // Unity serialized data overrides C# field initializers, so new spells appended to
+    // the inline array never appear in old prefab saves. This runs before SyncEquipped
+    // so class-pool defaultEquipped indices always resolve.
+    void BackfillMissingSpellbookEntries()
+    {
+        if (spellbook == null) return;
+
+        // Known required length: 39 entries (indices 0-38)
+        const int RequiredLength = 39;
+        if (spellbook.Length >= RequiredLength) return;
+
+        AbilityDef[] expanded = new AbilityDef[RequiredLength];
+        System.Array.Copy(spellbook, expanded, spellbook.Length);
+
+        // Fill any missing entries using the same defaults as the inline array.
+        // Entries before 35 should already be present; guard with null check anyway.
+        var missing = new AbilityDef[]
+        {
+            // [35] Healing Cone
+            new AbilityDef { abilityName = "Healing Cone",       shape = AbilityShape.Cone,      category = AbilityCategory.Heal,   range = 10f, coneAngle = 60f, cooldown = 5f, targetTag = "Player", healAmount = 25f, shieldAbsorb = 30f },
+            // [36] Mending Beam
+            new AbilityDef { abilityName = "Mending Beam",       shape = AbilityShape.Rectangle, category = AbilityCategory.Heal,   range = 12f, rectWidth = 2.0f, cooldown = 6f, targetTag = "Player", healAmount = 25f, shieldAbsorb = 30f },
+            // [37] Conflagration Cone
+            new AbilityDef { abilityName = "Conflagration Cone", shape = AbilityShape.Cone,      category = AbilityCategory.Damage, range = 10f, coneAngle = 60f, cooldown = 5f, targetTag = "Enemy", damage = 20f },
+            // [38] Ember Beam
+            new AbilityDef { abilityName = "Ember Beam",         shape = AbilityShape.Rectangle, category = AbilityCategory.Damage, range = 12f, rectWidth = 2.0f, cooldown = 6f, targetTag = "Enemy", damage = 25f },
+        };
+
+        int firstMissingIndex = 35;
+        for (int i = 0; i < missing.Length; i++)
+        {
+            int idx = firstMissingIndex + i;
+            if (idx < RequiredLength && expanded[idx] == null)
+                expanded[idx] = missing[i];
+        }
+
+        spellbook = expanded;
+    }
+
+    // Inject variant data at runtime for spells that have been converted.
+    // The serialized prefab data may predate the variants field; this ensures
+    // they're always present regardless of what Unity serialized.
+    void BackfillVariantDefaults()
+    {
+        if (spellbook == null) return;
+        foreach (AbilityDef ability in spellbook)
+        {
+            if (ability == null) continue;
+            if (ability.variants != null && ability.variants.Length > 0) continue;
+
+            switch (ability.abilityName)
+            {
+                case "Healing Cone":
+                    ability.variants = new AbilityVariant[]
+                    {
+                        new AbilityVariant { variantName="HPS",    indicatorTint=new Color(0.1f,1f,0.2f,0.75f), healAmount=45f },
+                        new AbilityVariant { variantName="HOT",    indicatorTint=new Color(0.5f,1f,0.1f,0.75f), hotTickAmount=8f, hotTicks=5, hotInterval=1f },
+                        new AbilityVariant { variantName="BUBBLE", indicatorTint=new Color(0.1f,0.7f,1f,0.75f), shieldAbsorb=40f, shieldDuration=6f },
+                    };
+                    break;
+
+                case "Mending Beam":
+                    ability.variants = new AbilityVariant[]
+                    {
+                        new AbilityVariant { variantName="HPS",    indicatorTint=new Color(0.1f,1f,0.2f,0.75f), healAmount=45f },
+                        new AbilityVariant { variantName="HOT",    indicatorTint=new Color(0.5f,1f,0.1f,0.75f), hotTickAmount=8f, hotTicks=5, hotInterval=1f },
+                        new AbilityVariant { variantName="BUBBLE", indicatorTint=new Color(0.1f,0.7f,1f,0.75f), shieldAbsorb=40f, shieldDuration=6f },
+                    };
+                    break;
+
+                case "Conflagration Cone":
+                    ability.variants = new AbilityVariant[]
+                    {
+                        new AbilityVariant { variantName="Burst", indicatorTint=new Color(1f,0.15f,0.0f,0.75f), damage=32f, statusEffect=StatusEffectType.Stagger,  statusDuration=0.8f },
+                        new AbilityVariant { variantName="Burn",  indicatorTint=new Color(1f,0.45f,0.0f,0.75f), damage=12f, statusEffect=StatusEffectType.Cursed,   statusDuration=6f,  statusValue=5f },
+                        new AbilityVariant { variantName="Scorch",indicatorTint=new Color(1f,0.75f,0.0f,0.75f), damage=16f, statusEffect=StatusEffectType.Slow,     statusDuration=4f,  statusValue=0.4f },
+                    };
+                    break;
+
+                case "Ember Beam":
+                    ability.variants = new AbilityVariant[]
+                    {
+                        new AbilityVariant { variantName="Burst", indicatorTint=new Color(1f,0.15f,0.0f,0.75f), damage=32f, statusEffect=StatusEffectType.Stagger,  statusDuration=0.8f },
+                        new AbilityVariant { variantName="Burn",  indicatorTint=new Color(1f,0.45f,0.0f,0.75f), damage=12f, statusEffect=StatusEffectType.Cursed,   statusDuration=6f,  statusValue=5f },
+                        new AbilityVariant { variantName="Scorch",indicatorTint=new Color(1f,0.75f,0.0f,0.75f), damage=16f, statusEffect=StatusEffectType.Slow,     statusDuration=4f,  statusValue=0.4f },
+                    };
+                    break;
+
+                case "Fan of Blades":
+                    ability.variants = new AbilityVariant[]
+                    {
+                        new AbilityVariant { variantName="Slash",  indicatorTint=new Color(0.7f,0.0f,1f,0.75f),  damage=30f, statusEffect=StatusEffectType.Stagger,  statusDuration=0.6f },
+                        new AbilityVariant { variantName="Bleed",  indicatorTint=new Color(0.5f,0.0f,0.8f,0.75f),damage=10f, statusEffect=StatusEffectType.Cursed,   statusDuration=5f,  statusValue=4f },
+                        new AbilityVariant { variantName="Expose", indicatorTint=new Color(0.3f,0.0f,0.6f,0.75f),damage=14f, statusEffect=StatusEffectType.Weakened, statusDuration=4f,  statusValue=0.25f },
+                    };
+                    break;
+
+                case "Void Bolt":
+                    ability.variants = new AbilityVariant[]
+                    {
+                        new AbilityVariant { variantName="Shatter",indicatorTint=new Color(0.6f,0.1f,1f,0.75f),  damage=28f, statusEffect=StatusEffectType.Stagger,  statusDuration=0.7f },
+                        new AbilityVariant { variantName="Drain",  indicatorTint=new Color(0.4f,0.1f,0.8f,0.75f),damage=16f, statusEffect=StatusEffectType.Slow,     statusDuration=3f,  statusValue=0.3f },
+                        new AbilityVariant { variantName="Wither", indicatorTint=new Color(0.2f,0.0f,0.6f,0.75f),damage=20f, statusEffect=StatusEffectType.Weakened, statusDuration=4f,  statusValue=0.25f },
+                    };
+                    break;
+
+                case "Storm Lash":
+                    ability.variants = new AbilityVariant[]
+                    {
+                        new AbilityVariant { variantName="Strike",indicatorTint=new Color(1f,1f,0.2f,0.75f),  damage=30f, statusEffect=StatusEffectType.Stagger, statusDuration=0.7f },
+                        new AbilityVariant { variantName="Shock", indicatorTint=new Color(0.6f,1f,0.2f,0.75f),damage=15f, statusEffect=StatusEffectType.Cursed,  statusDuration=4f,  statusValue=4f },
+                        new AbilityVariant { variantName="Zap",   indicatorTint=new Color(0.3f,0.8f,1f,0.75f),damage=18f, statusEffect=StatusEffectType.Slow,    statusDuration=4f,  statusValue=0.35f },
+                    };
+                    break;
+            }
+        }
+    }
+
+    // Draws dashed zone-divider arcs inside a cone indicator for variant spells.
+    void UpdateConeZoneArcs(GameObject indicator, AbilityDef ability, ConeAimData coneData)
+    {
+        if (ability.variants == null || ability.variants.Length < 2 || !coneData.valid) return;
+
+        const int arcSegs = 22;
+        for (int z = 1; z < ability.variants.Length; z++)
+        {
+            Transform arcT = indicator.transform.Find($"ZoneArc_{z}");
+            if (arcT == null) continue;
+            LineRenderer arcLR = arcT.GetComponent<LineRenderer>();
+            if (arcLR == null) continue;
+
+            float t        = (float)z / ability.variants.Length;
+            float arcRange = coneData.visualRange * t;
+
+            arcLR.positionCount = arcSegs + 1;
+            for (int i = 0; i <= arcSegs; i++)
+            {
+                float frac  = i / (float)arcSegs;
+                float angle = Mathf.Lerp(-coneData.halfAngle, coneData.halfAngle, frac);
+                Vector3 dir = Quaternion.AngleAxis(angle, coneData.visualNormal) * coneData.visualForward;
+                arcLR.SetPosition(i, ProjectToGround(coneData.origin + dir * arcRange));
+            }
+
+            // Active zone boundary brightens to guide the eye.
+            bool nearActive = (z == _activeVariantIndex || z == _activeVariantIndex + 1);
+            arcLR.startWidth = arcLR.endWidth = nearActive ? 0.10f : 0.05f;
+            arcLR.startColor = arcLR.endColor = nearActive
+                ? new Color(0.8f, 1f, 0.8f, 0.95f)
+                : new Color(0.4f, 0.8f, 0.4f, 0.35f);
+        }
+    }
+
+    // Draws crossbar zone-divider lines inside a rectangle indicator for variant spells.
+    void UpdateRectZoneMarkers(GameObject indicator, AbilityDef ability, RectangleAimData rectData)
+    {
+        if (ability.variants == null || ability.variants.Length < 2 || !rectData.valid) return;
+
+        for (int z = 1; z < ability.variants.Length; z++)
+        {
+            Transform barT = indicator.transform.Find($"RectZone_{z}");
+            if (barT == null) continue;
+            LineRenderer barLR = barT.GetComponent<LineRenderer>();
+            if (barLR == null) continue;
+
+            float t = (float)z / ability.variants.Length;
+            Vector3 left  = Vector3.Lerp(rectData.corners[0], rectData.corners[3], t);
+            Vector3 right = Vector3.Lerp(rectData.corners[1], rectData.corners[2], t);
+            barLR.SetPosition(0, left);
+            barLR.SetPosition(1, right);
+
+            bool nearActive = (z == _activeVariantIndex || z == _activeVariantIndex + 1);
+            barLR.startWidth = barLR.endWidth = nearActive ? 0.10f : 0.05f;
+            barLR.startColor = barLR.endColor = nearActive
+                ? new Color(1f, 0.9f, 0.5f, 0.95f)
+                : new Color(1f, 0.7f, 0.2f, 0.35f);
+        }
+    }
+
+    // Applies a single variant's effect to every target found in the spell's shape.
+    // Runs server-side in networked play (called via CmdFinalizeCast → FinalizeCast).
+    void ResolveVariantCast(AbilityDef ability, GameObject indicator, AbilityVariant variant, float damageMultiplier, Vector3 castOrigin)
+    {
+        if (variant == null || indicator == null) return;
+
+        var hits = new System.Collections.Generic.List<Collider>();
+
+        if (ability.shape == AbilityShape.Cone)
+        {
+            float maxRange = ability.range * indicator.transform.localScale.x;
+            foreach (Collider c in Physics.OverlapSphere(castOrigin, maxRange))
+            {
+                if (!c.CompareTag(ability.targetTag)) continue;
+                Vector3 toHit = c.transform.position - castOrigin;
+                toHit.y = 0f;
+                if (toHit.sqrMagnitude > 0.0001f &&
+                    Vector3.Angle(indicator.transform.forward, toHit) > ability.coneAngle * 0.5f)
+                    continue;
+                hits.Add(c);
+            }
+        }
+        else if (ability.shape == AbilityShape.Rectangle)
+        {
+            RectangleAimData rectData = indicator.GetComponent<RectangleAimData>();
+            if (rectData != null && rectData.valid)
+            {
+                foreach (Collider c in Physics.OverlapBox(rectData.damageCenter, rectData.damageHalfExtents, rectData.damageRotation))
+                {
+                    if (c.CompareTag(ability.targetTag)) hits.Add(c);
+                }
+            }
+        }
+        else // Circle fallback
+        {
+            foreach (Collider c in Physics.OverlapSphere(indicator.transform.position, ability.indicatorSize * 0.5f))
+            {
+                if (c.CompareTag(ability.targetTag)) hits.Add(c);
+            }
+        }
+
+        foreach (Collider hit in hits)
+        {
+            Health health = hit.GetComponent<Health>();
+            if (health == null) continue;
+            Vector3 hitPos = hit.transform.position + Vector3.up * 0.5f;
+
+            if (variant.healAmount > 0f)
+            {
+                health.Heal(variant.healAmount);
+                FloatingDamageText.Spawn(hitPos + Vector3.up, variant.healAmount, FloatingDamageText.DamageType.Heal);
+            }
+
+            if (variant.hotTicks > 0 && variant.hotTickAmount > 0f)
+            {
+                StartCoroutine(ApplyHealOverTime(health, variant.hotTickAmount, variant.hotTicks, variant.hotInterval));
+                float totalHot = variant.hotTickAmount * variant.hotTicks;
+                FloatingDamageText.Spawn(hitPos + Vector3.up * 1.3f, totalHot, FloatingDamageText.DamageType.Heal);
+            }
+
+            if (variant.shieldAbsorb > 0f)
+            {
+                health.ApplyShield(variant.shieldAbsorb);
+                FloatingDamageText.Spawn(hitPos + Vector3.up * 1.3f, variant.shieldAbsorb, FloatingDamageText.DamageType.Shield);
+            }
+
+            if (variant.damage > 0f)
+            {
+                health.TakeDamage(variant.damage * damageMultiplier, gameObject);
+                EmitHitVFX(variant.hitVFX ?? ability.hitVFX, hitPos);
+            }
+
+            if (variant.statusDuration > 0f)
+            {
+                var sem = hit.GetComponent<StatusEffectManager>();
+                sem?.AddEffect(new StatusEffect(variant.statusEffect, variant.statusDuration, variant.statusValue, gameObject));
+            }
+
+            EmitHitVFX(variant.hitVFX ?? ability.hitVFX, hitPos);
+        }
+
+#if UNITY_EDITOR || !UNITY_SERVER
+        if (ability.category == AbilityCategory.Heal) OnHealCast?.Invoke();
+#endif
+    }
 
 }
 
