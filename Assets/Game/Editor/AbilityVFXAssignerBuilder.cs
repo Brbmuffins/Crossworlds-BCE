@@ -27,6 +27,7 @@ public static class AbilityVFXAssignerBuilder
         "Assets/brbmuffins FX",
         "Assets/brbmuffins Trails",
         "Assets/Game/Characters/Engineer/Turret",
+        "Assets/Game/Networking",       // deployable prefabs incl. IceGuardianTurret
     };
 
     static readonly string[] HeroPrefabs =
@@ -88,13 +89,12 @@ public static class AbilityVFXAssignerBuilder
     };
 
     // ── Turret map ────────────────────────────────────────────────────────────
-    // Abilities with spawnTurret=true get a turretPrefab from the FBX models.
-    // The FBX is loaded as a model import (acts as a visual placeholder until
-    // you create a proper turret prefab with NavMesh/AI components).
+    // Abilities with spawnTurret=true get a turretPrefab assigned here by name.
+    // Run BCE/Setup/4g first to create IceGuardianTurret.prefab in Game/Networking/.
     static readonly Dictionary<string, string> TurretMap =
         new Dictionary<string, string>
     {
-        { "Runic Sentinel", "Engineer Turret 1" },
+        { "Runic Sentinel", "IceGuardianTurret" },  // BCE/Setup/4g creates this
     };
 
     // ── Entry point ───────────────────────────────────────────────────────────
@@ -171,9 +171,8 @@ public static class AbilityVFXAssignerBuilder
         AssetDatabase.SaveAssets();
         EditorUtility.DisplayDialog("Ability VFX",
             $"Done. Assigned {total} reference(s) across all class prefabs.\n\n" +
-            "Note: Runic Sentinel turretPrefab is set to the raw FBX model as a\n" +
-            "visual placeholder. Create a proper prefab (with NavMeshAgent + AI)\n" +
-            "when you're ready to make it functional.", "OK");
+            "Runic Sentinel turretPrefab → IceGuardianTurret (networked deployable).\n" +
+            "Run BCE/Setup/4g first if the prefab does not exist yet.", "OK");
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

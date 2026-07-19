@@ -37,19 +37,23 @@ public static class GatheringZoneBuilder
     const string HubPath   = SceneNames.HubPath;
 
     // ── Visual models ────────────────────────────────────────────────────────────
-    const string VegRoot    = "Assets/brbMuff Folder/Vegetation_Stylized_Pack_ByLuxArtStudios/Prefabs";
-    const string TreeA      = VegRoot + "/Trees/S_Tree_A.prefab";
-    const string TreeE      = VegRoot + "/Trees/S_Tree_E.prefab";
-    const string TreeG      = VegRoot + "/Trees/S_Tree_G.prefab";
-    const string BushB      = VegRoot + "/Bushes/S_Bush_B.prefab";
-    const string BushD      = VegRoot + "/Bushes/S_Bush_D.prefab";
-    const string CattailA   = VegRoot + "/Bushes/S_Cattail_A.prefab";
-    const string CattailB   = VegRoot + "/Bushes/S_Cattail_B.prefab";
-    const string FlowersA   = VegRoot + "/Bushes/S_Flowers_A.prefab";
-    const string CopperFbx  = "Assets/brbMuff Folder/Metal Ore/Models/Copper.fbx";
+    const string VegRoot      = "Assets/brbMuff Folder/Vegetation_Stylized_Pack_ByLuxArtStudios/Prefabs";
+    const string TreeA        = VegRoot + "/Trees/S_Tree_A.prefab";
+    const string TreeE        = VegRoot + "/Trees/S_Tree_E.prefab";
+    const string TreeG        = VegRoot + "/Trees/S_Tree_G.prefab";
+    const string BushB        = VegRoot + "/Bushes/S_Bush_B.prefab";
+    const string BushD        = VegRoot + "/Bushes/S_Bush_D.prefab";
+    const string CattailA     = VegRoot + "/Bushes/S_Cattail_A.prefab";
+    const string CattailB     = VegRoot + "/Bushes/S_Cattail_B.prefab";
+    const string FlowersA     = VegRoot + "/Bushes/S_Flowers_A.prefab";
+    const string CopperFbx    = "Assets/brbMuff Folder/Metal Ore/Models/Copper.fbx";
+
+    // Tripo-generated models
+    const string FishingSpotGlb  = "Assets/Game/3D Models/Gathering Zone/model_fishing_spot.glb";
+    const string ForgeGlb        = "Assets/Game/3D Models/Gathering Zone/model_forge_workbench.glb";
 
     // Portal model (existing in project)
-    const string PortalFbx  = "Assets/Game/3D Models/Portals/circular+portal+3d+model.fbm/circular+portal+3d+model.fbx";
+    const string PortalFbx    = "Assets/Game/3D Models/Portals/circular+portal+3d+model.fbm/circular+portal+3d+model.fbx";
 
     // ── VFX prefabs ──────────────────────────────────────────────────────────────
     const string FxRoot      = "Assets/Game/FX/Particle Pack/EffectExamples";
@@ -165,9 +169,10 @@ public static class GatheringZoneBuilder
         report.AppendLine("  3. File → Build Settings → Add Open Scenes");
         report.AppendLine("  4. Rebuild + redeploy server");
         report.AppendLine();
-        report.AppendLine("PENDING — replace placeholders once Tripo models arrive:");
-        report.AppendLine("  • Crystal Spring  → swap S_Cattail cluster for fishing-spot model");
-        report.AppendLine("  • Forge           → swap grey cube for forge/anvil model");
+        report.AppendLine("Tripo models: fishing_spot + forge_workbench in");
+        report.AppendLine("  Assets/Game/3D Models/Gathering Zone/");
+        report.AppendLine("  If Unity hasn't imported them yet, re-run this builder after");
+        report.AppendLine("  Unity refreshes the asset database (Ctrl+R).");
 
         EditorUtility.DisplayDialog("Gathering Zone Builder", report.ToString(), "Done");
     }
@@ -248,8 +253,8 @@ public static class GatheringZoneBuilder
                 xp       = 10,
                 tick     = 7f,
                 pos      = center + new Vector3(15f, 0f, 10f),
-                visualPrefab   = cattailA,    // cluster built separately below
-                visualScale    = Vector3.one,
+                visualPrefab   = AssetDatabase.LoadAssetAtPath<GameObject>(FishingSpotGlb) ?? cattailA,
+                visualScale    = new Vector3(1.5f, 1.5f, 1.5f),
                 visualOffset   = Vector3.zero,
                 tickVFXPrefab  = vfxSplash,
                 animBool       = "isFishing",
@@ -334,16 +339,27 @@ public static class GatheringZoneBuilder
         forge.professionId  = 0;
         forge.interactRange = 4f;
 
-        // Placeholder cube (swap for generated anvil model when available)
-        var block = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        block.name = "ForgeMesh";
-        block.transform.SetParent(go.transform);
-        block.transform.localPosition = new Vector3(0f, 0.5f, 0f);
-        block.transform.localScale    = new Vector3(1.4f, 0.9f, 0.9f);
-        var rend = block.GetComponent<Renderer>();
-        if (rend != null)
-            rend.sharedMaterial = new Material(Shader.Find("Standard"))
-                { color = new Color(0.22f, 0.22f, 0.22f) };
+        // Tripo-generated forge model; cube fallback if GLB not yet imported
+        var forgeModel = AssetDatabase.LoadAssetAtPath<GameObject>(ForgeGlb);
+        if (forgeModel != null)
+        {
+            var vis = (GameObject)PrefabUtility.InstantiatePrefab(forgeModel, go.transform);
+            vis.name = "ForgeMesh";
+            vis.transform.localPosition = new Vector3(0f, 0f, 0f);
+            vis.transform.localScale    = Vector3.one * 1.2f;
+        }
+        else
+        {
+            var block = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            block.name = "ForgeMesh";
+            block.transform.SetParent(go.transform);
+            block.transform.localPosition = new Vector3(0f, 0.5f, 0f);
+            block.transform.localScale    = new Vector3(1.4f, 0.9f, 0.9f);
+            var rend2 = block.GetComponent<Renderer>();
+            if (rend2 != null)
+                rend2.sharedMaterial = new Material(Shader.Find("Standard"))
+                    { color = new Color(0.22f, 0.22f, 0.22f) };
+        }
 
         // Fire effect
         var flames = AssetDatabase.LoadAssetAtPath<GameObject>(VfxFlames);

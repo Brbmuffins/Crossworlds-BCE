@@ -35,6 +35,7 @@ public static class ClassPrefabFixer
     {
         "Assets/Game/Networking/ChatManager.prefab",
         "Assets/Game/Networking/RestorationBeacon.prefab",
+        "Assets/Game/Networking/IceGuardianTurret.prefab",
         "Assets/Game/Game_Prefabs/Muffin Junk/Wisp_Mob.prefab",
         "Assets/Game/Game_Prefabs/Muffin Junk/Enemy_Grunt.prefab",
         "Assets/Game/Game_Prefabs/Muffin Junk/Enemy_Ranged.prefab",
