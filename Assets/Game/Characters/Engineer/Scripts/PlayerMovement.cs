@@ -71,9 +71,8 @@ public class PlayerMovement : NetworkBehaviour
         // with no NetworkIdentity are decorations and must disable themselves.
         var netId = GetComponent<NetworkIdentity>();
         bool networkActive = NetworkClient.active || NetworkServer.active;
-        bool isLocal = networkActive
-            ? (netId != null && netId.isLocalPlayer)   // net session: must be the local player
-            : (netId == null || netId.isLocalPlayer);  // solo editor: anything goes
+        bool isLocal = !networkActive
+            || (netId != null && netId.isLocalPlayer); // net session: must be the local player
         if (!isLocal)
         {
             enabled = false;
