@@ -9692,6 +9692,7 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   - {fileID: 0}
+  zoneConfig: {fileID: 11400000, guid: 622cc83bd4b12484ba8f479df3cc17b5, type: 2}
   baseEnemiesPerWave: 5
   enemiesAddedPerWave: 2
   timeBetweenWaves: 12
