@@ -378,6 +378,11 @@ public class PlayerMovement : NetworkBehaviour
 
     static Quaternion UprightRotation(Quaternion rotation)
     {
+        if (float.IsNaN(rotation.x) || float.IsNaN(rotation.y) || float.IsNaN(rotation.z) || float.IsNaN(rotation.w) ||
+            (rotation.x == 0f && rotation.y == 0f && rotation.z == 0f && rotation.w == 0f))
+        {
+            return Quaternion.identity;
+        }
         return Quaternion.Euler(0f, rotation.eulerAngles.y, 0f);
     }
 
