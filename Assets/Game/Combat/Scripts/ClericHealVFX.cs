@@ -20,7 +20,6 @@ using UnityEngine;
 /// </summary>
 public class ClericHealVFX : NetworkBehaviour
 {
-#if UNITY_EDITOR || !UNITY_SERVER
     [Header("VFX Prefabs (assign via BCE/Setup/4v or manually)")]
     [Tooltip("Short radial burst — plays once at cast origin.\n" +
              "Best pick: brbmuffins Magic Pack / Hits and explosions / Holy hit.prefab")]
@@ -46,7 +45,6 @@ public class ClericHealVFX : NetworkBehaviour
     [Header("Direct Particle Systems (legacy — prefer Prefab fields above)")]
     public ParticleSystem healBurst;
     public ParticleSystem healAura;
-#endif
 
     // ── Server entry point ─────────────────────────────────────────────────────
 
@@ -61,12 +59,9 @@ public class ClericHealVFX : NetworkBehaviour
     [ClientRpc]
     void RpcPlayHealVFX()
     {
-#if UNITY_EDITOR || !UNITY_SERVER
         PlayVisual();
-#endif
     }
 
-#if UNITY_EDITOR || !UNITY_SERVER
     void PlayVisual()
     {
         Vector3 pos = transform.position;
@@ -113,5 +108,4 @@ public class ClericHealVFX : NetworkBehaviour
         var go = Instantiate(healCrossPrefab, pos + Vector3.up * 0.2f, Quaternion.identity);
         Destroy(go, 2f);
     }
-#endif
 }

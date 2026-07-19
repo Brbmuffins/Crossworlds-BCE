@@ -1,4 +1,3 @@
-#if UNITY_EDITOR || !UNITY_SERVER
 using Mirror;
 using UnityEngine;
 
@@ -100,4 +99,3 @@ public class ClericAnimationDriver : NetworkBehaviour
         animator.SetFloat(SpeedHash, normalized, 0.1f, Time.deltaTime);
     }
 }
-#endif

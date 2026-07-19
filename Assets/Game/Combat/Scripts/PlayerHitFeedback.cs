@@ -1,4 +1,3 @@
-#if UNITY_EDITOR || !UNITY_SERVER
 using Mirror;
 using UnityEngine;
 
@@ -71,4 +70,3 @@ public class PlayerHitFeedback : NetworkBehaviour
         HitstopManager.Freeze(HitstopManager.Weight.KillBlow);
     }
 }
-#endif // UNITY_EDITOR || !UNITY_SERVER
