@@ -1256,6 +1256,7 @@ MonoBehaviour:
   - {fileID: 1395475098}
   - {fileID: 1623568154}
   - {fileID: 1863669484}
+  zoneConfig: {fileID: 0}
   baseEnemiesPerWave: 4
   enemiesAddedPerWave: 2
   timeBetweenWaves: 8
