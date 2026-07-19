@@ -48,6 +48,7 @@ public class PlayerHitFeedback : NetworkBehaviour
     {
         if (_health == null) return;
 
+#if UNITY_EDITOR || !UNITY_SERVER
         // Trauma proportional to damage fraction (20 dmg on 100 HP = 0.2 trauma)
         float fraction = _health.maxHealth > 0f ? amount / _health.maxHealth : 0f;
         float trauma   = Mathf.Lerp(0.10f, 0.50f, Mathf.Clamp01(fraction * 3f));
@@ -60,13 +61,16 @@ public class PlayerHitFeedback : NetworkBehaviour
         // Hitstop on heavy hits (>20% HP in one hit)
         if (fraction >= 0.20f)
             HitstopManager.Freeze(HitstopManager.Weight.Medium);
+#endif
     }
 
     void OnDownedChanged(bool downed)
     {
         if (!downed) return;
+#if UNITY_EDITOR || !UNITY_SERVER
         // Player just went down — large shake
         ScreenShake.PlayerDowned();
         HitstopManager.Freeze(HitstopManager.Weight.KillBlow);
+#endif
     }
 }
