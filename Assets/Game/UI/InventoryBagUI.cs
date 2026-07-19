@@ -246,7 +246,7 @@ public class InventoryBagUI : MonoBehaviour
     static string GetCharacterId()
     {
         if (AuthManager.CharacterId > 0) return AuthManager.CharacterId.ToString();
-        foreach (var id in FindObjectsByType<PlayerIdentity>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+        foreach (var id in FindObjectsByType<PlayerIdentity>(FindObjectsInactive.Exclude))
             if (id.isLocalPlayer) return id.characterId.ToString();
         return null;
     }
@@ -258,7 +258,7 @@ public class InventoryBagUI : MonoBehaviour
 
     static bool AnyInputFocused()
     {
-        foreach (var f in FindObjectsByType<TMP_InputField>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+        foreach (var f in FindObjectsByType<TMP_InputField>(FindObjectsInactive.Exclude))
             if (f.isFocused) return true;
         return false;
     }

@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.SceneManagement;
+#if UNITY_EDITOR || !UNITY_SERVER
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.UI;
 using UnityEngine.UI;
@@ -25,6 +27,7 @@ public sealed class WaypointMapUI : MonoBehaviour
     TextMeshProUGUI _status;
     Image _mapImage;
     Action<WaypointMapNode> _onNodeSelected;
+    string _currentSceneName;
 
     public static void Show(
         string title,
@@ -104,9 +107,12 @@ public sealed class WaypointMapUI : MonoBehaviour
         ClearLayer(_nodeLayer);
         SetStatusText("Select a destination.");
 
+        _currentSceneName = SceneManager.GetActiveScene().name;
+
         Canvas.ForceUpdateCanvases();
         DrawBarrierPlaceholder();
         DrawConnections(nodes, connections);
+        DrawCurrentLocation(nodes);
         DrawNodes(nodes);
 
         Cursor.lockState = CursorLockMode.None;
@@ -209,10 +215,17 @@ public sealed class WaypointMapUI : MonoBehaviour
         Button button = buttonGo.AddComponent<Button>();
         ColorBlock colors = button.colors;
         colors.normalColor = Color.white;
-        colors.highlightedColor = new Color(1.25f, 1.25f, 1.25f, 1f);
+        colors.highlightedColor = new Color(1.5f, 1.5f, 1.5f, 1f);
         colors.pressedColor = new Color(0.7f, 0.7f, 0.7f, 1f);
         button.colors = colors;
         button.onClick.AddListener(() => SelectNode(node));
+
+        string hoverText = node.CanTravel
+            ? (string.IsNullOrWhiteSpace(node.description) ? node.displayName : node.description)
+            : $"{node.displayName}: coming soon.";
+        EventTrigger et = buttonGo.AddComponent<EventTrigger>();
+        AddPointerEvent(et, EventTriggerType.PointerEnter, _ => SetStatusText(hoverText));
+        AddPointerEvent(et, EventTriggerType.PointerExit, _ => SetStatusText("Select a destination."));
 
         GameObject ring = MakeRect(node.id + "_Ring", buttonRt, Vector2.zero, Vector2.one);
         Image ringImage = ring.AddComponent<Image>();
@@ -237,7 +250,7 @@ public sealed class WaypointMapUI : MonoBehaviour
     void SelectNode(WaypointMapNode node)
     {
         string detail = string.IsNullOrWhiteSpace(node.description) ? node.displayName : node.description;
-        SetStatusText(node.CanTravel ? detail : $"{node.displayName}: coming soon.");
+        SetStatusText(node.CanTravel ? $"→ {detail}" : $"{node.displayName}: coming soon.");
         _onNodeSelected?.Invoke(node);
     }
 
@@ -301,6 +314,52 @@ public sealed class WaypointMapUI : MonoBehaviour
             Vector2 dashB = a + direction * end;
             DrawLine(dashA, dashB, color, DashedLineThickness);
         }
+    }
+
+    void DrawCurrentLocation(WaypointMapNode[] nodes)
+    {
+        if (nodes == null || string.IsNullOrWhiteSpace(_currentSceneName))
+            return;
+
+        foreach (WaypointMapNode node in nodes)
+        {
+            if (node == null) continue;
+            if (!string.Equals(node.sceneName, _currentSceneName, StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            Vector2 local = MapToLocal(node.normalizedPosition);
+
+            // Golden pulse ring — drawn before nodes so it sits behind them
+            GameObject glow = MakeRect("CurrentLocationGlow", _nodeLayer,
+                new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f));
+            RectTransform glowRt = glow.GetComponent<RectTransform>();
+            glowRt.anchoredPosition = local;
+            glowRt.sizeDelta = new Vector2(52f, 52f);
+            Image glowImg = glow.AddComponent<Image>();
+            glowImg.color = new Color(1f, 0.92f, 0.32f, 0.55f);
+            glowImg.raycastTarget = false;
+
+            // "— you are here —" text below the node label
+            TextMeshProUGUI hereLabel = MakeTmp("CurrentLocationLabel", _nodeLayer,
+                new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f));
+            RectTransform hereLabelRt = hereLabel.GetComponent<RectTransform>();
+            hereLabelRt.anchoredPosition = local + node.labelOffset + new Vector2(0f, -18f);
+            hereLabelRt.sizeDelta = new Vector2(130f, 18f);
+            hereLabel.text = "— you are here —";
+            hereLabel.fontSize = 9f;
+            hereLabel.color = new Color(1f, 0.92f, 0.4f, 0.85f);
+            hereLabel.alignment = TextAlignmentOptions.Center;
+            hereLabel.raycastTarget = false;
+            break;
+        }
+    }
+
+    static void AddPointerEvent(EventTrigger trigger, EventTriggerType type,
+        UnityEngine.Events.UnityAction<BaseEventData> action)
+    {
+        var entry = new EventTrigger.Entry { eventID = type };
+        entry.callback.AddListener(action);
+        trigger.triggers.Add(entry);
     }
 
     void DrawBarrierPlaceholder()
@@ -396,7 +455,7 @@ public sealed class WaypointMapUI : MonoBehaviour
         EventSystem eventSystem = EventSystem.current;
         if (eventSystem == null)
         {
-            var go = new GameObject("EventSystem", typeof(EventSystem), typeof(InputSystemUIInputModule));
+            var go = new GameObject("EventSystem", typeof(EventSystem), typeof(InputSystemUIInputModule), typeof(SingleEventSystem));
             DontDestroyOnLoad(go);
             return;
         }
@@ -405,3 +464,4 @@ public sealed class WaypointMapUI : MonoBehaviour
             eventSystem.gameObject.AddComponent<InputSystemUIInputModule>();
     }
 }
+#endif // UNITY_EDITOR || !UNITY_SERVER

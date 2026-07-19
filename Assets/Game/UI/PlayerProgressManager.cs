@@ -151,7 +151,12 @@ public class PlayerProgressManager : MonoBehaviour
 
         try
         {
-            var r = JsonUtility.FromJson<CharacterFetchResponse>(req.downloadHandler.text);
+            string rawText = req.downloadHandler.text.Trim();
+            if (rawText.StartsWith("[") && rawText.EndsWith("]"))
+            {
+                rawText = rawText.Substring(1, rawText.Length - 2).Trim();
+            }
+            var r = JsonUtility.FromJson<CharacterFetchResponse>(rawText);
             int prevLevel = Level;
             Level    = Mathf.Max(1, r.level);
             Xp       = r.xp;
@@ -206,8 +211,12 @@ public class PlayerProgressManager : MonoBehaviour
     // ── Helpers ───────────────────────────────────────────────────────────────
     static PlayerIdentity FindLocalIdentity()
     {
-        foreach (var id in FindObjectsByType<PlayerIdentity>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
-            if (id.isLocalPlayer) return id;
+        bool networkActive = Mirror.NetworkClient.active || Mirror.NetworkServer.active;
+        foreach (var id in FindObjectsByType<PlayerIdentity>(FindObjectsInactive.Exclude))
+        {
+            bool isLocal = networkActive ? id.isLocalPlayer : true;
+            if (isLocal) return id;
+        }
         return null;
     }
 

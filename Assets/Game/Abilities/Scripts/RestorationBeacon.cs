@@ -1,10 +1,11 @@
 using UnityEngine;
+using Mirror;
 
 // Medic deployable — Restoration Beacon
 // Pulsing nanite emitter heals all allies in range every pulseInterval seconds.
 // VFX: brbmuffins Dark Arts/Fantasy Pack/Prefabs/Effects normal/Magic circle.prefab (tint green)
 //      brbmuffins Dark Arts/Fantasy Pack/Prefabs/Healing buff.prefab (per-heal burst)
-public class RestorationBeacon : MonoBehaviour
+public class RestorationBeacon : NetworkBehaviour
 {
     [Header("Healing")]
     public float healPerPulse   = 12f;
@@ -63,6 +64,12 @@ public class RestorationBeacon : MonoBehaviour
             col.GetComponent<Health>()?.Heal(healPerPulse * mult);
         }
 
+        RpcPlayPulseVFX();
+    }
+
+    [ClientRpc]
+    void RpcPlayPulseVFX()
+    {
         if (pulseVFX != null)
         {
             GameObject fx = Instantiate(pulseVFX, transform.position, Quaternion.identity);
@@ -72,6 +79,7 @@ public class RestorationBeacon : MonoBehaviour
 
     void OnDestroy()
     {
-        DeployableManager.Instance?.Unregister(gameObject);
+        if (DeployableNet.IsAuthority)
+            DeployableManager.Instance?.Unregister(gameObject);
     }
 }

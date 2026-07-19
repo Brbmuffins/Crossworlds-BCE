@@ -610,6 +610,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Gunda (8)
       objectReference: {fileID: 0}
+    - target: {fileID: 5425423173228415393, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: sceneId
+      value: 1898801731
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1222,6 +1226,10 @@ PrefabInstance:
     - target: {fileID: 1046127108768916309, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
       propertyPath: m_Name
       value: Gunda (6)
+      objectReference: {fileID: 0}
+    - target: {fileID: 5425423173228415393, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: sceneId
+      value: 1259309107
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1961,6 +1969,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Gunda (11)
       objectReference: {fileID: 0}
+    - target: {fileID: 5425423173228415393, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: sceneId
+      value: 371282650
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -2441,6 +2453,10 @@ PrefabInstance:
     - target: {fileID: 1046127108768916309, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
       propertyPath: m_Name
       value: Gunda (10)
+      objectReference: {fileID: 0}
+    - target: {fileID: 5425423173228415393, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: sceneId
+      value: 462208172
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -3367,6 +3383,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 910665033}
     m_Modifications:
+    - target: {fileID: -2402860187570788362, guid: c0cdc9b76b6fd4141b70007d92530e81, type: 3}
+      propertyPath: sceneId
+      value: 2911164941
+      objectReference: {fileID: 0}
     - target: {fileID: 811337269358917240, guid: c0cdc9b76b6fd4141b70007d92530e81, type: 3}
       propertyPath: m_LocalPosition.x
       value: 12
@@ -3595,6 +3615,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 910665033}
     m_Modifications:
+    - target: {fileID: -2402860187570788362, guid: c0cdc9b76b6fd4141b70007d92530e81, type: 3}
+      propertyPath: sceneId
+      value: 913802010
+      objectReference: {fileID: 0}
     - target: {fileID: 811337269358917240, guid: c0cdc9b76b6fd4141b70007d92530e81, type: 3}
       propertyPath: m_LocalPosition.x
       value: -10
@@ -3996,6 +4020,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Gunda (2)
       objectReference: {fileID: 0}
+    - target: {fileID: 5425423173228415393, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: sceneId
+      value: 716090741
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -4212,6 +4240,10 @@ PrefabInstance:
     - target: {fileID: 1046127108768916309, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
       propertyPath: m_Name
       value: Gunda
+      objectReference: {fileID: 0}
+    - target: {fileID: 5425423173228415393, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: sceneId
+      value: 2768773503
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -4733,6 +4765,10 @@ PrefabInstance:
     - target: {fileID: 1046127108768916309, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
       propertyPath: m_Name
       value: Gunda (5)
+      objectReference: {fileID: 0}
+    - target: {fileID: 5425423173228415393, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: sceneId
+      value: 320818978
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -5870,6 +5906,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 910665033}
     m_Modifications:
+    - target: {fileID: -2402860187570788362, guid: c0cdc9b76b6fd4141b70007d92530e81, type: 3}
+      propertyPath: sceneId
+      value: 976827071
+      objectReference: {fileID: 0}
     - target: {fileID: 811337269358917240, guid: c0cdc9b76b6fd4141b70007d92530e81, type: 3}
       propertyPath: m_LocalPosition.x
       value: 44.44
@@ -7512,6 +7552,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 910665033}
     m_Modifications:
+    - target: {fileID: -2402860187570788362, guid: c0cdc9b76b6fd4141b70007d92530e81, type: 3}
+      propertyPath: sceneId
+      value: 2219644988
+      objectReference: {fileID: 0}
     - target: {fileID: 811337269358917240, guid: c0cdc9b76b6fd4141b70007d92530e81, type: 3}
       propertyPath: m_LocalPosition.x
       value: 32.2
@@ -9647,6 +9691,9 @@ MonoBehaviour:
   - {fileID: 4577330360238886047, guid: e9b165cca9a40fe47bdda9b21d407720, type: 3}
   - {fileID: 8204671760820388417, guid: 05ca882c1b18d70449cfc3fbde6fc614, type: 3}
   elitePrefab: {fileID: 5551267369004884409, guid: b4c4d40894b065142ac7e320545e40e6, type: 3}
+  wispPrefab: {fileID: 1675110105690553697, guid: c0cdc9b76b6fd4141b70007d92530e81, type: 3}
+  wispEveryNWaves: 2
+  wispCountPerSwarm: 3
   spawnPoints:
   - {fileID: 0}
   - {fileID: 0}
@@ -9664,6 +9711,7 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   - {fileID: 0}
+  zoneConfig: {fileID: 11400000, guid: 622cc83bd4b12484ba8f479df3cc17b5, type: 2}
   baseEnemiesPerWave: 5
   enemiesAddedPerWave: 2
   timeBetweenWaves: 12
@@ -9802,6 +9850,10 @@ PrefabInstance:
     - target: {fileID: 1046127108768916309, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
       propertyPath: m_Name
       value: Gunda (1)
+      objectReference: {fileID: 0}
+    - target: {fileID: 5425423173228415393, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: sceneId
+      value: 1932958058
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -10439,6 +10491,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Gunda (7)
       objectReference: {fileID: 0}
+    - target: {fileID: 5425423173228415393, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: sceneId
+      value: 2459720647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -10566,6 +10622,10 @@ PrefabInstance:
     - target: {fileID: 1046127108768916309, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
       propertyPath: m_Name
       value: Gunda (3)
+      objectReference: {fileID: 0}
+    - target: {fileID: 5425423173228415393, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: sceneId
+      value: 3618980
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -10710,6 +10770,10 @@ PrefabInstance:
     - target: {fileID: 1046127108768916309, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
       propertyPath: m_Name
       value: Gunda (9)
+      objectReference: {fileID: 0}
+    - target: {fileID: 5425423173228415393, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: sceneId
+      value: 1876477425
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -10928,6 +10992,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 910665033}
     m_Modifications:
+    - target: {fileID: -2402860187570788362, guid: c0cdc9b76b6fd4141b70007d92530e81, type: 3}
+      propertyPath: sceneId
+      value: 144635710
+      objectReference: {fileID: 0}
     - target: {fileID: 811337269358917240, guid: c0cdc9b76b6fd4141b70007d92530e81, type: 3}
       propertyPath: m_LocalPosition.x
       value: 13.43
@@ -11352,6 +11420,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 910665033}
     m_Modifications:
+    - target: {fileID: -2402860187570788362, guid: c0cdc9b76b6fd4141b70007d92530e81, type: 3}
+      propertyPath: sceneId
+      value: 4081759021
+      objectReference: {fileID: 0}
     - target: {fileID: 811337269358917240, guid: c0cdc9b76b6fd4141b70007d92530e81, type: 3}
       propertyPath: m_LocalPosition.x
       value: -31.4
@@ -11483,6 +11555,10 @@ PrefabInstance:
     - target: {fileID: 1046127108768916309, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
       propertyPath: m_Name
       value: Gunda (4)
+      objectReference: {fileID: 0}
+    - target: {fileID: 5425423173228415393, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: sceneId
+      value: 305206892
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

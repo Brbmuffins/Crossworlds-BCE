@@ -126,12 +126,19 @@ public class HeroMasteryUI : MonoBehaviour
 
     void Update()
     {
-        // Dismiss on Escape or H
-        if (_open)
+        var kb = UnityEngine.InputSystem.Keyboard.current;
+        if (kb != null)
         {
-            var kb = UnityEngine.InputSystem.Keyboard.current;
-            if (kb != null && (kb.escapeKey.wasPressedThisFrame || kb.hKey.wasPressedThisFrame))
-                Close();
+            if (_open)
+            {
+                if (kb.escapeKey.wasPressedThisFrame || kb.mKey.wasPressedThisFrame)
+                    Close();
+            }
+            else
+            {
+                if (kb.mKey.wasPressedThisFrame && !AnyInputFocused())
+                    Open();
+            }
         }
 
         // Flash animation
@@ -288,7 +295,7 @@ public class HeroMasteryUI : MonoBehaviour
         hintRT.anchorMax = new Vector2(1f, 0.10f);
         hintRT.offsetMin = hintRT.offsetMax = Vector2.zero;
         var hintTxt = hintGO.AddComponent<TextMeshProUGUI>();
-        hintTxt.text      = "Press H or Esc to close";
+        hintTxt.text      = "Press M or Esc to close";
         hintTxt.fontSize  = 8f;
         hintTxt.color     = ColDim;
         hintTxt.alignment = TextAlignmentOptions.Center;
@@ -406,6 +413,14 @@ public class HeroMasteryUI : MonoBehaviour
         r.anchorMin = Vector2.zero;
         r.anchorMax = Vector2.one;
         r.offsetMin = r.offsetMax = Vector2.zero;
+    }
+
+    static bool AnyInputFocused()
+    {
+        foreach (var f in Object.FindObjectsByType<TMP_InputField>(FindObjectsInactive.Exclude))
+            if (f.isFocused) return true;
+        if (RodChatManager.Instance != null && RodChatManager.Instance.IsOpen) return true;
+        return false;
     }
 }
 #endif

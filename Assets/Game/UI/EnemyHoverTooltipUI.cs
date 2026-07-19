@@ -161,7 +161,7 @@ public class EnemyHoverTooltipUI : MonoBehaviour
         text.fontSize = size;
         text.fontStyle = style;
         text.color = color;
-        text.enableWordWrapping = false;
+        text.textWrappingMode = TextWrappingModes.NoWrap;
         text.overflowMode = TextOverflowModes.Ellipsis;
         return text;
     }

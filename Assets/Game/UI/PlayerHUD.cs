@@ -150,9 +150,12 @@ public class PlayerHUD : MonoBehaviour
         if (_scanTimer > 0f) return;
         _scanTimer = 0.5f;
 
-        foreach (var ni in FindObjectsByType<NetworkIdentity>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+        bool networkActive = NetworkClient.active || NetworkServer.active;
+
+        foreach (var ni in FindObjectsByType<NetworkIdentity>(FindObjectsInactive.Exclude))
         {
-            if (!ni.isLocalPlayer) continue;
+            bool isLocal = networkActive ? ni.isLocalPlayer : (ni.CompareTag("Player") || ni.GetComponent<PlayerMovement>() != null);
+            if (!isLocal) continue;
             BindPlayer(ni.gameObject);
             break;
         }
@@ -170,6 +173,7 @@ public class PlayerHUD : MonoBehaviour
         {
             _health.onHealthChanged.AddListener(OnHealthChanged);
             _displayedHp = _health.Fraction;
+            UpdateHpLabel(_health.currentHealth, _health.maxHealth);
         }
 
         RebuildAbilitySlots();

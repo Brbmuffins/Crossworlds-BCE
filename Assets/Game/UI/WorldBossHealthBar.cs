@@ -40,7 +40,7 @@ public class WorldBossHealthBar : MonoBehaviour
     {
         if (_trackedBoss == null)
         {
-            _trackedBoss = FindObjectOfType<WorldBossController>();
+            _trackedBoss = FindAnyObjectByType<WorldBossController>();
             if (_trackedBoss != null &&
                 _trackedBoss.currentPhase != WorldBossController.BossPhase.Idle &&
                 _trackedBoss.currentPhase != WorldBossController.BossPhase.Dead)

@@ -18,8 +18,20 @@ public class WaveSpawner : NetworkBehaviour
     public List<GameObject> enemyPrefabs = new List<GameObject>();
     public GameObject elitePrefab;
 
+    [Header("Wisp Swarm")]
+    [Tooltip("Floating swarm mob (WispCombat). Spawns as a group every wispEveryNWaves waves.")]
+    public GameObject wispPrefab;
+    [Tooltip("0 = disabled. 2 = wisps on even waves, 3 = every 3rd wave, etc.")]
+    public int wispEveryNWaves   = 2;
+    [Tooltip("How many wisps per swarm.")]
+    public int wispCountPerSwarm = 3;
+
     [Header("Spawn Points")]
     public List<Transform> spawnPoints = new List<Transform>();
+
+    [Header("Zone Config (optional — overrides Wave Config values below)")]
+    [Tooltip("Assign a ZoneConfig asset to drive wave settings from one place.")]
+    public ZoneConfig zoneConfig;
 
     [Header("Wave Config")]
     public int   baseEnemiesPerWave  = 4;
@@ -40,6 +52,12 @@ public class WaveSpawner : NetworkBehaviour
     private bool _running = false;
 
     // ─────────────────────────────────────────────────────────────────────────────
+
+    void Awake()
+    {
+        // ZoneConfig wins over Inspector values when assigned.
+        if (zoneConfig != null) zoneConfig.ApplyTo(this);
+    }
 
     [Server]
     public void StartWaves()
@@ -108,8 +126,11 @@ public class WaveSpawner : NetworkBehaviour
         bool spawnElite = eliteEveryNWaves > 0
                           && wave % eliteEveryNWaves == 0
                           && elitePrefab != null;
+        bool spawnWisps = wispPrefab != null
+                          && wispEveryNWaves > 0
+                          && wave % wispEveryNWaves == 0;
 
-        int total = count + (spawnElite ? 1 : 0);
+        int total = count + (spawnElite ? 1 : 0) + (spawnWisps ? wispCountPerSwarm : 0);
         RpcAnnounce($"Wave {wave} — {total} enemies incoming!");
         yield return new WaitForSeconds(1.5f);
 
@@ -127,6 +148,18 @@ public class WaveSpawner : NetworkBehaviour
             yield return new WaitForSeconds(1f);
             SpawnEnemy(elitePrefab);
             RpcAnnounce("ELITE has arrived!");
+        }
+
+        if (spawnWisps)
+        {
+            yield return new WaitForSeconds(0.8f);
+            for (int w = 0; w < wispCountPerSwarm; w++)
+            {
+                if (!_running) yield break;
+                SpawnEnemy(wispPrefab);
+                yield return new WaitForSeconds(0.3f);
+            }
+            RpcAnnounce("Wisps — watch your flanks!");
         }
 
         // Wait until all enemies are dead
@@ -147,6 +180,31 @@ public class WaveSpawner : NetworkBehaviour
 
         Transform sp  = GetSpawnPoint();
         var enemy     = Instantiate(prefab, sp.position, sp.rotation);
+
+        // Apply zone difficulty scaling before the object goes live
+        if (zoneConfig != null)
+        {
+            var ec = enemy.GetComponent<EnemyController>();
+            if (ec != null) ec.damage *= zoneConfig.damageMult;
+
+            var h = enemy.GetComponent<Health>();
+            if (h != null)
+            {
+                h.maxHealth     *= zoneConfig.healthMult;
+                h.currentHealth  = h.maxHealth;
+            }
+
+            // Push heavy attack cooldown tighter at higher difficulty zones
+            var ha = enemy.GetComponent<EnemyHeavyAttack>();
+            if (ha != null)
+            {
+                if (zoneConfig.heavyAttackMinCooldown > 0f)
+                    ha.minCooldown = zoneConfig.heavyAttackMinCooldown;
+                if (zoneConfig.heavyAttackMaxCooldown > 0f)
+                    ha.maxCooldown = zoneConfig.heavyAttackMaxCooldown;
+            }
+        }
+
         var health    = enemy.GetComponent<Health>();
         if (health != null) health.onDeath.AddListener(OnEnemyDied);
         NetworkServer.Spawn(enemy);

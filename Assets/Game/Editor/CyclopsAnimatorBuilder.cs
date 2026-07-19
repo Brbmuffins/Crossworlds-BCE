@@ -240,7 +240,7 @@ public static class CyclopsAnimatorBuilder
 
         int assigned = 0;
         HashSet<GameObject> visited = new HashSet<GameObject>();
-        foreach (GameObject go in Object.FindObjectsByType<GameObject>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+        foreach (GameObject go in Object.FindObjectsByType<GameObject>(FindObjectsInactive.Include))
         {
             if (!LooksLikeCyclops(go))
                 continue;
@@ -279,7 +279,7 @@ public static class CyclopsAnimatorBuilder
     {
         int updated = 0;
         HashSet<GameObject> visited = new HashSet<GameObject>();
-        foreach (GameObject go in Object.FindObjectsByType<GameObject>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+        foreach (GameObject go in Object.FindObjectsByType<GameObject>(FindObjectsInactive.Include))
         {
             if (!LooksLikeCyclops(go))
                 continue;

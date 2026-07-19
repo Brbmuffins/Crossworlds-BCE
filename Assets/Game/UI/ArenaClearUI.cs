@@ -78,7 +78,7 @@ public class ArenaClearUI : MonoBehaviour
             _searchTimer -= Time.deltaTime;
             if (_searchTimer > 0f) return;
             _searchTimer = 2f;
-            _spawner = FindFirstObjectByType<WaveSpawner>();
+            _spawner = FindAnyObjectByType<WaveSpawner>();
             if (_spawner == null) return;
             // Snapshot start-of-run progress
             _runStartLevel = PlayerProgressManager.Local?.Level ?? 0;
@@ -114,7 +114,7 @@ public class ArenaClearUI : MonoBehaviour
     /// </summary>
     public static void ShowArenaClear()
     {
-        var instance = FindFirstObjectByType<ArenaClearUI>();
+        var instance = FindAnyObjectByType<ArenaClearUI>();
         instance?.ShowClearScreen();
     }
 

@@ -34,31 +34,31 @@ public static class HeroModelSetupBuilder
     static readonly (string prefabPath, string modelPath, string controllerPath, string label)[] Entries =
     {
         (
-            "Assets/Game/Prefabs/Warden.prefab",
+            "Assets/Game/Game_Prefabs/Warden.prefab",
             "Assets/Game/Characters/Engineer/Model/RoD-bike-ridah.fbx",
             null,
             "Warden"
         ),
         (
-            "Assets/Game/Prefabs/Ironclad.prefab",
+            "Assets/Game/Game_Prefabs/Ironclad.prefab",
             "Assets/Game/Heroes/Guardian/Guardian.fbx",
             null,
             "Ironclad"
         ),
         (
-            "Assets/Game/Prefabs/Shadowblade.prefab",
+            "Assets/Game/Game_Prefabs/Shadowblade.prefab",
             "Assets/Game/Heroes/Bogar/Bogar.fbx",
             null,
             "Shadowblade"
         ),
         (
-            "Assets/Game/Prefabs/Cleric.prefab",
+            "Assets/Game/Game_Prefabs/Cleric.prefab",
             "Assets/Game/Heroes/Brandalf/Brandalf.fbx",
             "Assets/Game/Heroes/Brandalf/Brandalf.controller",
             "Cleric"
         ),
         (
-            "Assets/Game/Prefabs/Arcanist.prefab",
+            "Assets/Game/Game_Prefabs/Arcanist.prefab",
             "Assets/Game/Heroes/Dravos/fantasy_goblin_3d_model/Idle.fbx",
             "Assets/Game/Heroes/Dravos/fantasy_goblin_3d_model/Dravos.controller",
             "Arcanist"

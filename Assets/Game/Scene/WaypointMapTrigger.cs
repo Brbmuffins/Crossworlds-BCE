@@ -53,12 +53,15 @@ public sealed class WaypointMapTrigger : NetworkBehaviour
 
     void Start()
     {
+#if UNITY_EDITOR || !UNITY_SERVER
         if (showWorldPrompt)
             BuildWorldPrompt();
+#endif
     }
 
     void Update()
     {
+#if UNITY_EDITOR || !UNITY_SERVER
         if (_loading) return;
 
         if (_localPlayer == null)
@@ -78,12 +81,15 @@ public sealed class WaypointMapTrigger : NetworkBehaviour
 
         if (allowMouseClick && WasClicked())
             OpenMap();
+#endif
     }
 
+#if UNITY_EDITOR || !UNITY_SERVER
     void OpenMap()
     {
         WaypointMapUI.Show(mapTitle, mapBackground, nodes, connections, HandleNodeSelected);
     }
+#endif
 
     void HandleNodeSelected(WaypointMapNode node)
     {
@@ -92,21 +98,27 @@ public sealed class WaypointMapTrigger : NetworkBehaviour
 
         if (!node.CanTravel)
         {
+#if UNITY_EDITOR || !UNITY_SERVER
             WaypointMapUI.SetStatus($"{node.displayName} is not available yet.");
+#endif
             return;
         }
 
         string sceneName = node.sceneName.Trim();
         if (!CanLoadScene(sceneName))
         {
+#if UNITY_EDITOR || !UNITY_SERVER
             WaypointMapUI.SetStatus($"{node.displayName} scene is not in Build Settings yet.");
+#endif
             return;
         }
 
         _loading = true;
+#if UNITY_EDITOR || !UNITY_SERVER
         WaypointMapUI.SetStatus($"Traveling to {node.displayName}...");
         if (closeMapAfterTravelRequest)
             WaypointMapUI.Hide();
+#endif
 
         if (NetworkServer.active)
         {
@@ -143,7 +155,9 @@ public sealed class WaypointMapTrigger : NetworkBehaviour
     void TargetTravelRejected(NetworkConnectionToClient target, string message)
     {
         _loading = false;
+#if UNITY_EDITOR || !UNITY_SERVER
         WaypointMapUI.SetStatus(message);
+#endif
     }
 
     static void ChangeScene(string sceneName)
@@ -164,6 +178,7 @@ public sealed class WaypointMapTrigger : NetworkBehaviour
                 string.Equals(SceneManager.GetActiveScene().name, sceneName, StringComparison.OrdinalIgnoreCase));
     }
 
+#if UNITY_EDITOR || !UNITY_SERVER
     bool WasInteractPressed()
     {
         var keyboard = Keyboard.current;
@@ -203,7 +218,7 @@ public sealed class WaypointMapTrigger : NetworkBehaviour
 
     static Transform FindLocalPlayer()
     {
-        var identities = FindObjectsByType<NetworkIdentity>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+        var identities = FindObjectsByType<NetworkIdentity>(FindObjectsInactive.Exclude);
         foreach (var identity in identities)
             if (identity.isLocalPlayer)
                 return identity.transform;
@@ -227,7 +242,7 @@ public sealed class WaypointMapTrigger : NetworkBehaviour
         _promptLabel.fontSize = 3f;
         _promptLabel.richText = true;
         _promptLabel.raycastTarget = false;
-        _promptLabel.enableWordWrapping = false;
+        _promptLabel.textWrappingMode = TextWrappingModes.NoWrap;
         _promptLabel.color = Color.white;
 
         SetPromptVisible(false);
@@ -238,6 +253,7 @@ public sealed class WaypointMapTrigger : NetworkBehaviour
         if (_promptObject != null && _promptObject.activeSelf != visible)
             _promptObject.SetActive(visible);
     }
+#endif // UNITY_EDITOR || !UNITY_SERVER
 
     static WaypointMapNode[] DefaultNodes()
     {
@@ -271,13 +287,13 @@ public sealed class WaypointMapTrigger : NetworkBehaviour
             {
                 id = "gathering",
                 displayName = "GATHERING ZONE",
-                subtitle = "",
-                sceneName = "",
-                unlocked = false,
+                subtitle = "harvest · craft · relax",
+                sceneName = SceneNames.GatheringZone,
+                unlocked = true,
                 normalizedPosition = new Vector2(0.24f, 0.72f),
                 labelOffset = new Vector2(0f, -34f),
                 color = new Color(0.82f, 0.36f, 0.38f, 1f),
-                description = "Placeholder gathering zone."
+                description = "A peaceful zone for AFK woodcutting, fishing, and mining. A forge is available for crafting."
             },
             new WaypointMapNode
             {
@@ -319,13 +335,13 @@ public sealed class WaypointMapTrigger : NetworkBehaviour
             {
                 id = "ashen",
                 displayName = "ASHEN WASTELAND",
-                subtitle = "unwritten",
+                subtitle = "burned and blighted",
                 sceneName = SceneNames.AshenWastelands,
-                unlocked = false,
+                unlocked = true,
                 normalizedPosition = new Vector2(0.94f, 0.74f),
                 labelOffset = new Vector2(0f, -40f),
-                color = new Color(0.72f, 0.66f, 0.66f, 1f),
-                description = "Placeholder ashen region."
+                color = new Color(0.85f, 0.42f, 0.18f, 1f),
+                description = "A scorched wasteland consumed by ancient fire."
             },
         };
     }
@@ -339,6 +355,7 @@ public sealed class WaypointMapTrigger : NetworkBehaviour
             new WaypointMapConnection { fromNodeId = "gathering", toNodeId = "darkwood" },
             new WaypointMapConnection { fromNodeId = "brightwood", toNodeId = "darkwood" },
             new WaypointMapConnection { fromNodeId = "darkwood", toNodeId = "toujam" },
+            new WaypointMapConnection { fromNodeId = "toujam", toNodeId = "ashen" },
             new WaypointMapConnection { fromNodeId = "neimos", toNodeId = "darkwood", dashed = true },
         };
     }

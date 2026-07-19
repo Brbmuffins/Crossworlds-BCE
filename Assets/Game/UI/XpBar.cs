@@ -1,4 +1,4 @@
-﻿#if UNITY_EDITOR || !UNITY_SERVER
+#if UNITY_EDITOR || !UNITY_SERVER
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -140,6 +140,7 @@ public class XpBar : MonoBehaviour
         _cg = cgo.GetComponent<CanvasGroup>();
         _cg.blocksRaycasts = false;
         _cg.interactable   = false;
+        _cg.alpha          = 0.3f; // 30% opacity to make it less glaring
 
         var scaler = cgo.GetComponent<CanvasScaler>();
         scaler.uiScaleMode         = CanvasScaler.ScaleMode.ScaleWithScreenSize;

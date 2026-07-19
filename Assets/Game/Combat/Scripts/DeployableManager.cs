@@ -32,6 +32,9 @@ public class DeployableManager : MonoBehaviour
 
         List<GameObject> list = _byOwner[ownerID];
 
+        // Guard: same object registered twice (e.g. SpawnDeployableAt + component.Start).
+        if (list.Contains(deployable)) return;
+
         // Destroy oldest if we're at the limit
         while (list.Count >= classLimit)
         {

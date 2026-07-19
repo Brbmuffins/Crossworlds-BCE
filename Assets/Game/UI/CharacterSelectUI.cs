@@ -86,7 +86,7 @@ public class CharacterSelectUI : MonoBehaviour
     // disable the rest, and guarantee it drives the new Input System.
     void EnsureSingleEventSystem()
     {
-        var systems = FindObjectsByType<EventSystem>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+        var systems = FindObjectsByType<EventSystem>(FindObjectsInactive.Exclude);
         EventSystem keep = systems.Length > 0 ? systems[0] : null;
 
         if (keep == null)
@@ -169,7 +169,10 @@ public class CharacterSelectUI : MonoBehaviour
         Destroy(plat.GetComponent<Collider>());
         plat.transform.SetPositionAndRotation(new Vector3(0f, -0.06f, 0f), Quaternion.identity);
         plat.transform.localScale = new Vector3(1.7f, 0.04f, 1.7f);
-        plat.GetComponent<Renderer>().material.color = new Color(0.06f, 0.06f, 0.12f);
+        var platMat = plat.GetComponent<Renderer>().material;
+        var urpShader = Shader.Find("Universal Render Pipeline/Lit");
+        if (urpShader != null) platMat.shader = urpShader;
+        platMat.color = new Color(0.06f, 0.06f, 0.12f);
         SetLayer(plat, PREV_LAY);
 
         // Ring
@@ -178,7 +181,9 @@ public class CharacterSelectUI : MonoBehaviour
         Destroy(ring.GetComponent<Collider>());
         ring.transform.SetPositionAndRotation(new Vector3(0f, -0.07f, 0f), Quaternion.identity);
         ring.transform.localScale = new Vector3(2.0f, 0.02f, 2.0f);
-        ring.GetComponent<Renderer>().material.color = new Color(0.08f, 0.08f, 0.16f);
+        var ringMat = ring.GetComponent<Renderer>().material;
+        if (urpShader != null) ringMat.shader = urpShader;
+        ringMat.color = new Color(0.08f, 0.08f, 0.16f);
         SetLayer(ring, PREV_LAY);
 
         // Spawn point + rotation root
@@ -244,10 +249,10 @@ public class CharacterSelectUI : MonoBehaviour
         // 3D preview
         if (_previewInstance != null) Destroy(_previewInstance);
         GameObject prefab = d.previewPrefab != null ? d.previewPrefab : d.prefab;
-        if (prefab != null && previewSpawnPoint != null)
+        Transform spawnParent = _previewRoot != null ? _previewRoot.transform : previewSpawnPoint;
+        if (prefab != null && spawnParent != null)
         {
-            _previewInstance = Instantiate(prefab,
-                _previewRoot != null ? _previewRoot.transform : previewSpawnPoint);
+            _previewInstance = Instantiate(prefab, spawnParent);
             _previewInstance.transform.localPosition = Vector3.zero;
             _previewInstance.transform.localRotation = Quaternion.identity;
             _previewInstance.transform.localScale    = Vector3.one;
@@ -736,11 +741,13 @@ public class CharacterSelectUI : MonoBehaviour
     IEnumerator PostCharacterThenConnect(int classIndex)
     {
         string jwt      = PlayerPrefs.GetString("jwt_token", "");
-        string serverIP = PlayerPrefs.GetString("game_server_ip", serverAddress);
+        string serverIP = PlayerPrefs.GetString("game_server_ip", serverAddress).Trim();
         string url      = $"http://{serverIP}:3000/character";
         string json     = $"{{\"class_index\":{classIndex}}}";
 
-        using var req = new UnityWebRequest(url, "POST");
+        using var req = new UnityWebRequest();
+        req.url = url;
+        req.method = "POST";
         req.uploadHandler   = new UploadHandlerRaw(Encoding.UTF8.GetBytes(json));
         req.downloadHandler = new DownloadHandlerBuffer();
         req.SetRequestHeader("Content-Type", "application/json");
@@ -752,14 +759,53 @@ public class CharacterSelectUI : MonoBehaviour
         if (req.result != UnityWebRequest.Result.Success)
         {
             Debug.LogError($"[CharSel] POST /character failed: {req.error}");
-            if (_deployBtn)   _deployBtn.interactable = true;
-            if (_deployLabel) _deployLabel.text = "CONNECT FAILED — RETRY";
+            ResetDeployButton("CONNECT FAILED — RETRY");
             yield break;
+        }
+
+        // Verify the server actually wrote the class we selected.
+        // If not, the DB value will override at spawn — warn loudly so it shows in logs.
+        try
+        {
+            var charData = JsonUtility.FromJson<CharacterApiResponse>(req.downloadHandler.text);
+            if (charData != null && charData.id != 0 && charData.class_index != classIndex)
+                Debug.LogWarning($"[CharSel] class_index mismatch: sent {classIndex}, server has {charData.class_index}. " +
+                                 "Run the VPS patch to make POST /character update class_index for existing characters.");
+        }
+        catch { /* non-fatal: response shape may differ */ }
+
+        // If a previous session is still live, stop it before starting a new one.
+        // Mirror silently ignores StartClient() when already active, causing a permanent "CONNECTING…" lock.
+        if (NetworkClient.active)
+        {
+            Debug.Log("[CharSel] NetworkClient still active — stopping before reconnect.");
+            NetworkManager.singleton.StopClient();
+            yield return new WaitForSeconds(0.3f);
         }
 
         NetworkManager.singleton.networkAddress = serverIP;
         Debug.Log($"[CharSel] Class {classIndex} confirmed. Connecting to {serverIP}...");
         NetworkManager.singleton.StartClient();
+
+        // Timeout guard: re-enable the button if the scene never changes.
+        StartCoroutine(ConnectionTimeout(15f));
+    }
+
+    IEnumerator ConnectionTimeout(float seconds)
+    {
+        yield return new WaitForSeconds(seconds);
+        if (_deployBtn != null && !_deployBtn.interactable)
+        {
+            NetworkManager.singleton?.StopClient();
+            ResetDeployButton("CONNECTION TIMED OUT — RETRY");
+            Debug.LogWarning("[CharSel] Connection timed out — button re-enabled.");
+        }
+    }
+
+    void ResetDeployButton(string label)
+    {
+        if (_deployBtn)   _deployBtn.interactable = true;
+        if (_deployLabel) _deployLabel.text = label;
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -831,4 +877,7 @@ public class CharacterSelectUI : MonoBehaviour
         go.layer = layer;
         foreach (Transform c in go.transform) SetLayer(c.gameObject, layer);
     }
+
+    [System.Serializable]
+    class CharacterApiResponse { public int id; public int class_index; }
 }

@@ -42,6 +42,14 @@ public class AfkGatheringStation : MonoBehaviour
     [Tooltip("How far the player must drift before gathering auto-cancels.")]
     public float cancelRadius  = 4f;
 
+    [Header("VFX")]
+    [Tooltip("Particle prefab spawned at the station on each yield tick.")]
+    public GameObject tickVFXPrefab;
+
+    [Header("Animation")]
+    [Tooltip("Bool parameter name on the local player's Animator to set while gathering. Leave empty to skip.")]
+    public string gatheringAnimBool = "";
+
     // ── Runtime ───────────────────────────────────────────────────────────────────
 
     bool       _gathering;
@@ -154,6 +162,7 @@ public class AfkGatheringStation : MonoBehaviour
         _gatherOrigin = _localPlayer.position;
         _tickProgress = 0f;
         _promptGO.SetActive(false);
+        SetGatheringAnim(true);
 
         string verb = GetGatherVerb();
         RodChatManager.Instance?.AddSystemMessage($"You begin {verb} {stationName}...");
@@ -186,6 +195,7 @@ public class AfkGatheringStation : MonoBehaviour
 
             StartCoroutine(PostItem(qty));
             ProfessionManager.Local?.AwardXp(professionId, xpPerTick);
+            SpawnTickVFX();
 
             if (_hud != null) _hud.Pulse(qty);
 
@@ -197,6 +207,7 @@ public class AfkGatheringStation : MonoBehaviour
     {
         if (!_gathering) return;
         _gathering = false;
+        SetGatheringAnim(false);
 
         if (_loop != null) { StopCoroutine(_loop); _loop = null; }
 
@@ -256,6 +267,20 @@ public class AfkGatheringStation : MonoBehaviour
 
     // ── Helpers ───────────────────────────────────────────────────────────────────
 
+    void SpawnTickVFX()
+    {
+        if (tickVFXPrefab == null) return;
+        var vfx = Instantiate(tickVFXPrefab, transform.position + Vector3.up * 0.6f, Quaternion.identity);
+        Destroy(vfx, 3f);
+    }
+
+    void SetGatheringAnim(bool on)
+    {
+        if (string.IsNullOrEmpty(gatheringAnimBool) || _localPlayer == null) return;
+        var anim = _localPlayer.GetComponentInChildren<Animator>();
+        if (anim != null) anim.SetBool(gatheringAnimBool, on);
+    }
+
     string GetGatherVerb() => professionId switch
     {
         0 => "chopping",
@@ -286,8 +311,7 @@ public class AfkGatheringStation : MonoBehaviour
 
     static Transform FindLocalPlayer()
     {
-        foreach (var id in FindObjectsByType<Mirror.NetworkIdentity>(
-            FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+        foreach (var id in FindObjectsByType<Mirror.NetworkIdentity>(FindObjectsInactive.Exclude))
             if (id.isLocalPlayer) return id.transform;
         return null;
     }

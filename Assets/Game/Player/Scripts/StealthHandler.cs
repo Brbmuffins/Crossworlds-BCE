@@ -125,7 +125,7 @@ public class StealthHandler : MonoBehaviour
 
     ShadowRelayDeployable FindNearestRelay()
     {
-        ShadowRelayDeployable[] relays = FindObjectsByType<ShadowRelayDeployable>(FindObjectsSortMode.None);
+        ShadowRelayDeployable[] relays = FindObjectsByType<ShadowRelayDeployable>(FindObjectsInactive.Exclude);
         foreach (var r in relays)
             if (r.ownerTransform == transform) return r;
         return null;
