@@ -32,11 +32,11 @@ public static class AbilityVFXAssignerBuilder
 
     static readonly string[] HeroPrefabs =
     {
-        "Assets/Game/Prefabs/Warden.prefab",
-        "Assets/Game/Prefabs/Ironclad.prefab",
-        "Assets/Game/Prefabs/Shadowblade.prefab",
-        "Assets/Game/Prefabs/Cleric.prefab",
-        "Assets/Game/Prefabs/Arcanist.prefab",
+        "Assets/Game/Game_Prefabs/Warden.prefab",
+        "Assets/Game/Game_Prefabs/Ironclad.prefab",
+        "Assets/Game/Game_Prefabs/Shadowblade.prefab",
+        "Assets/Game/Game_Prefabs/Cleric.prefab",
+        "Assets/Game/Game_Prefabs/Arcanist.prefab",
     };
 
     // ── Main VFX map ──────────────────────────────────────────────────────────
