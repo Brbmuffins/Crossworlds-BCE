@@ -938,7 +938,8 @@ PrefabInstance:
       propertyPath: m_Name
       value: Brandalf
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: -2959069294958710991, guid: 939895e555e55bd47ba918737c733b2f, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []

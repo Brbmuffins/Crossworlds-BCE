@@ -111,6 +111,7 @@ public class StatusEffectHUD : MonoBehaviour
 
         for (int i = 0; i < MaxIcons; i++)
         {
+            if (_slots[i].root == null) continue;
             if (i < active.Count)
                 ShowSlot(i, active[i]);
             else
@@ -121,12 +122,13 @@ public class StatusEffectHUD : MonoBehaviour
     void HideAll()
     {
         for (int i = 0; i < MaxIcons; i++)
-            _slots[i].root.SetActive(false);
+            if (_slots[i].root != null) _slots[i].root.SetActive(false);
     }
 
     void ShowSlot(int i, StatusEffect effect)
     {
         var slot = _slots[i];
+        if (slot.root == null) return;
         slot.root.SetActive(true);
 
         Color c = EffectColors.TryGetValue(effect.type, out var col)

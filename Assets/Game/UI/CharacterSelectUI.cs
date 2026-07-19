@@ -98,10 +98,7 @@ public class CharacterSelectUI : MonoBehaviour
         else
         {
             for (int i = 1; i < systems.Length; i++)
-            {
-                Debug.LogWarning($"[CharSel] Disabling duplicate EventSystem '{systems[i].name}' — it was blocking clicks.");
-                systems[i].gameObject.SetActive(false);
-            }
+                Destroy(systems[i].gameObject);
             if (keep.GetComponent<InputSystemUIInputModule>() == null)
             {
                 foreach (var m in keep.GetComponents<BaseInputModule>()) m.enabled = false;

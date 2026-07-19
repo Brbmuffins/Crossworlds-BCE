@@ -1,4 +1,5 @@
 using Mirror;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Controls;
@@ -9,6 +10,42 @@ using UnityEditor;
 
 public enum AbilityShape { Circle, Cone, Rectangle }
 public enum AbilityCategory { Damage, Heal, Support }
+
+// One zone outcome for a variant-spell. Cursor distance picks the active zone.
+[System.Serializable]
+public class AbilityVariant
+{
+    public string variantName = "Variant";
+    [Tooltip("Indicator tint while this zone is active.")]
+    public Color  indicatorTint = new Color(0.2f, 1f, 0.3f, 0.7f);
+
+    [Header("Instant Heal")]
+    public float healAmount;
+
+    [Header("Heal over Time")]
+    public float hotTickAmount;
+    public int   hotTicks;
+    [Min(0.1f)] public float hotInterval = 1f;
+
+    [Header("Shield")]
+    public float shieldAbsorb;
+    public float shieldDuration = 5f;
+
+    [Header("Damage")]
+    public float damage;
+
+    [Header("Status on hit")]
+    public StatusEffectType statusEffect;
+    public float            statusDuration;
+    public float            statusValue;
+
+    [Header("Targeting — leave empty to inherit from AbilityDef")]
+    public string targetTag;  // "Player", "Enemy", or "" to use ability's default
+
+    [Header("VFX (null = inherit from AbilityDef)")]
+    public GameObject castVFX;
+    public GameObject hitVFX;
+}
 
 [System.Serializable]
 public class AbilityDef
@@ -81,6 +118,10 @@ public class AbilityDef
     [Header("Deployable Scene Prefab")]
     // The runtime object spawned in the world by this ability (mine, wall, zone, etc.)
     public GameObject deployablePrefab;
+
+    [Header("Charge Variants (cursor distance selects zone; overrides sweetspot for this spell)")]
+    [Tooltip("2–4 zones ordered near→far. Empty array = legacy behaviour unchanged.")]
+    public AbilityVariant[] variants;
 }
 
 public class AbilityCaster : NetworkBehaviour
@@ -155,6 +196,10 @@ public class AbilityCaster : NetworkBehaviour
 
     [Header("Mouse Aim")]
     public float minimumAimDistance = 1f;
+
+    [Header("Variant Selection")]
+    [Tooltip("When ON: scroll wheel steps through zone variants while aiming. When OFF: cursor distance from caster picks the zone.")]
+    public bool useScrollWheelVariants = false;
 
     [Header("Ground Projection")]
     [SerializeField] float indicatorGroundOffset = 0.02f;
@@ -247,6 +292,61 @@ public class AbilityCaster : NetworkBehaviour
         new AbilityDef { abilityName = "Fan of Blades",    shape = AbilityShape.Cone,      category = AbilityCategory.Damage,  range = 6f, coneAngle = 70f, cooldown = 5f, chargeable = true, maxChargeTime = 1.2f, damage = 12f, maxChargeDamage = 30f, maxChargeSizeMultiplier = 1.4f, targetTag = "Enemy", chargedTint = new Color(0.4f, 0.1f, 0.8f, 0.9f) },
         // [34] Ether Lance (Arcanist) — piercing line of void energy; hold to charge
         new AbilityDef { abilityName = "Ether Lance",      shape = AbilityShape.Rectangle, category = AbilityCategory.Damage,  range = 12f, rectWidth = 1.2f, cooldown = 5f, chargeable = true, maxChargeTime = 1.5f, damage = 15f, maxChargeDamage = 40f, maxChargeSizeMultiplier = 1.6f, targetTag = "Enemy" },
+        // [35] Healing Cone (Cleric) — healing cone with multi-layer sweet spots: HPS / Burst (close), HoT (mid), Shield (far)
+        new AbilityDef { abilityName = "Healing Cone",     shape = AbilityShape.Cone,      category = AbilityCategory.Heal,    range = 10f, coneAngle = 60f, cooldown = 5f, targetTag = "Player", healAmount = 25f, shieldAbsorb = 30f },
+        // [36] Mending Beam (Cleric) — healing beam with multi-layer sweet spots
+        new AbilityDef { abilityName = "Mending Beam",     shape = AbilityShape.Rectangle, category = AbilityCategory.Heal,    range = 12f, rectWidth = 2.0f, cooldown = 6f, targetTag = "Player", healAmount = 25f, shieldAbsorb = 30f },
+        // [37] Conflagration Cone (Arcanist) — fire cone with multi-layer sweet spots: Burst (close), Burn DoT (mid), Slow/Weakened (far)
+        new AbilityDef { abilityName = "Conflagration Cone", shape = AbilityShape.Cone,     category = AbilityCategory.Damage,  range = 10f, coneAngle = 60f, cooldown = 5f, targetTag = "Enemy", damage = 20f },
+        // [38] Ember Beam (Arcanist) — fire beam with multi-layer sweet spots
+        new AbilityDef { abilityName = "Ember Beam",       shape = AbilityShape.Rectangle, category = AbilityCategory.Damage,  range = 12f, rectWidth = 2.0f, cooldown = 6f, targetTag = "Enemy", damage = 25f },
+
+        // [39] Ice Spikes (Arcanist) — Hangdanger: ground-eruption cone, slow + burst; changed rect→cone
+        new AbilityDef { abilityName = "Ice Spikes",       shape = AbilityShape.Cone,      category = AbilityCategory.Damage,  range = 10f, coneAngle = 60f, cooldown = 5f, targetTag = "Enemy", damage = 20f,
+            castVFX = null, hitVFX = null },  // assign Ice freeze skill VFX via SpellIconAssigner / Inspector
+
+        // [40] Meteor Shower (Arcanist) — Hangdanger: delayed AoE bombardment circle; large radius
+        new AbilityDef { abilityName = "Meteor Shower",    shape = AbilityShape.Circle,    category = AbilityCategory.Damage,  range = 14f, indicatorSize = 8f, cooldown = 30f, targetTag = "Enemy", damage = 30f },
+
+        // ── NEW ARCANIST ──────────────────────────────────────────────────────────────
+        // [41] Fireball — cone burst: V0 quick shot, V1 triple burst, V2 inferno nova
+        new AbilityDef { abilityName = "Fireball",          shape = AbilityShape.Cone,      category = AbilityCategory.Damage,  range = 10f, coneAngle = 55f,  cooldown = 4f,  targetTag = "Enemy", damage = 25f, chargeable = true, maxChargeTime = 1.2f, maxChargeDamage = 45f, maxChargeSizeMultiplier = 1.7f, chargedTint = new Color(1f,0.35f,0f,0.9f) },
+        // [42] Chain Lightning — circle burst: V0 arc, V1 chain, V2 thunderstorm
+        new AbilityDef { abilityName = "Chain Lightning",   shape = AbilityShape.Circle,    category = AbilityCategory.Damage,  range = 10f, indicatorSize = 3f, cooldown = 5f, targetTag = "Enemy", damage = 30f, chargeable = true, maxChargeTime = 1.5f, maxChargeDamage = 55f, maxChargeSizeMultiplier = 2.0f, chargedTint = new Color(0.3f,0.8f,1f,0.9f) },
+        // [43] Frost Nova — circle AoE control: V0 chill, V1 freeze, V2 blizzard
+        new AbilityDef { abilityName = "Frost Nova",        shape = AbilityShape.Circle,    category = AbilityCategory.Damage,  range = 8f,  indicatorSize = 4f, cooldown = 6f, targetTag = "Enemy", damage = 15f },
+
+        // ── NEW WARDEN ────────────────────────────────────────────────────────────────
+        // [44] Thorn Volley — cone: V0 single thorn, V1 3-shot volley, V2 briar storm
+        new AbilityDef { abilityName = "Thorn Volley",      shape = AbilityShape.Cone,      category = AbilityCategory.Damage,  range = 9f,  coneAngle = 50f,  cooldown = 4f,  targetTag = "Enemy", damage = 20f, chargeable = true, maxChargeTime = 1.0f, maxChargeDamage = 36f, maxChargeSizeMultiplier = 1.5f, chargedTint = new Color(0.1f,0.7f,0.1f,0.9f) },
+        // [45] Earth Surge — circle: V0 tremor, V1 quake, V2 fissure
+        new AbilityDef { abilityName = "Earth Surge",       shape = AbilityShape.Circle,    category = AbilityCategory.Damage,  range = 8f,  indicatorSize = 3f, cooldown = 5f, targetTag = "Enemy", damage = 20f },
+        // [46] Vine Grasp — circle: V0 root, V1 stranglehold, V2 forest prison
+        new AbilityDef { abilityName = "Vine Grasp",        shape = AbilityShape.Circle,    category = AbilityCategory.Damage,  range = 9f,  indicatorSize = 2f, cooldown = 7f, targetTag = "Enemy", damage = 10f },
+
+        // ── NEW IRONCLAD ─────────────────────────────────────────────────────────────
+        // [47] Hammer Strike — rect: V0 quick blow, V1 heavy slam, V2 seismic slam
+        new AbilityDef { abilityName = "Hammer Strike",     shape = AbilityShape.Rectangle, category = AbilityCategory.Damage,  range = 5f,  rectWidth = 2.5f, cooldown = 4f,  targetTag = "Enemy", damage = 30f, chargeable = true, maxChargeTime = 1.5f, maxChargeDamage = 70f, maxChargeSizeMultiplier = 1.8f, chargedTint = new Color(1f,0.5f,0.0f,0.9f) },
+        // [48] War Cry — circle aura: V0 shout heal, V1 rally shield, V2 primal roar
+        new AbilityDef { abilityName = "War Cry",           shape = AbilityShape.Circle,    category = AbilityCategory.Support, range = 0f,  indicatorSize = 6f, cooldown = 10f, targetTag = "Player", healAmount = 30f },
+        // [49] Juggernaut Rush — rect charge: V0 dash, V1 bull rush, V2 wrecking ball
+        new AbilityDef { abilityName = "Juggernaut Rush",   shape = AbilityShape.Rectangle, category = AbilityCategory.Damage,  range = 7f,  rectWidth = 2f,   cooldown = 6f,  targetTag = "Enemy", damage = 25f, chargeable = true, maxChargeTime = 1.2f, maxChargeDamage = 60f, maxChargeSizeMultiplier = 2.0f, chargedTint = new Color(1f,0.6f,0.1f,0.9f) },
+
+        // ── NEW SHADOWBLADE ───────────────────────────────────────────────────────────
+        // [50] Blade Flurry — cone: V0 slash, V1 flurry x3, V2 maelstrom x5
+        new AbilityDef { abilityName = "Blade Flurry",      shape = AbilityShape.Cone,      category = AbilityCategory.Damage,  range = 6f,  coneAngle = 65f,  cooldown = 4f,  targetTag = "Enemy", damage = 25f, chargeable = true, maxChargeTime = 1.0f, maxChargeDamage = 50f, maxChargeSizeMultiplier = 1.6f, chargedTint = new Color(0.5f,0f,0.8f,0.9f) },
+        // [51] Poison Cloud — circle: V0 mist, V1 miasma, V2 death fog
+        new AbilityDef { abilityName = "Poison Cloud",      shape = AbilityShape.Circle,    category = AbilityCategory.Damage,  range = 8f,  indicatorSize = 3f, cooldown = 6f, targetTag = "Enemy", damage = 10f },
+        // [52] Death Strike — circle: V0 stab, V1 deep cut, V2 assassination
+        new AbilityDef { abilityName = "Death Strike",      shape = AbilityShape.Circle,    category = AbilityCategory.Damage,  range = 7f,  indicatorSize = 1.2f, cooldown = 7f, targetTag = "Enemy", damage = 40f },
+
+        // ── NEW CLERIC ────────────────────────────────────────────────────────────────
+        // [53] Holy Bolt — cone heal: V0 flash, V1 radiance, V2 divine ray
+        new AbilityDef { abilityName = "Holy Bolt",         shape = AbilityShape.Cone,      category = AbilityCategory.Heal,    range = 10f, coneAngle = 55f,  cooldown = 4f,  targetTag = "Player", healAmount = 30f },
+        // [54] Divine Shield — circle: V0 shelter, V1 bastion, V2 cathedral
+        new AbilityDef { abilityName = "Divine Shield",     shape = AbilityShape.Circle,    category = AbilityCategory.Support, range = 0f,  indicatorSize = 5f, cooldown = 12f, targetTag = "Player", shieldAbsorb = 40f, shieldDuration = 5f },
+        // [55] Smite — cone holy damage: V0 strike, V1 judgement, V2 wrath
+        new AbilityDef { abilityName = "Smite",             shape = AbilityShape.Cone,      category = AbilityCategory.Damage,  range = 9f,  coneAngle = 60f,  cooldown = 5f,  targetTag = "Enemy", damage = 35f, chargeable = true, maxChargeTime = 1.2f, maxChargeDamage = 75f, maxChargeSizeMultiplier = 1.8f, chargedTint = new Color(1f,0.95f,0.3f,0.9f) },
     };
 
     [Header("Equipped slots (indices into spellbook)")]
@@ -277,6 +377,10 @@ public class AbilityCaster : NetworkBehaviour
     private GameObject activeShieldVFX;
     private float shieldVFXTimer = 0f;
 
+    // Variant zone selection — updated every frame while aiming, snapshotted at commit.
+    private int   _activeVariantIndex = 0;
+    private float _currentAimFraction = 0f;
+
     // ── Cached component refs ──────────────────────────────────────
     private ClassPassive         _passive;
     private PassivePhaseCharge   _phaseCharge;
@@ -284,7 +388,8 @@ public class AbilityCaster : NetworkBehaviour
     private Health               _health;
     private CharacterStats       _characterStats;  // gear/attunement bonuses
 
-    public int HeldAbilityIndex => heldAbilityIndex;
+    public int HeldAbilityIndex    => heldAbilityIndex;
+    public int ActiveVariantIndex  => _activeVariantIndex;
     public bool IsCommittedCasting => committedCastRoutine != null && committedCastAbility != null && committedCastDuration > 0f;
     public string CommittedCastName => committedCastAbility != null ? committedCastAbility.abilityName : "";
     public AbilityCategory CommittedCastCategory => committedCastAbility != null ? committedCastAbility.category : AbilityCategory.Damage;
@@ -305,7 +410,13 @@ public class AbilityCaster : NetworkBehaviour
                 equippedIndices[i] = (i < classPool.defaultEquipped.Length)
                     ? classPool.defaultEquipped[i] : -1;
 
+        useScrollWheelVariants = PlayerPrefs.GetInt("VariantScrollMode", 0) == 1;
+
+        BackfillMissingSpellbookEntries(); // must run before Sync so class-pool indices exist
         SyncEquippedFromSpellbook();
+        BackfillVariantDefaults();
+        BackfillVariantVFX();
+        GenerateProceduralIcons();
 
         _passive        = GetComponent<ClassPassive>();
         _phaseCharge    = GetComponent<PassivePhaseCharge>();
@@ -339,7 +450,7 @@ public class AbilityCaster : NetworkBehaviour
     }
 
 #if UNITY_EDITOR
-    void OnValidate()
+    protected override void OnValidate()
     {
         BackfillSpellBehaviorDefaults();
     }
@@ -603,7 +714,7 @@ public class AbilityCaster : NetworkBehaviour
                 if (abilities[i].shieldAbsorb > 0f && abilities[i].range <= 0f)
                 {
                     if (heldAbilityIndex != -1) CancelAim();
-                    BeginCommittedCast(i, abilities[i], null, 0f);
+                    BeginCommittedCast(i, abilities[i], null, 0f, 0);
                 }
                 else if (heldAbilityIndex == i)
                 {
@@ -616,6 +727,8 @@ public class AbilityCaster : NetworkBehaviour
 
                     heldAbilityIndex = i;
                     aimTimer = 0f;
+                    _activeVariantIndex = 0;
+                    _currentAimFraction = 0f;
                     activeIndicator = CreateIndicator(abilities[i]);
                     IsAimingLocally = true;
 
@@ -639,11 +752,14 @@ public class AbilityCaster : NetworkBehaviour
             }
             else if (Mouse.current.leftButton.wasPressedThisFrame)
             {
-                BeginCommittedCast(heldAbilityIndex, abilities[heldAbilityIndex], activeIndicator, aimTimer);
+                // Snapshot the variant index at commit time so it survives the cast-time window.
+                BeginCommittedCast(heldAbilityIndex, abilities[heldAbilityIndex], activeIndicator, aimTimer, _activeVariantIndex);
 
                 IsAimingLocally = false;
                 heldAbilityIndex = -1;
                 activeIndicator = null;
+                _activeVariantIndex = 0;
+                _currentAimFraction = 0f;
                 DestroyRangeRing();
                 // Cursor stays free — CameraFollow owns lock state when not aiming
             }
@@ -657,10 +773,12 @@ public class AbilityCaster : NetworkBehaviour
         activeIndicator = null;
         DestroyRangeRing();
         heldAbilityIndex = -1;
+        _activeVariantIndex = 0;
+        _currentAimFraction = 0f;
         // Cursor stays free — CameraFollow resumes ownership
     }
 
-    void BeginCommittedCast(int slot, AbilityDef ability, GameObject indicator, float aimTime)
+    void BeginCommittedCast(int slot, AbilityDef ability, GameObject indicator, float aimTime, int variantIndex = 0)
     {
         if (ability == null)
         {
@@ -681,7 +799,7 @@ public class AbilityCaster : NetworkBehaviour
         Debug.Log($"[CastTime] {ability.abilityName} committed with castTime={castTime:0.###}s.", this);
         if (castTime <= 0f)
         {
-            if (FinalizeCast(ability, indicator, aimTime))
+            if (FinalizeCast(ability, indicator, aimTime, variantIndex))
                 StartCooldown(slot, ability);
             else if (indicator != null)
                 Destroy(indicator);
@@ -693,7 +811,7 @@ public class AbilityCaster : NetworkBehaviour
         committedCastAbility = ability;
         committedCastDuration = castTime;
         committedCastElapsed = 0f;
-        committedCastRoutine = StartCoroutine(CommittedCastRoutine(slot, ability, indicator, aimTime, castTime));
+        committedCastRoutine = StartCoroutine(CommittedCastRoutine(slot, ability, indicator, aimTime, castTime, variantIndex));
     }
 
     void RequestCommitMovementLock()
@@ -714,7 +832,7 @@ public class AbilityCaster : NetworkBehaviour
         indicator.transform.SetParent(null, true);
     }
 
-    System.Collections.IEnumerator CommittedCastRoutine(int slot, AbilityDef ability, GameObject indicator, float aimTime, float castTime)
+    System.Collections.IEnumerator CommittedCastRoutine(int slot, AbilityDef ability, GameObject indicator, float aimTime, float castTime, int variantIndex = 0)
     {
         Vector3 startPosition = transform.position;
         float elapsed = 0f;
@@ -738,7 +856,7 @@ public class AbilityCaster : NetworkBehaviour
         }
 
         committedCastElapsed = castTime;
-        bool castStarted = FinalizeCast(ability, indicator, aimTime);
+        bool castStarted = FinalizeCast(ability, indicator, aimTime, variantIndex);
         Debug.Log($"[CastTime] {ability.abilityName} resolved after {castTime:0.###}s.", this);
         if (castStarted)
             StartCooldown(slot, ability);
@@ -995,6 +1113,25 @@ public class AbilityCaster : NetworkBehaviour
             indicator.AddComponent<ConeAimData>();
             BuildConeOutline(indicator, c);
             BuildProjectedConeFill(indicator, c);
+
+            // Zone arc dividers for variant spells.
+            if (ability.variants != null && ability.variants.Length > 1)
+            {
+                for (int z = 1; z < ability.variants.Length; z++)
+                {
+                    var arcGO = new GameObject($"ZoneArc_{z}");
+                    arcGO.transform.SetParent(indicator.transform, false);
+                    var arcLR = arcGO.AddComponent<LineRenderer>();
+                    arcLR.useWorldSpace = true;
+                    arcLR.loop = false;
+                    arcLR.startWidth = arcLR.endWidth = 0.06f;
+                    arcLR.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                    arcLR.receiveShadows = false;
+                    arcLR.material = new Material(Shader.Find("Sprites/Default"));
+                    arcLR.startColor = arcLR.endColor = new Color(0.5f, 1f, 0.5f, 0.45f);
+                    arcLR.positionCount = 0;
+                }
+            }
         }
         else if (ability.shape == AbilityShape.Circle)
         {
@@ -1020,6 +1157,25 @@ public class AbilityCaster : NetworkBehaviour
             BuildOutlineLR(indicator, ability, c);
             if (!BuildProjectedRectDecal(indicator, c))
                 BuildProjectedRectFill(indicator, c);
+
+            // Zone crossbar dividers for variant rect spells.
+            if (ability.variants != null && ability.variants.Length > 1)
+            {
+                for (int z = 1; z < ability.variants.Length; z++)
+                {
+                    var barGO = new GameObject($"RectZone_{z}");
+                    barGO.transform.SetParent(indicator.transform, false);
+                    var barLR = barGO.AddComponent<LineRenderer>();
+                    barLR.useWorldSpace = true;
+                    barLR.loop = false;
+                    barLR.startWidth = barLR.endWidth = 0.06f;
+                    barLR.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                    barLR.receiveShadows = false;
+                    barLR.material = new Material(Shader.Find("Sprites/Default"));
+                    barLR.startColor = barLR.endColor = new Color(1f, 0.7f, 0.2f, 0.45f);
+                    barLR.positionCount = 2;
+                }
+            }
         }
 
         // Range ring: only for Circle/Rectangle — cone length already shows the range
@@ -1260,9 +1416,13 @@ public class AbilityCaster : NetworkBehaviour
         }
         else if (ability.shape == AbilityShape.Rectangle)
         {
+            bool hasVariants = ability.variants != null && ability.variants.Length > 0;
+
             float widthMul = Mathf.Lerp(1f, ability.maxChargeSizeMultiplier, chargeFraction);
             float hw = ability.rectWidth * widthMul / 2f;
-            Vector3 mid = ProjectToGround(transform.position + aimDir * (aimDistance / 2f), out Vector3 groundNormal);
+            // Variant rects always show at full range; cursor distance picks zone.
+            float rectLength = hasVariants ? ability.range : aimDistance;
+            Vector3 mid = ProjectToGround(transform.position + aimDir * (rectLength / 2f), out Vector3 groundNormal);
             Vector3 groundForward = Vector3.ProjectOnPlane(aimDir, groundNormal);
             if (groundForward.sqrMagnitude < 0.0001f)
                 groundForward = aimDir;
@@ -1271,17 +1431,47 @@ public class AbilityCaster : NetworkBehaviour
             indicator.transform.position   = mid;
             indicator.transform.rotation   = Quaternion.LookRotation(groundForward, groundNormal);
             // Keep localScale for VFX, server proxies, and the damage fallback path.
-            indicator.transform.localScale = new Vector3(ability.rectWidth * widthMul, 1f, aimDistance);
+            indicator.transform.localScale = new Vector3(ability.rectWidth * widthMul, 1f, rectLength);
 
-            RectangleAimData rectData = UpdateRectangleAimData(indicator, mid, groundForward, groundNormal, hw, aimDistance / 2f);
+            RectangleAimData rectData = UpdateRectangleAimData(indicator, mid, groundForward, groundNormal, hw, rectLength / 2f);
             if (lr != null) SetRectPoints(lr, rectData);
             UpdateProjectedRectDecal(indicator, rectData);
             UpdateProjectedRectFill(indicator, rectData);
+
+            if (hasVariants)
+            {
+                if (useScrollWheelVariants)
+                {
+                    float scroll = Mouse.current?.scroll.y.ReadValue() ?? 0f;
+                    if (scroll > 0f) _activeVariantIndex = Mathf.Min(_activeVariantIndex + 1, ability.variants.Length - 1);
+                    else if (scroll < 0f) _activeVariantIndex = Mathf.Max(_activeVariantIndex - 1, 0);
+                    _currentAimFraction = ability.variants.Length > 1
+                        ? (float)_activeVariantIndex / (ability.variants.Length - 1)
+                        : 0f;
+                }
+                else
+                {
+                    _currentAimFraction = ability.range > 0f
+                        ? Mathf.Clamp01(aimDistance / ability.range)
+                        : 0f;
+                    _activeVariantIndex = Mathf.Clamp(
+                        Mathf.FloorToInt(_currentAimFraction * ability.variants.Length),
+                        0, ability.variants.Length - 1);
+                }
+
+                UpdateRectZoneMarkers(indicator, ability, rectData);
+                Color vc = ability.variants[_activeVariantIndex].indicatorTint;
+                if (lr != null) lr.startColor = lr.endColor = vc;
+                SetProjectedRectColor(indicator, vc);
+            }
         }
         else if (ability.shape == AbilityShape.Cone)
         {
+            bool hasVariants = ability.variants != null && ability.variants.Length > 0;
+
             float chargeMul   = Mathf.Lerp(1f, ability.maxChargeSizeMultiplier, chargeFraction);
-            float distanceMul = ability.range > 0f ? aimDistance / ability.range : 1f;
+            // Variant spells: always show at full range; cursor distance only picks zone.
+            float distanceMul = hasVariants ? 1f : (ability.range > 0f ? aimDistance / ability.range : 1f);
             float visualRange = ability.range * distanceMul * chargeMul;
             // Pull origin 0.5 units behind the player so the character body sits
             // inside the fan rather than at the very tip.
@@ -1298,6 +1488,31 @@ public class AbilityCaster : NetworkBehaviour
             ConeAimData coneData = UpdateConeAimData(indicator, coneOrigin, groundForward, groundNormal, visualRange, ability.coneAngle * 0.5f);
             if (lr != null) SetConeOutlinePoints(lr, coneData);
             UpdateProjectedConeFill(indicator, coneData);
+
+            if (hasVariants)
+            {
+                if (useScrollWheelVariants)
+                {
+                    float scroll = Mouse.current?.scroll.y.ReadValue() ?? 0f;
+                    if (scroll > 0f) _activeVariantIndex = Mathf.Min(_activeVariantIndex + 1, ability.variants.Length - 1);
+                    else if (scroll < 0f) _activeVariantIndex = Mathf.Max(_activeVariantIndex - 1, 0);
+                    _currentAimFraction = ability.variants.Length > 1
+                        ? (float)_activeVariantIndex / (ability.variants.Length - 1)
+                        : 0f;
+                }
+                else
+                {
+                    _currentAimFraction = ability.range > 0f
+                        ? Mathf.Clamp01(aimDistance / ability.range)
+                        : 0f;
+                    _activeVariantIndex = Mathf.Clamp(
+                        Mathf.FloorToInt(_currentAimFraction * ability.variants.Length),
+                        0, ability.variants.Length - 1);
+                }
+
+                UpdateConeZoneArcs(indicator, ability, coneData);
+                SetConeIndicatorColor(indicator, ability.variants[_activeVariantIndex].indicatorTint);
+            }
         }
 
         // Charge tint — apply to LR (circle/rect) or renderer (cone)
@@ -2111,8 +2326,9 @@ public class AbilityCaster : NetworkBehaviour
 
         if (NetworkServer.active)
         {
-            int idx = ResolveHitVfxIndex(hitVFXPrefab);
-            if (idx >= 0) RpcPlayHitVFX(idx, position, lifetime);
+            ResolveHitVfxIndices(hitVFXPrefab, out int spellbookIndex, out int variantIndex);
+            if (spellbookIndex >= 0)
+                RpcPlayHitVFX(spellbookIndex, position, lifetime, variantIndex);
         }
         else if (!NetworkClient.active)
         {
@@ -2123,22 +2339,49 @@ public class AbilityCaster : NetworkBehaviour
 
     // Resolve a hitVFX prefab to a spellbook index so it can be sent over the RPC.
     // Any index whose hitVFX matches works — the client re-looks-up the same prefab.
-    int ResolveHitVfxIndex(GameObject hitVFXPrefab)
+    void ResolveHitVfxIndices(GameObject hitVFXPrefab, out int spellbookIndex, out int variantIndex)
     {
-        if (spellbook == null) return -1;
+        spellbookIndex = -1;
+        variantIndex = -1;
+        if (spellbook == null) return;
+
         for (int i = 0; i < spellbook.Length; i++)
-            if (spellbook[i] != null && spellbook[i].hitVFX == hitVFXPrefab) return i;
-        return -1;
+        {
+            if (spellbook[i] == null) continue;
+            if (spellbook[i].hitVFX == hitVFXPrefab)
+            {
+                spellbookIndex = i;
+                return;
+            }
+            if (spellbook[i].variants != null)
+            {
+                for (int v = 0; v < spellbook[i].variants.Length; v++)
+                {
+                    if (spellbook[i].variants[v] != null && spellbook[i].variants[v].hitVFX == hitVFXPrefab)
+                    {
+                        spellbookIndex = i;
+                        variantIndex = v;
+                        return;
+                    }
+                }
+            }
+        }
     }
 
     [ClientRpc]
-    void RpcPlayHitVFX(int spellbookIndex, Vector3 position, float lifetime)
+    void RpcPlayHitVFX(int spellbookIndex, Vector3 position, float lifetime, int variantIndex)
     {
         if (spellbookIndex < 0 || spellbookIndex >= spellbook.Length) return;
         AbilityDef ability = spellbook[spellbookIndex];
         if (ability == null) return;
 #if UNITY_EDITOR || !UNITY_SERVER
-        SpawnVFX(ability.hitVFX, position, Quaternion.identity, lifetime);
+        GameObject hitVfxPrefab = ability.hitVFX;
+        if (variantIndex >= 0 && ability.variants != null && variantIndex < ability.variants.Length)
+        {
+            if (ability.variants[variantIndex].hitVFX != null)
+                hitVfxPrefab = ability.variants[variantIndex].hitVFX;
+        }
+        SpawnVFX(hitVfxPrefab, position, Quaternion.identity, lifetime);
 #endif
     }
 
@@ -2163,7 +2406,7 @@ public class AbilityCaster : NetworkBehaviour
         return ability != null ? Mathf.Max(0f, ability.castTime) : 0f;
     }
 
-    bool FinalizeCast(AbilityDef ability, GameObject indicator, float aimTime)
+    bool FinalizeCast(AbilityDef ability, GameObject indicator, float aimTime, int variantIndex = 0)
     {
         if (ability == null) return false;
 
@@ -2180,7 +2423,7 @@ public class AbilityCaster : NetworkBehaviour
             Quaternion castRotation = indicator != null ? indicator.transform.rotation : transform.rotation;
             Vector3    castScale    = indicator != null ? indicator.transform.localScale : Vector3.one;
 
-            CmdFinalizeCast(spellbookIndex, castPosition, castRotation, castScale, aimTime);
+            CmdFinalizeCast(spellbookIndex, castPosition, castRotation, castScale, aimTime, variantIndex);
             PlayLocalCastVFX(ability, castPosition, castRotation);
 
             if (indicator != null)
@@ -2203,28 +2446,45 @@ public class AbilityCaster : NetworkBehaviour
         if (_characterStats != null)
             damageMultiplier *= _characterStats.DamageMultiplier;
 
-        ResolveCastEffects(ability, indicator, aimTime, damageMultiplier, transform.position);
+        ResolveCastEffects(ability, indicator, aimTime, damageMultiplier, transform.position, variantIndex);
         if (indicator != null)
             Destroy(indicator);
         return true;
     }
 
-    void ResolveCastEffects(AbilityDef ability, GameObject indicator, float aimTime, float damageMultiplier, Vector3 castOrigin)
+    void ResolveCastEffects(AbilityDef ability, GameObject indicator, float aimTime, float damageMultiplier, Vector3 castOrigin, int variantIndex = 0)
     {
         if (ability == null) return;
 
 #if UNITY_EDITOR || !UNITY_SERVER
-        if (ability.category == AbilityCategory.Heal) OnHealCast?.Invoke();
+        // Variant spells raise OnHealCast inside ResolveVariantCast to avoid double-fire.
+        if (ability.category == AbilityCategory.Heal && (ability.variants == null || ability.variants.Length == 0))
+            OnHealCast?.Invoke();
 #endif
 
-        if (ability.shape == AbilityShape.Rectangle && ability.damage > 0f && indicator != null)
+        // Variant spells: route to variant resolution and skip legacy sweetspot paths.
+        if (ability.variants != null && ability.variants.Length > 0)
+        {
+            int clampedIdx = Mathf.Clamp(variantIndex, 0, ability.variants.Length - 1);
+            ResolveVariantCast(ability, indicator, ability.variants[clampedIdx], damageMultiplier, castOrigin);
+            // Still dispatch special behaviours (e.g. Arcane Step teleport) and VFX below.
+        }
+        else if (ability.abilityName == "Healing Cone" || ability.abilityName == "Mending Beam" ||
+            ability.abilityName == "Conflagration Cone" || ability.abilityName == "Ember Beam")
+        {
+            ApplySweetSpotEffects(ability, indicator, damageMultiplier, castOrigin);
+        }
+
+        bool isVariantSpell = ability.variants != null && ability.variants.Length > 0;
+
+        if (!isVariantSpell && ability.shape == AbilityShape.Rectangle && ability.damage > 0f && indicator != null)
         {
             float chargeFraction = GetChargeFraction(ability, aimTime);
             float damage = Mathf.Lerp(ability.damage, ability.maxChargeDamage, chargeFraction) * damageMultiplier;
             ApplyRectangleDamage(ability, indicator, damage);
         }
 
-        if (ability.shape == AbilityShape.Cone && ability.damage > 0f && indicator != null)
+        if (!isVariantSpell && ability.shape == AbilityShape.Cone && ability.damage > 0f && indicator != null)
         {
             float chargeFraction = GetChargeFraction(ability, aimTime);
             float damage = Mathf.Lerp(ability.damage, ability.maxChargeDamage, chargeFraction) * damageMultiplier;
@@ -2242,7 +2502,8 @@ public class AbilityCaster : NetworkBehaviour
             ApplyCircleDamage(ability, indicator, damageMultiplier);
         }
 
-        if (ability.shieldAbsorb > 0f)
+        // Variant spells handle shields via their BUBBLE zone; skip the self-shield path.
+        if (ability.shieldAbsorb > 0f && (ability.variants == null || ability.variants.Length == 0))
             CastMagicShield(ability);
 
         if (ability.spawnTurret && indicator != null)
@@ -2260,15 +2521,23 @@ public class AbilityCaster : NetworkBehaviour
         }
 
 #if UNITY_EDITOR || !UNITY_SERVER
-        if (ability.castVFX != null)
+        GameObject castVfxPrefab = ability.castVFX;
+        if (ability.variants != null && ability.variants.Length > 0)
+        {
+            int clampedIdx = Mathf.Clamp(variantIndex, 0, ability.variants.Length - 1);
+            if (ability.variants[clampedIdx].castVFX != null)
+                castVfxPrefab = ability.variants[clampedIdx].castVFX;
+        }
+
+        if (castVfxPrefab != null)
         {
             if (ability.shape == AbilityShape.Rectangle && indicator != null)
-                StartCoroutine(TravelVFX(ability.castVFX,
+                StartCoroutine(TravelVFX(castVfxPrefab,
                     castOrigin + Vector3.up * 1.2f,
                     castPoint + Vector3.up * 0.5f,
                     castVfxRot, 0.3f));
             else
-                SpawnVFX(ability.castVFX, castPoint + Vector3.up * 0.8f, castVfxRot);
+                SpawnVFX(castVfxPrefab, castPoint + Vector3.up * 0.8f, castVfxRot);
         }
 #endif
         DispatchAbility(ability, castPoint, damageMultiplier);
@@ -2276,7 +2545,7 @@ public class AbilityCaster : NetworkBehaviour
     }
 
     [Command]
-    void CmdFinalizeCast(int spellbookIndex, Vector3 castPosition, Quaternion castRotation, Vector3 castScale, float aimTime)
+    void CmdFinalizeCast(int spellbookIndex, Vector3 castPosition, Quaternion castRotation, Vector3 castScale, float aimTime, int variantIndex)
     {
         if (spellbookIndex < 0 || spellbookIndex >= spellbook.Length) return;
 
@@ -2292,7 +2561,7 @@ public class AbilityCaster : NetworkBehaviour
         if (cooldownTimers[equippedSlot] > 0f) return;
 
         GameObject serverIndicator = CreateServerCastProxy(ability, castPosition, castRotation, castScale);
-        if (!FinalizeCast(ability, serverIndicator, aimTime))
+        if (!FinalizeCast(ability, serverIndicator, aimTime, variantIndex))
         {
             if (serverIndicator != null) Destroy(serverIndicator);
             return;
@@ -2300,15 +2569,15 @@ public class AbilityCaster : NetworkBehaviour
 
         cooldownTimers[equippedSlot] = CooldownFor(ability);
 
-        RpcCastConfirmed(spellbookIndex, castPosition, castRotation);
+        RpcCastConfirmed(spellbookIndex, castPosition, castRotation, variantIndex);
     }
 
     [ClientRpc]
-    void RpcCastConfirmed(int spellbookIndex, Vector3 position, Quaternion rotation)
+    void RpcCastConfirmed(int spellbookIndex, Vector3 position, Quaternion rotation, int variantIndex)
     {
         if (isLocalPlayer) return;
         if (spellbookIndex < 0 || spellbookIndex >= spellbook.Length) return;
-        PlayLocalCastVFX(spellbook[spellbookIndex], position, rotation);
+        PlayLocalCastVFX(spellbook[spellbookIndex], position, rotation, variantIndex);
     }
 
     GameObject CreateServerCastProxy(AbilityDef ability, Vector3 position, Quaternion rotation, Vector3 scale)
@@ -2335,13 +2604,13 @@ public class AbilityCaster : NetworkBehaviour
         return proxy;
     }
 
-    void PlayLocalCastVFX(AbilityDef ability, Vector3 position, Quaternion rotation)
+    void PlayLocalCastVFX(AbilityDef ability, Vector3 position, Quaternion rotation, int variantIndex = 0)
     {
         if (ability == null) return;
-        SpawnLocalCastVFX(ability, position, rotation, transform.position);
+        SpawnLocalCastVFX(ability, position, rotation, transform.position, variantIndex);
     }
 
-    void SpawnLocalCastVFX(AbilityDef ability, Vector3 position, Quaternion rotation, Vector3 castOrigin)
+    void SpawnLocalCastVFX(AbilityDef ability, Vector3 position, Quaternion rotation, Vector3 castOrigin, int variantIndex = 0)
     {
         if (ability == null) return;
 
@@ -2349,17 +2618,25 @@ public class AbilityCaster : NetworkBehaviour
         if (ability.category == AbilityCategory.Heal) OnHealCast?.Invoke();
 #endif
 
-        if (ability.castVFX == null) return;
+        GameObject castVfxPrefab = ability.castVFX;
+        if (ability.variants != null && ability.variants.Length > 0)
+        {
+            int clampedIdx = Mathf.Clamp(variantIndex, 0, ability.variants.Length - 1);
+            if (ability.variants[clampedIdx].castVFX != null)
+                castVfxPrefab = ability.variants[clampedIdx].castVFX;
+        }
+
+        if (castVfxPrefab == null) return;
 
 #if UNITY_EDITOR || !UNITY_SERVER
         if (ability.shape == AbilityShape.Rectangle)
-            StartCoroutine(TravelVFX(ability.castVFX,
+            StartCoroutine(TravelVFX(castVfxPrefab,
                 castOrigin + Vector3.up * 1.2f,
                 position + Vector3.up * 0.5f,
                 rotation, 0.3f));
         else
 #endif
-            SpawnVFX(ability.castVFX, position + Vector3.up, rotation);
+            SpawnVFX(castVfxPrefab, position + Vector3.up, rotation);
     }
 
     int FindSpellbookIndex(AbilityDef ability)
@@ -3125,6 +3402,178 @@ public class AbilityCaster : NetworkBehaviour
         }
     }
 
+    void ApplySweetSpotEffects(AbilityDef ability, GameObject indicator, float damageMultiplier, Vector3 castOrigin)
+    {
+        if (indicator == null) return;
+
+        System.Collections.Generic.List<Collider> hitColliders = new System.Collections.Generic.List<Collider>();
+        float maxRange = ability.range;
+
+        if (ability.shape == AbilityShape.Cone)
+        {
+            maxRange = ability.range * indicator.transform.localScale.x;
+            Collider[] sphereHits = Physics.OverlapSphere(castOrigin, maxRange);
+            foreach (var hit in sphereHits)
+            {
+                if (!hit.CompareTag(ability.targetTag)) continue;
+                Vector3 toHit = hit.transform.position - castOrigin;
+                toHit.y = 0;
+                if (toHit.sqrMagnitude < 0.0001f) continue;
+
+                float angle = Vector3.Angle(indicator.transform.forward, toHit);
+                if (angle > ability.coneAngle / 2f) continue;
+                hitColliders.Add(hit);
+            }
+        }
+        else if (ability.shape == AbilityShape.Rectangle)
+        {
+            RectangleAimData rectData = indicator.GetComponent<RectangleAimData>();
+            Vector3 center;
+            Vector3 halfExtents;
+            Quaternion rotation;
+
+            if (rectData != null && rectData.valid)
+            {
+                center = rectData.damageCenter;
+                halfExtents = rectData.damageHalfExtents;
+                rotation = rectData.damageRotation;
+                maxRange = halfExtents.z * 2f;
+            }
+            else
+            {
+                float rectangleLength = indicator.transform.localScale.z;
+                center = indicator.transform.position;
+                halfExtents = new Vector3(
+                    indicator.transform.localScale.x / 2f,
+                    1f,
+                    rectangleLength / 2f
+                );
+                rotation = indicator.transform.rotation;
+                maxRange = rectangleLength;
+            }
+
+            Collider[] boxHits = Physics.OverlapBox(center, halfExtents, rotation);
+            foreach (var hit in boxHits)
+            {
+                if (!hit.CompareTag(ability.targetTag)) continue;
+                hitColliders.Add(hit);
+            }
+        }
+
+        foreach (Collider hit in hitColliders)
+        {
+            Health targetHealth = hit.GetComponent<Health>();
+            if (targetHealth == null) continue;
+
+            Vector3 toTarget = hit.transform.position - castOrigin;
+            toTarget.y = 0;
+
+            float distance = 0f;
+            if (ability.shape == AbilityShape.Cone)
+            {
+                distance = toTarget.magnitude;
+            }
+            else if (ability.shape == AbilityShape.Rectangle)
+            {
+                distance = Vector3.Dot(toTarget, indicator.transform.forward);
+            }
+
+            float fraction = Mathf.Clamp01(distance / maxRange);
+
+            if (ability.category == AbilityCategory.Heal)
+            {
+                if (fraction <= 0.33f)
+                {
+                    // Zone 1: HPS / Instant Burst
+                    float healVal = (ability.healAmount > 0f ? ability.healAmount : 25f) * 1.5f;
+                    targetHealth.Heal(healVal);
+                    EmitHitVFX(ability.hitVFX, hit.transform.position + Vector3.up * 0.5f);
+                    FloatingDamageText.Spawn(hit.transform.position + Vector3.up * 1.5f, healVal, FloatingDamageText.DamageType.HealCrit);
+                }
+                else if (fraction <= 0.66f)
+                {
+                    // Zone 2: HoT / Healing over Time
+                    float instantHeal = (ability.healAmount > 0f ? ability.healAmount : 25f) * 0.5f;
+                    targetHealth.Heal(instantHeal);
+
+                    float tickAmount = (ability.healAmount > 0f ? ability.healAmount : 25f) * 0.25f;
+                    StartCoroutine(ApplyHealOverTime(targetHealth, tickAmount, 5, 1f));
+
+                    EmitHitVFX(ability.hitVFX, hit.transform.position + Vector3.up * 0.5f);
+                    FloatingDamageText.Spawn(hit.transform.position + Vector3.up * 1.5f, instantHeal, FloatingDamageText.DamageType.Heal);
+                }
+                else
+                {
+                    // Zone 3: Bubble / Shield
+                    float shieldAmount = ability.shieldAbsorb > 0f ? ability.shieldAbsorb : 30f;
+                    targetHealth.ApplyShield(shieldAmount);
+
+                    EmitHitVFX(ability.hitVFX, hit.transform.position + Vector3.up * 0.5f);
+                    FloatingDamageText.Spawn(hit.transform.position + Vector3.up * 1.5f, shieldAmount, FloatingDamageText.DamageType.Shield);
+                }
+            }
+            else
+            {
+                if (fraction <= 0.33f)
+                {
+                    // Zone 1: Burst Damage + Stagger
+                    float dmgVal = (ability.damage > 0f ? ability.damage : 20f) * 1.6f * damageMultiplier;
+                    targetHealth.TakeDamage(dmgVal, gameObject);
+
+                    StatusEffectManager sem = hit.GetComponent<StatusEffectManager>();
+                    if (sem != null)
+                    {
+                        sem.AddEffect(new StatusEffect(StatusEffectType.Stagger, 0.8f, 0f, gameObject));
+                    }
+
+                    EmitHitVFX(ability.hitVFX, hit.transform.position + Vector3.up * 0.5f);
+                }
+                else if (fraction <= 0.66f)
+                {
+                    // Zone 2: Burn DoT (Cursed effect)
+                    float instantDmg = (ability.damage > 0f ? ability.damage : 20f) * 0.6f * damageMultiplier;
+                    targetHealth.TakeDamage(instantDmg, gameObject);
+
+                    StatusEffectManager sem = hit.GetComponent<StatusEffectManager>();
+                    if (sem != null)
+                    {
+                        float dps = (ability.damage > 0f ? ability.damage : 20f) * 0.3f;
+                        sem.AddEffect(new StatusEffect(StatusEffectType.Cursed, 6f, dps, gameObject));
+                    }
+
+                    EmitHitVFX(ability.hitVFX, hit.transform.position + Vector3.up * 0.5f);
+                }
+                else
+                {
+                    // Zone 3: Slow & Weakened
+                    float dmgVal = (ability.damage > 0f ? ability.damage : 20f) * 0.8f * damageMultiplier;
+                    targetHealth.TakeDamage(dmgVal, gameObject);
+
+                    StatusEffectManager sem = hit.GetComponent<StatusEffectManager>();
+                    if (sem != null)
+                    {
+                        sem.AddEffect(new StatusEffect(StatusEffectType.Slow, 4f, 0.4f, gameObject));
+                        sem.AddEffect(new StatusEffect(StatusEffectType.Weakened, 4f, 0.25f, gameObject));
+                    }
+
+                    EmitHitVFX(ability.hitVFX, hit.transform.position + Vector3.up * 0.5f);
+                }
+            }
+        }
+    }
+
+    System.Collections.IEnumerator ApplyHealOverTime(Health target, float tickAmount, int ticks, float interval)
+    {
+        for (int i = 0; i < ticks; i++)
+        {
+            yield return new UnityEngine.WaitForSeconds(interval);
+            if (target != null && target.IsAlive)
+            {
+                target.Heal(tickAmount);
+            }
+        }
+    }
+
     void CastMagicShield(AbilityDef ability)
     {
         Health health = GetComponent<Health>();
@@ -3244,6 +3693,1578 @@ public class AbilityCaster : NetworkBehaviour
         Destroy(go, main.duration + main.startLifetime.constantMax + 0.5f);
     }
 #endif // UNITY_EDITOR || !UNITY_SERVER
+
+    // ── Charge-variant system ────────────────────────────────────────────────
+
+    // ── Procedural icon generation ────────────────────────────────────────────────────
+    // Creates 64x64 Sprite for any ability whose .icon is still null.
+    // Shape symbol + category background color — good enough for play-testing.
+    static readonly Dictionary<string, Sprite> _iconCache = new();
+
+    void GenerateProceduralIcons()
+    {
+        if (spellbook == null) return;
+        foreach (var ab in spellbook)
+        {
+            if (ab == null || ab.icon != null) continue;
+            if (_iconCache.TryGetValue(ab.abilityName, out var cached))
+            { ab.icon = cached; continue; }
+            ab.icon = _iconCache[ab.abilityName] = MakeIconSprite(ab);
+        }
+    }
+
+    static Sprite MakeIconSprite(AbilityDef ab)
+    {
+        const int S = 64;
+        var tex = new Texture2D(S, S, TextureFormat.RGBA32, false);
+
+        // Category background
+        Color bg = ab.category == AbilityCategory.Heal    ? new Color(0.10f, 0.44f, 0.22f) :
+                   ab.category == AbilityCategory.Support  ? new Color(0.18f, 0.28f, 0.52f) :
+                                                             new Color(0.50f, 0.12f, 0.08f);
+        Color bgDark = bg * 0.6f; bgDark.a = 1f;
+
+        for (int y = 0; y < S; y++)
+        for (int x = 0; x < S; x++)
+        {
+            // Subtle radial gradient
+            float dx = (x - S * 0.5f) / (S * 0.5f);
+            float dy = (y - S * 0.5f) / (S * 0.5f);
+            float r  = Mathf.Clamp01(dx * dx + dy * dy);
+            tex.SetPixel(x, y, Color.Lerp(bg, bgDark, r * 0.6f));
+        }
+
+        // Shape symbol in bright overlay
+        Color fg = Color.white; fg.a = 0.82f;
+        int cx = S / 2, cy = S / 2;
+        switch (ab.shape)
+        {
+            case AbilityShape.Cone:
+                // Upward triangle
+                for (int y2 = 6; y2 < S - 6; y2++)
+                {
+                    float t  = (float)(y2 - 6) / (S - 12);
+                    int   hw = Mathf.RoundToInt(t * 20);
+                    for (int x2 = cx - hw; x2 <= cx + hw; x2++)
+                        if (x2 >= 0 && x2 < S) tex.SetPixel(x2, y2, fg);
+                }
+                break;
+            case AbilityShape.Rectangle:
+                // Filled rect with a thin inner frame
+                for (int y2 = 14; y2 < S - 14; y2++)
+                for (int x2 = 10; x2 < S - 10; x2++)
+                {
+                    bool border2 = y2 < 17 || y2 > S - 17 || x2 < 13 || x2 > S - 13;
+                    Color c = border2 ? fg : fg * 0.55f; c.a = fg.a;
+                    tex.SetPixel(x2, y2, c);
+                }
+                break;
+            default: // Circle
+                int rad = 22;
+                for (int y2 = 0; y2 < S; y2++)
+                for (int x2 = 0; x2 < S; x2++)
+                {
+                    int dx2 = x2 - cx, dy2 = y2 - cy;
+                    int dist2 = dx2 * dx2 + dy2 * dy2;
+                    if (dist2 <= rad * rad)
+                    {
+                        bool rim = dist2 >= (rad - 3) * (rad - 3);
+                        Color c = rim ? fg : fg * 0.5f; c.a = fg.a;
+                        tex.SetPixel(x2, y2, c);
+                    }
+                }
+                break;
+        }
+
+        // Border frame
+        Color border = new Color(0.04f, 0.04f, 0.04f, 1f);
+        for (int i = 0; i < S; i++)
+        {
+            tex.SetPixel(i, 0, border); tex.SetPixel(i, 1, border);
+            tex.SetPixel(i, S - 1, border); tex.SetPixel(i, S - 2, border);
+            tex.SetPixel(0, i, border); tex.SetPixel(1, i, border);
+            tex.SetPixel(S - 1, i, border); tex.SetPixel(S - 2, i, border);
+        }
+
+        tex.Apply();
+        tex.wrapMode = TextureWrapMode.Clamp;
+        tex.filterMode = FilterMode.Bilinear;
+        return Sprite.Create(tex, new Rect(0, 0, S, S), new Vector2(0.5f, 0.5f), S);
+    }
+
+    // Expands a stale serialized spellbook that was saved before entries 35-38 existed.
+    // Unity serialized data overrides C# field initializers, so new spells appended to
+    // the inline array never appear in old prefab saves. This runs before SyncEquipped
+    // so class-pool defaultEquipped indices always resolve.
+    public void BackfillMissingSpellbookEntries()
+    {
+        if (spellbook == null) return;
+
+        // 56 entries (0-55): 41 original + 15 new class abilities
+        const int RequiredLength = 56;
+        if (spellbook.Length >= RequiredLength) return;
+
+        AbilityDef[] expanded = new AbilityDef[RequiredLength];
+        System.Array.Copy(spellbook, expanded, spellbook.Length);
+
+        // Fill any missing entries. Only touches null slots so serialized data wins.
+        var missing = new (int idx, AbilityDef def)[]
+        {
+            (35, new AbilityDef { abilityName = "Healing Cone",       shape = AbilityShape.Cone,      category = AbilityCategory.Heal,   range = 10f, coneAngle = 60f,   cooldown = 5f,  targetTag = "Player", healAmount = 25f, shieldAbsorb = 30f }),
+            (36, new AbilityDef { abilityName = "Mending Beam",       shape = AbilityShape.Rectangle, category = AbilityCategory.Heal,   range = 12f, rectWidth = 2.0f,  cooldown = 6f,  targetTag = "Player", healAmount = 25f, shieldAbsorb = 30f }),
+            (37, new AbilityDef { abilityName = "Conflagration Cone", shape = AbilityShape.Cone,      category = AbilityCategory.Damage, range = 10f, coneAngle = 60f,   cooldown = 5f,  targetTag = "Enemy",  damage = 20f }),
+            (38, new AbilityDef { abilityName = "Ember Beam",         shape = AbilityShape.Rectangle, category = AbilityCategory.Damage, range = 12f, rectWidth = 2.0f,  cooldown = 6f,  targetTag = "Enemy",  damage = 25f }),
+            (39, new AbilityDef { abilityName = "Ice Spikes",         shape = AbilityShape.Cone,      category = AbilityCategory.Damage, range = 10f, coneAngle = 60f,   cooldown = 5f,  targetTag = "Enemy",  damage = 20f }),
+            (40, new AbilityDef { abilityName = "Meteor Shower",      shape = AbilityShape.Circle,    category = AbilityCategory.Damage, range = 14f, indicatorSize = 8f, cooldown = 30f, targetTag = "Enemy",  damage = 30f }),
+            // New Arcanist
+            (41, new AbilityDef { abilityName = "Fireball",         shape = AbilityShape.Cone,      category = AbilityCategory.Damage,  range = 10f, coneAngle = 55f,   cooldown = 4f,  targetTag = "Enemy", damage = 25f }),
+            (42, new AbilityDef { abilityName = "Chain Lightning",   shape = AbilityShape.Circle,    category = AbilityCategory.Damage,  range = 10f, indicatorSize = 3f, cooldown = 5f, targetTag = "Enemy", damage = 30f }),
+            (43, new AbilityDef { abilityName = "Frost Nova",        shape = AbilityShape.Circle,    category = AbilityCategory.Damage,  range = 8f,  indicatorSize = 4f, cooldown = 6f, targetTag = "Enemy", damage = 15f }),
+            // New Warden
+            (44, new AbilityDef { abilityName = "Thorn Volley",      shape = AbilityShape.Cone,      category = AbilityCategory.Damage,  range = 9f,  coneAngle = 50f,   cooldown = 4f,  targetTag = "Enemy", damage = 20f }),
+            (45, new AbilityDef { abilityName = "Earth Surge",       shape = AbilityShape.Circle,    category = AbilityCategory.Damage,  range = 8f,  indicatorSize = 3f, cooldown = 5f, targetTag = "Enemy", damage = 20f }),
+            (46, new AbilityDef { abilityName = "Vine Grasp",        shape = AbilityShape.Circle,    category = AbilityCategory.Damage,  range = 9f,  indicatorSize = 2f, cooldown = 7f, targetTag = "Enemy", damage = 10f }),
+            // New Ironclad
+            (47, new AbilityDef { abilityName = "Hammer Strike",     shape = AbilityShape.Rectangle, category = AbilityCategory.Damage,  range = 5f,  rectWidth = 2.5f,  cooldown = 4f,  targetTag = "Enemy", damage = 30f }),
+            (48, new AbilityDef { abilityName = "War Cry",           shape = AbilityShape.Circle,    category = AbilityCategory.Support, range = 0f,  indicatorSize = 6f, cooldown = 10f, targetTag = "Player", healAmount = 30f }),
+            (49, new AbilityDef { abilityName = "Juggernaut Rush",   shape = AbilityShape.Rectangle, category = AbilityCategory.Damage,  range = 7f,  rectWidth = 2f,    cooldown = 6f,  targetTag = "Enemy", damage = 25f }),
+            // New Shadowblade
+            (50, new AbilityDef { abilityName = "Blade Flurry",      shape = AbilityShape.Cone,      category = AbilityCategory.Damage,  range = 6f,  coneAngle = 65f,   cooldown = 4f,  targetTag = "Enemy", damage = 25f }),
+            (51, new AbilityDef { abilityName = "Poison Cloud",      shape = AbilityShape.Circle,    category = AbilityCategory.Damage,  range = 8f,  indicatorSize = 3f, cooldown = 6f, targetTag = "Enemy", damage = 10f }),
+            (52, new AbilityDef { abilityName = "Death Strike",      shape = AbilityShape.Circle,    category = AbilityCategory.Damage,  range = 7f,  indicatorSize = 1.2f,cooldown = 7f, targetTag = "Enemy", damage = 40f }),
+            // New Cleric
+            (53, new AbilityDef { abilityName = "Holy Bolt",         shape = AbilityShape.Cone,      category = AbilityCategory.Heal,    range = 10f, coneAngle = 55f,   cooldown = 4f,  targetTag = "Player", healAmount = 30f }),
+            (54, new AbilityDef { abilityName = "Divine Shield",     shape = AbilityShape.Circle,    category = AbilityCategory.Support, range = 0f,  indicatorSize = 5f, cooldown = 12f, targetTag = "Player", shieldAbsorb = 40f, shieldDuration = 5f }),
+            (55, new AbilityDef { abilityName = "Smite",             shape = AbilityShape.Cone,      category = AbilityCategory.Damage,  range = 9f,  coneAngle = 60f,   cooldown = 5f,  targetTag = "Enemy", damage = 35f }),
+        };
+
+        foreach (var (idx, def) in missing)
+            if (expanded[idx] == null) expanded[idx] = def;
+
+        spellbook = expanded;
+    }
+
+    // Inject variant data at runtime for spells that have been converted.
+    // The serialized prefab data may predate the variants field; this ensures
+    // they're always present regardless of what Unity serialized.
+    // Patches null castVFX / hitVFX on any already-existing variant without touching stats.
+    // Runs after BackfillVariantDefaults so pre-serialized variants missing VFX get filled in.
+    void BackfillVariantVFX()
+    {
+        if (spellbook == null) return;
+        foreach (var ab in spellbook)
+        {
+            if (ab?.variants == null || ab.variants.Length == 0) continue;
+            switch (ab.abilityName)
+            {
+                // ── SHARED ───────────────────────────────────────────────────────────────
+                case "Runic Sentinel":
+                    FillVFX(ab,0,"FX/dark magic/Effects normal/Magic circle",     "FX/Particle Pack/EffectExamples/Weapon Effects/Prefabs/StoneImpacts");
+                    FillVFX(ab,1,"FX/dark magic/Effects normal/Magic circle",     "FX/dark magic/Effects normal/Snow circle");
+                    FillVFX(ab,2,"FX/Spells/Human_Spell_Shield",                  "FX/dark magic/Healing buff");
+                    break;
+                case "Void Bolt":
+                    FillVFX(ab,0,"FX/dark magic/Dard magic shoot",                "FX/dark magic/Effects normal/Death magic circle");
+                    FillVFX(ab,1,"FX/dark magic/Dard magic shoot",                "FX/Particle Pack/EffectExamples/Misc Effects/Prefabs/ElectricalSparks");
+                    FillVFX(ab,2,"FX/dark magic/Dard magic shoot",                "FX/dark magic/Effects normal/Magic circle");
+                    break;
+                case "Mending Circle":
+                    FillVFX(ab,0,"FX/dark magic/Effects normal/Magic circle",     "FX/Spells/Human_Spell_Heal");
+                    FillVFX(ab,1,"FX/dark magic/Healing buff",                    "FX/Particle Pack/EffectExamples/Misc Effects/Prefabs/FireFlies");
+                    FillVFX(ab,2,"FX/Spells/Human_Spell_Shield",                  "FX/Spells/Human_SpellAura_Heal");
+                    break;
+                case "Storm Lash":
+                    FillVFX(ab,0,"FX/Spells/Human_SpellAura_Lightning",           "FX/Spells/Spell_LightningStrike");
+                    FillVFX(ab,1,"FX/Spells/Human_SpellAura_Lightning",           "FX/dark magic/Effects with projectors/Lightning strike skill");
+                    FillVFX(ab,2,"FX/Spells/Human_SpellAura_Lightning",           "FX/Particle Pack/EffectExamples/Misc Effects/Prefabs/ElectricalSparks");
+                    break;
+                case "Ember Surge":
+                    FillVFX(ab,0,"FX/Spells/Spell_FireballLarge",                 "FX/dark magic/Fireball");
+                    FillVFX(ab,1,"FX/Spells/Human_SpellAura_Fire",                "FX/Particle Pack/EffectExamples/Fire & Explosion Effects/Prefabs/WildFire");
+                    FillVFX(ab,2,"FX/Spells/Human_SpellAura_Fire",                "FX/Particle Pack/EffectExamples/Fire & Explosion Effects/Prefabs/SmallExplosion");
+                    break;
+                case "Mind Spike":
+                    FillVFX(ab,0,"FX/dark magic/Plazma sphere",                   "FX/Particle Pack/EffectExamples/Fire & Explosion Effects/Prefabs/EnergyExplosion");
+                    FillVFX(ab,1,"FX/dark magic/Glowing orbs",                    "FX/Particle Pack/EffectExamples/Legacy Particles/Prefabs/PlasmaExplosionEffect");
+                    FillVFX(ab,2,"FX/dark magic/Glowing orbs",                    "FX/dark magic/Effects normal/Magic circle");
+                    break;
+                case "Binding Wave":
+                    FillVFX(ab,0,"FX/Particle Pack/EffectExamples/Magic Effects/Prefabs/EarthShatter", "FX/Particle Pack/EffectExamples/Weapon Effects/Prefabs/StoneImpacts");
+                    FillVFX(ab,1,"FX/dark magic/Ground spikes",                   "FX/dark magic/Ground spikes");
+                    FillVFX(ab,2,"FX/Particle Pack/EffectExamples/Smoke & Steam Effects/Prefabs/GroundFog","FX/Particle Pack/EffectExamples/Smoke & Steam Effects/Prefabs/SmokeEffect");
+                    break;
+                case "Arcane Ward":
+                    FillVFX(ab,0,"FX/Spells/Human_Spell_Shield",                  "FX/dark magic/Shield buff");
+                    FillVFX(ab,1,"FX/dark magic/Magic buff",                      "FX/Spells/Human_SpellAura_Heal");
+                    FillVFX(ab,2,"FX/Spells/Human_Spell_Shield",                  "FX/Spells/Human_Spell_Shield");
+                    break;
+
+                // ── WARDEN ───────────────────────────────────────────────────────────────
+                case "Runic Snare":
+                    FillVFX(ab,0,"FX/dark magic/Leaves shield",                   "FX/dark magic/Ground spikes");
+                    FillVFX(ab,1,"FX/Particle Pack/EffectExamples/Smoke & Steam Effects/Prefabs/PoisonGas","FX/Particle Pack/EffectExamples/Smoke & Steam Effects/Prefabs/PoisonGas");
+                    FillVFX(ab,2,"FX/dark magic/Leaves shield",                   "FX/dark magic/Effects normal/Snow circle");
+                    break;
+                case "Battle Hymn":
+                    FillVFX(ab,0,"FX/Spells/Human_Spell_Heal",                    "FX/Spells/Human_SpellAura_Heal");
+                    FillVFX(ab,1,"FX/dark magic/Magic buff",                      "FX/Spells/Spell_LightningStrike");
+                    FillVFX(ab,2,"FX/Spells/Human_Spell_Shield",                  "FX/dark magic/Healing buff");
+                    break;
+                case "Spirit Redirect":
+                    FillVFX(ab,0,"FX/dark magic/Leaves shield",                   "FX/Particle Pack/EffectExamples/Weapon Effects/Prefabs/StoneImpacts");
+                    FillVFX(ab,1,"FX/dark magic/Effects normal/Lightning strike skill","FX/Spells/Spell_LightningStrike");
+                    FillVFX(ab,2,"FX/dark magic/Healing buff",                    "FX/Spells/Human_SpellAura_Heal");
+                    break;
+                case "Mend":
+                    FillVFX(ab,0,"FX/Spells/Human_Spell_Heal",                    "FX/Spells/Human_SpellAura_Heal");
+                    FillVFX(ab,1,"FX/Spells/Human_SpellAura_Heal",                "FX/Particle Pack/EffectExamples/Misc Effects/Prefabs/FireFlies");
+                    FillVFX(ab,2,"FX/Spells/Human_Spell_Shield",                  "FX/dark magic/Healing buff");
+                    break;
+                case "Conjurer's Surge":
+                    FillVFX(ab,0,"FX/dark magic/Effects normal/Magic circle",     "FX/Particle Pack/EffectExamples/Magic Effects/Prefabs/EarthShatter");
+                    FillVFX(ab,1,"FX/dark magic/Magic arrow",                     "FX/dark magic/Effects normal/Snow circle");
+                    FillVFX(ab,2,"FX/dark magic/Plazma sphere",                   "FX/Particle Pack/EffectExamples/Fire & Explosion Effects/Prefabs/EnergyExplosion");
+                    break;
+
+                // ── IRONCLAD ─────────────────────────────────────────────────────────────
+                case "Counter Blow":
+                    FillVFX(ab,0,"FX/Particle Pack/EffectExamples/Magic Effects/Prefabs/EarthShatter","FX/Particle Pack/EffectExamples/Weapon Effects/Prefabs/MetalImpacts");
+                    FillVFX(ab,1,"FX/Spells/Human_Spell_Shockwave_Ground",        "FX/Particle Pack/EffectExamples/Misc Effects/Prefabs/SparksEffect");
+                    FillVFX(ab,2,"FX/Spells/Human_Spell_Shockwave_Explosion",     "FX/Particle Pack/EffectExamples/Weapon Effects/Prefabs/StoneImpacts");
+                    break;
+                case "Gravity Slam":
+                    FillVFX(ab,0,"FX/Particle Pack/EffectExamples/Magic Effects/Prefabs/EarthShatter","FX/Particle Pack/EffectExamples/Weapon Effects/Prefabs/StoneImpacts");
+                    FillVFX(ab,1,"FX/Spells/Human_Spell_Shockwave_Explosion",     "FX/Particle Pack/EffectExamples/Magic Effects/Prefabs/EarthShatter");
+                    FillVFX(ab,2,"FX/Particle Pack/EffectExamples/Smoke & Steam Effects/Prefabs/DustStorm","FX/dark magic/Effects normal/Snow circle");
+                    break;
+                case "Shieldwall Charge":
+                    FillVFX(ab,0,"FX/Spells/Human_Spell_Shockwave_Ground",        "FX/Particle Pack/EffectExamples/Weapon Effects/Prefabs/StoneImpacts");
+                    FillVFX(ab,1,"FX/Spells/Human_Spell_Shockwave_Ground",        "FX/Particle Pack/EffectExamples/Weapon Effects/Prefabs/MetalImpacts");
+                    FillVFX(ab,2,"FX/Spells/Human_Spell_Shockwave_Explosion",     "FX/Particle Pack/EffectExamples/Misc Effects/Prefabs/SparksEffect");
+                    break;
+                case "Stalwart Stance":
+                    FillVFX(ab,0,"FX/Spells/Human_Spell_Shield",                  "FX/Particle Pack/EffectExamples/Weapon Effects/Prefabs/MetalImpacts");
+                    FillVFX(ab,1,"FX/dark magic/Shield buff",                     "FX/Particle Pack/EffectExamples/Misc Effects/Prefabs/SparksEffect");
+                    FillVFX(ab,2,"FX/dark magic/Magic buff",                      "FX/Spells/Human_Spell_Shield");
+                    break;
+                case "Rune Chain":
+                    FillVFX(ab,0,"FX/dark magic/Ground spikes",                   "FX/dark magic/Ground spikes");
+                    FillVFX(ab,1,"FX/dark magic/Effects normal/Mana wall",        "FX/Particle Pack/EffectExamples/Weapon Effects/Prefabs/StoneImpacts");
+                    FillVFX(ab,2,"FX/dark magic/Healing buff",                    "FX/Spells/Human_SpellAura_Heal");
+                    break;
+                case "Iron Rampart":
+                    FillVFX(ab,0,"FX/dark magic/Effects normal/Mana wall",        "FX/Spells/Human_Spell_Shield");
+                    FillVFX(ab,1,"FX/dark magic/Effects with projectors/Mana wall","FX/dark magic/Ground spikes");
+                    FillVFX(ab,2,"FX/dark magic/Effects normal/Mana wall",        "FX/dark magic/Shield buff");
+                    break;
+
+                // ── ARCANIST ─────────────────────────────────────────────────────────────
+                case "Arcane Step":
+                    FillVFX(ab,0,"FX/dark magic/Magic arrow",                     "FX/Spells/Ice Rend");
+                    FillVFX(ab,1,"FX/dark magic/Plazma sphere",                   "FX/Particle Pack/EffectExamples/Misc Effects/Prefabs/ElectricalSparks");
+                    FillVFX(ab,2,"FX/Spells/Ice Rend",                            "FX/Particle Pack/EffectExamples/Smoke & Steam Effects/Prefabs/GroundFog");
+                    break;
+                case "Void Maw":
+                    FillVFX(ab,0,"FX/dark magic/Plazma sphere",                   "FX/dark magic/Effects with projectors/Death magic circle");
+                    FillVFX(ab,1,"FX/dark magic/Effects normal/Magic circle",     "FX/dark magic/Glowing orbs");
+                    FillVFX(ab,2,"FX/dark magic/Effects normal/Magic circle",     "FX/Particle Pack/EffectExamples/Fire & Explosion Effects/Prefabs/EnergyExplosion");
+                    break;
+                case "Forked Lightning":
+                    FillVFX(ab,0,"FX/Spells/Human_SpellAura_Lightning",           "FX/Spells/Spell_LightningStrike");
+                    FillVFX(ab,1,"FX/Particle Pack/EffectExamples/Legacy Particles/Prefabs/LightnigStormCloud","FX/dark magic/Effects with projectors/Lightning strike skill");
+                    FillVFX(ab,2,"FX/Spells/Human_SpellAura_Lightning",           "FX/Particle Pack/EffectExamples/Legacy Particles/Prefabs/ElectricalSparksEffect");
+                    break;
+                case "Collapsing Void":
+                    FillVFX(ab,0,"FX/dark magic/Effects normal/Magic circle",     "FX/dark magic/Effects with projectors/Death magic circle");
+                    FillVFX(ab,1,"FX/dark magic/Plazma sphere",                   "FX/Particle Pack/EffectExamples/Fire & Explosion Effects/Prefabs/EnergyExplosion");
+                    FillVFX(ab,2,"FX/dark magic/Effects with projectors/Death magic circle","FX/dark magic/Effects with projectors/Death magic circle");
+                    break;
+                case "Ether Lance":
+                    FillVFX(ab,0,"FX/dark magic/Dard magic shoot",                "FX/dark magic/Effects normal/Death magic circle");
+                    FillVFX(ab,1,"FX/dark magic/Magic arrow",                     "FX/Particle Pack/EffectExamples/Misc Effects/Prefabs/ElectricalSparks");
+                    FillVFX(ab,2,"FX/dark magic/Plazma sphere",                   "FX/Particle Pack/EffectExamples/Fire & Explosion Effects/Prefabs/EnergyExplosion");
+                    break;
+
+                // ── CLERIC ───────────────────────────────────────────────────────────────
+                case "Soul Bond":
+                    FillVFX(ab,0,"FX/dark magic/Healing buff",                    "FX/Spells/Human_SpellAura_Heal");
+                    FillVFX(ab,1,"FX/Spells/Human_Spell_Shield",                  "FX/dark magic/Shield buff");
+                    FillVFX(ab,2,"FX/dark magic/Healing buff",                    "FX/Particle Pack/EffectExamples/Misc Effects/Prefabs/FireFlies");
+                    break;
+                case "Spirit Wisps":
+                    FillVFX(ab,0,"FX/dark magic/Glowing orbs",                    "FX/dark magic/Glowing orbs");
+                    FillVFX(ab,1,"FX/dark magic/Effects normal/Magic circle",     "FX/Particle Pack/EffectExamples/Misc Effects/Prefabs/FireFlies");
+                    FillVFX(ab,2,"FX/Spells/Human_Spell_Shield",                  "FX/dark magic/Healing buff");
+                    break;
+                case "Divine Spark":
+                    FillVFX(ab,0,"FX/Particle Pack/EffectExamples/Misc Effects/Prefabs/Respawn","FX/Spells/Human_Spell_Heal");
+                    FillVFX(ab,1,"FX/Particle Pack/EffectExamples/Misc Effects/Prefabs/Respawn","FX/Particle Pack/EffectExamples/Fire & Explosion Effects/Prefabs/LargeFlames");
+                    FillVFX(ab,2,"FX/Particle Pack/EffectExamples/Fire & Explosion Effects/Prefabs/EnergyExplosion","FX/Particle Pack/EffectExamples/Fire & Explosion Effects/Prefabs/BigExplosion");
+                    break;
+                case "Sacred Aegis":
+                    FillVFX(ab,0,"FX/dark magic/Leaves shield",                   "FX/dark magic/Shield buff");
+                    FillVFX(ab,1,"FX/Spells/Human_Spell_Shield",                  "FX/Particle Pack/EffectExamples/Misc Effects/Prefabs/Respawn");
+                    FillVFX(ab,2,"FX/dark magic/Magic buff",                      "FX/Spells/Human_Spell_Shield");
+                    break;
+                case "Dispel":
+                    FillVFX(ab,0,"FX/Spells/Human_Spell_Heal",                    "FX/Particle Pack/EffectExamples/Misc Effects/Prefabs/Respawn");
+                    FillVFX(ab,1,"FX/dark magic/Healing buff",                    "FX/Spells/Human_SpellAura_Heal");
+                    FillVFX(ab,2,"FX/Spells/Human_Spell_Shield",                  "FX/Spells/Human_SpellAura_Heal");
+                    break;
+                case "Temporal Grace":
+                    FillVFX(ab,0,"FX/dark magic/Magic buff",                      "FX/Spells/Human_SpellAura_Heal");
+                    FillVFX(ab,1,"FX/dark magic/Glowing orbs",                    "FX/Particle Pack/EffectExamples/Misc Effects/Prefabs/FireFlies");
+                    FillVFX(ab,2,"FX/Spells/Human_Spell_Shield",                  "FX/dark magic/Magic buff");
+                    break;
+
+                // ── SHADOWBLADE ──────────────────────────────────────────────────────────
+                case "Shadow Veil":
+                    FillVFX(ab,0,"FX/dark magic/Feathers buff",                   "FX/Particle Pack/EffectExamples/Smoke & Steam Effects/Prefabs/SmokeEffect");
+                    FillVFX(ab,1,"FX/dark magic/Feathers buff",                   "FX/Particle Pack/EffectExamples/Smoke & Steam Effects/Prefabs/GroundFog");
+                    FillVFX(ab,2,"FX/dark magic/Feathers buff",                   "FX/dark magic/Effects normal/Death magic circle");
+                    break;
+                case "Silence Ward":
+                    FillVFX(ab,0,"FX/dark magic/Effects normal/Magic circle",     "FX/dark magic/Ground spikes");
+                    FillVFX(ab,1,"FX/dark magic/Plazma sphere",                   "FX/dark magic/Effects normal/Snow circle");
+                    FillVFX(ab,2,"FX/dark magic/Effects with projectors/Death magic circle","FX/dark magic/Effects normal/Death magic circle");
+                    break;
+                case "Dark Harvest":
+                    FillVFX(ab,0,"FX/dark magic/Effects normal/Death magic circle","FX/dark magic/Effects normal/Magic circle");
+                    FillVFX(ab,1,"FX/dark magic/Effects with projectors/Death magic circle","FX/Particle Pack/EffectExamples/Fire & Explosion Effects/Prefabs/LargeFlames");
+                    FillVFX(ab,2,"FX/dark magic/Effects normal/Death magic circle","FX/Particle Pack/EffectExamples/Misc Effects/Prefabs/SparksEffect");
+                    break;
+                case "Dark Mark":
+                    FillVFX(ab,0,"FX/dark magic/Dard magic shoot",                "FX/dark magic/Effects normal/Magic circle");
+                    FillVFX(ab,1,"FX/dark magic/Magic arrow",                     "FX/dark magic/Effects normal/Death magic circle");
+                    FillVFX(ab,2,"FX/dark magic/Plazma sphere",                   "FX/Particle Pack/EffectExamples/Weapon Effects/Prefabs/StoneImpacts");
+                    break;
+                case "Fan of Blades":
+                    FillVFX(ab,0,"FX/dark magic/Dard magic shoot",                "FX/Particle Pack/EffectExamples/Weapon Effects/Prefabs/MetalImpacts");
+                    FillVFX(ab,1,"FX/dark magic/Magic arrow",                     "FX/Particle Pack/EffectExamples/Misc Effects/Prefabs/SparksEffect");
+                    FillVFX(ab,2,"FX/dark magic/Feathers buff",                   "FX/dark magic/Effects normal/Magic circle");
+                    break;
+
+                // ── CLERIC CONE / BEAM ────────────────────────────────────────────────────
+                case "Healing Cone":
+                    FillVFX(ab,0,"FX/Spells/Human_SpellAura_Heal",               "FX/Spells/Human_Spell_Heal");
+                    FillVFX(ab,1,"FX/dark magic/Healing buff",                    "FX/Particle Pack/EffectExamples/Misc Effects/Prefabs/FireFlies");
+                    FillVFX(ab,2,"FX/Spells/Human_Spell_Shield",                  "FX/dark magic/Shield buff");
+                    break;
+                case "Mending Beam":
+                    FillVFX(ab,0,"FX/Spells/Human_SpellAura_Heal",               "FX/Spells/Human_Spell_Heal");
+                    FillVFX(ab,1,"FX/dark magic/Healing buff",                    "FX/Particle Pack/EffectExamples/Misc Effects/Prefabs/FireFlies");
+                    FillVFX(ab,2,"FX/Spells/Human_Spell_Shield",                  "FX/dark magic/Shield buff");
+                    break;
+
+                // ── ARCANIST CONE / BEAM ─────────────────────────────────────────────────
+                case "Conflagration Cone":
+                    FillVFX(ab,0,"FX/Spells/Spell_FireballLarge",                 "FX/Particle Pack/EffectExamples/Fire & Explosion Effects/Prefabs/FireBall");
+                    FillVFX(ab,1,"FX/Spells/Human_SpellAura_Fire",                "FX/Particle Pack/EffectExamples/Fire & Explosion Effects/Prefabs/WildFire");
+                    FillVFX(ab,2,"FX/Spells/Human_SpellAura_Fire",                "FX/Particle Pack/EffectExamples/Fire & Explosion Effects/Prefabs/MediumFlames");
+                    break;
+                case "Ember Beam":
+                    FillVFX(ab,0,"FX/Spells/Spell_FireballLarge",                 "FX/Particle Pack/EffectExamples/Fire & Explosion Effects/Prefabs/FireBall");
+                    FillVFX(ab,1,"FX/Spells/Human_SpellAura_Fire",                "FX/Particle Pack/EffectExamples/Fire & Explosion Effects/Prefabs/FlameThrower");
+                    FillVFX(ab,2,"FX/Particle Pack/EffectExamples/Fire & Explosion Effects/Prefabs/LargeFlames","FX/Particle Pack/EffectExamples/Fire & Explosion Effects/Prefabs/MediumFlames");
+                    break;
+
+                // ── HANGDANGER'S ARCANIST ─────────────────────────────────────────────────
+                case "Ice Spikes":
+                    FillVFX(ab,0,"FX/dark magic/Effects normal/Ice freeze skill", "FX/dark magic/Effects normal/Ice freeze skill");
+                    FillVFX(ab,1,"FX/Spells/Human_SpellAura_Ice",                 "FX/Particle Pack/EffectExamples/Magic Effects/Prefabs/Ice Lance");
+                    FillVFX(ab,2,"FX/dark magic/Effects with projectors/Ice freeze skill","FX/Spells/Ice Rend Large");
+                    break;
+                case "Meteor Shower":
+                    FillVFX(ab,0,"FX/dark magic/Effects with projectors/Meteor rain",    "FX/Particle Pack/EffectExamples/Fire & Explosion Effects/Prefabs/SmallExplosion");
+                    FillVFX(ab,1,"FX/dark magic/Effects normal/Meteor rain",             "FX/Particle Pack/EffectExamples/Fire & Explosion Effects/Prefabs/MediumFlames");
+                    FillVFX(ab,2,"FX/dark magic/Effects with projectors/Meteor rain Large","FX/Particle Pack/EffectExamples/Fire & Explosion Effects/Prefabs/BigExplosion");
+                    break;
+            }
+        }
+    }
+
+    void FillVFX(AbilityDef ab, int vi, string castPath, string hitPath)
+    {
+        if (vi >= ab.variants.Length || ab.variants[vi] == null) return;
+        var v = ab.variants[vi];
+        if (v.castVFX == null) v.castVFX = Resources.Load<GameObject>(castPath);
+        if (v.hitVFX  == null) v.hitVFX  = Resources.Load<GameObject>(hitPath);
+    }
+
+    void BackfillVariantDefaults()
+    {
+        if (spellbook == null) return;
+        foreach (AbilityDef ability in spellbook)
+        {
+            if (ability == null) continue;
+            if (ability.variants != null && ability.variants.Length > 0) continue;
+
+            switch (ability.abilityName)
+            {
+                // ── SHARED ────────────────────────────────────────────────────────────
+                case "Runic Sentinel":
+                    ability.variants = new AbilityVariant[]
+                    {
+                        new AbilityVariant { variantName="Sentinel",  indicatorTint=new Color(0.2f,0.8f,0.4f,0.75f), targetTag="Enemy",  damage=15f, statusEffect=StatusEffectType.Stagger, statusDuration=0.5f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Effects normal/Magic circle"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Weapon Effects/Prefabs/StoneImpacts") },
+                        new AbilityVariant { variantName="Overwatch", indicatorTint=new Color(0.1f,0.6f,0.3f,0.75f), targetTag="Enemy",  damage=10f, statusEffect=StatusEffectType.Slow,    statusDuration=3f, statusValue=0.3f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Effects normal/Magic circle"),
+                            hitVFX = Resources.Load<GameObject>("FX/dark magic/Effects normal/Snow circle") },
+                        new AbilityVariant { variantName="Bastion",   indicatorTint=new Color(0.2f,1f,0.6f,0.75f),   targetTag="Player", shieldAbsorb=20f, shieldDuration=4f,
+                            castVFX = Resources.Load<GameObject>("FX/Spells/Human_Spell_Shield"),
+                            hitVFX = Resources.Load<GameObject>("FX/dark magic/Healing buff") },
+                    };
+                    break;
+
+                case "Void Bolt":
+                    ability.variants = new AbilityVariant[]
+                    {
+                        new AbilityVariant { variantName="Shatter", indicatorTint=new Color(0.6f,0.1f,1f,0.75f),   targetTag="Enemy", damage=28f, statusEffect=StatusEffectType.Stagger,  statusDuration=0.7f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Dard magic shoot"),
+                            hitVFX = Resources.Load<GameObject>("FX/dark magic/Effects normal/Death magic circle") },
+                        new AbilityVariant { variantName="Drain",   indicatorTint=new Color(0.4f,0.1f,0.8f,0.75f), targetTag="Enemy", damage=16f, statusEffect=StatusEffectType.Slow,     statusDuration=3f,  statusValue=0.3f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Dard magic shoot"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Misc Effects/Prefabs/ElectricalSparks") },
+                        new AbilityVariant { variantName="Wither",  indicatorTint=new Color(0.2f,0.0f,0.6f,0.75f), targetTag="Enemy", damage=20f, statusEffect=StatusEffectType.Weakened, statusDuration=4f,  statusValue=0.25f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Dard magic shoot"),
+                            hitVFX = Resources.Load<GameObject>("FX/dark magic/Effects normal/Magic circle") },
+                    };
+                    break;
+
+                case "Mending Circle":
+                    ability.variants = new AbilityVariant[]
+                    {
+                        new AbilityVariant { variantName="Surge",     indicatorTint=new Color(0.1f,1f,0.2f,0.75f), targetTag="Player", healAmount=45f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Effects normal/Magic circle"),
+                            hitVFX = Resources.Load<GameObject>("FX/Spells/Human_Spell_Heal") },
+                        new AbilityVariant { variantName="Rain",      indicatorTint=new Color(0.4f,1f,0.1f,0.75f), targetTag="Player", hotTickAmount=12f, hotTicks=4, hotInterval=1.5f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Effects normal/Magic circle"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Misc Effects/Prefabs/FireFlies") },
+                        new AbilityVariant { variantName="Sanctuary", indicatorTint=new Color(0.1f,0.7f,1f,0.75f), targetTag="Player", shieldAbsorb=35f, shieldDuration=5f,
+                            castVFX = Resources.Load<GameObject>("FX/Spells/Human_Spell_Shield"),
+                            hitVFX = Resources.Load<GameObject>("FX/Spells/Human_SpellAura_Heal") },
+                    };
+                    break;
+
+                case "Storm Lash":
+                    ability.variants = new AbilityVariant[]
+                    {
+                        new AbilityVariant { variantName="Strike", indicatorTint=new Color(1f,1f,0.2f,0.75f),   targetTag="Enemy", damage=30f, statusEffect=StatusEffectType.Stagger, statusDuration=0.7f,
+                            castVFX = Resources.Load<GameObject>("FX/Spells/Human_SpellAura_Lightning"),
+                            hitVFX = Resources.Load<GameObject>("FX/dark magic/Effects normal/Lightning strike skill") },
+                        new AbilityVariant { variantName="Shock",  indicatorTint=new Color(0.6f,1f,0.2f,0.75f), targetTag="Enemy", damage=15f, statusEffect=StatusEffectType.Cursed,  statusDuration=4f,  statusValue=4f,
+                            castVFX = Resources.Load<GameObject>("FX/Spells/Human_SpellAura_Lightning"),
+                            hitVFX = Resources.Load<GameObject>("FX/dark magic/Effects normal/Lightning strike skill") },
+                        new AbilityVariant { variantName="Zap",    indicatorTint=new Color(0.3f,0.8f,1f,0.75f), targetTag="Enemy", damage=18f, statusEffect=StatusEffectType.Slow,    statusDuration=4f,  statusValue=0.35f,
+                            castVFX = Resources.Load<GameObject>("FX/Spells/Human_SpellAura_Lightning"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Misc Effects/Prefabs/ElectricalSparks") },
+                    };
+                    break;
+
+                case "Ember Surge":
+                    ability.variants = new AbilityVariant[]
+                    {
+                        new AbilityVariant { variantName="Flare",   indicatorTint=new Color(1f,0.4f,0.0f,0.75f),  targetTag="Enemy", damage=28f, statusEffect=StatusEffectType.Stagger, statusDuration=0.6f,
+                            castVFX = Resources.Load<GameObject>("FX/Spells/Human_SpellAura_Fire"),
+                            hitVFX = Resources.Load<GameObject>("FX/dark magic/Fireball") },
+                        new AbilityVariant { variantName="Inferno", indicatorTint=new Color(1f,0.6f,0.0f,0.75f),  targetTag="Enemy", damage=15f, statusEffect=StatusEffectType.Cursed,  statusDuration=5f,  statusValue=5f,
+                            castVFX = Resources.Load<GameObject>("FX/Spells/Human_SpellAura_Fire"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Fire & Explosion Effects/Prefabs/FlameStream") },
+                        new AbilityVariant { variantName="Singe",   indicatorTint=new Color(1f,0.8f,0.15f,0.75f), targetTag="Enemy", damage=20f, statusEffect=StatusEffectType.Slow,    statusDuration=3f,  statusValue=0.35f,
+                            castVFX = Resources.Load<GameObject>("FX/Spells/Human_SpellAura_Fire"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Fire & Explosion Effects/Prefabs/SmallExplosion") },
+                    };
+                    break;
+
+                case "Mind Spike":
+                    ability.variants = new AbilityVariant[]
+                    {
+                        new AbilityVariant { variantName="Pierce",   indicatorTint=new Color(0.8f,0.3f,1f,0.75f),  targetTag="Enemy", damage=45f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Glowing orbs"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Fire & Explosion Effects/Prefabs/EnergyExplosion") },
+                        new AbilityVariant { variantName="Echo",     indicatorTint=new Color(0.6f,0.2f,0.9f,0.75f), targetTag="Enemy", damage=30f, statusEffect=StatusEffectType.Stagger,  statusDuration=0.8f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Glowing orbs"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Weapon Effects/Prefabs/StoneImpacts") },
+                        new AbilityVariant { variantName="Fracture", indicatorTint=new Color(0.4f,0.1f,0.7f,0.75f), targetTag="Enemy", damage=25f, statusEffect=StatusEffectType.Weakened, statusDuration=4f,  statusValue=0.25f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Glowing orbs"),
+                            hitVFX = Resources.Load<GameObject>("FX/dark magic/Effects normal/Magic circle") },
+                    };
+                    break;
+
+                case "Binding Wave":
+                    ability.variants = new AbilityVariant[]
+                    {
+                        new AbilityVariant { variantName="Slam",     indicatorTint=new Color(0.7f,0.7f,0.2f,0.75f), targetTag="Enemy", damage=25f, statusEffect=StatusEffectType.Stagger, statusDuration=1f,
+                            castVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Magic Effects/Prefabs/EarthShatter"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Weapon Effects/Prefabs/StoneImpacts") },
+                        new AbilityVariant { variantName="Chain",    indicatorTint=new Color(0.5f,0.5f,0.1f,0.75f), targetTag="Enemy", damage=12f, statusEffect=StatusEffectType.Cursed,  statusDuration=4f, statusValue=4f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Ground spikes"),
+                            hitVFX = Resources.Load<GameObject>("FX/dark magic/Ground spikes") },
+                        new AbilityVariant { variantName="Suppress", indicatorTint=new Color(0.3f,0.3f,0.0f,0.75f), targetTag="Enemy", damage=15f, statusEffect=StatusEffectType.Slow,    statusDuration=5f, statusValue=0.4f,
+                            castVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Smoke & Steam Effects/Prefabs/GroundFog"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Smoke & Steam Effects/Prefabs/SmokeEffect") },
+                    };
+                    break;
+
+                case "Arcane Ward":
+                    ability.variants = new AbilityVariant[]
+                    {
+                        new AbilityVariant { variantName="Barrier",  indicatorTint=new Color(0.5f,0.7f,1f,0.75f),  targetTag="Player", shieldAbsorb=30f, shieldDuration=3f,
+                            castVFX = Resources.Load<GameObject>("FX/Spells/Human_Spell_Shield"),
+                            hitVFX = Resources.Load<GameObject>("FX/Spells/Human_SpellAura_Heal") },
+                        new AbilityVariant { variantName="Ward",     indicatorTint=new Color(0.3f,0.5f,1f,0.75f),  targetTag="Player", shieldAbsorb=50f, shieldDuration=5f,
+                            castVFX = Resources.Load<GameObject>("FX/Spells/Human_Spell_Shield"),
+                            hitVFX = Resources.Load<GameObject>("FX/Spells/Human_SpellAura_Heal") },
+                        new AbilityVariant { variantName="Fortress", indicatorTint=new Color(0.1f,0.3f,0.9f,0.75f), targetTag="Player", shieldAbsorb=80f, shieldDuration=8f,
+                            castVFX = Resources.Load<GameObject>("FX/Spells/Human_Spell_Shield"),
+                            hitVFX = Resources.Load<GameObject>("FX/Spells/Human_Spell_Shield") },
+                    };
+                    break;
+
+                // ── WARDEN ────────────────────────────────────────────────────────────
+                case "Runic Snare":
+                    ability.variants = new AbilityVariant[]
+                    {
+                        new AbilityVariant { variantName="Trap",          indicatorTint=new Color(0.2f,0.8f,0.3f,0.75f), targetTag="Enemy", damage=40f, statusEffect=StatusEffectType.Stagger, statusDuration=1f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Leaves shield"),
+                            hitVFX = Resources.Load<GameObject>("FX/dark magic/Ground spikes") },
+                        new AbilityVariant { variantName="Venom Snare",   indicatorTint=new Color(0.1f,0.6f,0.2f,0.75f), targetTag="Enemy", damage=20f, statusEffect=StatusEffectType.Cursed,  statusDuration=6f, statusValue=5f,
+                            castVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Smoke & Steam Effects/Prefabs/PoisonGas"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Smoke & Steam Effects/Prefabs/PoisonGas") },
+                        new AbilityVariant { variantName="Cripple Snare", indicatorTint=new Color(0.0f,0.4f,0.1f,0.75f), targetTag="Enemy", damage=25f, statusEffect=StatusEffectType.Slow,    statusDuration=5f, statusValue=0.5f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Leaves shield"),
+                            hitVFX = Resources.Load<GameObject>("FX/dark magic/Effects normal/Snow circle") },
+                    };
+                    break;
+
+                case "Battle Hymn":
+                    ability.variants = new AbilityVariant[]
+                    {
+                        new AbilityVariant { variantName="Hymn",    indicatorTint=new Color(0.3f,1f,0.4f,0.75f), targetTag="Player", healAmount=25f,
+                            castVFX = Resources.Load<GameObject>("FX/Spells/Human_Spell_Heal"),
+                            hitVFX = Resources.Load<GameObject>("FX/Spells/Human_SpellAura_Heal") },
+                        new AbilityVariant { variantName="War Song", indicatorTint=new Color(0.5f,0.9f,0.1f,0.75f), targetTag="Enemy", damage=15f, statusEffect=StatusEffectType.Weakened, statusDuration=3f, statusValue=0.2f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Effects normal/Magic circle"),
+                            hitVFX = Resources.Load<GameObject>("FX/dark magic/Effects normal/Lightning strike skill") },
+                        new AbilityVariant { variantName="Rally",   indicatorTint=new Color(0.1f,1f,0.3f,0.75f), targetTag="Player", healAmount=35f, shieldAbsorb=20f, shieldDuration=3f,
+                            castVFX = Resources.Load<GameObject>("FX/Spells/Human_Spell_Shield"),
+                            hitVFX = Resources.Load<GameObject>("FX/Spells/Human_SpellAura_Heal") },
+                    };
+                    break;
+
+                case "Spirit Redirect":
+                    ability.variants = new AbilityVariant[]
+                    {
+                        new AbilityVariant { variantName="Redirect",   indicatorTint=new Color(0.2f,0.9f,0.4f,0.75f), targetTag="Enemy",  damage=20f, statusEffect=StatusEffectType.Stagger, statusDuration=0.5f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Leaves shield"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Weapon Effects/Prefabs/StoneImpacts") },
+                        new AbilityVariant { variantName="Overcharge", indicatorTint=new Color(0.1f,0.7f,0.3f,0.75f), targetTag="Enemy",  damage=30f, statusEffect=StatusEffectType.Weakened, statusDuration=2f, statusValue=0.2f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Effects normal/Magic circle"),
+                            hitVFX = Resources.Load<GameObject>("FX/dark magic/Effects normal/Lightning strike skill") },
+                        new AbilityVariant { variantName="Siphon",     indicatorTint=new Color(0.2f,1f,0.5f,0.75f),   targetTag="Player", healAmount=20f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Healing buff"),
+                            hitVFX = Resources.Load<GameObject>("FX/Spells/Human_SpellAura_Heal") },
+                    };
+                    break;
+
+                case "Mend":
+                    ability.variants = new AbilityVariant[]
+                    {
+                        new AbilityVariant { variantName="Mend",    indicatorTint=new Color(0.1f,1f,0.2f,0.75f),  targetTag="Player", healAmount=50f,
+                            castVFX = Resources.Load<GameObject>("FX/Spells/Human_Spell_Heal"),
+                            hitVFX = Resources.Load<GameObject>("FX/Spells/Human_SpellAura_Heal") },
+                        new AbilityVariant { variantName="Mend+HoT",indicatorTint=new Color(0.4f,1f,0.1f,0.75f),  targetTag="Player", healAmount=25f, hotTickAmount=8f, hotTicks=3, hotInterval=1f,
+                            castVFX = Resources.Load<GameObject>("FX/Spells/Human_SpellAura_Heal"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Misc Effects/Prefabs/FireFlies") },
+                        new AbilityVariant { variantName="Fortify", indicatorTint=new Color(0.1f,0.8f,1f,0.75f),  targetTag="Player", healAmount=20f, shieldAbsorb=30f, shieldDuration=5f,
+                            castVFX = Resources.Load<GameObject>("FX/Spells/Human_Spell_Shield"),
+                            hitVFX = Resources.Load<GameObject>("FX/dark magic/Healing buff") },
+                    };
+                    break;
+
+                case "Conjurer's Surge":
+                    ability.variants = new AbilityVariant[]
+                    {
+                        new AbilityVariant { variantName="Surge",    indicatorTint=new Color(0.2f,1f,0.4f,0.75f),  targetTag="Enemy", damage=30f, statusEffect=StatusEffectType.Stagger, statusDuration=0.8f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Effects normal/Magic circle"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Magic Effects/Prefabs/EarthShatter") },
+                        new AbilityVariant { variantName="Cascade",  indicatorTint=new Color(0.1f,0.8f,0.3f,0.75f), targetTag="Enemy", damage=20f, statusEffect=StatusEffectType.Slow,    statusDuration=3f,  statusValue=0.3f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Effects normal/Magic circle"),
+                            hitVFX = Resources.Load<GameObject>("FX/dark magic/Effects normal/Snow circle") },
+                        new AbilityVariant { variantName="Overload", indicatorTint=new Color(0.0f,0.6f,0.2f,0.75f), targetTag="Enemy", damage=50f, statusEffect=StatusEffectType.Weakened, statusDuration=4f,  statusValue=0.3f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Effects normal/Magic circle"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Fire & Explosion Effects/Prefabs/EnergyExplosion") },
+                    };
+                    break;
+
+                // ── IRONCLAD ──────────────────────────────────────────────────────────
+                case "Counter Blow":
+                    ability.variants = new AbilityVariant[]
+                    {
+                        new AbilityVariant { variantName="Counter",  indicatorTint=new Color(1f,0.6f,0.1f,0.75f),  targetTag="Enemy", damage=40f, statusEffect=StatusEffectType.Stagger, statusDuration=0.8f,
+                            castVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Magic Effects/Prefabs/EarthShatter"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Weapon Effects/Prefabs/MetalImpacts") },
+                        new AbilityVariant { variantName="Riposte",  indicatorTint=new Color(1f,0.45f,0.0f,0.75f), targetTag="Enemy", damage=30f, statusEffect=StatusEffectType.Slow,    statusDuration=3f,  statusValue=0.35f,
+                            castVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Magic Effects/Prefabs/EarthShatter"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Misc Effects/Prefabs/SparksEffect") },
+                        new AbilityVariant { variantName="Punish",   indicatorTint=new Color(0.9f,0.3f,0.0f,0.75f), targetTag="Enemy", damage=60f, statusEffect=StatusEffectType.Weakened, statusDuration=3f,  statusValue=0.3f,
+                            castVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Magic Effects/Prefabs/EarthShatter"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Weapon Effects/Prefabs/StoneImpacts") },
+                    };
+                    break;
+
+                case "Gravity Slam":
+                    ability.variants = new AbilityVariant[]
+                    {
+                        new AbilityVariant { variantName="Pull Slam", indicatorTint=new Color(1f,0.55f,0.0f,0.75f), targetTag="Enemy", damage=15f, statusEffect=StatusEffectType.Stagger, statusDuration=1f,
+                            castVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Magic Effects/Prefabs/EarthShatter"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Weapon Effects/Prefabs/StoneImpacts") },
+                        new AbilityVariant { variantName="Crush",     indicatorTint=new Color(1f,0.4f,0.0f,0.75f),  targetTag="Enemy", damage=30f, statusEffect=StatusEffectType.Weakened, statusDuration=3f, statusValue=0.3f,
+                            castVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Magic Effects/Prefabs/EarthShatter"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Magic Effects/Prefabs/EarthShatter") },
+                        new AbilityVariant { variantName="Vortex",    indicatorTint=new Color(0.9f,0.25f,0.0f,0.75f),targetTag="Enemy", damage=10f, statusEffect=StatusEffectType.Slow,    statusDuration=5f, statusValue=0.4f,
+                            castVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Smoke & Steam Effects/Prefabs/GroundFog"),
+                            hitVFX = Resources.Load<GameObject>("FX/dark magic/Effects normal/Snow circle") },
+                    };
+                    break;
+
+                case "Shieldwall Charge":
+                    ability.variants = new AbilityVariant[]
+                    {
+                        new AbilityVariant { variantName="Charge",        indicatorTint=new Color(1f,0.6f,0.1f,0.75f),  targetTag="Enemy", damage=25f, statusEffect=StatusEffectType.Stagger, statusDuration=0.8f,
+                            castVFX = Resources.Load<GameObject>("FX/Spells/Human_Spell_Shockwave_Ground"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Weapon Effects/Prefabs/StoneImpacts") },
+                        new AbilityVariant { variantName="Cleave",        indicatorTint=new Color(1f,0.45f,0.0f,0.75f), targetTag="Enemy", damage=20f, statusEffect=StatusEffectType.Slow,    statusDuration=3f,  statusValue=0.35f,
+                            castVFX = Resources.Load<GameObject>("FX/Spells/Human_Spell_Shockwave_Ground"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Weapon Effects/Prefabs/MetalImpacts") },
+                        new AbilityVariant { variantName="Battering Ram", indicatorTint=new Color(0.9f,0.3f,0.0f,0.75f), targetTag="Enemy", damage=35f, statusEffect=StatusEffectType.Weakened, statusDuration=2f, statusValue=0.2f,
+                            castVFX = Resources.Load<GameObject>("FX/Spells/Human_Spell_Shockwave_Ground"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Misc Effects/Prefabs/SparksEffect") },
+                    };
+                    break;
+
+                case "Stalwart Stance":
+                    ability.variants = new AbilityVariant[]
+                    {
+                        new AbilityVariant { variantName="Defensive",    indicatorTint=new Color(1f,0.65f,0.15f,0.75f), targetTag="Player", shieldAbsorb=40f, shieldDuration=6f,
+                            castVFX = Resources.Load<GameObject>("FX/Spells/Human_Spell_Shield"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Weapon Effects/Prefabs/MetalImpacts") },
+                        new AbilityVariant { variantName="Counter Stance",indicatorTint=new Color(1f,0.5f,0.05f,0.75f), targetTag="Player", healAmount=20f, shieldAbsorb=25f, shieldDuration=4f,
+                            castVFX = Resources.Load<GameObject>("FX/Spells/Human_Spell_Shield"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Misc Effects/Prefabs/SparksEffect") },
+                        new AbilityVariant { variantName="Iron Will",    indicatorTint=new Color(0.9f,0.35f,0.0f,0.75f), targetTag="Player", shieldAbsorb=70f, shieldDuration=5f,
+                            castVFX = Resources.Load<GameObject>("FX/Spells/Human_Spell_Shield"),
+                            hitVFX = Resources.Load<GameObject>("FX/Spells/Human_Spell_Shield") },
+                    };
+                    break;
+
+                case "Rune Chain":
+                    ability.variants = new AbilityVariant[]
+                    {
+                        new AbilityVariant { variantName="Chain",      indicatorTint=new Color(1f,0.6f,0.1f,0.75f),  targetTag="Enemy", damage=15f, statusEffect=StatusEffectType.Slow, statusDuration=5f, statusValue=0.5f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Ground spikes"),
+                            hitVFX = Resources.Load<GameObject>("FX/dark magic/Ground spikes") },
+                        new AbilityVariant { variantName="Heavy Chain", indicatorTint=new Color(1f,0.45f,0.0f,0.75f), targetTag="Enemy", damage=25f, statusEffect=StatusEffectType.Slow, statusDuration=4f, statusValue=0.4f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Ground spikes"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Weapon Effects/Prefabs/StoneImpacts") },
+                        new AbilityVariant { variantName="Soul Chain", indicatorTint=new Color(0.9f,0.3f,0.0f,0.75f), targetTag="Player", healAmount=20f, shieldAbsorb=15f, shieldDuration=3f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Healing buff"),
+                            hitVFX = Resources.Load<GameObject>("FX/Spells/Human_SpellAura_Heal") },
+                    };
+                    break;
+
+                case "Iron Rampart":
+                    ability.variants = new AbilityVariant[]
+                    {
+                        new AbilityVariant { variantName="Fortress",  indicatorTint=new Color(1f,0.6f,0.1f,0.75f),  targetTag="Player", shieldAbsorb=20f, shieldDuration=6f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Effects normal/Mana wall"),
+                            hitVFX = Resources.Load<GameObject>("FX/Spells/Human_Spell_Shield") },
+                        new AbilityVariant { variantName="Thorns",    indicatorTint=new Color(1f,0.4f,0.0f,0.75f),  targetTag="Enemy",  damage=25f, statusEffect=StatusEffectType.Stagger, statusDuration=0.8f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Effects normal/Mana wall"),
+                            hitVFX = Resources.Load<GameObject>("FX/dark magic/Ground spikes") },
+                        new AbilityVariant { variantName="Bulwark",   indicatorTint=new Color(0.9f,0.25f,0.0f,0.75f), targetTag="Player", shieldAbsorb=35f, shieldDuration=8f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Effects normal/Mana wall"),
+                            hitVFX = Resources.Load<GameObject>("FX/Spells/Human_Spell_Shield") },
+                    };
+                    break;
+
+                // ── ARCANIST ──────────────────────────────────────────────────────────
+                case "Arcane Step":
+                    ability.variants = new AbilityVariant[]
+                    {
+                        new AbilityVariant { variantName="Swift Step",   indicatorTint=new Color(0.5f,0.2f,1f,0.75f),  targetTag="Enemy", damage=15f, statusEffect=StatusEffectType.Stagger, statusDuration=0.5f,
+                            castVFX = Resources.Load<GameObject>("FX/Spells/Ice Rend"),
+                            hitVFX = Resources.Load<GameObject>("FX/Spells/Ice Rend") },
+                        new AbilityVariant { variantName="Phase Strike", indicatorTint=new Color(0.35f,0.1f,0.9f,0.75f), targetTag="Enemy", damage=25f, statusEffect=StatusEffectType.Stagger, statusDuration=0.8f,
+                            castVFX = Resources.Load<GameObject>("FX/Spells/Ice Rend"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Misc Effects/Prefabs/ElectricalSparks") },
+                        new AbilityVariant { variantName="Void Walk",    indicatorTint=new Color(0.2f,0.0f,0.75f,0.75f), targetTag="Enemy", damage=10f, statusEffect=StatusEffectType.Slow,    statusDuration=3f,  statusValue=0.35f,
+                            castVFX = Resources.Load<GameObject>("FX/Spells/Ice Rend"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Smoke & Steam Effects/Prefabs/GroundFog") },
+                    };
+                    break;
+
+                case "Void Maw":
+                    ability.variants = new AbilityVariant[]
+                    {
+                        new AbilityVariant { variantName="Crush",    indicatorTint=new Color(0.5f,0.1f,0.9f,0.75f),  targetTag="Enemy", damage=20f, statusEffect=StatusEffectType.Stagger, statusDuration=1f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Effects normal/Magic circle"),
+                            hitVFX = Resources.Load<GameObject>("FX/dark magic/Effects normal/Death magic circle") },
+                        new AbilityVariant { variantName="Drain",    indicatorTint=new Color(0.35f,0.0f,0.75f,0.75f), targetTag="Enemy", damage=15f, statusEffect=StatusEffectType.Cursed,  statusDuration=5f, statusValue=4f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Effects normal/Magic circle"),
+                            hitVFX = Resources.Load<GameObject>("FX/dark magic/Glowing orbs") },
+                        new AbilityVariant { variantName="Collapse", indicatorTint=new Color(0.2f,0.0f,0.6f,0.75f),  targetTag="Enemy", damage=20f, statusEffect=StatusEffectType.Weakened, statusDuration=4f, statusValue=0.3f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Effects normal/Magic circle"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Fire & Explosion Effects/Prefabs/EnergyExplosion") },
+                    };
+                    break;
+
+                case "Forked Lightning":
+                    ability.variants = new AbilityVariant[]
+                    {
+                        new AbilityVariant { variantName="Static",   indicatorTint=new Color(0.9f,0.9f,0.3f,0.75f), targetTag="Enemy", damage=30f, statusEffect=StatusEffectType.Stagger, statusDuration=0.7f,
+                            castVFX = Resources.Load<GameObject>("FX/Spells/Human_SpellAura_Lightning"),
+                            hitVFX = Resources.Load<GameObject>("FX/dark magic/Effects normal/Lightning strike skill") },
+                        new AbilityVariant { variantName="Storm",    indicatorTint=new Color(0.6f,0.8f,0.2f,0.75f), targetTag="Enemy", damage=20f, statusEffect=StatusEffectType.Cursed,  statusDuration=4f,  statusValue=4f,
+                            castVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Legacy Particles/Prefabs/LightnigStormCloud"),
+                            hitVFX = Resources.Load<GameObject>("FX/dark magic/Effects normal/Lightning strike skill") },
+                        new AbilityVariant { variantName="Overload", indicatorTint=new Color(0.4f,0.6f,1f,0.75f),   targetTag="Enemy", damage=40f, statusEffect=StatusEffectType.Weakened, statusDuration=3f,  statusValue=0.25f,
+                            castVFX = Resources.Load<GameObject>("FX/Spells/Human_SpellAura_Lightning"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Legacy Particles/Prefabs/ElectricalSparksEffect") },
+                    };
+                    break;
+
+                case "Collapsing Void":
+                    ability.variants = new AbilityVariant[]
+                    {
+                        new AbilityVariant { variantName="Rift",         indicatorTint=new Color(0.5f,0.1f,0.9f,0.75f),  targetTag="Enemy", damage=60f, statusEffect=StatusEffectType.Stagger, statusDuration=1f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Effects normal/Magic circle"),
+                            hitVFX = Resources.Load<GameObject>("FX/dark magic/Effects normal/Death magic circle") },
+                        new AbilityVariant { variantName="Singularity",  indicatorTint=new Color(0.35f,0.0f,0.75f,0.75f), targetTag="Enemy", damage=40f, statusEffect=StatusEffectType.Cursed,  statusDuration=8f,  statusValue=5f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Effects normal/Magic circle"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Fire & Explosion Effects/Prefabs/EnergyExplosion") },
+                        new AbilityVariant { variantName="Annihilation", indicatorTint=new Color(0.2f,0.0f,0.6f,0.75f),  targetTag="Enemy", damage=80f, statusEffect=StatusEffectType.Weakened, statusDuration=5f,  statusValue=0.35f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Effects normal/Magic circle"),
+                            hitVFX = Resources.Load<GameObject>("FX/dark magic/Effects normal/Death magic circle") },
+                    };
+                    break;
+
+                case "Ether Lance":
+                    ability.variants = new AbilityVariant[]
+                    {
+                        new AbilityVariant { variantName="Pierce",    indicatorTint=new Color(0.5f,0.2f,1f,0.75f),   targetTag="Enemy", damage=30f, statusEffect=StatusEffectType.Stagger, statusDuration=0.6f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Dard magic shoot"),
+                            hitVFX = Resources.Load<GameObject>("FX/dark magic/Effects normal/Death magic circle") },
+                        new AbilityVariant { variantName="Drain",     indicatorTint=new Color(0.35f,0.1f,0.85f,0.75f), targetTag="Enemy", damage=20f, statusEffect=StatusEffectType.Cursed,  statusDuration=5f, statusValue=4f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Dard magic shoot"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Misc Effects/Prefabs/ElectricalSparks") },
+                        new AbilityVariant { variantName="Void Surge",indicatorTint=new Color(0.2f,0.0f,0.7f,0.75f), targetTag="Enemy", damage=40f, statusEffect=StatusEffectType.Weakened, statusDuration=3f, statusValue=0.3f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Dard magic shoot"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Fire & Explosion Effects/Prefabs/EnergyExplosion") },
+                    };
+                    break;
+
+                // ── CLERIC ────────────────────────────────────────────────────────────
+                case "Soul Bond":
+                    ability.variants = new AbilityVariant[]
+                    {
+                        new AbilityVariant { variantName="Bond",           indicatorTint=new Color(1f,0.95f,0.3f,0.75f), targetTag="Player", healAmount=25f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Healing buff"),
+                            hitVFX = Resources.Load<GameObject>("FX/Spells/Human_SpellAura_Heal") },
+                        new AbilityVariant { variantName="Shielding Bond", indicatorTint=new Color(0.9f,0.85f,0.2f,0.75f), targetTag="Player", shieldAbsorb=30f, shieldDuration=5f,
+                            castVFX = Resources.Load<GameObject>("FX/Spells/Human_Spell_Shield"),
+                            hitVFX = Resources.Load<GameObject>("FX/Spells/Human_SpellAura_Heal") },
+                        new AbilityVariant { variantName="Sustain Bond",   indicatorTint=new Color(0.8f,0.75f,0.1f,0.75f), targetTag="Player", hotTickAmount=8f, hotTicks=4, hotInterval=1.5f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Healing buff"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Misc Effects/Prefabs/FireFlies") },
+                    };
+                    break;
+
+                case "Spirit Wisps":
+                    ability.variants = new AbilityVariant[]
+                    {
+                        new AbilityVariant { variantName="Wisp Swarm",    indicatorTint=new Color(1f,0.95f,0.3f,0.75f),  targetTag="Player", healAmount=40f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Effects normal/Magic circle"),
+                            hitVFX = Resources.Load<GameObject>("FX/dark magic/Glowing orbs") },
+                        new AbilityVariant { variantName="Mending Wisps", indicatorTint=new Color(0.9f,1f,0.3f,0.75f),   targetTag="Player", hotTickAmount=10f, hotTicks=4, hotInterval=1f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Effects normal/Magic circle"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Misc Effects/Prefabs/FireFlies") },
+                        new AbilityVariant { variantName="Guard Wisps",   indicatorTint=new Color(0.3f,0.9f,1f,0.75f),   targetTag="Player", healAmount=15f, shieldAbsorb=25f, shieldDuration=4f,
+                            castVFX = Resources.Load<GameObject>("FX/Spells/Human_Spell_Shield"),
+                            hitVFX = Resources.Load<GameObject>("FX/dark magic/Healing buff") },
+                    };
+                    break;
+
+                case "Divine Spark":
+                    ability.variants = new AbilityVariant[]
+                    {
+                        new AbilityVariant { variantName="Smite",     indicatorTint=new Color(1f,0.95f,0.3f,0.75f),  targetTag="Enemy", damage=60f, statusEffect=StatusEffectType.Stagger,  statusDuration=1f,
+                            castVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Misc Effects/Prefabs/Respawn"),
+                            hitVFX = Resources.Load<GameObject>("FX/Spells/Human_Spell_Heal") },
+                        new AbilityVariant { variantName="Sacred Flame",indicatorTint=new Color(1f,0.7f,0.1f,0.75f), targetTag="Enemy", damage=40f, statusEffect=StatusEffectType.Cursed,   statusDuration=5f,  statusValue=5f,
+                            castVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Misc Effects/Prefabs/Respawn"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Fire & Explosion Effects/Prefabs/FlameStream") },
+                        new AbilityVariant { variantName="Exorcism",  indicatorTint=new Color(0.9f,0.9f,0.5f,0.75f), targetTag="Enemy", damage=80f, statusEffect=StatusEffectType.Weakened, statusDuration=3f,  statusValue=0.35f,
+                            castVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Misc Effects/Prefabs/Respawn"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Fire & Explosion Effects/Prefabs/EnergyExplosion") },
+                    };
+                    break;
+
+                case "Sacred Aegis":
+                    ability.variants = new AbilityVariant[]
+                    {
+                        new AbilityVariant { variantName="Aegis",           indicatorTint=new Color(1f,0.95f,0.3f,0.75f),  targetTag="Player", shieldAbsorb=30f, shieldDuration=8f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Leaves shield"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Misc Effects/Prefabs/Respawn") },
+                        new AbilityVariant { variantName="Reinforced Aegis",indicatorTint=new Color(0.9f,0.85f,0.2f,0.75f), targetTag="Player", shieldAbsorb=50f, shieldDuration=6f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Leaves shield"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Misc Effects/Prefabs/Respawn") },
+                        new AbilityVariant { variantName="Unyielding Aegis",indicatorTint=new Color(0.8f,0.75f,0.1f,0.75f), targetTag="Player", shieldAbsorb=80f, shieldDuration=4f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Leaves shield"),
+                            hitVFX = Resources.Load<GameObject>("FX/Spells/Human_Spell_Shield") },
+                    };
+                    break;
+
+                case "Dispel":
+                    ability.variants = new AbilityVariant[]
+                    {
+                        new AbilityVariant { variantName="Dispel",   indicatorTint=new Color(1f,0.95f,0.3f,0.75f),  targetTag="Player", healAmount=20f,
+                            castVFX = Resources.Load<GameObject>("FX/Spells/Human_Spell_Heal"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Misc Effects/Prefabs/Respawn") },
+                        new AbilityVariant { variantName="Purify",   indicatorTint=new Color(0.9f,1f,0.3f,0.75f),   targetTag="Player", healAmount=35f,
+                            castVFX = Resources.Load<GameObject>("FX/Spells/Human_Spell_Heal"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Misc Effects/Prefabs/Respawn") },
+                        new AbilityVariant { variantName="Sanctify", indicatorTint=new Color(0.3f,0.9f,1f,0.75f),   targetTag="Player", healAmount=20f, shieldAbsorb=20f, shieldDuration=3f,
+                            castVFX = Resources.Load<GameObject>("FX/Spells/Human_Spell_Shield"),
+                            hitVFX = Resources.Load<GameObject>("FX/Spells/Human_SpellAura_Heal") },
+                    };
+                    break;
+
+                case "Temporal Grace":
+                    ability.variants = new AbilityVariant[]
+                    {
+                        new AbilityVariant { variantName="Grace",       indicatorTint=new Color(1f,0.95f,0.3f,0.75f),  targetTag="Player", healAmount=60f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Magic buff"),
+                            hitVFX = Resources.Load<GameObject>("FX/Spells/Human_SpellAura_Heal") },
+                        new AbilityVariant { variantName="Time Spiral", indicatorTint=new Color(0.9f,0.85f,0.2f,0.75f), targetTag="Player", healAmount=40f, hotTickAmount=8f, hotTicks=5, hotInterval=1f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Magic buff"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Misc Effects/Prefabs/FireFlies") },
+                        new AbilityVariant { variantName="Chronoshift", indicatorTint=new Color(0.7f,0.7f,1f,0.75f),   targetTag="Player", healAmount=80f, shieldAbsorb=40f, shieldDuration=5f,
+                            castVFX = Resources.Load<GameObject>("FX/Spells/Human_Spell_Shield"),
+                            hitVFX = Resources.Load<GameObject>("FX/dark magic/Magic buff") },
+                    };
+                    break;
+
+                // ── SHADOWBLADE ───────────────────────────────────────────────────────
+                case "Shadow Veil":
+                    ability.variants = new AbilityVariant[]
+                    {
+                        new AbilityVariant { variantName="Fade",       indicatorTint=new Color(0.5f,0.0f,0.7f,0.75f), targetTag="Player", shieldAbsorb=20f, shieldDuration=4f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Feathers buff"),
+                            hitVFX = Resources.Load<GameObject>("FX/dark magic/Feathers buff") },
+                        new AbilityVariant { variantName="Phantom",    indicatorTint=new Color(0.4f,0.0f,0.6f,0.75f), targetTag="Player", shieldAbsorb=35f, shieldDuration=4f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Feathers buff"),
+                            hitVFX = Resources.Load<GameObject>("FX/dark magic/Feathers buff") },
+                        new AbilityVariant { variantName="Ghost Walk", indicatorTint=new Color(0.3f,0.0f,0.5f,0.75f), targetTag="Player", shieldAbsorb=50f, shieldDuration=4f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Feathers buff"),
+                            hitVFX = Resources.Load<GameObject>("FX/dark magic/Feathers buff") },
+                    };
+                    break;
+
+                case "Silence Ward":
+                    ability.variants = new AbilityVariant[]
+                    {
+                        new AbilityVariant { variantName="Hush",    indicatorTint=new Color(0.6f,0.0f,0.8f,0.75f), targetTag="Enemy", damage=15f, statusEffect=StatusEffectType.Slow,    statusDuration=5f, statusValue=0.5f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Effects normal/Magic circle"),
+                            hitVFX = Resources.Load<GameObject>("FX/dark magic/Ground spikes") },
+                        new AbilityVariant { variantName="Nullify", indicatorTint=new Color(0.5f,0.0f,0.7f,0.75f), targetTag="Enemy", damage=20f, statusEffect=StatusEffectType.Cursed,  statusDuration=4f, statusValue=3f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Effects normal/Magic circle"),
+                            hitVFX = Resources.Load<GameObject>("FX/dark magic/Effects normal/Snow circle") },
+                        new AbilityVariant { variantName="Void Silence",indicatorTint=new Color(0.4f,0.0f,0.6f,0.75f),targetTag="Enemy", damage=25f, statusEffect=StatusEffectType.Weakened, statusDuration=4f, statusValue=0.25f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Effects normal/Magic circle"),
+                            hitVFX = Resources.Load<GameObject>("FX/dark magic/Effects normal/Death magic circle") },
+                    };
+                    break;
+
+                case "Dark Harvest":
+                    ability.variants = new AbilityVariant[]
+                    {
+                        new AbilityVariant { variantName="Harvest",      indicatorTint=new Color(0.6f,0.0f,0.8f,0.75f), targetTag="Enemy", damage=20f, statusEffect=StatusEffectType.Weakened, statusDuration=4f, statusValue=0.3f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Effects normal/Death magic circle"),
+                            hitVFX = Resources.Load<GameObject>("FX/dark magic/Effects normal/Magic circle") },
+                        new AbilityVariant { variantName="Blood Harvest",indicatorTint=new Color(0.7f,0.0f,0.5f,0.75f), targetTag="Enemy", damage=30f, statusEffect=StatusEffectType.Cursed,   statusDuration=5f, statusValue=5f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Effects normal/Death magic circle"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Fire & Explosion Effects/Prefabs/FlameStream") },
+                        new AbilityVariant { variantName="Soul Harvest", indicatorTint=new Color(0.5f,0.0f,0.4f,0.75f), targetTag="Enemy", damage=40f, statusEffect=StatusEffectType.Stagger,  statusDuration=1f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Effects normal/Death magic circle"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Misc Effects/Prefabs/SparksEffect") },
+                    };
+                    break;
+
+                case "Dark Mark":
+                    ability.variants = new AbilityVariant[]
+                    {
+                        new AbilityVariant { variantName="Mark",  indicatorTint=new Color(0.6f,0.0f,0.8f,0.75f), targetTag="Enemy", damage=20f, statusEffect=StatusEffectType.Cursed,   statusDuration=4f, statusValue=4f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Dard magic shoot"),
+                            hitVFX = Resources.Load<GameObject>("FX/dark magic/Effects normal/Magic circle") },
+                        new AbilityVariant { variantName="Scar",  indicatorTint=new Color(0.5f,0.0f,0.6f,0.75f), targetTag="Enemy", damage=28f, statusEffect=StatusEffectType.Weakened, statusDuration=3f, statusValue=0.25f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Dard magic shoot"),
+                            hitVFX = Resources.Load<GameObject>("FX/dark magic/Effects normal/Death magic circle") },
+                        new AbilityVariant { variantName="Brand", indicatorTint=new Color(0.4f,0.0f,0.5f,0.75f), targetTag="Enemy", damage=35f, statusEffect=StatusEffectType.Stagger,  statusDuration=0.6f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Dard magic shoot"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Weapon Effects/Prefabs/StoneImpacts") },
+                    };
+                    break;
+
+                case "Fan of Blades":
+                    ability.variants = new AbilityVariant[]
+                    {
+                        new AbilityVariant { variantName="Slash",  indicatorTint=new Color(0.7f,0.0f,1f,0.75f),   targetTag="Enemy", damage=30f, statusEffect=StatusEffectType.Stagger,  statusDuration=0.6f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Dard magic shoot"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Weapon Effects/Prefabs/MetalImpacts") },
+                        new AbilityVariant { variantName="Bleed",  indicatorTint=new Color(0.5f,0.0f,0.8f,0.75f), targetTag="Enemy", damage=10f, statusEffect=StatusEffectType.Cursed,   statusDuration=5f,  statusValue=4f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Dard magic shoot"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Misc Effects/Prefabs/SparksEffect") },
+                        new AbilityVariant { variantName="Expose", indicatorTint=new Color(0.3f,0.0f,0.6f,0.75f), targetTag="Enemy", damage=14f, statusEffect=StatusEffectType.Weakened, statusDuration=4f,  statusValue=0.25f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Dard magic shoot"),
+                            hitVFX = Resources.Load<GameObject>("FX/dark magic/Effects normal/Magic circle") },
+                    };
+                    break;
+
+                // ── CLERIC CONE / BEAM ─────────────────────────────────────────────────
+                case "Healing Cone":
+                    ability.variants = new AbilityVariant[]
+                    {
+                        new AbilityVariant { variantName="HPS",    indicatorTint=new Color(0.1f,1f,0.2f,0.75f), targetTag="Player", healAmount=45f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Effects normal/Magic circle"),
+                            hitVFX = Resources.Load<GameObject>("FX/Spells/Human_Spell_Heal") },
+                        new AbilityVariant { variantName="HOT",    indicatorTint=new Color(0.5f,1f,0.1f,0.75f), targetTag="Player", hotTickAmount=8f, hotTicks=5, hotInterval=1f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Effects normal/Magic circle"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Misc Effects/Prefabs/FireFlies") },
+                        new AbilityVariant { variantName="BUBBLE", indicatorTint=new Color(0.1f,0.7f,1f,0.75f), targetTag="Player", shieldAbsorb=40f, shieldDuration=6f,
+                            castVFX = Resources.Load<GameObject>("FX/Spells/Human_Spell_Shield"),
+                            hitVFX = Resources.Load<GameObject>("FX/dark magic/Healing buff") },
+                    };
+                    break;
+
+                case "Mending Beam":
+                    ability.variants = new AbilityVariant[]
+                    {
+                        new AbilityVariant { variantName="HPS",    indicatorTint=new Color(0.1f,1f,0.2f,0.75f), targetTag="Player", healAmount=45f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Effects normal/Magic circle"),
+                            hitVFX = Resources.Load<GameObject>("FX/Spells/Human_Spell_Heal") },
+                        new AbilityVariant { variantName="HOT",    indicatorTint=new Color(0.5f,1f,0.1f,0.75f), targetTag="Player", hotTickAmount=8f, hotTicks=5, hotInterval=1f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Effects normal/Magic circle"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Misc Effects/Prefabs/FireFlies") },
+                        new AbilityVariant { variantName="BUBBLE", indicatorTint=new Color(0.1f,0.7f,1f,0.75f), targetTag="Player", shieldAbsorb=40f, shieldDuration=6f,
+                            castVFX = Resources.Load<GameObject>("FX/Spells/Human_Spell_Shield"),
+                            hitVFX = Resources.Load<GameObject>("FX/dark magic/Healing buff") },
+                    };
+                    break;
+
+                // ── ARCANIST CONE / BEAM ───────────────────────────────────────────────
+                case "Conflagration Cone":
+                    ability.variants = new AbilityVariant[]
+                    {
+                        new AbilityVariant { variantName="Burst",  indicatorTint=new Color(1f,0.15f,0.0f,0.75f), targetTag="Enemy", damage=32f, statusEffect=StatusEffectType.Stagger, statusDuration=0.8f,
+                            castVFX = Resources.Load<GameObject>("FX/Spells/Human_SpellAura_Fire"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Fire & Explosion Effects/Prefabs/FireBall") },
+                        new AbilityVariant { variantName="Burn",   indicatorTint=new Color(1f,0.45f,0.0f,0.75f), targetTag="Enemy", damage=12f, statusEffect=StatusEffectType.Cursed,  statusDuration=6f,  statusValue=5f,
+                            castVFX = Resources.Load<GameObject>("FX/Spells/Human_SpellAura_Fire"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Fire & Explosion Effects/Prefabs/FlameStream") },
+                        new AbilityVariant { variantName="Scorch", indicatorTint=new Color(1f,0.75f,0.0f,0.75f), targetTag="Enemy", damage=16f, statusEffect=StatusEffectType.Slow,    statusDuration=4f,  statusValue=0.4f,
+                            castVFX = Resources.Load<GameObject>("FX/Spells/Human_SpellAura_Fire"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Fire & Explosion Effects/Prefabs/MediumFlames") },
+                    };
+                    break;
+
+                case "Ember Beam":
+                    ability.variants = new AbilityVariant[]
+                    {
+                        new AbilityVariant { variantName="Burst",  indicatorTint=new Color(1f,0.15f,0.0f,0.75f), targetTag="Enemy", damage=32f, statusEffect=StatusEffectType.Stagger, statusDuration=0.8f,
+                            castVFX = Resources.Load<GameObject>("FX/Spells/Human_SpellAura_Fire"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Fire & Explosion Effects/Prefabs/FireBall") },
+                        new AbilityVariant { variantName="Burn",   indicatorTint=new Color(1f,0.45f,0.0f,0.75f), targetTag="Enemy", damage=12f, statusEffect=StatusEffectType.Cursed,  statusDuration=6f,  statusValue=5f,
+                            castVFX = Resources.Load<GameObject>("FX/Spells/Human_SpellAura_Fire"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Fire & Explosion Effects/Prefabs/FlameStream") },
+                        new AbilityVariant { variantName="Scorch", indicatorTint=new Color(1f,0.75f,0.0f,0.75f), targetTag="Enemy", damage=16f, statusEffect=StatusEffectType.Slow,    statusDuration=4f,  statusValue=0.4f,
+                            castVFX = Resources.Load<GameObject>("FX/Spells/Human_SpellAura_Fire"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Fire & Explosion Effects/Prefabs/MediumFlames") },
+                    };
+                    break;
+
+                // ── HANGDANGER'S ARCANIST SPELLS ─────────────────────────────────────
+                case "Ice Spikes":
+                    // Hangdanger: cone eruption changed from rect→cone; VFX = "Ice freeze skill"
+                    ability.variants = new AbilityVariant[]
+                    {
+                        new AbilityVariant { variantName="Frost Spikes",  indicatorTint=new Color(0.4f,0.85f,1f,0.75f), targetTag="Enemy", damage=20f, statusEffect=StatusEffectType.Slow,    statusDuration=3f,  statusValue=0.35f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Effects normal/Ice freeze skill"),
+                            hitVFX = Resources.Load<GameObject>("FX/dark magic/Effects normal/Ice freeze skill") },
+                        new AbilityVariant { variantName="Ice Lance",     indicatorTint=new Color(0.2f,0.7f,1f,0.75f),  targetTag="Enemy", damage=30f, statusEffect=StatusEffectType.Stagger,  statusDuration=0.8f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Effects normal/Ice freeze skill"),
+                            hitVFX = Resources.Load<GameObject>("FX/Spells/Ice Rend") },
+                        new AbilityVariant { variantName="Glacial Prison",indicatorTint=new Color(0.1f,0.5f,0.9f,0.75f), targetTag="Enemy", damage=15f, statusEffect=StatusEffectType.Bound,    statusDuration=2.5f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Effects normal/Ice freeze skill"),
+                            hitVFX = Resources.Load<GameObject>("FX/dark magic/Effects with projectors/Ice freeze skill") },
+                    };
+                    break;
+
+                case "Meteor Shower":
+                    // Hangdanger: delayed AoE bombardment; VFX = Arcanist_MeteorIpact prefab
+                    ability.variants = new AbilityVariant[]
+                    {
+                        new AbilityVariant { variantName="Shower",     indicatorTint=new Color(1f,0.5f,0.1f,0.75f),  targetTag="Enemy", damage=30f, statusEffect=StatusEffectType.Stagger,  statusDuration=0.6f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Effects with projectors/Meteor rain"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Fire & Explosion Effects/Prefabs/SmallExplosion") },
+                        new AbilityVariant { variantName="Barrage",    indicatorTint=new Color(1f,0.35f,0.0f,0.75f), targetTag="Enemy", damage=20f, statusEffect=StatusEffectType.Cursed,   statusDuration=4f,  statusValue=4f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Effects with projectors/Meteor rain"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Fire & Explosion Effects/Prefabs/MediumFlames") },
+                        new AbilityVariant { variantName="Extinction", indicatorTint=new Color(0.9f,0.2f,0.0f,0.75f), targetTag="Enemy", damage=50f, statusEffect=StatusEffectType.Weakened, statusDuration=4f,  statusValue=0.3f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Effects with projectors/Meteor rain"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Fire & Explosion Effects/Prefabs/BigExplosion") },
+                    };
+                    break;
+
+                // ── NEW ARCANIST ──────────────────────────────────────────────────────
+                case "Fireball":
+                    ability.variants = new AbilityVariant[]
+                    {
+                        new AbilityVariant { variantName="Quick Shot",   indicatorTint=new Color(1f,0.5f,0.1f,0.75f),  targetTag="Enemy", damage=25f, statusEffect=StatusEffectType.Stagger, statusDuration=0.5f,
+                            castVFX = Resources.Load<GameObject>("FX/Spells/Spell_Fireball"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Fire & Explosion Effects/Prefabs/SmallExplosion") },
+                        new AbilityVariant { variantName="Triple Burst", indicatorTint=new Color(1f,0.35f,0.0f,0.75f), targetTag="Enemy", damage=18f, statusEffect=StatusEffectType.Cursed,  statusDuration=4f, statusValue=4f,
+                            castVFX = Resources.Load<GameObject>("FX/Spells/Spell_FireballLarge"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Fire & Explosion Effects/Prefabs/FireBall") },
+                        new AbilityVariant { variantName="Inferno Nova", indicatorTint=new Color(0.9f,0.15f,0.0f,0.75f), targetTag="Enemy", damage=45f, statusEffect=StatusEffectType.Weakened, statusDuration=3f, statusValue=0.25f,
+                            castVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Fire & Explosion Effects/Prefabs/WildFire"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Fire & Explosion Effects/Prefabs/BigExplosion") },
+                    };
+                    break;
+
+                case "Chain Lightning":
+                    ability.variants = new AbilityVariant[]
+                    {
+                        new AbilityVariant { variantName="Arc",         indicatorTint=new Color(0.9f,0.9f,0.3f,0.75f), targetTag="Enemy", damage=30f, statusEffect=StatusEffectType.Stagger,  statusDuration=0.7f,
+                            castVFX = Resources.Load<GameObject>("FX/Spells/Human_SpellAura_Lightning"),
+                            hitVFX = Resources.Load<GameObject>("FX/Spells/Spell_LightningStrike") },
+                        new AbilityVariant { variantName="Chain",       indicatorTint=new Color(0.5f,0.8f,0.2f,0.75f), targetTag="Enemy", damage=20f, statusEffect=StatusEffectType.Cursed,   statusDuration=4f,  statusValue=4f,
+                            castVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Legacy Particles/Prefabs/LightnigStormCloud"),
+                            hitVFX = Resources.Load<GameObject>("FX/dark magic/Effects with projectors/Lightning strike skill") },
+                        new AbilityVariant { variantName="Thunderstorm",indicatorTint=new Color(0.3f,0.6f,1f,0.75f),   targetTag="Enemy", damage=40f, statusEffect=StatusEffectType.Weakened, statusDuration=3f,  statusValue=0.25f,
+                            castVFX = Resources.Load<GameObject>("FX/Spells/Spell_LightningStrike"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Legacy Particles/Prefabs/ElectricalSparksEffect") },
+                    };
+                    break;
+
+                case "Frost Nova":
+                    ability.variants = new AbilityVariant[]
+                    {
+                        new AbilityVariant { variantName="Chill",       indicatorTint=new Color(0.5f,0.85f,1f,0.75f),  targetTag="Enemy", damage=15f, statusEffect=StatusEffectType.Slow,  statusDuration=3f,  statusValue=0.35f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Effects normal/Snow circle"),
+                            hitVFX = Resources.Load<GameObject>("FX/dark magic/Effects normal/Snow circle") },
+                        new AbilityVariant { variantName="Freeze",      indicatorTint=new Color(0.3f,0.7f,1f,0.75f),   targetTag="Enemy", damage=20f, statusEffect=StatusEffectType.Bound, statusDuration=2.5f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Effects normal/Ice freeze skill"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Magic Effects/Prefabs/Ice Lance") },
+                        new AbilityVariant { variantName="Blizzard",    indicatorTint=new Color(0.1f,0.5f,0.9f,0.75f), targetTag="Enemy", damage=25f, statusEffect=StatusEffectType.Slow,  statusDuration=5f,  statusValue=0.5f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Effects with projectors/Snow circle"),
+                            hitVFX = Resources.Load<GameObject>("FX/Spells/Ice Rend Large") },
+                    };
+                    break;
+
+                // ── NEW WARDEN ────────────────────────────────────────────────────────
+                case "Thorn Volley":
+                    ability.variants = new AbilityVariant[]
+                    {
+                        new AbilityVariant { variantName="Spine",       indicatorTint=new Color(0.2f,0.8f,0.2f,0.75f), targetTag="Enemy", damage=20f, statusEffect=StatusEffectType.Stagger, statusDuration=0.5f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Ground spikes"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Weapon Effects/Prefabs/StoneImpacts") },
+                        new AbilityVariant { variantName="Volley",      indicatorTint=new Color(0.1f,0.6f,0.1f,0.75f), targetTag="Enemy", damage=15f, statusEffect=StatusEffectType.Slow,    statusDuration=3f,  statusValue=0.3f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Leaves shield"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Goop Effects/Prefabs/GoopSpray") },
+                        new AbilityVariant { variantName="Briar Storm", indicatorTint=new Color(0.0f,0.4f,0.0f,0.75f), targetTag="Enemy", damage=12f, statusEffect=StatusEffectType.Cursed,  statusDuration=5f,  statusValue=4f,
+                            castVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Smoke & Steam Effects/Prefabs/PoisonGas"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Goop Effects/Prefabs/GoopSprayEffect") },
+                    };
+                    break;
+
+                case "Earth Surge":
+                    ability.variants = new AbilityVariant[]
+                    {
+                        new AbilityVariant { variantName="Tremor",      indicatorTint=new Color(0.6f,0.4f,0.1f,0.75f), targetTag="Enemy", damage=20f, statusEffect=StatusEffectType.Stagger, statusDuration=0.8f,
+                            castVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Magic Effects/Prefabs/EarthShatter"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Weapon Effects/Prefabs/StoneImpacts") },
+                        new AbilityVariant { variantName="Quake",       indicatorTint=new Color(0.5f,0.3f,0.0f,0.75f), targetTag="Enemy", damage=30f, statusEffect=StatusEffectType.Slow,    statusDuration=4f,  statusValue=0.35f,
+                            castVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Magic Effects/Prefabs/EarthShatter"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Smoke & Steam Effects/Prefabs/DustStorm") },
+                        new AbilityVariant { variantName="Fissure",     indicatorTint=new Color(0.4f,0.2f,0.0f,0.75f), targetTag="Enemy", damage=45f, statusEffect=StatusEffectType.Weakened, statusDuration=4f, statusValue=0.3f,
+                            castVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Magic Effects/Prefabs/EarthShatter"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Magic Effects/Prefabs/EarthShatter") },
+                    };
+                    break;
+
+                case "Vine Grasp":
+                    ability.variants = new AbilityVariant[]
+                    {
+                        new AbilityVariant { variantName="Root",         indicatorTint=new Color(0.2f,0.7f,0.1f,0.75f), targetTag="Enemy", damage=10f, statusEffect=StatusEffectType.Bound,   statusDuration=2f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Leaves shield"),
+                            hitVFX = Resources.Load<GameObject>("FX/dark magic/Ground spikes") },
+                        new AbilityVariant { variantName="Stranglehold", indicatorTint=new Color(0.1f,0.5f,0.1f,0.75f), targetTag="Enemy", damage=20f, statusEffect=StatusEffectType.Bound,   statusDuration=3f,
+                            castVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Smoke & Steam Effects/Prefabs/PoisonGas"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Goop Effects/Prefabs/GoopStreamEffect") },
+                        new AbilityVariant { variantName="Forest Prison",indicatorTint=new Color(0.0f,0.35f,0.0f,0.75f), targetTag="Enemy", damage=30f, statusEffect=StatusEffectType.Bound,  statusDuration=4f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Leaves shield"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Goop Effects/Prefabs/GoopSpray") },
+                    };
+                    break;
+
+                // ── NEW IRONCLAD ──────────────────────────────────────────────────────
+                case "Hammer Strike":
+                    ability.variants = new AbilityVariant[]
+                    {
+                        new AbilityVariant { variantName="Quick Blow",   indicatorTint=new Color(1f,0.6f,0.1f,0.75f),  targetTag="Enemy", damage=30f, statusEffect=StatusEffectType.Stagger,  statusDuration=0.7f,
+                            castVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Magic Effects/Prefabs/EarthShatter"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Weapon Effects/Prefabs/MetalImpacts") },
+                        new AbilityVariant { variantName="Heavy Slam",   indicatorTint=new Color(1f,0.45f,0.0f,0.75f), targetTag="Enemy", damage=50f, statusEffect=StatusEffectType.Weakened, statusDuration=3f,  statusValue=0.25f,
+                            castVFX = Resources.Load<GameObject>("FX/Spells/Human_Spell_Shockwave_Ground"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Weapon Effects/Prefabs/StoneImpacts") },
+                        new AbilityVariant { variantName="Seismic Slam", indicatorTint=new Color(0.9f,0.25f,0.0f,0.75f), targetTag="Enemy", damage=70f, statusEffect=StatusEffectType.Slow,   statusDuration=4f,  statusValue=0.4f,
+                            castVFX = Resources.Load<GameObject>("FX/Spells/Human_Spell_Shockwave_Explosion"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Magic Effects/Prefabs/EarthShatter") },
+                    };
+                    break;
+
+                case "War Cry":
+                    ability.variants = new AbilityVariant[]
+                    {
+                        new AbilityVariant { variantName="Battle Shout", indicatorTint=new Color(1f,0.65f,0.15f,0.75f), targetTag="Player", healAmount=30f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Magic buff"),
+                            hitVFX = Resources.Load<GameObject>("FX/Spells/Human_Spell_Heal") },
+                        new AbilityVariant { variantName="Rally Cry",    indicatorTint=new Color(1f,0.5f,0.05f,0.75f), targetTag="Player", healAmount=15f, shieldAbsorb=25f, shieldDuration=4f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Shield buff"),
+                            hitVFX = Resources.Load<GameObject>("FX/Spells/Human_SpellAura_Heal") },
+                        new AbilityVariant { variantName="Primal Roar",  indicatorTint=new Color(0.9f,0.35f,0.0f,0.75f), targetTag="Enemy", damage=20f, statusEffect=StatusEffectType.Stagger, statusDuration=1f,
+                            castVFX = Resources.Load<GameObject>("FX/Spells/Human_Spell_Shockwave_Explosion"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Weapon Effects/Prefabs/MetalImpacts") },
+                    };
+                    break;
+
+                case "Juggernaut Rush":
+                    ability.variants = new AbilityVariant[]
+                    {
+                        new AbilityVariant { variantName="Charge",       indicatorTint=new Color(1f,0.6f,0.1f,0.75f),   targetTag="Enemy", damage=25f, statusEffect=StatusEffectType.Stagger,  statusDuration=0.8f,
+                            castVFX = Resources.Load<GameObject>("FX/Spells/Human_Spell_Shockwave_Ground"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Weapon Effects/Prefabs/MetalImpacts") },
+                        new AbilityVariant { variantName="Bull Rush",     indicatorTint=new Color(1f,0.45f,0.0f,0.75f),  targetTag="Enemy", damage=35f, statusEffect=StatusEffectType.Slow,     statusDuration=3f,  statusValue=0.35f,
+                            castVFX = Resources.Load<GameObject>("FX/Spells/Human_Spell_Shockwave_Explosion"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Weapon Effects/Prefabs/StoneImpacts") },
+                        new AbilityVariant { variantName="Wrecking Ball", indicatorTint=new Color(0.9f,0.25f,0.0f,0.75f), targetTag="Enemy", damage=60f, statusEffect=StatusEffectType.Weakened, statusDuration=4f, statusValue=0.3f,
+                            castVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Fire & Explosion Effects/Prefabs/BigExplosion"),
+                            hitVFX = Resources.Load<GameObject>("FX/Spells/Human_Spell_Shockwave_Explosion") },
+                    };
+                    break;
+
+                // ── NEW SHADOWBLADE ───────────────────────────────────────────────────
+                case "Blade Flurry":
+                    ability.variants = new AbilityVariant[]
+                    {
+                        new AbilityVariant { variantName="Slash",        indicatorTint=new Color(0.7f,0.0f,1f,0.75f),   targetTag="Enemy", damage=25f, statusEffect=StatusEffectType.Stagger,  statusDuration=0.6f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Dard magic shoot"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Weapon Effects/Prefabs/MetalImpacts") },
+                        new AbilityVariant { variantName="Flurry",       indicatorTint=new Color(0.5f,0.0f,0.8f,0.75f), targetTag="Enemy", damage=15f, statusEffect=StatusEffectType.Cursed,   statusDuration=4f,  statusValue=4f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Magic arrow"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Misc Effects/Prefabs/SparksEffect") },
+                        new AbilityVariant { variantName="Maelstrom",    indicatorTint=new Color(0.3f,0.0f,0.6f,0.75f), targetTag="Enemy", damage=10f, statusEffect=StatusEffectType.Weakened, statusDuration=4f,  statusValue=0.25f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Feathers buff"),
+                            hitVFX = Resources.Load<GameObject>("FX/dark magic/Ground spikes") },
+                    };
+                    break;
+
+                case "Poison Cloud":
+                    ability.variants = new AbilityVariant[]
+                    {
+                        new AbilityVariant { variantName="Mist",         indicatorTint=new Color(0.4f,0.7f,0.1f,0.75f), targetTag="Enemy", damage=10f, statusEffect=StatusEffectType.Cursed, statusDuration=4f, statusValue=3f,
+                            castVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Smoke & Steam Effects/Prefabs/PoisonGas"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Smoke & Steam Effects/Prefabs/PoisonGas") },
+                        new AbilityVariant { variantName="Miasma",       indicatorTint=new Color(0.2f,0.5f,0.0f,0.75f), targetTag="Enemy", damage=15f, statusEffect=StatusEffectType.Cursed, statusDuration=6f, statusValue=5f,
+                            castVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Smoke & Steam Effects/Prefabs/GroundFog"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Smoke & Steam Effects/Prefabs/PoisonGas") },
+                        new AbilityVariant { variantName="Death Fog",    indicatorTint=new Color(0.1f,0.3f,0.0f,0.75f), targetTag="Enemy", damage=20f, statusEffect=StatusEffectType.Slow,   statusDuration=4f, statusValue=0.4f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Effects normal/Death magic circle"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Smoke & Steam Effects/Prefabs/PoisonGas") },
+                    };
+                    break;
+
+                case "Death Strike":
+                    ability.variants = new AbilityVariant[]
+                    {
+                        new AbilityVariant { variantName="Stab",          indicatorTint=new Color(0.6f,0.0f,0.8f,0.75f), targetTag="Enemy", damage=40f, statusEffect=StatusEffectType.Stagger,  statusDuration=0.8f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Dard magic shoot"),
+                            hitVFX = Resources.Load<GameObject>("FX/dark magic/Effects normal/Death magic circle") },
+                        new AbilityVariant { variantName="Deep Cut",      indicatorTint=new Color(0.4f,0.0f,0.6f,0.75f), targetTag="Enemy", damage=35f, statusEffect=StatusEffectType.Weakened, statusDuration=4f, statusValue=0.3f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Magic arrow"),
+                            hitVFX = Resources.Load<GameObject>("FX/dark magic/Effects with projectors/Death magic circle") },
+                        new AbilityVariant { variantName="Assassination", indicatorTint=new Color(0.2f,0.0f,0.4f,0.75f), targetTag="Enemy", damage=75f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Plazma sphere"),
+                            hitVFX = Resources.Load<GameObject>("FX/dark magic/Effects with projectors/Death magic circle") },
+                    };
+                    break;
+
+                // ── NEW CLERIC ────────────────────────────────────────────────────────
+                case "Holy Bolt":
+                    ability.variants = new AbilityVariant[]
+                    {
+                        new AbilityVariant { variantName="Flash",         indicatorTint=new Color(1f,0.95f,0.4f,0.75f), targetTag="Player", healAmount=30f,
+                            castVFX = Resources.Load<GameObject>("FX/Spells/Human_SpellAura_Heal"),
+                            hitVFX = Resources.Load<GameObject>("FX/Spells/Human_Spell_Heal") },
+                        new AbilityVariant { variantName="Radiance",      indicatorTint=new Color(1f,0.85f,0.2f,0.75f), targetTag="Player", healAmount=45f, hotTickAmount=5f, hotTicks=3, hotInterval=1f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Healing buff"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Misc Effects/Prefabs/FireFlies") },
+                        new AbilityVariant { variantName="Divine Ray",    indicatorTint=new Color(0.9f,0.75f,0.1f,0.75f), targetTag="Player", healAmount=70f, shieldAbsorb=20f, shieldDuration=4f,
+                            castVFX = Resources.Load<GameObject>("FX/Spells/Human_Spell_Shield"),
+                            hitVFX = Resources.Load<GameObject>("FX/Spells/Human_SpellAura_Heal") },
+                    };
+                    break;
+
+                case "Divine Shield":
+                    ability.variants = new AbilityVariant[]
+                    {
+                        new AbilityVariant { variantName="Shelter",       indicatorTint=new Color(1f,0.95f,0.4f,0.75f), targetTag="Player", shieldAbsorb=40f, shieldDuration=5f,
+                            castVFX = Resources.Load<GameObject>("FX/Spells/Human_Spell_Shield"),
+                            hitVFX = Resources.Load<GameObject>("FX/dark magic/Shield buff") },
+                        new AbilityVariant { variantName="Bastion",       indicatorTint=new Color(0.9f,0.85f,0.2f,0.75f), targetTag="Player", shieldAbsorb=70f, shieldDuration=6f, healAmount=20f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Shield buff"),
+                            hitVFX = Resources.Load<GameObject>("FX/Spells/Human_SpellAura_Heal") },
+                        new AbilityVariant { variantName="Cathedral",     indicatorTint=new Color(0.8f,0.7f,0.1f,0.75f), targetTag="Player", shieldAbsorb=120f, shieldDuration=8f, hotTickAmount=10f, hotTicks=5, hotInterval=1f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Magic buff"),
+                            hitVFX = Resources.Load<GameObject>("FX/Spells/Human_Spell_Shield") },
+                    };
+                    break;
+
+                case "Smite":
+                    ability.variants = new AbilityVariant[]
+                    {
+                        new AbilityVariant { variantName="Strike",        indicatorTint=new Color(1f,0.95f,0.4f,0.75f),  targetTag="Enemy", damage=35f, statusEffect=StatusEffectType.Stagger,  statusDuration=0.8f,
+                            castVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Misc Effects/Prefabs/Respawn"),
+                            hitVFX = Resources.Load<GameObject>("FX/Spells/Human_Spell_Heal") },
+                        new AbilityVariant { variantName="Judgement",     indicatorTint=new Color(1f,0.7f,0.1f,0.75f),   targetTag="Enemy", damage=50f, statusEffect=StatusEffectType.Slow,     statusDuration=3f,  statusValue=0.35f,
+                            castVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Misc Effects/Prefabs/Respawn"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Fire & Explosion Effects/Prefabs/LargeFlames") },
+                        new AbilityVariant { variantName="Wrath",         indicatorTint=new Color(0.9f,0.5f,0.0f,0.75f), targetTag="Enemy", damage=75f, statusEffect=StatusEffectType.Weakened, statusDuration=4f,  statusValue=0.3f,
+                            castVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Fire & Explosion Effects/Prefabs/EnergyExplosion"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Fire & Explosion Effects/Prefabs/BigExplosion") },
+                    };
+                    break;
+            }
+        }
+    }
+
+    // Draws zone-divider arcs and animates the active zone for cone variant spells.
+    void UpdateConeZoneArcs(GameObject indicator, AbilityDef ability, ConeAimData coneData)
+    {
+        if (ability.variants == null || ability.variants.Length < 2 || !coneData.valid) return;
+
+        const int arcSegs = 22;
+        float pulse  = 0.5f + 0.5f * Mathf.Sin(Time.time * 6f);    // 0→1 at 6 Hz
+        float pulseW = 0.08f + 0.08f * pulse;                        // width breathes 0.08→0.16
+
+        Color activeVariantTint = ability.variants[_activeVariantIndex].indicatorTint;
+
+        for (int z = 1; z < ability.variants.Length; z++)
+        {
+            Transform arcT = indicator.transform.Find($"ZoneArc_{z}");
+            if (arcT == null) continue;
+            LineRenderer arcLR = arcT.GetComponent<LineRenderer>();
+            if (arcLR == null) continue;
+
+            float t        = (float)z / ability.variants.Length;
+            float arcRange = coneData.visualRange * t;
+
+            arcLR.positionCount = arcSegs + 1;
+            for (int i = 0; i <= arcSegs; i++)
+            {
+                float frac  = i / (float)arcSegs;
+                float angle = Mathf.Lerp(-coneData.halfAngle, coneData.halfAngle, frac);
+                Vector3 dir = Quaternion.AngleAxis(angle, coneData.visualNormal) * coneData.visualForward;
+                arcLR.SetPosition(i, ProjectToGround(coneData.origin + dir * arcRange));
+            }
+
+            bool nearActive = (z == _activeVariantIndex || z == _activeVariantIndex + 1);
+            if (nearActive)
+            {
+                arcLR.startWidth = arcLR.endWidth = pulseW;
+                float a = 0.65f + 0.35f * pulse;
+                arcLR.startColor = arcLR.endColor = new Color(
+                    activeVariantTint.r * 0.8f + 0.2f,
+                    activeVariantTint.g * 0.8f + 0.2f,
+                    activeVariantTint.b * 0.8f + 0.2f, a);
+            }
+            else
+            {
+                arcLR.startWidth = arcLR.endWidth = 0.04f;
+                arcLR.startColor = arcLR.endColor = new Color(0.4f, 0.4f, 0.4f, 0.25f);
+            }
+        }
+
+        // Zone cursor: a bright diamond that sits on the cone center-axis at the midpoint
+        // of the active zone and pulses, making it obvious which zone is selected.
+        UpdateZoneCursor(indicator, ability, coneData, pulse, activeVariantTint);
+
+        // Zone name floats above the cursor
+        UpdateZoneLabel(indicator, ability, coneData, activeVariantTint);
+    }
+
+    // Draws crossbar zone-divider lines and animates the active band for rect variant spells.
+    void UpdateRectZoneMarkers(GameObject indicator, AbilityDef ability, RectangleAimData rectData)
+    {
+        if (ability.variants == null || ability.variants.Length < 2 || !rectData.valid) return;
+
+        float pulse  = 0.5f + 0.5f * Mathf.Sin(Time.time * 6f);
+        float pulseW = 0.08f + 0.08f * pulse;
+
+        Color activeVariantTint = ability.variants[_activeVariantIndex].indicatorTint;
+
+        for (int z = 1; z < ability.variants.Length; z++)
+        {
+            Transform barT = indicator.transform.Find($"RectZone_{z}");
+            if (barT == null) continue;
+            LineRenderer barLR = barT.GetComponent<LineRenderer>();
+            if (barLR == null) continue;
+
+            float t = (float)z / ability.variants.Length;
+            Vector3 left  = Vector3.Lerp(rectData.corners[0], rectData.corners[3], t);
+            Vector3 right = Vector3.Lerp(rectData.corners[1], rectData.corners[2], t);
+            barLR.SetPosition(0, left);
+            barLR.SetPosition(1, right);
+
+            bool nearActive = (z == _activeVariantIndex || z == _activeVariantIndex + 1);
+            if (nearActive)
+            {
+                barLR.startWidth = barLR.endWidth = pulseW;
+                float a = 0.65f + 0.35f * pulse;
+                barLR.startColor = barLR.endColor = new Color(
+                    activeVariantTint.r * 0.8f + 0.2f,
+                    activeVariantTint.g * 0.8f + 0.2f,
+                    activeVariantTint.b * 0.8f + 0.2f, a);
+            }
+            else
+            {
+                barLR.startWidth = barLR.endWidth = 0.04f;
+                barLR.startColor = barLR.endColor = new Color(0.4f, 0.4f, 0.4f, 0.25f);
+            }
+        }
+
+        // Rect zone label
+        UpdateRectZoneLabel(indicator, ability, rectData, activeVariantTint);
+    }
+
+    // Small bright dot on the cone centre-axis at the midpoint of the active zone.
+    void UpdateZoneCursor(GameObject indicator, AbilityDef ability, ConeAimData coneData, float pulse, Color tint)
+    {
+        const string CursorName = "ZoneCursor";
+        Transform cursorT = indicator.transform.Find(CursorName);
+        if (cursorT == null)
+        {
+            var go = new GameObject(CursorName);
+            go.transform.SetParent(indicator.transform, false);
+            var lr = go.AddComponent<LineRenderer>();
+            lr.useWorldSpace = true;
+            lr.loop = false;
+            lr.positionCount = 2;
+            lr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            lr.receiveShadows = false;
+            lr.material = new Material(Shader.Find("Sprites/Default"));
+            cursorT = go.transform;
+        }
+
+        int n = ability.variants.Length;
+        float tMin = (float)_activeVariantIndex / n;
+        float tMax = (float)(_activeVariantIndex + 1) / n;
+        float tMid = (tMin + tMax) * 0.5f;
+
+        // Draw a short perpendicular tick on the centerline at the zone midpoint
+        float midRange  = coneData.visualRange * tMid;
+        Vector3 midBase = ProjectToGround(coneData.origin + coneData.visualForward * midRange);
+        Vector3 right   = Vector3.Cross(coneData.visualForward, Vector3.up).normalized;
+        float tickHalf  = ability.range * 0.07f;
+
+        var cursorLR = cursorT.GetComponent<LineRenderer>();
+        if (cursorLR != null)
+        {
+            cursorLR.positionCount = 2;
+            cursorLR.SetPosition(0, midBase - right * tickHalf);
+            cursorLR.SetPosition(1, midBase + right * tickHalf);
+            float w = 0.10f + 0.06f * pulse;
+            cursorLR.startWidth = cursorLR.endWidth = w;
+            float a = 0.7f + 0.3f * pulse;
+            cursorLR.startColor = cursorLR.endColor = new Color(tint.r, tint.g, tint.b, a);
+        }
+    }
+
+    // World-space variant name tag floating above the active zone midpoint.
+    void UpdateZoneLabel(GameObject indicator, AbilityDef ability, ConeAimData coneData, Color tint)
+    {
+        const string LabelName = "ZoneLabel";
+        Transform lblT = indicator.transform.Find(LabelName);
+        if (lblT == null)
+        {
+            var go = new GameObject(LabelName);
+            go.transform.SetParent(indicator.transform, false);
+            var tmp = go.AddComponent<TMPro.TextMeshPro>();
+            tmp.fontSize     = 0.38f;
+            tmp.fontStyle    = TMPro.FontStyles.Bold;
+            tmp.alignment    = TMPro.TextAlignmentOptions.Center;
+            tmp.color        = Color.white;
+            tmp.sortingOrder = 10;
+            tmp.rectTransform.sizeDelta = new Vector2(4f, 1f);
+            lblT = go.transform;
+        }
+
+        int n = ability.variants.Length;
+        float tMid = ((float)_activeVariantIndex + 0.5f) / n;
+        Vector3 pos = ProjectToGround(coneData.origin + coneData.visualForward * (coneData.visualRange * tMid));
+        pos.y += 0.06f;
+
+        lblT.position = pos;
+        // Lie flat on ground; text rows run along the indicator's forward direction.
+        lblT.rotation = Quaternion.LookRotation(Vector3.down, coneData.visualForward);
+
+        var tmp2 = lblT.GetComponent<TMPro.TextMeshPro>();
+        if (tmp2 != null)
+        {
+            tmp2.text  = ability.variants[_activeVariantIndex].variantName.ToUpper();
+            tmp2.color = new Color(tint.r * 0.7f + 0.3f, tint.g * 0.7f + 0.3f, tint.b * 0.7f + 0.3f, 0.95f);
+        }
+    }
+
+    // Same label for rectangle shapes.
+    void UpdateRectZoneLabel(GameObject indicator, AbilityDef ability, RectangleAimData rectData, Color tint)
+    {
+        const string LabelName = "ZoneLabel";
+        Transform lblT = indicator.transform.Find(LabelName);
+        if (lblT == null)
+        {
+            var go = new GameObject(LabelName);
+            go.transform.SetParent(indicator.transform, false);
+            var tmp = go.AddComponent<TMPro.TextMeshPro>();
+            tmp.fontSize     = 0.38f;
+            tmp.fontStyle    = TMPro.FontStyles.Bold;
+            tmp.alignment    = TMPro.TextAlignmentOptions.Center;
+            tmp.color        = Color.white;
+            tmp.sortingOrder = 10;
+            tmp.rectTransform.sizeDelta = new Vector2(4f, 1f);
+            lblT = go.transform;
+        }
+
+        int n = ability.variants.Length;
+        float tMid  = ((float)_activeVariantIndex + 0.5f) / n;
+        Vector3 midLeft  = Vector3.Lerp(rectData.corners[0], rectData.corners[3], tMid);
+        Vector3 midRight = Vector3.Lerp(rectData.corners[1], rectData.corners[2], tMid);
+        Vector3 pos = (midLeft + midRight) * 0.5f;
+        pos.y += 0.06f;
+
+        lblT.position = pos;
+        lblT.rotation = Quaternion.LookRotation(Vector3.down, rectData.visualForward);
+
+        var tmp2 = lblT.GetComponent<TMPro.TextMeshPro>();
+        if (tmp2 != null)
+        {
+            tmp2.text  = ability.variants[_activeVariantIndex].variantName.ToUpper();
+            tmp2.color = new Color(tint.r * 0.7f + 0.3f, tint.g * 0.7f + 0.3f, tint.b * 0.7f + 0.3f, 0.95f);
+        }
+    }
+
+    // Applies a single variant's effect to every target found in the spell's shape.
+    // Runs server-side in networked play (called via CmdFinalizeCast → FinalizeCast).
+    void ResolveVariantCast(AbilityDef ability, GameObject indicator, AbilityVariant variant, float damageMultiplier, Vector3 castOrigin)
+    {
+        if (variant == null || indicator == null) return;
+
+        // Per-variant targeting overrides the ability's default (lets one ability have
+        // a heal variant that targets "Player" and a damage variant that targets "Enemy").
+        string tag = !string.IsNullOrEmpty(variant.targetTag) ? variant.targetTag : ability.targetTag;
+        if (string.IsNullOrEmpty(tag)) return;
+
+        var hits = new System.Collections.Generic.List<Collider>();
+
+        if (ability.shape == AbilityShape.Cone)
+        {
+            float maxRange = ability.range * indicator.transform.localScale.x;
+            foreach (Collider c in Physics.OverlapSphere(castOrigin, maxRange))
+            {
+                if (!c.CompareTag(tag)) continue;
+                Vector3 toHit = c.transform.position - castOrigin;
+                toHit.y = 0f;
+                if (toHit.sqrMagnitude > 0.0001f &&
+                    Vector3.Angle(indicator.transform.forward, toHit) > ability.coneAngle * 0.5f)
+                    continue;
+                hits.Add(c);
+            }
+        }
+        else if (ability.shape == AbilityShape.Rectangle)
+        {
+            RectangleAimData rectData = indicator.GetComponent<RectangleAimData>();
+            if (rectData != null && rectData.valid)
+            {
+                foreach (Collider c in Physics.OverlapBox(rectData.damageCenter, rectData.damageHalfExtents, rectData.damageRotation))
+                {
+                    if (c.CompareTag(tag)) hits.Add(c);
+                }
+            }
+        }
+        else // Circle
+        {
+            foreach (Collider c in Physics.OverlapSphere(indicator.transform.position, ability.indicatorSize * 0.5f))
+            {
+                if (c.CompareTag(tag)) hits.Add(c);
+            }
+        }
+
+        foreach (Collider hit in hits)
+        {
+            Health health = hit.GetComponent<Health>();
+            if (health == null) continue;
+            Vector3 hitPos = hit.transform.position + Vector3.up * 0.5f;
+
+            if (variant.healAmount > 0f)
+            {
+                health.Heal(variant.healAmount);
+                FloatingDamageText.Spawn(hitPos + Vector3.up, variant.healAmount, FloatingDamageText.DamageType.Heal);
+            }
+
+            if (variant.hotTicks > 0 && variant.hotTickAmount > 0f)
+            {
+                StartCoroutine(ApplyHealOverTime(health, variant.hotTickAmount, variant.hotTicks, variant.hotInterval));
+                float totalHot = variant.hotTickAmount * variant.hotTicks;
+                FloatingDamageText.Spawn(hitPos + Vector3.up * 1.3f, totalHot, FloatingDamageText.DamageType.Heal);
+            }
+
+            if (variant.shieldAbsorb > 0f)
+            {
+                health.ApplyShield(variant.shieldAbsorb);
+                FloatingDamageText.Spawn(hitPos + Vector3.up * 1.3f, variant.shieldAbsorb, FloatingDamageText.DamageType.Shield);
+            }
+
+            if (variant.damage > 0f)
+            {
+                health.TakeDamage(variant.damage * damageMultiplier, gameObject);
+                EmitHitVFX(variant.hitVFX ?? ability.hitVFX, hitPos);
+            }
+
+            if (variant.statusDuration > 0f)
+            {
+                var sem = hit.GetComponent<StatusEffectManager>();
+                sem?.AddEffect(new StatusEffect(variant.statusEffect, variant.statusDuration, variant.statusValue, gameObject));
+            }
+
+            EmitHitVFX(variant.hitVFX ?? ability.hitVFX, hitPos);
+        }
+
+#if UNITY_EDITOR || !UNITY_SERVER
+        if (ability.category == AbilityCategory.Heal) OnHealCast?.Invoke();
+#endif
+    }
 
 }
 

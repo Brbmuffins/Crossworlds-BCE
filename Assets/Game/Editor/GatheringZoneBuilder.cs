@@ -56,7 +56,7 @@ public static class GatheringZoneBuilder
     const string PortalFbx    = "Assets/Game/3D Models/Portals/circular+portal+3d+model.fbm/circular+portal+3d+model.fbx";
 
     // ── VFX prefabs ──────────────────────────────────────────────────────────────
-    const string FxRoot      = "Assets/Game/FX/Particle Pack/EffectExamples";
+    const string FxRoot      = "Assets/Game/Resources/FX/Particle Pack/EffectExamples";
     const string VfxWood     = FxRoot + "/Weapon Effects/Prefabs/WoodImpacts.prefab";
     const string VfxStone    = FxRoot + "/Weapon Effects/Prefabs/StoneImpacts.prefab";
     const string VfxSplash   = FxRoot + "/Water Effects/Prefabs/BigSplash.prefab";

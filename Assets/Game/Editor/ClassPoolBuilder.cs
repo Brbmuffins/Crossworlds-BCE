@@ -11,10 +11,10 @@ using UnityEditor;
 public static class ClassPoolBuilder
 {
     const string OutputDir = "Assets/Game/Data/ClassPools";
-    const string PrefabDir = "Assets/Game/Prefabs";
+    const string PrefabDir = "Assets/Game/Game_Prefabs";
 
     [MenuItem("BCE/Combat/Create Class Ability Pools")]
-    static void CreateAllPools()
+    public static void CreateAllPools()
     {
         // Ensure output directory exists
         if (!AssetDatabase.IsValidFolder(OutputDir))
@@ -32,16 +32,16 @@ public static class ClassPoolBuilder
             defaultEquipped:  new[] { 7,15,16,18 });         // Shield, Charge, Stance, Rampart
 
         CreatePool("Arcanist",
-            availableIndices: new[] { 0,1,2,3,4,5,6,7,19,20,21,22,34 },  // +34 Ether Lance
-            defaultEquipped:  new[] { 3,20,21,22 });         // Storm Lash, Maw, Lightning, Void
+            availableIndices: new[] { 0,1,2,3,4,5,6,7,19,20,21,22,34,37,38 },  // +34 Ether Lance, +37 Conflagration Cone, +38 Ember Beam
+            defaultEquipped:  new[] { 37,38,20,22 });         // Conflagration Cone, Ember Beam, Void Maw, Collapsing Void
 
         CreatePool("Cleric",
-            availableIndices: new[] { 0,1,2,3,4,5,6,7,23,24,25,26,27,28 },
-            defaultEquipped:  new[] { 24,23,26,28 });        // Wisps, Bond, Aegis, Grace
+            availableIndices: new[] { 0,1,2,3,4,5,6,7,23,24,25,26,27,28,35,36 }, // +35 Healing Cone, +36 Mending Beam
+            defaultEquipped:  new[] { 35,36,26,28 });        // Healing Cone, Mending Beam, Sacred Aegis, Temporal Grace
 
         CreatePool("Shadowblade",
             availableIndices: new[] { 0,1,2,3,4,5,6,7,29,30,31,32,33 },  // +32 Dark Mark, +33 Fan of Blades
-            defaultEquipped:  new[] { 1,30,31,29 });         // VoidBolt, Silence, Harvest, Veil
+            defaultEquipped:  new[] { 33,32,31,29 });        // Fan of Blades, Dark Mark, Dark Harvest, Shadow Veil
 
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
