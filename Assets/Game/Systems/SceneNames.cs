@@ -14,7 +14,8 @@ public static class SceneNames
     public const string ToujamBasin     = "Toujam Basin";
     public const string AshenWastelands = "Ashen Wastelands";
     public const string GMIsland        = "GM Island";
-    public const string VoidDungeon     = "VoidDungeon";   // placeholder — future dungeon build
+    public const string VoidDungeon     = "VoidDungeon";      // placeholder — future dungeon build
+    public const string GatheringZone   = "Gathering Zone";   // AFK gathering + crafting
 
     // ── Full asset paths (used by editor scripts and Mirror scene fields) ─
     public const string LoginPath           = "Assets/Game/Scenes/LoginScene.unity";
@@ -26,4 +27,5 @@ public static class SceneNames
     public const string AshenWastelandsPath = "Assets/Game/Scenes/Ashen Wastelands.unity";
     public const string GMIslandPath        = "Assets/Game/Scenes/GM Island.unity";
     public const string VoidDungeonPath     = "Assets/Game/Scenes/VoidDungeon.unity";
+    public const string GatheringZonePath   = "Assets/Game/Scenes/Gathering Zone.unity";
 }
