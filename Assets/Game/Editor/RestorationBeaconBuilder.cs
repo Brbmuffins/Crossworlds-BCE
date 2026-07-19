@@ -37,7 +37,7 @@ public static class RestorationBeaconBuilder
     // VFX
     const string MagicPackPfx = "Assets/brbMuff Folder/brbmuffins Studio/brbmuffins Magic Pack/Prefabs";
     static string HealingCircle => $"{MagicPackPfx}/Magic circles/Healing circle.prefab";
-    static string HealingBuff   => "Assets/Game/FX/dark magic/Healing buff.prefab";
+    static string HealingBuff   => "Assets/Game/Resources/FX/dark magic/Healing buff.prefab";
 
     [MenuItem("BCE/Setup/4r ▶ Restoration Beacon Builder", priority = 43)]
     static void Build()

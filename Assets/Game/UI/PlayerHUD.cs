@@ -78,7 +78,8 @@ public class PlayerHUD : MonoBehaviour
     TextMeshProUGUI[]   _slotKey      = new TextMeshProUGUI[Slots];
     TextMeshProUGUI[]   _slotName     = new TextMeshProUGUI[Slots];
     TextMeshProUGUI[]   _slotCdText   = new TextMeshProUGUI[Slots];   // live cooldown countdown
-    int                 _activeSlot   = 0;
+    int                 _activeSlot         = 0;
+    bool                _wasAimingLastFrame = false;
 
     // Cast bar
     GameObject          _castBarRoot;
@@ -419,6 +420,44 @@ public class PlayerHUD : MonoBehaviour
     {
         // Mirror AbilityCaster's held slot so the ring tracks the ability currently being aimed.
         if (_caster != null) _activeSlot = _caster.HeldAbilityIndex;
+
+        // While aiming, show the active variant name below the held slot label
+        bool isAiming = _caster != null && _caster.HeldAbilityIndex >= 0;
+        if (isAiming && _caster.abilities != null)
+        {
+            int held = _caster.HeldAbilityIndex;
+            AbilityDef heldAbility = (held < _caster.abilities.Length) ? _caster.abilities[held] : null;
+            if (heldAbility != null && heldAbility.variants != null && heldAbility.variants.Length > 0)
+            {
+                int vi = _caster.ActiveVariantIndex;
+                vi = Mathf.Clamp(vi, 0, heldAbility.variants.Length - 1);
+                string vName = heldAbility.variants[vi].variantName;
+                if (_slotName[held] != null && _slotName[held].text != vName)
+                    _slotName[held].text = vName;
+
+                if (_slotIcon[held] != null)
+                {
+                    _slotIcon[held].color = heldAbility.variants[vi].indicatorTint;
+                }
+            }
+        }
+        else if (!isAiming && _caster != null && _caster.abilities != null && _wasAimingLastFrame)
+        {
+            // Restore ability names once when aim ends
+            for (int s = 0; s < Slots; s++)
+            {
+                AbilityDef ab = (s < _caster.abilities.Length) ? _caster.abilities[s] : null;
+                if (_slotName[s] != null)
+                    _slotName[s].text = ab != null ? ab.abilityName : "—";
+
+                if (_slotIcon[s] != null)
+                {
+                    _slotIcon[s].color = (ab != null && ab.icon != null) ? Color.white
+                        : (ab != null ? CategoryTint(ab.category) : new Color(0.25f, 0.25f, 0.30f, 0.6f));
+                }
+            }
+        }
+        _wasAimingLastFrame = isAiming;
 
         // Cooldown fills + ring pulse
         for (int i = 0; i < Slots; i++)

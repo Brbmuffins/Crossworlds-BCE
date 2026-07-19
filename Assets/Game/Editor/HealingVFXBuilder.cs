@@ -63,16 +63,16 @@ public static class HealingVFXBuilder
     static string TrailCosmos     => $"{TrailsPfx}/VFX_Trail_Cosmos.prefab";
 
     // Dark magic pack (used by RestorationBeacon per existing comments)
-    static string HealingBuff     => "Assets/Game/FX/dark magic/Healing buff.prefab";
-    static string LeavesShield    => "Assets/Game/FX/dark magic/Leaves shield.prefab";
+    static string HealingBuff     => "Assets/Game/Resources/FX/dark magic/Healing buff.prefab";
+    static string LeavesShield    => "Assets/Game/Resources/FX/dark magic/Leaves shield.prefab";
 
     // Unity Particle Pack
     static string EllenRespawn    =>
-        "Assets/Game/FX/Particle Pack/EffectExamples/Misc Effects/Prefabs/EllenRespawn.prefab";
+        "Assets/Game/Resources/FX/Particle Pack/EffectExamples/Misc Effects/Prefabs/EllenRespawn.prefab";
     static string Respawn         =>
-        "Assets/Game/FX/Particle Pack/EffectExamples/Misc Effects/Prefabs/Respawn.prefab";
+        "Assets/Game/Resources/FX/Particle Pack/EffectExamples/Misc Effects/Prefabs/Respawn.prefab";
     static string FireFlies       =>
-        "Assets/Game/FX/Particle Pack/EffectExamples/Misc Effects/Prefabs/FireFlies.prefab";
+        "Assets/Game/Resources/FX/Particle Pack/EffectExamples/Misc Effects/Prefabs/FireFlies.prefab";
 
     // Game prefab paths
     const string ClericPrefabPath      = "Assets/Game/Game_Prefabs/Cleric.prefab";
