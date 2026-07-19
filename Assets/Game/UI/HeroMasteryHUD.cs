@@ -85,8 +85,8 @@ public class HeroMasteryHUD : MonoBehaviour
 
     void Update()
     {
-        // H toggles full mastery panel (HeroMasteryUI)
-        if (UnityEngine.InputSystem.Keyboard.current?.hKey.wasPressedThisFrame == true)
+        // M toggles full mastery panel (HeroMasteryUI)
+        if (UnityEngine.InputSystem.Keyboard.current?.mKey.wasPressedThisFrame == true && !AnyInputFocused())
         {
             HeroMasteryUI.Instance?.Toggle();
         }
@@ -106,6 +106,14 @@ public class HeroMasteryHUD : MonoBehaviour
             _lastClass = classIdx;
             RefreshBar();
         }
+    }
+
+    static bool AnyInputFocused()
+    {
+        foreach (var f in Object.FindObjectsByType<TMP_InputField>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+            if (f.isFocused) return true;
+        if (RodChatManager.Instance != null && RodChatManager.Instance.IsOpen) return true;
+        return false;
     }
 
     // ── Event handlers ────────────────────────────────────────────────────────
