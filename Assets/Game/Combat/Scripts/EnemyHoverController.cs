@@ -120,7 +120,8 @@ public class EnemyHoverController : MonoBehaviour
         _hoveredEnemy = target;
         if (_hoveredEnemy == null)
         {
-            EnemyHoverTooltipUI.EnsureInstance().Hide();
+            if (EnemyHoverTooltipUI.Instance != null)
+                EnemyHoverTooltipUI.Instance.Hide();
             return;
         }
 

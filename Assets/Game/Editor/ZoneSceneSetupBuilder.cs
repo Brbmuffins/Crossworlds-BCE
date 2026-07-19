@@ -37,6 +37,7 @@ public static class ZoneSceneSetupBuilder
     const string GruntPrefab    = "Enemy_Grunt";
     const string RangedPrefab   = "Enemy_Ranged";
     const string ElitePrefab    = "Enemy_Elite";
+    const string WispPrefabPath = "Assets/Game/Game_Prefabs/Muffin Junk/Wisp_Mob.prefab";
 
     [MenuItem("BCE/Setup/8 ▶ Zone Combat Setup (active scene)", priority = 48)]
     static void SetupZoneScene()
@@ -117,9 +118,12 @@ public static class ZoneSceneSetupBuilder
         if (ranged != null) ws.enemyPrefabs.Add(ranged);
         if (elite  != null) ws.elitePrefab = elite;
 
+        var wisp = AssetDatabase.LoadAssetAtPath<GameObject>(WispPrefabPath);
+        if (wisp  != null) { ws.wispPrefab = wisp; ws.wispEveryNWaves = 2; ws.wispCountPerSwarm = 3; }
+
         int wired = (grunt != null ? 1 : 0) + (ranged != null ? 1 : 0) + (elite != null ? 1 : 0);
         report.AppendLine(wired > 0
-            ? $"  ✓ WaveSpawner wired: {wired}/3 enemy prefabs found"
+            ? $"  ✓ WaveSpawner wired: {wired}/3 ground enemies + wisp={wisp != null}"
             : $"  ⚠ WaveSpawner: no enemy prefabs found in {PrefabDir} — assign manually");
 
         // Wave tuning — escalates per zone difficulty (tweak in Inspector)
@@ -199,7 +203,7 @@ public static class ZoneSceneSetupBuilder
         }
 
         // Fall back to the bounding center of all renderers
-        var renderers = Object.FindObjectsByType<Renderer>(FindObjectsSortMode.None);
+        var renderers = Object.FindObjectsByType<Renderer>(FindObjectsInactive.Exclude);
         if (renderers.Length > 0)
         {
             Bounds b = renderers[0].bounds;
@@ -215,7 +219,7 @@ public static class ZoneSceneSetupBuilder
         int added = 0;
 
         // Add NavMeshSurface to every Terrain that doesn't already have one
-        foreach (var terrain in Object.FindObjectsByType<Terrain>(FindObjectsSortMode.None))
+        foreach (var terrain in Object.FindObjectsByType<Terrain>(FindObjectsInactive.Exclude))
         {
             if (terrain.GetComponent<NavMeshSurface>() != null) continue;
             var surf = terrain.gameObject.AddComponent<NavMeshSurface>();
@@ -232,7 +236,7 @@ public static class ZoneSceneSetupBuilder
             float best = 0f;
             MeshFilter bigMesh = null;
 
-            foreach (var mf in Object.FindObjectsByType<MeshFilter>(FindObjectsSortMode.None))
+            foreach (var mf in Object.FindObjectsByType<MeshFilter>(FindObjectsInactive.Exclude))
             {
                 if (mf.sharedMesh == null) continue;
                 string n = mf.gameObject.name.ToLower();
@@ -266,7 +270,7 @@ public static class ZoneSceneSetupBuilder
 
     static int PatchExistingEnemies(StringBuilder report)
     {
-        var enemies = Object.FindObjectsByType<EnemyController>(FindObjectsSortMode.None);
+        var enemies = Object.FindObjectsByType<EnemyController>(FindObjectsInactive.Exclude);
         int added = 0;
 
         foreach (var ec in enemies)

@@ -218,7 +218,7 @@ public sealed class WaypointMapTrigger : NetworkBehaviour
 
     static Transform FindLocalPlayer()
     {
-        var identities = FindObjectsByType<NetworkIdentity>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+        var identities = FindObjectsByType<NetworkIdentity>(FindObjectsInactive.Exclude);
         foreach (var identity in identities)
             if (identity.isLocalPlayer)
                 return identity.transform;
@@ -242,7 +242,7 @@ public sealed class WaypointMapTrigger : NetworkBehaviour
         _promptLabel.fontSize = 3f;
         _promptLabel.richText = true;
         _promptLabel.raycastTarget = false;
-        _promptLabel.enableWordWrapping = false;
+        _promptLabel.textWrappingMode = TextWrappingModes.NoWrap;
         _promptLabel.color = Color.white;
 
         SetPromptVisible(false);
@@ -287,13 +287,13 @@ public sealed class WaypointMapTrigger : NetworkBehaviour
             {
                 id = "gathering",
                 displayName = "GATHERING ZONE",
-                subtitle = "",
-                sceneName = "",
-                unlocked = false,
+                subtitle = "harvest · craft · relax",
+                sceneName = SceneNames.GatheringZone,
+                unlocked = true,
                 normalizedPosition = new Vector2(0.24f, 0.72f),
                 labelOffset = new Vector2(0f, -34f),
                 color = new Color(0.82f, 0.36f, 0.38f, 1f),
-                description = "Placeholder gathering zone."
+                description = "A peaceful zone for AFK woodcutting, fishing, and mining. A forge is available for crafting."
             },
             new WaypointMapNode
             {

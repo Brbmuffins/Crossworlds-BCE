@@ -137,7 +137,7 @@ public class CameraFollow : MonoBehaviour
         }
 
         float scroll = mouse.scroll.ReadValue().y;
-        if (Mathf.Abs(scroll) > 0.01f)
+        if (Mathf.Abs(scroll) > 0.01f && !AbilityCaster.IsAimingLocally)
             distance = Mathf.Clamp(distance - scroll * zoomSpeed * 0.01f,
                                    minDistance, maxDistance);
 

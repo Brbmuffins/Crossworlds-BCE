@@ -461,6 +461,10 @@ MonoBehaviour:
   - {fileID: 8204671760820388417, guid: 05ca882c1b18d70449cfc3fbde6fc614, type: 3}
   - {fileID: 5551267369004884409, guid: b4c4d40894b065142ac7e320545e40e6, type: 3}
   - {fileID: 5614484268032330788, guid: 348c7151261e1ba4db1931d6061f9a27, type: 3}
+  - {fileID: 6540632024305697650, guid: 7a4c75eb4a855da42ab1a4619502d4a7, type: 3}
+  - {fileID: 4261978409328691889, guid: 08b6f7a4fdaa1954f840be1233c8204d, type: 3}
+  - {fileID: 1675110105690553697, guid: c0cdc9b76b6fd4141b70007d92530e81, type: 3}
+  - {fileID: 832449836960929029, guid: aeeec77a192ced14c801c8c8521f793e, type: 3}
   exceptionsDisconnect: 1
   snapshotSettings:
     bufferTimeMultiplier: 2
@@ -482,7 +486,11 @@ MonoBehaviour:
   - {fileID: 2286457734563818783, guid: d228dda3426926b41ae915d331560f12, type: 3}
   - {fileID: 5383663458828750495, guid: ee265e874399c4643b9b9e77a5bc83c6, type: 3}
   - {fileID: 7044732009718663101, guid: f2f18204026d32e418e80ae36363d3d3, type: 3}
-  worldPrefabs: []
+  worldPrefabs:
+  - {fileID: 6540632024305697650, guid: 7a4c75eb4a855da42ab1a4619502d4a7, type: 3}
+  - {fileID: 4261978409328691889, guid: 08b6f7a4fdaa1954f840be1233c8204d, type: 3}
+  - {fileID: 1675110105690553697, guid: c0cdc9b76b6fd4141b70007d92530e81, type: 3}
+  - {fileID: 832449836960929029, guid: aeeec77a192ced14c801c8c8521f793e, type: 3}
   chatManagerPrefab: {fileID: 1000000000000000001, guid: 0b8a9bdc07f1a3146a8481bbae0fb2fe, type: 3}
   authServerURL: http://15.204.243.36:3000
 --- !u!114 &286295840
@@ -1251,6 +1259,9 @@ MonoBehaviour:
   syncInterval: 0
   enemyPrefabs: []
   elitePrefab: {fileID: 0}
+  wispPrefab: {fileID: 0}
+  wispEveryNWaves: 2
+  wispCountPerSwarm: 3
   spawnPoints:
   - {fileID: 566137158}
   - {fileID: 1395475098}

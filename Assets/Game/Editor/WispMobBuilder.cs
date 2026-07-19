@@ -81,7 +81,7 @@ public static class WispMobBuilder
     public static void FixExistingWisps()
     {
         int fixedCount = 0;
-        foreach (WispMob wisp in Object.FindObjectsByType<WispMob>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+        foreach (WispMob wisp in Object.FindObjectsByType<WispMob>(FindObjectsInactive.Include))
         {
             GameObject go = wisp.gameObject;
 

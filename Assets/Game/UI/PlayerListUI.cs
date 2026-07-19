@@ -103,7 +103,7 @@ public class PlayerListUI : MonoBehaviour
         foreach (Transform child in _rowContainer)
             Destroy(child.gameObject);
 
-        var identities = Object.FindObjectsByType<PlayerIdentity>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+        var identities = Object.FindObjectsByType<PlayerIdentity>(FindObjectsInactive.Exclude);
 
         _headerText.text = $"ONLINE  <size=10><color=#64748b>{identities.Length} player{(identities.Length == 1 ? "" : "s")}</color></size>";
 
@@ -137,9 +137,11 @@ public class PlayerListUI : MonoBehaviour
     void AddRow(string name, string nameColor, string className, string classColor = "#64748b")
     {
         // Row background
-        var rowGO = new GameObject("Row", typeof(RectTransform), typeof(Image));
+        var rowGO = new GameObject("Row", typeof(RectTransform), typeof(Image), typeof(LayoutElement));
         rowGO.transform.SetParent(_rowContainer, false);
         rowGO.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0.03f);
+
+        rowGO.GetComponent<LayoutElement>().preferredHeight = 22f;
 
         var rowRt = rowGO.GetComponent<RectTransform>();
         rowRt.sizeDelta = new Vector2(0f, 22f);
@@ -201,7 +203,7 @@ public class PlayerListUI : MonoBehaviour
         panelRt.anchorMin = new Vector2(1f, 1f);
         panelRt.anchorMax = new Vector2(1f, 1f);
         panelRt.pivot     = new Vector2(1f, 1f);
-        panelRt.anchoredPosition = new Vector2(-12f, -12f);
+        panelRt.anchoredPosition = new Vector2(-12f, -48f);
         panelRt.sizeDelta = new Vector2(200f, 0f); // width fixed, height auto
 
         var vlg = _panel.GetComponent<VerticalLayoutGroup>();

@@ -31,6 +31,12 @@ public class ZoneConfig : ScriptableObject
     public float timeBetweenWaves    = 10f;
     public float introDelay          = 5f;
 
+    [Header("Wisp Swarm")]
+    [Tooltip("0 = disabled. 2 = wisp swarm on even waves, etc.")]
+    public int   wispEveryNWaves   = 2;
+    [Tooltip("How many wisps per swarm spawn.")]
+    public int   wispCountPerSwarm = 3;
+
     [Header("Heavy Attack Override")]
     [Tooltip("Override min cooldown on EnemyHeavyAttack for this zone. 0 = use component default.")]
     [Min(0f)]
@@ -59,5 +65,7 @@ public class ZoneConfig : ScriptableObject
         ws.maxWaves            = maxWaves;
         ws.timeBetweenWaves    = timeBetweenWaves;
         ws.introDelay          = introDelay;
+        ws.wispEveryNWaves     = wispEveryNWaves;
+        ws.wispCountPerSwarm   = wispCountPerSwarm;
     }
 }

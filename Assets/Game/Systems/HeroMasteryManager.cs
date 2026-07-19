@@ -1,4 +1,4 @@
-﻿#if UNITY_EDITOR || !UNITY_SERVER
+#if UNITY_EDITOR || !UNITY_SERVER
 using System;
 using System.Collections;
 using UnityEngine;
@@ -61,7 +61,9 @@ public class HeroMasteryManager : MonoBehaviour
     int    _characterId   = -1;
     string _jwt           = "";
     bool   _loaded        = false;
-    bool   _bonusesPending = false;  // bonuses fetched but player not yet spawned
+
+    public bool IsLoaded => _loaded;
+
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
     void Start()
@@ -249,11 +251,9 @@ public class HeroMasteryManager : MonoBehaviour
         if (localStats != null)
         {
             localStats.SetMasteryBonuses(dmg, heal, cdr, maxHp);
-            _bonusesPending = false;
         }
         else
         {
-            _bonusesPending = true;
             StartCoroutine(RetryApplyBonuses());
         }
     }
@@ -315,7 +315,7 @@ public class HeroMasteryManager : MonoBehaviour
     // ── Helpers ───────────────────────────────────────────────────────────────
     static PlayerIdentity FindLocalIdentity()
     {
-        foreach (var id in FindObjectsByType<PlayerIdentity>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+        foreach (var id in FindObjectsByType<PlayerIdentity>(FindObjectsInactive.Exclude))
             if (id.isLocalPlayer) return id;
         return null;
     }

@@ -283,7 +283,7 @@ public class HubReturnTrigger : NetworkBehaviour
 
     static Transform FindLocalPlayer()
     {
-        var identities = FindObjectsByType<NetworkIdentity>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+        var identities = FindObjectsByType<NetworkIdentity>(FindObjectsInactive.Exclude);
         foreach (var identity in identities)
             if (identity.isLocalPlayer)
                 return identity.transform;
@@ -307,7 +307,7 @@ public class HubReturnTrigger : NetworkBehaviour
         _promptLabel.fontSize = 3f;
         _promptLabel.richText = true;
         _promptLabel.raycastTarget = false;
-        _promptLabel.enableWordWrapping = false;
+        _promptLabel.textWrappingMode = TextWrappingModes.NoWrap;
         _promptLabel.color = Color.white;
 
         SetPromptVisible(false);

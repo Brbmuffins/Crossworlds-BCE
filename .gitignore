@@ -69,3 +69,4 @@ CrossWorlds/README.md
 
 # ── Local CI/CD setup helper (one-shot, prompts for secrets — not for git) ───
 tools/ci-setup.sh
+_CONTEXT/VFX_VARIANT_ASSIGNMENT_PROMPT.txt.md

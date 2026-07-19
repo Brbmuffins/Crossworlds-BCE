@@ -212,7 +212,7 @@ public class PlayerProgressManager : MonoBehaviour
     static PlayerIdentity FindLocalIdentity()
     {
         bool networkActive = Mirror.NetworkClient.active || Mirror.NetworkServer.active;
-        foreach (var id in FindObjectsByType<PlayerIdentity>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+        foreach (var id in FindObjectsByType<PlayerIdentity>(FindObjectsInactive.Exclude))
         {
             bool isLocal = networkActive ? id.isLocalPlayer : true;
             if (isLocal) return id;
