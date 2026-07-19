@@ -32,7 +32,12 @@ public static class ClassPrefabFixer
 
     // Additional networked prefabs (not class heroes) that also need a valid assetId.
     static readonly string[] ExtraPrefabs =
-        { "Assets/Game/Networking/ChatManager.prefab" };
+    {
+        "Assets/Game/Networking/ChatManager.prefab",
+        "Assets/Game/Game_Prefabs/Muffin Junk/Enemy_Grunt.prefab",
+        "Assets/Game/Game_Prefabs/Muffin Junk/Enemy_Ranged.prefab",
+        "Assets/Game/Game_Prefabs/Muffin Junk/Enemy_Elite.prefab",
+    };
 
     [MenuItem("BCE/Setup/4z ▶ Fix Class Prefab Asset IDs", priority = 47)]
     static void FixAssetIds()

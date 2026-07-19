@@ -4,6 +4,7 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.AI;
+using Unity.AI.Navigation;
 using Mirror;
 
 /// <summary>
@@ -209,60 +210,54 @@ public static class ZoneSceneSetupBuilder
         return Vector3.zero;
     }
 
-    // NavMeshSurface is in the optional Unity.AI.Navigation package — access via reflection
-    // so the script compiles even when the package isn't installed.
-    static readonly System.Type NavMeshSurfaceType =
-        System.Type.GetType("Unity.AI.Navigation.NavMeshSurface, Unity.AI.Navigation");
-
     static int EnsureNavMeshSurfaces(StringBuilder report)
     {
         int added = 0;
 
-        if (NavMeshSurfaceType == null)
-        {
-            report.AppendLine("  ⚠ AI Navigation package not found — add NavMeshSurface manually");
-            return 0;
-        }
-
-        // Add a NavMeshSurface to any Terrain that doesn't have one
+        // Add NavMeshSurface to every Terrain that doesn't already have one
         foreach (var terrain in Object.FindObjectsByType<Terrain>(FindObjectsSortMode.None))
         {
-            if (terrain.GetComponent(NavMeshSurfaceType) != null) continue;
-            terrain.gameObject.AddComponent(NavMeshSurfaceType);
+            if (terrain.GetComponent<NavMeshSurface>() != null) continue;
+            var surf = terrain.gameObject.AddComponent<NavMeshSurface>();
+            surf.collectObjects = CollectObjects.All;
+            surf.useGeometry    = NavMeshCollectGeometry.PhysicsColliders;
             EditorUtility.SetDirty(terrain.gameObject);
             added++;
             report.AppendLine($"  ✓ NavMeshSurface added to Terrain '{terrain.name}'");
         }
 
-        // If no terrain, add to largest ground-tagged mesh
+        // No terrain — target the largest ground/floor mesh in the scene
         if (added == 0)
         {
-            float biggest = 0f;
+            float best = 0f;
             MeshFilter bigMesh = null;
 
             foreach (var mf in Object.FindObjectsByType<MeshFilter>(FindObjectsSortMode.None))
             {
                 if (mf.sharedMesh == null) continue;
-                string lname = mf.gameObject.name.ToLower();
+                string n = mf.gameObject.name.ToLower();
                 bool isGround = mf.gameObject.CompareTag("Ground")
-                             || lname.Contains("ground")
-                             || lname.Contains("terrain")
-                             || lname.Contains("floor");
+                             || n.Contains("ground") || n.Contains("terrain")
+                             || n.Contains("floor")  || n.Contains("plane");
                 if (!isGround) continue;
                 float sz = mf.sharedMesh.bounds.extents.sqrMagnitude;
-                if (sz > biggest) { biggest = sz; bigMesh = mf; }
+                if (sz > best) { best = sz; bigMesh = mf; }
             }
 
-            if (bigMesh != null && bigMesh.GetComponent(NavMeshSurfaceType) == null)
+            if (bigMesh != null && bigMesh.GetComponent<NavMeshSurface>() == null)
             {
-                bigMesh.gameObject.AddComponent(NavMeshSurfaceType);
+                var surf = bigMesh.gameObject.AddComponent<NavMeshSurface>();
+                surf.collectObjects = CollectObjects.All;
+                surf.useGeometry    = NavMeshCollectGeometry.PhysicsColliders;
                 EditorUtility.SetDirty(bigMesh.gameObject);
                 added++;
                 report.AppendLine($"  ✓ NavMeshSurface added to '{bigMesh.name}'");
             }
             else if (bigMesh == null)
             {
-                report.AppendLine("  ⚠ No terrain or Ground mesh found — add NavMeshSurface manually");
+                report.AppendLine(
+                    "  ⚠ No Terrain or Ground mesh found. Tag your ground object as 'Ground'" +
+                    " then re-run, or add NavMeshSurface manually.");
             }
         }
 
