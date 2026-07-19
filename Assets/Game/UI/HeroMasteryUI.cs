@@ -126,12 +126,19 @@ public class HeroMasteryUI : MonoBehaviour
 
     void Update()
     {
-        // Dismiss on Escape or H
-        if (_open)
+        var kb = UnityEngine.InputSystem.Keyboard.current;
+        if (kb != null)
         {
-            var kb = UnityEngine.InputSystem.Keyboard.current;
-            if (kb != null && (kb.escapeKey.wasPressedThisFrame || kb.hKey.wasPressedThisFrame))
-                Close();
+            if (_open)
+            {
+                if (kb.escapeKey.wasPressedThisFrame || kb.hKey.wasPressedThisFrame)
+                    Close();
+            }
+            else
+            {
+                if (kb.hKey.wasPressedThisFrame)
+                    Open();
+            }
         }
 
         // Flash animation

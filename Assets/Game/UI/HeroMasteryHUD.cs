@@ -22,7 +22,7 @@ public class HeroMasteryHUD : MonoBehaviour
     // ── Bootstrap ─────────────────────────────────────────────────────────────
     public static HeroMasteryHUD Instance { get; private set; }
 
-    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+    // [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     static void Bootstrap()
     {
         if (Instance != null) return;

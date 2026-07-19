@@ -261,8 +261,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CharacterSelectUI
   characters:
   - {fileID: 11400000, guid: be2d0008c6df37b4395521acd08c5ac6, type: 2}
-  - {fileID: 11400000, guid: 1b761bf2e1fd7cd47a2736807d782a85, type: 2}
   - {fileID: 11400000, guid: 2fbcc7edc69314e458ebe1c9b763bcaf, type: 2}
+  - {fileID: 11400000, guid: 1b761bf2e1fd7cd47a2736807d782a85, type: 2}
   - {fileID: 11400000, guid: 11f855f00047dba4298df61fd7fbeced, type: 2}
   - {fileID: 11400000, guid: 8011518b75a795745bf3de2ec6c722da, type: 2}
   serverAddress: 15.204.243.36
@@ -281,6 +281,7 @@ GameObject:
   - component: {fileID: 1321275395}
   - component: {fileID: 1321275394}
   - component: {fileID: 1321275393}
+  - component: {fileID: 1321275396}
   m_Layer: 0
   m_Name: EventSystem
   m_TagString: Untagged
@@ -349,6 +350,18 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1321275396
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1321275392}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5f232191380535642b16afdf732917e8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SingleEventSystem
 --- !u!1 &1923208876
 GameObject:
   m_ObjectHideFlags: 0

@@ -12,7 +12,7 @@ using UnityEngine;
 public static class RodPrefabBuilder
 {
     const string FBX_PATH      = "Assets/Game/Characters/Engineer/Model/Idle.fbx";
-    const string PREFABS_DIR   = "Assets/Game/Prefabs";
+    const string PREFABS_DIR   = "Assets/Game/Game_Prefabs";
     const string LOGIN_SCENE   = "Assets/Game/Scenes/LoginScene.unity";
     const string ANIM_CTRL     = "Assets/Game/Characters/Engineer/Animations/AnimationController.controller";
 
@@ -254,7 +254,7 @@ public static class RodPrefabBuilder
 
     static void ShowDone(List<string> paths, bool wired)
     {
-        string msg = "Prefabs saved to Assets/Game/Prefabs/:\n";
+        string msg = "Prefabs saved to Assets/Game/Game_Prefabs/:\n";
         for (int i = 0; i < paths.Count; i++)
             msg += "  [" + i + "] " + ClassNames[i] + "\n";
 

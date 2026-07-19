@@ -107,8 +107,8 @@ public class AbilityCaster : NetworkBehaviour
     public CastAnimator castAnimator;
 
     [Header("Cast Time")]
-    [Tooltip("Horizontal movement beyond this distance interrupts a committed cast. Movement input interrupts immediately.")]
-    [SerializeField, Min(0f)] float castMoveInterruptDistance = 0.035f;
+    [Tooltip("Horizontal movement beyond this distance (metres) interrupts a committed cast. Set high enough to tolerate Mirror position corrections on a dedicated server (~0.5 m recommended).")]
+    [SerializeField, Min(0f)] float castMoveInterruptDistance = 0.5f;
     [Tooltip("Briefly freezes player movement when an aim is committed so leftover physics drift cannot move the locked spell target.")]
     [SerializeField, Min(0f)] float commitMovementLockDuration = 0.08f;
 
@@ -402,8 +402,19 @@ public class AbilityCaster : NetworkBehaviour
         UnityEngine.SceneManagement.SceneManager.sceneLoaded -= OnSceneLoaded;
     }
 
+    void OnDestroy()
+    {
+        UnityEngine.SceneManagement.SceneManager.sceneLoaded -= OnSceneLoaded;
+    }
+
     void OnSceneLoaded(UnityEngine.SceneManagement.Scene scene, UnityEngine.SceneManagement.LoadSceneMode mode)
     {
+        if (this == null)
+        {
+            UnityEngine.SceneManagement.SceneManager.sceneLoaded -= OnSceneLoaded;
+            return;
+        }
+
         // Scene is fully loaded by the time this callback fires.
         Camera sceneCam = Camera.main;
         if (sceneCam != null)
@@ -742,9 +753,10 @@ public class AbilityCaster : NetworkBehaviour
         if (IsDowned())
             return true;
 
-        if (HasMovementInput())
-            return true;
-
+        // On a dedicated server Mirror can nudge the client's position by a few cm
+        // (lag-compensation correction). Using key.isPressed caused false interrupts
+        // whenever WASD was held at click time. Rely on actual position displacement
+        // only — the threshold (Inspector) should be large enough to tolerate jitter.
         Vector3 delta = transform.position - startPosition;
         delta.y = 0f;
         return delta.sqrMagnitude > castMoveInterruptDistance * castMoveInterruptDistance;
@@ -2219,8 +2231,10 @@ public class AbilityCaster : NetworkBehaviour
             float coneRange = ability.range * indicator.transform.localScale.x;
             ApplyConeDamage(ability, indicator, damage, coneRange, castOrigin);
 
+#if UNITY_EDITOR || !UNITY_SERVER
             if (ability.fireVisual)
                 SpawnFireBurst(castOrigin + indicator.transform.forward * coneRange + Vector3.up * 0.5f, indicator.transform.rotation, coneRange, ability.coneAngle);
+#endif
         }
 
         if (ability.shape == AbilityShape.Circle && ability.damage > 0f && !IsArcaneStep(ability) && !IsVoidMaw(ability))
@@ -3178,6 +3192,7 @@ public class AbilityCaster : NetworkBehaviour
             classPool != null ? GetClassDeployableLimit() : 1);
     }
 
+#if UNITY_EDITOR || !UNITY_SERVER
     void SpawnFireBurst(Vector3 position, Quaternion rotation, float coneRange, float coneAngle)
     {
         GameObject go = new GameObject("FireBurst");
@@ -3220,6 +3235,7 @@ public class AbilityCaster : NetworkBehaviour
         ps.Play();
         Destroy(go, main.duration + main.startLifetime.constantMax + 0.5f);
     }
+#endif // UNITY_EDITOR || !UNITY_SERVER
 
 }
 

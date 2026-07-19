@@ -1,4 +1,4 @@
-﻿#if !UNITY_SERVER
+#if !UNITY_SERVER
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -80,11 +80,14 @@ public class StatusEffectHUD : MonoBehaviour
     {
         if (_localSEM != null) return;
 
+        bool networkActive = Mirror.NetworkClient.active || Mirror.NetworkServer.active;
+
         // Cache local player's StatusEffectManager — throttled search
         var identities = FindObjectsByType<Mirror.NetworkIdentity>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
         foreach (var ni in identities)
         {
-            if (!ni.isLocalPlayer) continue;
+            bool isLocal = networkActive ? ni.isLocalPlayer : (ni.CompareTag("Player") || ni.GetComponent<PlayerMovement>() != null);
+            if (!isLocal) continue;
             _localSEM = ni.GetComponent<StatusEffectManager>();
             break;
         }

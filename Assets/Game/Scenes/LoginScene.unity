@@ -483,6 +483,7 @@ MonoBehaviour:
   - {fileID: 5383663458828750495, guid: ee265e874399c4643b9b9e77a5bc83c6, type: 3}
   - {fileID: 7044732009718663101, guid: f2f18204026d32e418e80ae36363d3d3, type: 3}
   worldPrefabs: []
+  chatManagerPrefab: {fileID: 1000000000000000001, guid: 0b8a9bdc07f1a3146a8481bbae0fb2fe, type: 3}
   authServerURL: http://15.204.243.36:3000
 --- !u!114 &286295840
 MonoBehaviour:
@@ -1341,6 +1342,7 @@ GameObject:
   - component: {fileID: 1891471329}
   - component: {fileID: 1891471328}
   - component: {fileID: 1891471327}
+  - component: {fileID: 1891471330}
   m_Layer: 0
   m_Name: EventSystem
   m_TagString: Untagged
@@ -1409,6 +1411,18 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1891471330
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1891471326}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5f232191380535642b16afdf732917e8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SingleEventSystem
 --- !u!1001 &1999965765
 PrefabInstance:
   m_ObjectHideFlags: 0

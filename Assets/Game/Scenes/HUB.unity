@@ -702,6 +702,207 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 512226820}
   m_Mesh: {fileID: 10206, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &619692701
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 619692705}
+  - component: {fileID: 619692704}
+  - component: {fileID: 619692703}
+  - component: {fileID: 619692702}
+  m_Layer: 0
+  m_Name: Waystone Map Darkwood
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!135 &619692702
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 619692701}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Radius: 5
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &619692703
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 619692701}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2a58cc92eccb4758ab6403ee53fc4a17, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WaypointMapTrigger
+  syncDirection: 0
+  syncMode: 0
+  syncInterval: 0
+  interactionRange: 10
+  allowKeyboardInteract: 1
+  interactKey: 19
+  allowMouseClick: 1
+  clickableLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  clickRaycastDistance: 200
+  showWorldPrompt: 1
+  promptText: '[E] Open World Map'
+  promptOffset: {x: 0, y: 3.2, z: 0}
+  mapTitle: WORLD MAP
+  mapBackground: {fileID: 0}
+  closeMapAfterTravelRequest: 1
+  nodes:
+  - id: neimos
+    displayName: NEIMOS
+    subtitle: island - not to scale
+    sceneName: 
+    unlocked: 0
+    normalizedPosition: {x: 0.07, y: 0.15}
+    labelOffset: {x: 0, y: -42}
+    color: {r: 0, g: 0.75, b: 0.78, a: 1}
+    icon: {fileID: 0}
+    description: Placeholder island node.
+  - id: sw
+    displayName: SW
+    subtitle: unwritten
+    sceneName: 
+    unlocked: 0
+    normalizedPosition: {x: 0.05, y: 0.52}
+    labelOffset: {x: 0, y: -40}
+    color: {r: 0.72, g: 0.66, b: 0.66, a: 1}
+    icon: {fileID: 0}
+    description: Placeholder southwest region.
+  - id: gathering
+    displayName: GATHERING ZONE
+    subtitle: 
+    sceneName: 
+    unlocked: 0
+    normalizedPosition: {x: 0.24, y: 0.72}
+    labelOffset: {x: 0, y: -34}
+    color: {r: 0.82, g: 0.36, b: 0.38, a: 1}
+    icon: {fileID: 0}
+    description: Placeholder gathering zone.
+  - id: brightwood
+    displayName: BRIGHTWOOD
+    subtitle: 
+    sceneName: 
+    unlocked: 0
+    normalizedPosition: {x: 0.46, y: 0.86}
+    labelOffset: {x: 0, y: -34}
+    color: {r: 0.34, g: 0.68, b: 0.31, a: 1}
+    icon: {fileID: 0}
+    description: Placeholder forest zone.
+  - id: darkwood
+    displayName: DARKWOOD
+    subtitle: 
+    sceneName: Darkwood
+    unlocked: 1
+    normalizedPosition: {x: 0.44, y: 0.45}
+    labelOffset: {x: 0, y: -36}
+    color: {r: 0.78, g: 0.35, b: 0.28, a: 1}
+    icon: {fileID: 0}
+    description: Darkwood region.
+  - id: toujam
+    displayName: TOUJAM BASIN
+    subtitle: 
+    sceneName: Toujam Basin
+    unlocked: 1
+    normalizedPosition: {x: 0.72, y: 0.55}
+    labelOffset: {x: 0, y: -34}
+    color: {r: 0.78, g: 0.62, b: 0.02, a: 1}
+    icon: {fileID: 0}
+    description: Placeholder basin zone.
+  - id: ashen
+    displayName: ASHEN WASTELAND
+    subtitle: burned and blighted
+    sceneName: Ashen Wastelands
+    unlocked: 1
+    normalizedPosition: {x: 0.94, y: 0.74}
+    labelOffset: {x: 0, y: -40}
+    color: {r: 0.85, g: 0.42, b: 0.18, a: 1}
+    icon: {fileID: 0}
+    description: A scorched wasteland consumed by ancient fire.
+  connections:
+  - fromNodeId: sw
+    toNodeId: gathering
+    dashed: 1
+    color: {r: 0.55, g: 0.5, b: 0.44, a: 0.65}
+  - fromNodeId: gathering
+    toNodeId: brightwood
+    dashed: 0
+    color: {r: 0.55, g: 0.5, b: 0.44, a: 0.65}
+  - fromNodeId: gathering
+    toNodeId: darkwood
+    dashed: 0
+    color: {r: 0.55, g: 0.5, b: 0.44, a: 0.65}
+  - fromNodeId: brightwood
+    toNodeId: darkwood
+    dashed: 0
+    color: {r: 0.55, g: 0.5, b: 0.44, a: 0.65}
+  - fromNodeId: darkwood
+    toNodeId: toujam
+    dashed: 0
+    color: {r: 0.55, g: 0.5, b: 0.44, a: 0.65}
+  - fromNodeId: toujam
+    toNodeId: ashen
+    dashed: 0
+    color: {r: 0.85, g: 0.42, b: 0.18, a: 0.85}
+  - fromNodeId: neimos
+    toNodeId: darkwood
+    dashed: 1
+    color: {r: 0.55, g: 0.5, b: 0.44, a: 0.65}
+--- !u!114 &619692704
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 619692701}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9b91ecbcc199f4492b9a91e820070131, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Mirror::Mirror.NetworkIdentity
+  sceneId: 1003224416
+  _assetId: 0
+  serverOnly: 0
+  visibility: 0
+  hasSpawned: 0
+--- !u!4 &619692705
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 619692701}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 595.4161, y: 411.44, z: 502.78964}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &797698618
 GameObject:
   m_ObjectHideFlags: 0
@@ -1733,6 +1934,7 @@ GameObject:
   - component: {fileID: 2063705910}
   - component: {fileID: 2063705909}
   - component: {fileID: 2063705908}
+  - component: {fileID: 2063705911}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -1807,13 +2009,143 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2063705907}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1, z: -10}
+  m_LocalRotation: {x: 0.1736482, y: 0, z: 0, w: 0.9848078}
+  m_LocalPosition: {x: 0, y: 4.99, z: -8}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2063705911
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2063705907}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 71ac3d22eb583ad479aa94d33e0a88dd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CameraFollow
+  distance: 7
+  minDistance: 1.5
+  maxDistance: 20
+  zoomSpeed: 4
+  mouseSensitivity: 0.25
+  minPitch: -20
+  maxPitch: 70
+  heightOffset: 1.6
+  cameraCollision: 0
+  collisionMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  collisionRadius: 0.28
+  collisionBuffer: 0.15
+  collisionSmoothSpeed: 18
+--- !u!1 &6120000001
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6120000002}
+  - component: {fileID: 6120000003}
+  - component: {fileID: 6120000004}
+  - component: {fileID: 6120000005}
+  m_Layer: 0
+  m_Name: Waystone Map
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6120000002
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6120000001}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 639.8, y: 411.44, z: 502.78964}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!135 &6120000003
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6120000001}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Radius: 5
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &6120000004
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6120000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9b91ecbcc199f4492b9a91e820070131, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Mirror::Mirror.NetworkIdentity
+  sceneId: 6120000004
+  _assetId: 0
+  serverOnly: 0
+  visibility: 0
+  hasSpawned: 0
+--- !u!114 &6120000005
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6120000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2a58cc92eccb4758ab6403ee53fc4a17, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WaypointMapTrigger
+  syncDirection: 0
+  syncMode: 0
+  syncInterval: 0
+  interactionRange: 10
+  allowKeyboardInteract: 1
+  interactKey: 19
+  allowMouseClick: 1
+  clickableLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  clickRaycastDistance: 200
+  showWorldPrompt: 1
+  promptText: '[E] Open World Map'
+  promptOffset: {x: 0, y: 3.2, z: 0}
+  mapTitle: WORLD MAP
+  mapBackground: {fileID: 0}
+  closeMapAfterTravelRequest: 1
+  nodes: []
+  connections: []
 --- !u!1001 &5070887840991851742
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1888,10 +2220,55 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 7794434344400499106, guid: 10ab2236705f20249aee7efbaf01a468, type: 3}
   m_PrefabInstance: {fileID: 5070887840991851742}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &7200000001
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7200000002}
+  - component: {fileID: 7200000003}
+  m_Layer: 0
+  m_Name: SpawnPoint_Hub
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7200000002
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7200000001}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 635, y: 414, z: 498}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &7200000003
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7200000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 41f84591ce72545258ea98cb7518d8b9, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Mirror::Mirror.NetworkStartPosition
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
+  - {fileID: 7200000002}
   - {fileID: 2063705910}
   - {fileID: 27179446}
   - {fileID: 1754748489}
@@ -1899,3 +2276,5 @@ SceneRoots:
   - {fileID: 1943876386}
   - {fileID: 1895840183}
   - {fileID: 1174062475}
+  - {fileID: 6120000002}
+  - {fileID: 619692705}

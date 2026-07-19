@@ -14,9 +14,15 @@ using UnityEngine;
 /// What it runs, in order:
 ///   4n — NetworkTransform + NetworkAnimator on the 5 heroes + 3 base enemies.
 ///        Without it they spawn for other clients and stand frozen forever.
-///   4o — NetworkIdentity + movement sync on the O'gar Brute ogre.
+///   4o — NetworkIdentity + movement sync on the hand-placed world mobs
+///        (ogre, cyclops, Gunda, training dummy).
 ///   4d — NetworkIdentity on ability deployables/turrets + registers them in
 ///        RodNetworkManager, so other players can see spell objects.
+///        NOTE: as of 2026-07-15 this finds NOTHING — no prefab carries a deployable
+///        behaviour. The AbilityCaster deployable slots are null and the few
+///        ability.deployablePrefab fallbacks point at raw brbmuffins VFX prefabs with
+///        no scripts and no identity. 4d is correct but has nothing to act on until the
+///        deployable prefabs are actually built. See ROADMAP 2.7.
 ///
 /// Every step here touches prefab ASSETS or LoginScene only — none of them depend on
 /// which scene you have open, so this cannot eat unsaved scene work. The boss (6) is
@@ -28,7 +34,7 @@ public static class MultiplayerSetupOrchestrator
     static readonly (string menu, string what)[] Steps =
     {
         ("BCE/Setup/4n ▶ Add Movement Sync (Players + Enemies)", "Heroes + enemies replicate movement"),
-        ("BCE/Setup/4o ▶ Network the O'gar Brute (Ogre)",        "Ogre becomes a networked enemy"),
+        ("BCE/Setup/4o ▶ Network World Mobs (Ogre, Cyclops, Gunda, Dummy)", "Hand-placed world mobs become networked enemies"),
         ("BCE/Setup/4d ▶ Network Deployables + Turret",          "Spell deployables replicate"),
     };
 

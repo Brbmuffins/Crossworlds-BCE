@@ -38,6 +38,11 @@ public class RodNetworkManager : NetworkManager
              "Assign: Enemy_Grunt, Enemy_Ranged, Enemy_Elite, WorldItem, Wisp_Mob, Wraith.")]
     public GameObject[] worldPrefabs;
 
+    [Header("Persistent Networked Objects")]
+    [Tooltip("ChatManager prefab (NetworkIdentity + RodChatManager). Run BCE/Setup/4p to create and wire. " +
+             "Spawned once on the server at startup; persists across ServerChangeScene via DontDestroyOnLoad.")]
+    public GameObject chatManagerPrefab;
+
     [Header("Auth Server")]
     [Tooltip("Must match RodNetworkAuthenticator.authServerURL")]
     public string authServerURL = "http://15.204.243.36:3000";
@@ -104,12 +109,16 @@ public class RodNetworkManager : NetworkManager
         // built-in RegisterPrefab pass picks them all up in one shot.
         RegisterIntoSpawnList(classPrefabs);
         RegisterIntoSpawnList(worldPrefabs);
+        if (chatManagerPrefab != null)
+            RegisterIntoSpawnList(new[] { chatManagerPrefab });
 
         base.OnStartClient(); // registers everything now in spawnPrefabs
 
         // Belt-and-suspenders direct registration for non-editor builds
         DirectRegister(classPrefabs);
         DirectRegister(worldPrefabs);
+        if (chatManagerPrefab != null)
+            DirectRegister(new[] { chatManagerPrefab });
     }
 
     void RegisterIntoSpawnList(GameObject[] prefabs)
@@ -150,6 +159,22 @@ public class RodNetworkManager : NetworkManager
     {
         base.OnStartServer();
         NetworkServer.RegisterHandler<CreatePlayerMessage>(OnCreatePlayer);
+
+        // Spawn a single persistent ChatManager that survives ServerChangeScene.
+        // DontDestroyOnLoad moves it out of any scene so Mirror won't destroy it on
+        // scene transitions; clients receive it via the normal spawn message.
+        if (chatManagerPrefab != null)
+        {
+            var chatGO = Instantiate(chatManagerPrefab);
+            DontDestroyOnLoad(chatGO);
+            NetworkServer.Spawn(chatGO);
+            Debug.Log("[RodNM] ChatManager spawned and marked DontDestroyOnLoad.");
+        }
+        else
+        {
+            Debug.LogWarning("[RodNM] chatManagerPrefab not assigned — chat will not work. " +
+                             "Run BCE/Setup/4p with LoginScene open to fix.");
+        }
     }
 
     public override void OnServerConnect(NetworkConnectionToClient conn)
@@ -194,9 +219,11 @@ public class RodNetworkManager : NetworkManager
         // Spawn position: DB saved position, or Mirror start position, or safe default.
         // Guard: if DB coords are all zero the character has never saved a position
         // (first login). Treat that as a fresh spawn so players don't pile up at origin.
+        // Also guard against characters that disconnected while falling through the map (Y < -20).
         Vector3 spawnPos;
         bool hasSavedPos = auth != null && auth.fromDB
-                           && (auth.spawnX != 0f || auth.spawnY != 0f || auth.spawnZ != 0f);
+                           && (auth.spawnX != 0f || auth.spawnY != 0f || auth.spawnZ != 0f)
+                           && auth.spawnY > -20f;
 
         if (hasSavedPos)
         {

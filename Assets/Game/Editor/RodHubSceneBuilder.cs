@@ -28,7 +28,7 @@ using UnityEngine.EventSystems;
 
 public static class RodHubSceneBuilder
 {
-    const string HUB_SCENE_PATH   = "Assets/Game/Scenes/Hub.unity";
+    const string HUB_SCENE_PATH   = "Assets/Game/Scenes/HUB.unity";
     const string LOGIN_SCENE_PATH = "Assets/Game/Scenes/LoginScene.unity";
     const string CHAR_SELECT_PATH = "Assets/Game/Scenes/CharacterSelect.unity";
 

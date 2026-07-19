@@ -65,20 +65,40 @@ public class PlayerMovement : NetworkBehaviour
     void Start()
     {
         // ── Mirror: disable input on remote player objects ────────────────────
-        // When no network session is running (editor solo play), any PlayerMovement
-        // is treated as the local player.  Once a network session is active, only the
-        // Mirror-designated local player may process input; scene-placed characters
-        // with no NetworkIdentity are decorations and must disable themselves.
+        // In a live network session only the Mirror-designated local player processes
+        // input. In solo editor play (no NetworkManager), any PlayerMovement is local.
+        // NOTE: camera wiring moved to OnStartLocalPlayer() so Mirror guarantees
+        // isLocalPlayer is set before the wiring runs.
         var netId = GetComponent<NetworkIdentity>();
         bool networkActive = NetworkClient.active || NetworkServer.active;
         bool isLocal = networkActive
-            ? (netId != null && netId.isLocalPlayer)   // net session: must be the local player
-            : (netId == null || netId.isLocalPlayer);  // solo editor: anything goes
+            ? (netId != null && netId.isLocalPlayer)
+            : (netId == null || netId.isLocalPlayer);
+
         if (!isLocal)
         {
             enabled = false;
             return;
         }
+
+        InitLocal();
+    }
+
+    // Mirror calls this exactly once, after isLocalPlayer is confirmed.
+    // Also covers solo editor play via the Start() → InitLocal() path above.
+    // Re-enables the component in case Start() ran before isLocalPlayer was set.
+    public override void OnStartLocalPlayer()
+    {
+        base.OnStartLocalPlayer();
+        enabled = true;
+        InitLocal();
+    }
+
+    bool _inited;
+    void InitLocal()
+    {
+        if (_inited) return;
+        _inited = true;
 
         anim   = GetComponentInChildren<Animator>();
         rb     = GetComponent<Rigidbody>();
@@ -89,8 +109,7 @@ public class PlayerMovement : NetworkBehaviour
 
         // Movement is Rigidbody-driven (MovePosition). If the imported rig has Apply
         // Root Motion enabled, the run/sprint clip physically drags the mesh forward
-        // while the Rigidbody drags the root — the mesh detaches and flies around the
-        // camera's follow point. Force it off so the animation stays in-place.
+        // while the Rigidbody drags the root — the mesh detaches and flies.
         if (anim != null) anim.applyRootMotion = false;
 
         // Cache which parameters the controller actually has
@@ -98,20 +117,7 @@ public class PlayerMovement : NetworkBehaviour
             foreach (var p in anim.parameters)
                 _animParams.Add(p.name);
 
-        // Auto-find camera and wire CameraFollow to this transform.
-        if (cam == null) cam = Camera.main;
-        if (cam == null && Camera.allCamerasCount > 0) cam = Camera.allCameras[0];
-        if (cam != null)
-        {
-            // Prefer scene-placed CameraFollow anywhere in the scene to avoid creating a
-            // second component with default settings that fights the scene-placed one.
-            var follow = FindFirstObjectByType<CameraFollow>();
-            if (follow == null)
-                follow = cam.gameObject.AddComponent<CameraFollow>();
-            follow.cameraCollision = true;
-            follow.collisionMask = ~0;
-            follow.target = transform; // setter calls SnapToTarget() automatically
-        }
+        WireCamera();
 
         if (lockCharacterRotation && captureStartRotationAsLock)
             lockedRotationEuler = transform.rotation.eulerAngles;
@@ -126,6 +132,24 @@ public class PlayerMovement : NetworkBehaviour
         SetAnimBool("inWater", false);
         SetAnimBool("isBackwards", false);
     }
+
+#if UNITY_EDITOR || !UNITY_SERVER
+    void WireCamera()
+    {
+        if (cam == null) cam = Camera.main;
+        if (cam == null && Camera.allCamerasCount > 0) cam = Camera.allCameras[0];
+        if (cam == null) return;
+
+        var follow = FindFirstObjectByType<CameraFollow>();
+        if (follow == null)
+            follow = cam.gameObject.AddComponent<CameraFollow>();
+        follow.cameraCollision = true;
+        follow.collisionMask   = ~0;
+        follow.target          = transform;
+    }
+#else
+    void WireCamera() { }
+#endif
 
     // Only call SetBool if the controller actually has that parameter
     void SetAnimBool(string param, bool value)
@@ -251,6 +275,16 @@ public class PlayerMovement : NetworkBehaviour
     {
         if (rb == null)
             return;
+
+        // Void rescue safety net: if we fall deep into the void, teleport back to safety
+        if (transform.position.y < -30f)
+        {
+            var startPos = FindFirstObjectByType<NetworkStartPosition>();
+            Vector3 rescuePos = startPos != null ? startPos.transform.position : new Vector3(0f, 2f, 0f);
+            rb.linearVelocity = Vector3.zero;
+            transform.position = rescuePos;
+            Debug.LogWarning("[Void Rescue] Player fell below -30 Y! Teleporting to safety.");
+        }
 
         if (health != null && health.IsDowned)
         {

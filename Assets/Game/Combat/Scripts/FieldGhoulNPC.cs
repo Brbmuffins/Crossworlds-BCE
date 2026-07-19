@@ -71,6 +71,16 @@ public class FieldGhoulNPC : MonoBehaviour
         _health = GetComponent<Health>();
         _status = GetComponent<StatusEffectManager>();
         _enemyAI = GetComponent<EnemyAI>();
+
+        if (_agent != null && !_agent.isOnNavMesh)
+        {
+            if (NavMesh.SamplePosition(transform.position, out NavMeshHit hit, 5f, NavMesh.AllAreas))
+            {
+                _agent.Warp(hit.position);
+                Debug.Log($"[FieldGhoulNPC] Snapped '{gameObject.name}' to NavMesh at {hit.position}");
+            }
+        }
+
         CaptureOrigin();
         _baseAgentSpeed = _agent != null ? _agent.speed : chaseSpeed;
 

@@ -21,6 +21,10 @@ public class WaveSpawner : NetworkBehaviour
     [Header("Spawn Points")]
     public List<Transform> spawnPoints = new List<Transform>();
 
+    [Header("Zone Config (optional — overrides Wave Config values below)")]
+    [Tooltip("Assign a ZoneConfig asset to drive wave settings from one place.")]
+    public ZoneConfig zoneConfig;
+
     [Header("Wave Config")]
     public int   baseEnemiesPerWave  = 4;
     public int   enemiesAddedPerWave = 2;
@@ -40,6 +44,12 @@ public class WaveSpawner : NetworkBehaviour
     private bool _running = false;
 
     // ─────────────────────────────────────────────────────────────────────────────
+
+    void Awake()
+    {
+        // ZoneConfig wins over Inspector values when assigned.
+        if (zoneConfig != null) zoneConfig.ApplyTo(this);
+    }
 
     [Server]
     public void StartWaves()
@@ -147,6 +157,31 @@ public class WaveSpawner : NetworkBehaviour
 
         Transform sp  = GetSpawnPoint();
         var enemy     = Instantiate(prefab, sp.position, sp.rotation);
+
+        // Apply zone difficulty scaling before the object goes live
+        if (zoneConfig != null)
+        {
+            var ec = enemy.GetComponent<EnemyController>();
+            if (ec != null) ec.damage *= zoneConfig.damageMult;
+
+            var h = enemy.GetComponent<Health>();
+            if (h != null)
+            {
+                h.maxHealth     *= zoneConfig.healthMult;
+                h.currentHealth  = h.maxHealth;
+            }
+
+            // Push heavy attack cooldown tighter at higher difficulty zones
+            var ha = enemy.GetComponent<EnemyHeavyAttack>();
+            if (ha != null)
+            {
+                if (zoneConfig.heavyAttackMinCooldown > 0f)
+                    ha.minCooldown = zoneConfig.heavyAttackMinCooldown;
+                if (zoneConfig.heavyAttackMaxCooldown > 0f)
+                    ha.maxCooldown = zoneConfig.heavyAttackMaxCooldown;
+            }
+        }
+
         var health    = enemy.GetComponent<Health>();
         if (health != null) health.onDeath.AddListener(OnEnemyDied);
         NetworkServer.Spawn(enemy);
