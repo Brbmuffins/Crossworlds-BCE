@@ -55,6 +55,8 @@ public class PlayerMovement : NetworkBehaviour
     private bool isGrounded = true;
     private bool inWater = false;
 
+    public bool InWater => inWater;
+
     private Vector3 moveDirection = Vector3.zero;
     private Quaternion targetRotation;
     private bool wantsMove = false;

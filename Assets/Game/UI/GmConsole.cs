@@ -347,7 +347,7 @@ public class GmConsole : MonoBehaviour
 
     void CmdPlayers()
     {
-        var identities = UnityEngine.Object.FindObjectsByType<PlayerIdentity>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+        var identities = UnityEngine.Object.FindObjectsByType<PlayerIdentity>(FindObjectsInactive.Exclude);
         if (identities.Length == 0)
         {
             Log("<color=#94a3b8>No players found in scene.</color>");
@@ -368,7 +368,7 @@ public class GmConsole : MonoBehaviour
         if (parts.Length < 2) { Log("Usage: goto <playername>"); return; }
 
         string target = string.Join(" ", parts, 1, parts.Length - 1);
-        var identities = UnityEngine.Object.FindObjectsByType<PlayerIdentity>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+        var identities = UnityEngine.Object.FindObjectsByType<PlayerIdentity>(FindObjectsInactive.Exclude);
         foreach (var id in identities)
         {
             if (string.Equals(id.playerName, target, StringComparison.OrdinalIgnoreCase))

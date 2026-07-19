@@ -311,8 +311,7 @@ public class AfkGatheringStation : MonoBehaviour
 
     static Transform FindLocalPlayer()
     {
-        foreach (var id in FindObjectsByType<Mirror.NetworkIdentity>(
-            FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+        foreach (var id in FindObjectsByType<Mirror.NetworkIdentity>(FindObjectsInactive.Exclude))
             if (id.isLocalPlayer) return id.transform;
         return null;
     }

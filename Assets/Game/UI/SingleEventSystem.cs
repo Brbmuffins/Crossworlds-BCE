@@ -8,7 +8,7 @@ public class SingleEventSystem : MonoBehaviour
     void Awake()
     {
         EventSystem myEs = GetComponent<EventSystem>();
-        EventSystem[] eventSystems = FindObjectsByType<EventSystem>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        EventSystem[] eventSystems = FindObjectsByType<EventSystem>(FindObjectsInactive.Include);
         foreach (var es in eventSystems)
         {
             if (es != null && es != myEs && es.gameObject.activeInHierarchy && es.enabled)

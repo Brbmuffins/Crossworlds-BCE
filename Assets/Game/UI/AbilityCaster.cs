@@ -460,7 +460,7 @@ public class AbilityCaster : NetworkBehaviour
         // OnStartLocalPlayer fires after the prefab is fully spawned and isLocalPlayer
         // is confirmed — safer than relying on Start() timing alone.
         var follow = sceneCam.GetComponent<CameraFollow>()
-                  ?? FindFirstObjectByType<CameraFollow>()
+                  ?? FindAnyObjectByType<CameraFollow>()
                   ?? sceneCam.gameObject.AddComponent<CameraFollow>();
         follow.target = transform;
     }

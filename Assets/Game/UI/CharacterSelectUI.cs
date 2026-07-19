@@ -86,7 +86,7 @@ public class CharacterSelectUI : MonoBehaviour
     // disable the rest, and guarantee it drives the new Input System.
     void EnsureSingleEventSystem()
     {
-        var systems = FindObjectsByType<EventSystem>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+        var systems = FindObjectsByType<EventSystem>(FindObjectsInactive.Exclude);
         EventSystem keep = systems.Length > 0 ? systems[0] : null;
 
         if (keep == null)

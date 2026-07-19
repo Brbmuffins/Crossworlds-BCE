@@ -152,7 +152,7 @@ public class PlayerHUD : MonoBehaviour
 
         bool networkActive = NetworkClient.active || NetworkServer.active;
 
-        foreach (var ni in FindObjectsByType<NetworkIdentity>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+        foreach (var ni in FindObjectsByType<NetworkIdentity>(FindObjectsInactive.Exclude))
         {
             bool isLocal = networkActive ? ni.isLocalPlayer : (ni.CompareTag("Player") || ni.GetComponent<PlayerMovement>() != null);
             if (!isLocal) continue;

@@ -93,7 +93,7 @@ public static class GatheringZoneBuilder
         Vector3 entrance = center + new Vector3(0f, 0.1f, -30f);
 
         // ── 2. Directional light ─────────────────────────────────────────────────
-        if (GameObject.FindFirstObjectByType<Light>(FindObjectsInactive.Exclude) == null)
+        if (GameObject.FindAnyObjectByType<Light>(FindObjectsInactive.Exclude) == null)
         {
             var lg    = new GameObject("Directional Light");
             var light = lg.AddComponent<Light>();
