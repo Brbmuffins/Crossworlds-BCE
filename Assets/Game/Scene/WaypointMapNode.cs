@@ -8,6 +8,13 @@ public sealed class WaypointMapNode
     public string displayName = "DARKWOOD";
     public string subtitle = "";
     public string sceneName = "";
+
+    [Tooltip("Optional named arrival marker to place players at after loading this scene.")]
+    public string arrivalSpawnId = "";
+
+    [Tooltip("Face players the same way as the arrival marker after travel.")]
+    public bool useArrivalSpawnRotation = true;
+
     public bool unlocked = true;
     public Vector2 normalizedPosition = new Vector2(0.5f, 0.5f);
     public Vector2 labelOffset = new Vector2(0f, -36f);

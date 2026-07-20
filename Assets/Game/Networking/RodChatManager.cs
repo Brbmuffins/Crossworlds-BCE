@@ -58,6 +58,14 @@ public class RodChatManager : NetworkBehaviour
     float  _lastMsgTime = -999f;
     string _typedText   = "";
 
+    bool _gmFlyActive;
+    float _gmSpeedMultiplier = 1f;
+    GameObject _gmLocalPlayer;
+    PlayerMovement _gmMovement;
+    Rigidbody _gmRigidbody;
+    float _gmBaseMoveSpeed;
+    float _gmBaseSprintSpeed;
+
     readonly List<string> _history = new();
 
     // ── Name colours — deterministic from username hash ───────────────────
@@ -92,6 +100,9 @@ public class RodChatManager : NetworkBehaviour
     {
         // Re-wire EventSystem in case the new scene destroyed the one we made.
         EnsureEventSystem();
+        ResetGmPlayerCache();
+        if (_gmFlyActive || !Mathf.Approximately(_gmSpeedMultiplier, 1f))
+            ApplyGmMovementState();
         AddSystemMessage($"Entered {scene.name}.");
     }
 
@@ -170,6 +181,8 @@ public class RodChatManager : NetworkBehaviour
             _cg.blocksRaycasts = true;
             _cg.interactable   = true;
         }
+
+        UpdateGmMovement();
     }
 
     // ── Server-side command ───────────────────────────────────────────────
@@ -182,6 +195,9 @@ public class RodChatManager : NetworkBehaviour
         message = message.Trim();
         if (message.Length > MAX_MSG_LEN)
             message = message[..MAX_MSG_LEN];
+
+        if (GmCommandRouter.TryHandle(message, sender, this))
+            return;
 
         // Pull username from server-authoritative auth data — cannot be spoofed
         string username = "Unknown";
@@ -218,6 +234,38 @@ public class RodChatManager : NetworkBehaviour
         PushLine($"<color=#60a5fa>» </color><color=#94a3b8>{Esc(msg)}</color>");
 
     // ── Private ───────────────────────────────────────────────────────────
+
+    [Server]
+    public void SendGmFeedback(NetworkConnectionToClient target, string message)
+    {
+        if (target == null)
+        {
+            Debug.Log($"[GM] {message}");
+            return;
+        }
+
+        TargetReceiveGmMessage(target, message);
+    }
+
+    [TargetRpc]
+    public void TargetReceiveGmMessage(NetworkConnectionToClient target, string message)
+    {
+        PushLine($"<color=#fbbf24>GM</color><color=#94a3b8>: </color><color=#e2e8f0>{Esc(message)}</color>");
+    }
+
+    [TargetRpc]
+    public void TargetSetGmFly(NetworkConnectionToClient target, bool enabled)
+    {
+        _gmFlyActive = enabled;
+        ApplyGmMovementState();
+    }
+
+    [TargetRpc]
+    public void TargetSetGmSpeed(NetworkConnectionToClient target, float multiplier)
+    {
+        _gmSpeedMultiplier = Mathf.Clamp(multiplier, 0.25f, 8f);
+        ApplyGmMovementState();
+    }
 
     void OpenInput()
     {
@@ -300,6 +348,119 @@ public class RodChatManager : NetworkBehaviour
     //   Log      — fills panel body
     //   InputBg  — bottom 13% of panel, hidden when not typing
     // ─────────────────────────────────────────────────────────────────────
+
+    void ResetGmPlayerCache()
+    {
+        _gmLocalPlayer = null;
+        _gmMovement = null;
+        _gmRigidbody = null;
+        _gmBaseMoveSpeed = 0f;
+        _gmBaseSprintSpeed = 0f;
+    }
+
+    void UpdateGmMovement()
+    {
+        if (!_gmFlyActive && Mathf.Approximately(_gmSpeedMultiplier, 1f))
+            return;
+
+        if (!TryCacheGmLocalPlayer())
+            return;
+
+        if (!Mathf.Approximately(_gmSpeedMultiplier, 1f))
+            ApplyGmSpeed();
+
+        if (!_gmFlyActive || _gmRigidbody == null)
+            return;
+
+        _gmRigidbody.useGravity = false;
+
+        float vertical = 0f;
+        var keyboard = Keyboard.current;
+        if (keyboard != null)
+        {
+            if (keyboard.spaceKey.isPressed)
+                vertical += 1f;
+            if (keyboard.leftCtrlKey.isPressed || keyboard.rightCtrlKey.isPressed || keyboard.cKey.isPressed)
+                vertical -= 1f;
+        }
+
+        float verticalSpeed = Mathf.Max(6f, _gmBaseMoveSpeed * Mathf.Max(1f, _gmSpeedMultiplier));
+        Vector3 velocity = _gmRigidbody.linearVelocity;
+        _gmRigidbody.linearVelocity = new Vector3(velocity.x, vertical * verticalSpeed, velocity.z);
+    }
+
+    void ApplyGmMovementState()
+    {
+        if (!TryCacheGmLocalPlayer())
+            return;
+
+        ApplyGmSpeed();
+
+        if (_gmRigidbody == null)
+            return;
+
+        _gmRigidbody.useGravity = !_gmFlyActive;
+        if (!_gmFlyActive)
+        {
+            Vector3 velocity = _gmRigidbody.linearVelocity;
+            if (velocity.y > 0f)
+                _gmRigidbody.linearVelocity = new Vector3(velocity.x, 0f, velocity.z);
+        }
+    }
+
+    void ApplyGmSpeed()
+    {
+        if (_gmMovement == null)
+            return;
+
+        if (_gmBaseMoveSpeed <= 0f)
+            _gmBaseMoveSpeed = _gmMovement.moveSpeed;
+        if (_gmBaseSprintSpeed <= 0f)
+            _gmBaseSprintSpeed = _gmMovement.sprintSpeed;
+
+        _gmMovement.moveSpeed = _gmBaseMoveSpeed * _gmSpeedMultiplier;
+        _gmMovement.sprintSpeed = _gmBaseSprintSpeed * _gmSpeedMultiplier;
+    }
+
+    bool TryCacheGmLocalPlayer()
+    {
+        if (_gmLocalPlayer != null)
+            return true;
+
+        var identities = FindObjectsByType<NetworkIdentity>(FindObjectsInactive.Exclude);
+        foreach (var identity in identities)
+        {
+            if (identity != null && identity.isLocalPlayer)
+                return CacheGmPlayer(identity.gameObject);
+        }
+
+        if (!NetworkClient.active && !NetworkServer.active)
+        {
+            GameObject taggedPlayer = GameObject.FindWithTag("Player");
+            if (taggedPlayer != null)
+                return CacheGmPlayer(taggedPlayer);
+        }
+
+        return false;
+    }
+
+    bool CacheGmPlayer(GameObject player)
+    {
+        if (player == null)
+            return false;
+
+        _gmLocalPlayer = player;
+        _gmMovement = player.GetComponent<PlayerMovement>();
+        _gmRigidbody = player.GetComponent<Rigidbody>();
+
+        if (_gmMovement != null)
+        {
+            _gmBaseMoveSpeed = _gmMovement.moveSpeed;
+            _gmBaseSprintSpeed = _gmMovement.sprintSpeed;
+        }
+
+        return true;
+    }
 
     // Resolve a usable TMP font once. Relying on the implicit default font asset can
     // yield invisible text (visible box, no glyphs) when TMP_Settings.defaultFontAsset
