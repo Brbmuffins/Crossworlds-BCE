@@ -10,6 +10,8 @@ using UnityEngine.SceneManagement;
 [AddComponentMenu("BCE/Scene/Waypoint Map Trigger")]
 public sealed class WaypointMapTrigger : NetworkBehaviour
 {
+    const string AshenWastelandsSpawnId = "AshenWastelandsSpawnPoint";
+
     [Header("Interaction")]
     [Min(0.5f)] public float interactionRange = 5f;
     public bool allowKeyboardInteract = true;
@@ -17,6 +19,11 @@ public sealed class WaypointMapTrigger : NetworkBehaviour
     public bool allowMouseClick = true;
     public LayerMask clickableLayers = ~0;
     [Min(1f)] public float clickRaycastDistance = 200f;
+
+    [Header("Trigger Entry")]
+    public bool openMapOnTriggerEnter = false;
+    public bool localPlayerOnlyTrigger = true;
+    [Min(0f)] public float triggerOpenCooldown = 1.5f;
 
     [Header("Prompt")]
     public bool showWorldPrompt = true;
@@ -32,6 +39,7 @@ public sealed class WaypointMapTrigger : NetworkBehaviour
 
     bool _playerNear;
     bool _loading;
+    float _lastTriggerOpenTime = -999f;
     Transform _localPlayer;
     GameObject _promptObject;
     TextMeshPro _promptLabel;
@@ -85,6 +93,19 @@ public sealed class WaypointMapTrigger : NetworkBehaviour
     }
 
 #if UNITY_EDITOR || !UNITY_SERVER
+    void OnTriggerEnter(Collider other)
+    {
+        if (!openMapOnTriggerEnter || _loading)
+            return;
+        if (Time.unscaledTime - _lastTriggerOpenTime < triggerOpenCooldown)
+            return;
+        if (localPlayerOnlyTrigger && !IsLocalPlayer(other))
+            return;
+
+        _lastTriggerOpenTime = Time.unscaledTime;
+        OpenMap();
+    }
+
     void OpenMap()
     {
         WaypointMapUI.Show(mapTitle, mapBackground, nodes, connections, HandleNodeSelected);
@@ -122,21 +143,27 @@ public sealed class WaypointMapTrigger : NetworkBehaviour
 
         if (NetworkServer.active)
         {
+            PrepareArrival(sceneName, node.arrivalSpawnId, node.useArrivalSpawnRotation, false);
             ChangeScene(sceneName);
             return;
         }
 
         if (NetworkClient.active)
         {
-            CmdRequestTravel(sceneName);
+            CmdRequestTravel(sceneName, node.arrivalSpawnId, node.useArrivalSpawnRotation);
             return;
         }
 
+        PrepareArrival(sceneName, node.arrivalSpawnId, node.useArrivalSpawnRotation, true);
         ChangeScene(sceneName);
     }
 
     [Command(requiresAuthority = false)]
-    void CmdRequestTravel(string sceneName, NetworkConnectionToClient sender = null)
+    void CmdRequestTravel(
+        string sceneName,
+        string arrivalSpawnId,
+        bool useArrivalSpawnRotation,
+        NetworkConnectionToClient sender = null)
     {
         if (string.IsNullOrWhiteSpace(sceneName))
             return;
@@ -148,6 +175,7 @@ public sealed class WaypointMapTrigger : NetworkBehaviour
             return;
         }
 
+        PrepareArrival(sceneName, arrivalSpawnId, useArrivalSpawnRotation, false);
         ChangeScene(sceneName);
     }
 
@@ -157,6 +185,27 @@ public sealed class WaypointMapTrigger : NetworkBehaviour
         _loading = false;
 #if UNITY_EDITOR || !UNITY_SERVER
         WaypointMapUI.SetStatus(message);
+#endif
+    }
+
+    void PrepareArrival(string sceneName, string arrivalSpawnId, bool useArrivalSpawnRotation, bool carryLocalPlayer)
+    {
+        if (string.IsNullOrWhiteSpace(arrivalSpawnId))
+            return;
+
+        HubReturnArrival.Request(sceneName, arrivalSpawnId, useArrivalSpawnRotation);
+#if UNITY_EDITOR || !UNITY_SERVER
+        if (!carryLocalPlayer || NetworkServer.active || NetworkClient.active)
+            return;
+
+        Transform localPlayer = _localPlayer != null ? _localPlayer : FindLocalPlayer();
+        if (localPlayer != null)
+        {
+            HubReturnArrival.CarryLocalPlayer(localPlayer.gameObject);
+            return;
+        }
+
+        HubReturnArrival.Clear();
 #endif
     }
 
@@ -214,6 +263,18 @@ public sealed class WaypointMapTrigger : NetworkBehaviour
         return selected != null &&
                (selected.GetComponent<TMP_InputField>() != null ||
                 selected.GetComponent<UnityEngine.UI.InputField>() != null);
+    }
+
+    static bool IsLocalPlayer(Collider other)
+    {
+        if (other == null)
+            return false;
+
+        var identity = other.GetComponentInParent<NetworkIdentity>();
+        if (identity != null)
+            return identity.isLocalPlayer;
+
+        return other.CompareTag("Player") || other.GetComponentInParent<PlayerMovement>() != null;
     }
 
     static Transform FindLocalPlayer()
@@ -337,6 +398,8 @@ public sealed class WaypointMapTrigger : NetworkBehaviour
                 displayName = "ASHEN WASTELAND",
                 subtitle = "burned and blighted",
                 sceneName = SceneNames.AshenWastelands,
+                arrivalSpawnId = AshenWastelandsSpawnId,
+                useArrivalSpawnRotation = true,
                 unlocked = true,
                 normalizedPosition = new Vector2(0.94f, 0.74f),
                 labelOffset = new Vector2(0f, -40f),

@@ -4,11 +4,11 @@ using UnityEngine;
 
 [DisallowMultipleComponent]
 [AddComponentMenu("BCE/Scene/Hub Return Spawn Point")]
-public sealed class HubReturnSpawnPoint : MonoBehaviour
+public class HubReturnSpawnPoint : MonoBehaviour
 {
     public const string DefaultSpawnId = "HubReturn";
 
-    [Tooltip("Return triggers with the same id will land players here.")]
+    [Tooltip("Travel requests with the same id will land players here.")]
     public string spawnId = DefaultSpawnId;
 
     public static Transform Find(string requestedSpawnId)

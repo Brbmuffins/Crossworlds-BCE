@@ -451,7 +451,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 301782156525618200, guid: e1d277ab18e0fb94ab41769537ac1c41, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -380.0688
+      value: -381.01
       objectReference: {fileID: 0}
     - target: {fileID: 301782156525618200, guid: e1d277ab18e0fb94ab41769537ac1c41, type: 3}
       propertyPath: m_LocalPosition.y
@@ -494,11 +494,9 @@ PrefabInstance:
       value: Waystone (1)
       objectReference: {fileID: 0}
     m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects:
-    - targetCorrespondingSourceObject: {fileID: 301782156525618200, guid: e1d277ab18e0fb94ab41769537ac1c41, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1757979663}
+    m_RemovedGameObjects:
+    - {fileID: 5654631585247054362, guid: e1d277ab18e0fb94ab41769537ac1c41, type: 3}
+    m_AddedGameObjects: []
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 1115755714417172130, guid: e1d277ab18e0fb94ab41769537ac1c41, type: 3}
       insertIndex: -1
@@ -510,11 +508,6 @@ PrefabInstance:
 --- !u!1 &125418451 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 1115755714417172130, guid: e1d277ab18e0fb94ab41769537ac1c41, type: 3}
-  m_PrefabInstance: {fileID: 125418450}
-  m_PrefabAsset: {fileID: 0}
---- !u!4 &125418452 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 301782156525618200, guid: e1d277ab18e0fb94ab41769537ac1c41, type: 3}
   m_PrefabInstance: {fileID: 125418450}
   m_PrefabAsset: {fileID: 0}
 --- !u!114 &125418453
@@ -3029,6 +3022,51 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: fb788db241c5701419ddbee3a1bd9fc5, type: 3}
+--- !u!1 &1019995983
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1019995984}
+  - component: {fileID: 1019995985}
+  m_Layer: 0
+  m_Name: AshenWastelandsSpawnPoint
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1019995984
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1019995983}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: 0.7582734, z: -0, w: 0.6519366}
+  m_LocalPosition: {x: -351.65, y: 50.96, z: -1272.7706}
+  m_LocalScale: {x: 19.348766, y: 19.348766, z: 19.348766}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 98.624, z: 0}
+--- !u!114 &1019995985
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1019995983}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b2d9e8d1a6fd4d6dbb6bdf4c9424bd8d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WaypointArrivalPoint
+  spawnId: AshenWastelandsSpawnPoint
 --- !u!4 &1026489852 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 7313843752765692936, guid: 988bc5782a3ef3d47aa2ac85786afd8c, type: 3}
@@ -5799,64 +5837,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!1 &1757979662
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1757979663}
-  - component: {fileID: 1757979664}
-  - component: {fileID: 1757979665}
-  m_Layer: 0
-  m_Name: Spawnpoint
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1757979663
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1757979662}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.1529, z: -0.2458}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 125418452}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1757979664
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1757979662}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a0b0cd4307bf4aa39ee67b757c8d8a92, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::HubReturnSpawnPoint
-  spawnId: Spawnpoint
---- !u!114 &1757979665
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1757979662}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 41f84591ce72545258ea98cb7518d8b9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Mirror::Mirror.NetworkStartPosition
 --- !u!1001 &1760519855
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -12578,6 +12558,7 @@ SceneRoots:
   - {fileID: 303070213188314428}
   - {fileID: 124752066}
   - {fileID: 884236225}
+  - {fileID: 1019995984}
   - {fileID: 125418450}
   - {fileID: 583567221}
   - {fileID: 1325193503}
