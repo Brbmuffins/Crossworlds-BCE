@@ -1,19 +1,15 @@
-﻿using UnityEngine;
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.SceneManagement;
 using Mirror;
 using TMPro;
 using UnityEngine.UI;
 
 /// <summary>
 /// PortalTransition — attach to each portal in Hub scene.
-/// Server: first player to enter triggers scene load for all clients.
-/// Client: shows "Press E to enter" prompt when in range.
-///
-/// Setup (BCE/Build Hub Scene auto-adds portals — add this component + set arenaSceneName):
-///   1. Attach to portal GameObject (needs a trigger Collider)
-///   2. Set arenaSceneName in inspector (e.g. "Arena_Copper")
-///   3. The portal must have a trigger SphereCollider on it
-///
-/// The arena scene must be added to Build Settings.
+/// Each player enters independently; only the triggering client loads the scene.
+/// ServerChangeScene is intentionally NOT used here — that would move all players.
 /// </summary>
 public class PortalTransition : NetworkBehaviour
 {
@@ -29,30 +25,67 @@ public class PortalTransition : NetworkBehaviour
     [Tooltip("Distance at which the E prompt appears (client-side)")]
     public float promptRadius = 4f;
 
-    private bool          _triggered;
-    private Transform     _localPlayer;
-    private GameObject    _promptObj;
-    private TextMeshProUGUI _promptText;
-    private bool          _promptVisible;
+    // Per-connection set so each player can enter independently
+    private readonly HashSet<int> _entered = new HashSet<int>();
+
+    private Transform        _localPlayer;
+    private GameObject       _promptObj;
+    private TextMeshProUGUI  _promptText;
+    private bool             _promptVisible;
+    private bool             _enteringLocally;   // client-side: prevents double-trigger
 
     // ── Server ────────────────────────────────────────────────────────────────
 
     [Server]
     void OnTriggerEnter(Collider other)
     {
-        if (_triggered) return;
         if (!other.CompareTag("Player")) return;
 
-        _triggered = true;
-        RpcAnnounce($"A portal to {portalDisplayName} has opened! Warping all players...");
-        Invoke(nameof(LoadArena), transitionDelay);
+        var identity = other.GetComponentInParent<NetworkIdentity>();
+        if (identity == null) return;
+
+        var conn = identity.connectionToClient;
+        if (conn == null) return;
+
+        int connId = conn.connectionId;
+        if (_entered.Contains(connId)) return;
+        _entered.Add(connId);
+
+        TargetBeginTransition(conn, portalDisplayName, arenaSceneName, transitionDelay);
     }
 
-    [Server]
-    void LoadArena()
+    [Command(requiresAuthority = false)]
+    void CmdRequestEnter(NetworkConnectionToClient sender = null)
     {
-        Debug.Log($"[PORTAL] Loading arena scene: {arenaSceneName}");
-        NetworkManager.singleton.ServerChangeScene(arenaSceneName);
+        if (sender == null) return;
+
+        int connId = sender.connectionId;
+        if (_entered.Contains(connId)) return;
+        _entered.Add(connId);
+
+        TargetBeginTransition(sender, portalDisplayName, arenaSceneName, transitionDelay);
+    }
+
+    /// <summary>Tells only the triggering client to load the scene.</summary>
+    [TargetRpc]
+    void TargetBeginTransition(NetworkConnectionToClient target, string displayName, string sceneName, float delay)
+    {
+        if (_enteringLocally) return;
+        _enteringLocally = true;
+
+        RodChatManager.Instance?.AddSystemMessage($"Entering {displayName}...");
+        if (_promptObj != null) _promptObj.SetActive(false);
+
+        StartCoroutine(LocalLoad(sceneName, delay));
+    }
+
+    IEnumerator LocalLoad(string sceneName, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+#if UNITY_EDITOR || !UNITY_SERVER
+        LoadingScreen.Show(sceneName);
+#endif
+        SceneManager.LoadScene(sceneName);
     }
 
     // ── Client ────────────────────────────────────────────────────────────────
@@ -65,7 +98,8 @@ public class PortalTransition : NetworkBehaviour
 
     void Update()
     {
-        if (isServer) return; // server doesn't need the prompt
+        if (isServer) return;
+        if (_enteringLocally) return;
         if (_localPlayer == null) FindLocalPlayer();
         if (_localPlayer == null) return;
 
@@ -78,48 +112,32 @@ public class PortalTransition : NetworkBehaviour
             if (_promptObj != null) _promptObj.SetActive(inRange);
         }
 
-        // E to enter — sends a Cmd so the server handles the transition
         if (inRange && UnityEngine.InputSystem.Keyboard.current?.eKey.wasPressedThisFrame == true)
             CmdRequestEnter();
     }
 
-    [Command(requiresAuthority = false)]
-    void CmdRequestEnter()
-    {
-        if (_triggered) return;
-        _triggered = true;
-        RpcAnnounce($"A portal to {portalDisplayName} has opened! Warping all players...");
-        Invoke(nameof(LoadArena), transitionDelay);
-    }
-
-    [ClientRpc]
-    void RpcAnnounce(string message)
-    {
-        Debug.Log($"[PORTAL] {message}");
-        RodChatManager.Instance?.AddSystemMessage(message);
-    }
-
     void FindLocalPlayer()
     {
-        foreach (var id in FindObjectsByType<PlayerIdentity>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+        foreach (var id in FindObjectsByType<NetworkIdentity>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
         {
             if (id.isLocalPlayer) { _localPlayer = id.transform; return; }
         }
     }
 
-    // ── Prompt UI (world-space billboard) ─────────────────────────────────────
+    // ── Prompt UI (world-space billboard) ────────────────────────────────────
+
     void BuildPromptUI()
     {
         _promptObj = new GameObject("PortalPrompt");
         _promptObj.transform.SetParent(transform, false);
         _promptObj.transform.localPosition = new Vector3(0f, 3.5f, 0f);
-        _promptObj.AddComponent<RodBillboard>(); // always faces camera
+        _promptObj.AddComponent<RodBillboard>();
 
         var canvas = _promptObj.AddComponent<Canvas>();
-        canvas.renderMode    = RenderMode.WorldSpace;
-        canvas.sortingOrder  = 10;
+        canvas.renderMode   = RenderMode.WorldSpace;
+        canvas.sortingOrder = 10;
         var rt = _promptObj.GetComponent<RectTransform>();
-        rt.sizeDelta = new Vector2(220f, 50f);
+        rt.sizeDelta  = new Vector2(220f, 50f);
         rt.localScale = Vector3.one * 0.012f;
 
         var bg = new GameObject("BG", typeof(RectTransform), typeof(Image));
