@@ -11,6 +11,7 @@ using UnityEngine.SceneManagement;
 public sealed class WaypointMapTrigger : NetworkBehaviour
 {
     const string AshenWastelandsSpawnId = "AshenWastelandsSpawnPoint";
+    const string DarkwoodSpawnId = "DarkwoodSpawnLocation";
 
     [Header("Interaction")]
     [Min(0.5f)] public float interactionRange = 5f;
@@ -374,6 +375,8 @@ public sealed class WaypointMapTrigger : NetworkBehaviour
                 displayName = "DARKWOOD",
                 subtitle = "",
                 sceneName = SceneNames.Darkwood,
+                arrivalSpawnId = DarkwoodSpawnId,
+                useArrivalSpawnRotation = true,
                 unlocked = true,
                 normalizedPosition = new Vector2(0.44f, 0.45f),
                 labelOffset = new Vector2(0f, -36f),

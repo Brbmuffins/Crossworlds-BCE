@@ -83,7 +83,10 @@ public class RodNetworkAuthenticator : NetworkAuthenticator
                 spawnX      = 0f,
                 spawnY      = 2f,
                 spawnZ      = 0f,
-                fromDB      = false
+                fromDB      = false,
+                gmAllowed   = true,
+                gmActive    = true,
+                gmLevel     = 10
             };
             conn.Send(new AuthResponseMessage { success = true, message = "Dev mode — accepted." });
             ServerAccept(conn);
@@ -149,7 +152,10 @@ public class RodNetworkAuthenticator : NetworkAuthenticator
             spawnX      = character.pos_x,
             spawnY      = character.pos_y,
             spawnZ      = character.pos_z,
-            fromDB      = true
+            fromDB      = true,
+            gmAllowed   = character.gm_enabled,
+            gmLevel     = character.gm_level,
+            gmPermissions = character.gm_permissions
         };
 
         conn.Send(new AuthResponseMessage { success = true, message = "Authenticated." });
@@ -214,13 +220,16 @@ public class RodNetworkAuthenticator : NetworkAuthenticator
         public float  pos_x;
         public float  pos_y;
         public float  pos_z;
+        public bool   gm_enabled;
+        public int    gm_level;
+        public string gm_permissions;
     }
 }
 
 // ── Auth data stored on each server connection ────────────────────────────
 // RodNetworkManager reads this to spawn the right prefab at the right position.
 
-public class RodPlayerAuth
+public partial class RodPlayerAuth
 {
     public string username;
     public string jwt;
