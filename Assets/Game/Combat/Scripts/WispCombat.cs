@@ -61,6 +61,7 @@ public class WispCombat : NetworkBehaviour
     {
         base.OnStartServer();
         _spawnPos = transform.position;
+        _pulseTimer = EnemyCrowdUtility.FirstAttackDelay(this, pulseCooldown);
         _health.onDeath.AddListener(OnDeath);
         _health.onDamagedBy.AddListener(OnDamagedBy);
         StartCoroutine(AggroLoop());
@@ -106,8 +107,9 @@ public class WispCombat : NetworkBehaviour
             return;
         }
 
-        // Float towards target at chaseHeight
-        Vector3 desired = _target.position + Vector3.up * chaseHeight;
+        // Float towards a personal slot near the target instead of stacking directly above it.
+        Vector3 slot = EnemyCrowdUtility.ChaseSlot(transform, _target, 1.25f, 0.65f);
+        Vector3 desired = new Vector3(slot.x, _target.position.y + chaseHeight, slot.z);
         transform.position = Vector3.SmoothDamp(
             transform.position, desired, ref _chaseVelocity,
             chaseSmoothTime, chaseMaxSpeed);

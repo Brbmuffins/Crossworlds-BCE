@@ -149,8 +149,8 @@ public class FieldGhoulNPC : MonoBehaviour
             return;
         }
 
-        float dist = Vector3.Distance(transform.position, _aggroTarget.position);
-        if (dist > attackRange)
+        Vector3 slot = EnemyCrowdUtility.ChaseSlot(transform, _aggroTarget, EnemyCrowdUtility.MeleeSlotRadius(attackRange));
+        if (EnemyCrowdUtility.ShouldMoveToMeleeSlot(transform, _aggroTarget, slot, attackRange))
         {
             ChaseTarget();
             return;
@@ -178,7 +178,8 @@ public class FieldGhoulNPC : MonoBehaviour
         }
 
         _aggroTarget = target;
-        _attackTimer = 0f;
+        float interval = 1f / Mathf.Max(0.05f, attackRate);
+        _attackTimer = _aggroTarget != null ? EnemyCrowdUtility.ReadyCountUpAttackTimer(this, interval) : 0f;
         _returningToOrigin = false;
     }
 
@@ -312,12 +313,13 @@ public class FieldGhoulNPC : MonoBehaviour
         {
             _agent.isStopped = false;
             _agent.speed = speed;
-            _agent.stoppingDistance = Mathf.Max(0.1f, attackRange * 0.85f);
-            _agent.SetDestination(_aggroTarget.position);
+            _agent.stoppingDistance = 0.25f;
+            _agent.SetDestination(EnemyCrowdUtility.ChaseSlot(transform, _aggroTarget, EnemyCrowdUtility.MeleeSlotRadius(attackRange)));
         }
         else
         {
-            MoveDirectlyToward(_aggroTarget.position, speed);
+            Vector3 destination = EnemyCrowdUtility.ChaseSlot(transform, _aggroTarget, EnemyCrowdUtility.MeleeSlotRadius(attackRange));
+            MoveDirectlyToward(destination, speed);
         }
 
         FaceTarget(_aggroTarget.position);

@@ -123,8 +123,8 @@ public class EnemyAI : MonoBehaviour
             return;
         }
 
-        float dist = Vector3.Distance(transform.position, aggroTarget.position);
-        if (dist > attackRange)
+        Vector3 slot = EnemyCrowdUtility.ChaseSlot(transform, aggroTarget, EnemyCrowdUtility.MeleeSlotRadius(attackRange));
+        if (EnemyCrowdUtility.ShouldMoveToMeleeSlot(transform, aggroTarget, slot, attackRange))
         {
             ChaseTarget();
             return;
@@ -139,7 +139,8 @@ public class EnemyAI : MonoBehaviour
             _searchSuppressedUntil = Time.time + stealthConfusionDuration;
 
         aggroTarget = t;
-        _attackTimer = 0f;
+        float interval = 1f / Mathf.Max(0.05f, attackRate);
+        _attackTimer = aggroTarget != null ? EnemyCrowdUtility.ReadyCountUpAttackTimer(this, interval) : 0f;
         _returningHome = t == null;
 
         if (aggroTarget != null)
@@ -247,13 +248,14 @@ public class EnemyAI : MonoBehaviour
         {
             _agent.isStopped = false;
             _agent.speed = speed;
-            _agent.stoppingDistance = Mathf.Max(0.1f, attackRange * 0.85f);
-            _agent.SetDestination(aggroTarget.position);
+            _agent.stoppingDistance = 0.25f;
+            _agent.SetDestination(EnemyCrowdUtility.ChaseSlot(transform, aggroTarget, EnemyCrowdUtility.MeleeSlotRadius(attackRange)));
             FaceTarget(aggroTarget.position);
             return;
         }
 
-        Vector3 dir = aggroTarget.position - transform.position;
+        Vector3 destination = EnemyCrowdUtility.ChaseSlot(transform, aggroTarget, EnemyCrowdUtility.MeleeSlotRadius(attackRange));
+        Vector3 dir = destination - transform.position;
         dir.y = 0f;
         if (dir.sqrMagnitude <= 0.001f) return;
 

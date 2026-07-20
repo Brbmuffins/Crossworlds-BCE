@@ -123,6 +123,7 @@ public class EnemyController : NetworkBehaviour
         _target = target;
         _returningHome = false;
         state = _target != null ? EnemyState.Chase : EnemyState.Idle;
+        _attackTimer = _target != null ? EnemyCrowdUtility.FirstAttackDelay(this, attackInterval) : 0f;
     }
 
     // ─────────────────────────────────────────────────────────────────────────────
@@ -325,14 +326,28 @@ public class EnemyController : NetworkBehaviour
                 _agent?.SetDestination(transform.position + away * 3f);
             }
             else
-                _agent?.SetDestination(_target.position);
+            {
+                Vector3 slot = EnemyCrowdUtility.ChaseSlot(
+                    transform,
+                    _target,
+                    Mathf.Max(preferredRange, tooCloseDistance + 0.5f),
+                    1.1f);
+                if (_agent != null) _agent.stoppingDistance = 0.65f;
+                _agent?.SetDestination(slot);
+            }
 
             if (dist <= attackRange) state = EnemyState.Attack;
         }
         else
         {
-            _agent?.SetDestination(_target.position);
-            if (dist <= attackRange) state = EnemyState.Attack;
+            Vector3 slot = EnemyCrowdUtility.ChaseSlot(transform, _target, EnemyCrowdUtility.MeleeSlotRadius(attackRange));
+            if (_agent != null) _agent.stoppingDistance = 0.25f;
+            _agent?.SetDestination(slot);
+
+            if (EnemyCrowdUtility.CanMeleeAttack(transform, _target, slot, attackRange))
+            {
+                state = EnemyState.Attack;
+            }
         }
     }
 
@@ -348,10 +363,31 @@ public class EnemyController : NetworkBehaviour
         float dist = Vector3.Distance(transform.position, _target.position);
 
         // Target stepped out of range — re-chase
-        if (dist > attackRange * 1.3f) { state = EnemyState.Chase; return; }
+        float allowedAttackRange = isRanged ? attackRange * 1.3f : EnemyCrowdUtility.MeleeAttackReach(attackRange);
+        if (dist > allowedAttackRange) { state = EnemyState.Chase; return; }
 
         // Stand still for melee; keep pathing for ranged backpedal
-        if (!isRanged) _agent?.SetDestination(transform.position);
+        if (!isRanged)
+        {
+            Vector3 slot = EnemyCrowdUtility.ChaseSlot(transform, _target, EnemyCrowdUtility.MeleeSlotRadius(attackRange));
+            if (EnemyCrowdUtility.ShouldMoveToMeleeSlot(transform, _target, slot, attackRange))
+            {
+                state = EnemyState.Chase;
+                return;
+            }
+
+            _agent?.SetDestination(transform.position);
+        }
+        else
+        {
+            Vector3 slot = EnemyCrowdUtility.ChaseSlot(
+                transform,
+                _target,
+                Mathf.Max(preferredRange, tooCloseDistance + 0.5f),
+                1.1f);
+            if (_agent != null) _agent.stoppingDistance = 0.65f;
+            _agent?.SetDestination(slot);
+        }
 
         // Face target
         Vector3 dir = (_target.position - transform.position); dir.y = 0f;
@@ -420,6 +456,7 @@ public class EnemyController : NetworkBehaviour
         _returningHome = false;
         StopAllCoroutines();
 
+        _health.SetEnemyTargetTagActive(false);
         if (_agent != null && _agent.isActiveAndEnabled) _agent.enabled = false;
         foreach (var col in GetComponents<Collider>()) col.enabled = false;
 
@@ -552,6 +589,7 @@ public class EnemyController : NetworkBehaviour
 
         _status?.RemoveAll();
         _health.currentHealth = _health.maxHealth;
+        _health.SetEnemyTargetTagActive(true);
         _health.onHealthChanged?.Invoke(_health.currentHealth, _health.maxHealth);
 
         foreach (var col in GetComponents<Collider>())
@@ -588,6 +626,7 @@ public class EnemyController : NetworkBehaviour
     void RpcRespawn(Vector3 position, Quaternion rotation)
     {
         transform.SetPositionAndRotation(position, rotation);
+        _health.SetEnemyTargetTagActive(true);
         SetVisualsVisible(true);
         ResetAnimators();
         BroadcastMessage("OnEnemyRespawned", SendMessageOptions.DontRequireReceiver);
@@ -605,6 +644,7 @@ public class EnemyController : NetworkBehaviour
         {
             animator.Rebind();
             animator.Update(0f);
+            animator.Update(Mathf.Lerp(0.04f, 0.45f, EnemyCrowdUtility.Stable01(this, 59)));
         }
     }
 

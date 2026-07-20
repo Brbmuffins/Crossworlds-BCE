@@ -11,11 +11,16 @@ using Mirror;
 // all work identically. New features are additive.
 public class Health : NetworkBehaviour
 {
+    const string EnemyTag = "Enemy";
+    const string UntaggedTag = "Untagged";
+
     [Header("Settings")]
     [SyncVar(hook = nameof(OnMaxHealthSynced))]
     public float maxHealth = 100f;
     [SyncVar(hook = nameof(OnCurrentHealthSynced))]
     public float currentHealth;
+    [SyncVar(hook = nameof(OnEnemyTargetTagActiveSynced))]
+    bool _enemyTargetTagActive = true;
     public bool isPlayer  = false;  // players go downed instead of dying outright
     public bool isRobotic = false;  // Defibrillator deals 60 burst dmg to robotics
 
@@ -58,6 +63,14 @@ public class Health : NetworkBehaviour
     float simpleEnemyRespawnDelay = 30f;
     [SerializeField, Tooltip("If respawn is off, destroy the dead enemy after the dead model timer.")]
     bool destroySimpleEnemyIfRespawnDisabled = true;
+
+    [Header("Enemy Body Collision")]
+    [SerializeField, Tooltip("Enemy colliders become trigger-only hitboxes at runtime, removing body-blocking while keeping them targetable.")]
+    bool disableEnemyBodyCollision = true;
+    [SerializeField, Tooltip("Relax enemy NavMesh avoidance so mobs can reach close swarm slots instead of forming a wide polite ring.")]
+    bool relaxEnemyAgentAvoidance = true;
+    [SerializeField, Tooltip("Slightly offsets enemy animation timing so identical mobs do not animate in lockstep.")]
+    bool desyncEnemyAnimators = true;
 
     // ── Events ────────────────────────────────────────────────────
     public UnityEvent<float, float> onHealthChanged;    // (current, max)
@@ -133,10 +146,13 @@ public class Health : NetworkBehaviour
     private bool _hasServerSpawnPoint;
     private Vector3 _serverSpawnPosition;
     private Quaternion _serverSpawnRotation;
+    private bool _enemyTagRemovedForDeath;
+    private bool _enemyAnimatorDesyncApplied;
 
     void Awake()
     {
         _baseMaxHealth = maxHealth;
+        ApplyEnemyNonBlockingCollision();
         if (!NetworkClient.active && !NetworkServer.active)
         {
             currentHealth = maxHealth;
@@ -156,6 +172,7 @@ public class Health : NetworkBehaviour
         _serverSpawnPosition = transform.position;
         _serverSpawnRotation = transform.rotation;
         _hasServerSpawnPoint = true;
+        ApplyEnemyNonBlockingCollision();
 
         if (currentHealth <= 0f)
             currentHealth = maxHealth;
@@ -171,6 +188,7 @@ public class Health : NetworkBehaviour
     public override void OnStartClient()
     {
         base.OnStartClient();
+        ApplyEnemyNonBlockingCollision();
 #if UNITY_EDITOR || !UNITY_SERVER
         TryAttachEnemyHealthBar();
 #endif
@@ -367,6 +385,15 @@ public class Health : NetworkBehaviour
     public void SetSimpleEnemyRespawnEnabled(bool enabled)
     {
         simpleEnemyRespawns = enabled;
+        ApplyEnemyNonBlockingCollision();
+    }
+
+    public void SetEnemyTargetTagActive(bool active)
+    {
+        ApplyEnemyTargetTagActive(active);
+
+        if (NetworkServer.active)
+            _enemyTargetTagActive = active;
     }
 
     // ── Private ───────────────────────────────────────────────────
@@ -392,6 +419,11 @@ public class Health : NetworkBehaviour
     void OnDownedSynced(bool oldValue, bool newValue)
     {
         onDownedChanged?.Invoke(newValue);
+    }
+
+    void OnEnemyTargetTagActiveSynced(bool oldValue, bool newValue)
+    {
+        ApplyEnemyTargetTagActive(newValue);
     }
 
     void StartSimpleEnemyDeathLifecycle()
@@ -430,7 +462,7 @@ public class Health : NetworkBehaviour
 
     bool IsEnemyLikeForHud()
     {
-        return CompareTag("Enemy")
+        return CompareTag(EnemyTag)
             || GetComponent<EnemyAI>() != null
             || GetComponent<FieldGhoulNPC>() != null
             || GetComponent<EnemyController>() != null
@@ -542,6 +574,7 @@ public class Health : NetworkBehaviour
         if (!NetworkClient.active || NetworkServer.active)
             currentHealth = maxHealth;
 
+        SetEnemyTargetTagActive(true);
         SetSimpleEnemyVisible(true);
         SetSimpleEnemyCombatEnabled(true);
         ResetSimpleEnemyAnimators();
@@ -556,10 +589,31 @@ public class Health : NetworkBehaviour
             renderer.enabled = visible;
     }
 
+    void ApplyEnemyTargetTagActive(bool active)
+    {
+        if (active)
+        {
+            if (_enemyTagRemovedForDeath && gameObject.tag == UntaggedTag)
+                gameObject.tag = EnemyTag;
+
+            _enemyTagRemovedForDeath = false;
+            ApplyEnemyNonBlockingCollision();
+            return;
+        }
+
+        if (!gameObject.CompareTag(EnemyTag)) return;
+
+        gameObject.tag = UntaggedTag;
+        _enemyTagRemovedForDeath = true;
+    }
+
     void SetSimpleEnemyCombatEnabled(bool enabled)
     {
         foreach (var collider in GetComponentsInChildren<Collider>(true))
             collider.enabled = enabled;
+
+        if (enabled)
+            ApplyEnemyNonBlockingCollision();
 
         var agent = GetComponent<NavMeshAgent>();
         if (agent != null)
@@ -590,12 +644,44 @@ public class Health : NetworkBehaviour
             enemyAI.enabled = enabled;
     }
 
+    void ApplyEnemyNonBlockingCollision()
+    {
+        if (isPlayer || !IsEnemyLikeForHud()) return;
+
+        if (disableEnemyBodyCollision)
+        {
+            foreach (var collider in GetComponentsInChildren<Collider>(true))
+            {
+                if (collider == null || collider.isTrigger) continue;
+                if (collider is MeshCollider meshCollider && !meshCollider.convex) continue;
+
+                collider.isTrigger = true;
+            }
+        }
+
+        if (relaxEnemyAgentAvoidance)
+        {
+            var agent = GetComponent<NavMeshAgent>();
+            EnemyCrowdUtility.ApplyAgentCrowdSettings(agent, this);
+        }
+
+        if (desyncEnemyAnimators && !_enemyAnimatorDesyncApplied)
+        {
+            foreach (var animator in GetComponentsInChildren<Animator>(true))
+                EnemyCrowdUtility.DesyncAnimator(animator, this);
+
+            _enemyAnimatorDesyncApplied = true;
+        }
+    }
+
     void ResetSimpleEnemyAnimators()
     {
         foreach (var animator in GetComponentsInChildren<Animator>(true))
         {
             animator.Rebind();
             animator.Update(0f);
+            if (desyncEnemyAnimators)
+                animator.Update(Mathf.Lerp(0.04f, 0.45f, EnemyCrowdUtility.Stable01(this, 59)));
         }
     }
 
@@ -852,6 +938,7 @@ public class Health : NetworkBehaviour
             onDeath?.Invoke();
             onKilledBy?.Invoke(source);
             StartSimpleEnemyDeathLifecycle();
+            SetEnemyTargetTagActive(false);
         }
     }
 }
