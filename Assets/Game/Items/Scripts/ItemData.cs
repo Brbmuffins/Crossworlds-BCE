@@ -5,8 +5,12 @@ public enum EquipmentSlotType
     None,
     Head,
     Chest,
-    Legs,
-    Weapon
+    Legs,     // legacy — kept for the local (non-networked) Equipment prototype
+    Weapon,   // legacy alias for MainHand — kept for back-compat
+    Feet,
+    Hands,
+    MainHand, // sword / primary weapon (right hand)
+    OffHand   // shield / off-hand (left hand)
 }
 
 public enum ItemType
@@ -43,6 +47,21 @@ public class ItemData : ScriptableObject
     public EquipmentSlotType equipSlot = EquipmentSlotType.None;
 
     public float healAmount = 0f;
+
+    [Header("Server / Networking")]
+    [Tooltip("Matches items.id in the auth DB (e.g. \"sword_sneaker\"). This is the key the " +
+             "networked PlayerEquipment syncs and that InventoryManager persists via " +
+             "/api/inventory/equip. Required for anything that should be equippable online.")]
+    public string serverItemId;
+
+    [Header("World Model (attached to the character when equipped)")]
+    [Tooltip("Prefab attached to the matching EquipmentRig mount when this item is equipped. " +
+             "Leave null for stat-only gear with no distinct on-body model. Must NOT have a " +
+             "NetworkIdentity — it is a cosmetic child spawned locally on every client.")]
+    public GameObject worldModelPrefab;
+    public Vector3 attachPosition = Vector3.zero;
+    public Vector3 attachEuler    = Vector3.zero;
+    public Vector3 attachScale    = Vector3.one;
 
     [Header("Gear Stats (attunement system)")]
     [Tooltip("Innate stat bonuses granted while this gear is equipped.")]

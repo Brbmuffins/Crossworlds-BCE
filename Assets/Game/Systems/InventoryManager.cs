@@ -115,6 +115,23 @@ public class InventoryManager : MonoBehaviour
 
         slot.equipped = equipped ? 1 : 0;
         StartCoroutine(PostEquip(slot.slot_index, slot.equipped));
+
+        // Drive the networked on-body visual for every player (server-authoritative).
+        if (PlayerEquipment.Local != null)
+        {
+            if (equipped)
+            {
+                PlayerEquipment.Local.RequestEquip(itemId);
+            }
+            else
+            {
+                var slotType = EquipmentCatalog.Instance != null
+                    ? EquipmentCatalog.Instance.GetSlot(itemId)
+                    : EquipmentSlotType.None;
+                if (slotType != EquipmentSlotType.None)
+                    PlayerEquipment.Local.RequestUnequip(slotType);
+            }
+        }
     }
 
     IEnumerator PostEquip(int slotIndex, int equippedFlag)
