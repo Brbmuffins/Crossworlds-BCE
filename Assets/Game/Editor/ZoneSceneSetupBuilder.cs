@@ -38,6 +38,7 @@ public static class ZoneSceneSetupBuilder
     const string RangedPrefab   = "Enemy_Ranged";
     const string ElitePrefab    = "Enemy_Elite";
     const string WispPrefabPath = "Assets/Game/Game_Prefabs/Muffin Junk/Wisp_Mob.prefab";
+    const string DefaultScalerPath = "Assets/Game/Systems/DynamicScaler_Default.asset";
 
     [MenuItem("BCE/Setup/8 ▶ Zone Combat Setup (active scene)", priority = 48)]
     static void SetupZoneScene()
@@ -120,6 +121,22 @@ public static class ZoneSceneSetupBuilder
 
         var wisp = AssetDatabase.LoadAssetAtPath<GameObject>(WispPrefabPath);
         if (wisp  != null) { ws.wispPrefab = wisp; ws.wispEveryNWaves = 2; ws.wispCountPerSwarm = 3; }
+
+        // Dynamic difficulty overlay — layers per-wave + co-op scaling on top of
+        // ZoneConfig on the same combat root. Assigned here so the scaler always
+        // rides the combat root; leaving it null just keeps the zone's base tuning.
+        var scaler = AssetDatabase.LoadAssetAtPath<DynamicDifficultyScaler>(DefaultScalerPath);
+        if (scaler != null)
+        {
+            ws.difficultyScaler = scaler;
+            report.AppendLine($"  ✓ DynamicDifficultyScaler wired ({scaler.name})");
+        }
+        else
+        {
+            report.AppendLine("  ⚠ No default DynamicDifficultyScaler at " + DefaultScalerPath +
+                              " — create one (Assets ▶ Create ▶ BCE ▶ Dynamic Difficulty Scaler) " +
+                              "and assign it to WaveSpawner, or leave null for zone-base scaling only.");
+        }
 
         int wired = (grunt != null ? 1 : 0) + (ranged != null ? 1 : 0) + (elite != null ? 1 : 0);
         report.AppendLine(wired > 0

@@ -344,7 +344,7 @@ public class RodChatManager : NetworkBehaviour
 
     // ── Procedural UI ─────────────────────────────────────────────────────
     // Layout (fraction of 1920×1080):
-    //   Panel    — left edge, rows 38%→64% of screen height (sits above GmConsole)
+    //   Panel    — bottom left, rows 4%→30% of screen height, cols 1%→35% of screen width (aligned with abilities)
     //   Log      — fills panel body
     //   InputBg  — bottom 13% of panel, hidden when not typing
     // ─────────────────────────────────────────────────────────────────────
@@ -510,7 +510,7 @@ public class RodChatManager : NetworkBehaviour
 
         // ── Panel ─────────────────────────────────────────────────────────
         _panel = MakeRect("ChatPanel", root,
-            new Vector2(0f, 0.38f), new Vector2(0.42f, 0.64f));
+            new Vector2(0.01f, 0.04f), new Vector2(0.35f, 0.30f));
         Img(_panel, new Color(0.02f, 0.02f, 0.06f, 0.88f));
 
         // ── Header ────────────────────────────────────────────────────────

@@ -173,6 +173,10 @@ public class EnemyController : NetworkBehaviour
             if (d < nearest) { nearest = d; found = col.transform; }
         }
 
+        // NOTE: DynamicDifficultyScaler.maxAggroPerPlayer is intended to cap how
+        // many enemies chase one player here — skip acquisition when `found`
+        // already has that many chasers. Not yet wired (needs a per-player
+        // chaser count); left as the enforcement seam. See §4 combat-feel doc.
         if (found != null) SetAggroTarget(found);
     }
 

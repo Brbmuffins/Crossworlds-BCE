@@ -91,6 +91,9 @@ public class HubPortal : MonoBehaviour
 
         _loading = true;
         SetPromptText("Entering...", ColorReady);
+#if UNITY_EDITOR || !UNITY_SERVER
+        LoadingScreen.Show(portalLabel);
+#endif
         SceneManager.LoadScene(targetScene);
     }
 
