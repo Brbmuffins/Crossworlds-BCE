@@ -25,6 +25,8 @@ public class CharacterStats : MonoBehaviour
     public float MoveSpeedMultiplier { get; private set; } = 1f;  // ×movement speed
     public float CooldownReduction   { get; private set; }        // 0..0.6 fraction
     public float HealMultiplier      { get; private set; } = 1f;  // ×healing dealt
+    public float Tenacity            { get; private set; }        // 0..0.60 — cuts CC duration applied to you
+    public float ControlPower        { get; private set; }        // 0..0.50 — extends CC duration you apply
 
     // ── Mastery overlay (driven by HeroMasteryManager) ───────────
     // Percentages, additive on top of gear values. Updated via SetMasteryBonuses().
@@ -51,8 +53,15 @@ public class CharacterStats : MonoBehaviour
     // Additive on top of gear CDR. Clamped alongside gear CDR to the 0.6 ceiling.
     // Call AddTemporaryCDR(+0.30f) to apply, AddTemporaryCDR(-0.30f) to remove.
     private float _temporaryCDR = 0f;
-    public float EffectiveCooldownReduction =>
-        Mathf.Clamp(CooldownReduction + _temporaryCDR, 0f, 0.6f);
+    public float EffectiveCooldownReduction
+    {
+        get
+        {
+            var cfg = CombatBalanceConfig.Instance;
+            float cap = cfg != null ? cfg.overdriveCdrCap : 0.6f;
+            return Mathf.Clamp(CooldownReduction + _temporaryCDR, 0f, cap);
+        }
+    }
 
     public void AddTemporaryCDR(float delta)
     {
@@ -86,6 +95,7 @@ public class CharacterStats : MonoBehaviour
     {
         float flatHealth = 0f;
         float pctDamage = 0f, pctDR = 0f, pctSpeed = 0f, pctCdr = 0f, pctHeal = 0f;
+        float pctTenacity = 0f, pctControl = 0f;
 
         if (_equipment != null)
         {
@@ -103,11 +113,13 @@ public class CharacterStats : MonoBehaviour
                                 ? _health.BaseMaxHealth * m.value
                                 : m.value;
                             break;
-                        case StatType.Damage:            pctDamage += m.value; break;
-                        case StatType.DamageReduction:   pctDR     += m.value; break;
-                        case StatType.MoveSpeed:         pctSpeed  += m.value; break;
-                        case StatType.CooldownReduction: pctCdr    += m.value; break;
-                        case StatType.HealPower:         pctHeal   += m.value; break;
+                        case StatType.Damage:            pctDamage   += m.value; break;
+                        case StatType.DamageReduction:   pctDR       += m.value; break;
+                        case StatType.MoveSpeed:         pctSpeed    += m.value; break;
+                        case StatType.CooldownReduction: pctCdr      += m.value; break;
+                        case StatType.HealPower:         pctHeal     += m.value; break;
+                        case StatType.Tenacity:          pctTenacity += m.value; break;
+                        case StatType.ControlPower:      pctControl  += m.value; break;
                     }
                 }
             }
@@ -116,10 +128,18 @@ public class CharacterStats : MonoBehaviour
         float masteryHpFlat = _health != null ? _health.BaseMaxHealth * _masteryMaxHpPct : 0f;
         MaxHealthBonus      = flatHealth + masteryHpFlat;
         DamageMultiplier    = Mathf.Max(0f,   1f + pctDamage + _masteryDmgPct + _temporaryDmgPct);
-        DamageReduction     = Mathf.Clamp(pctDR,  0f, 0.8f);
+        var cfg          = CombatBalanceConfig.Instance;
+        float drCap      = cfg != null ? cfg.gearDrCap        : 0.8f;
+        float cdrCap     = cfg != null ? cfg.gearCdrCap       : 0.6f;
+        float tenCap     = cfg != null ? cfg.tenacityCap      : 0.6f;
+        float controlCap = cfg != null ? cfg.controlPowerCap  : 0.5f;
+
+        DamageReduction     = Mathf.Clamp(pctDR,  0f, drCap);
         MoveSpeedMultiplier = Mathf.Max(0.1f, 1f + pctSpeed);
-        CooldownReduction   = Mathf.Clamp(pctCdr + _masteryCdrPct, 0f, 0.6f);
+        CooldownReduction   = Mathf.Clamp(pctCdr + _masteryCdrPct, 0f, cdrCap);
         HealMultiplier      = Mathf.Max(0f,   1f + pctHeal + _masteryHealPct);
+        Tenacity            = Mathf.Clamp(pctTenacity, 0f, tenCap);
+        ControlPower        = Mathf.Clamp(pctControl,  0f, controlCap);
 
         // Hand off the channels Health owns.
         if (_health != null)

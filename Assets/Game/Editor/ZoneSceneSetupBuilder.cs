@@ -38,7 +38,6 @@ public static class ZoneSceneSetupBuilder
     const string RangedPrefab   = "Enemy_Ranged";
     const string ElitePrefab    = "Enemy_Elite";
     const string WispPrefabPath = "Assets/Game/Game_Prefabs/Muffin Junk/Wisp_Mob.prefab";
-    const string DefaultScalerPath = "Assets/Game/Systems/DynamicScaler_Default.asset";
 
     [MenuItem("BCE/Setup/8 ▶ Zone Combat Setup (active scene)", priority = 48)]
     static void SetupZoneScene()
@@ -122,21 +121,12 @@ public static class ZoneSceneSetupBuilder
         var wisp = AssetDatabase.LoadAssetAtPath<GameObject>(WispPrefabPath);
         if (wisp  != null) { ws.wispPrefab = wisp; ws.wispEveryNWaves = 2; ws.wispCountPerSwarm = 3; }
 
-        // Dynamic difficulty overlay — layers per-wave + co-op scaling on top of
-        // ZoneConfig on the same combat root. Assigned here so the scaler always
-        // rides the combat root; leaving it null just keeps the zone's base tuning.
-        var scaler = AssetDatabase.LoadAssetAtPath<DynamicDifficultyScaler>(DefaultScalerPath);
-        if (scaler != null)
-        {
-            ws.difficultyScaler = scaler;
-            report.AppendLine($"  ✓ DynamicDifficultyScaler wired ({scaler.name})");
-        }
-        else
-        {
-            report.AppendLine("  ⚠ No default DynamicDifficultyScaler at " + DefaultScalerPath +
-                              " — create one (Assets ▶ Create ▶ BCE ▶ Dynamic Difficulty Scaler) " +
-                              "and assign it to WaveSpawner, or leave null for zone-base scaling only.");
-        }
+        // Per-wave difficulty scaling is driven globally by the Resources/
+        // CombatBalanceConfig asset (read at runtime in WaveSpawner.SpawnEnemy),
+        // so nothing is wired per-scene here. The Inspector fallbacks on
+        // WaveSpawner cover the case where that asset doesn't exist yet.
+        report.AppendLine("  ℹ Per-wave scaling reads Resources/CombatBalanceConfig at runtime " +
+                          "(create it: Assets ▶ Create ▶ Crossworlds ▶ CombatBalanceConfig).");
 
         int wired = (grunt != null ? 1 : 0) + (ranged != null ? 1 : 0) + (elite != null ? 1 : 0);
         report.AppendLine(wired > 0

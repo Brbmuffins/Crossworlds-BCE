@@ -677,7 +677,7 @@ public class AbilityCaster : NetworkBehaviour
         if (!ShouldProcessLocalInput())
             return;
 
-        if (IsDowned())
+        if (IsDowned() || IsStunned())
         {
             if (heldAbilityIndex != -1)
                 CancelAim();
@@ -868,7 +868,7 @@ public class AbilityCaster : NetworkBehaviour
 
     bool WasCommittedCastInterrupted(Vector3 startPosition)
     {
-        if (IsDowned())
+        if (IsDowned() || IsStunned())
             return true;
 
         // On a dedicated server Mirror can nudge the client's position by a few cm
@@ -883,6 +883,14 @@ public class AbilityCaster : NetworkBehaviour
     bool IsDowned()
     {
         return _health != null && _health.IsDowned;
+    }
+
+    // Stunned players can't aim or cast, and any committed cast is interrupted.
+    // Reads the server-synced Health.IsStunned flag (status effects are server-side,
+    // so the local StatusEffectManager list is empty on a remote client).
+    bool IsStunned()
+    {
+        return _health != null && _health.IsStunned;
     }
 
     bool HasMovementInput()
@@ -2393,11 +2401,14 @@ public class AbilityCaster : NetworkBehaviour
     }
 
     // Cooldown after gear/attunement Cooldown Reduction is applied.
+    // Uses EffectiveCooldownReduction so the temporary Overdrive CDR actually
+    // applies: gear CDR is capped (gearCdrCap), and the Overdrive window can push
+    // total CDR up to overdriveCdrCap — the two-tier cap from CombatBalanceConfig.
     float CooldownFor(AbilityDef ability)
     {
         float cd = ability.cooldown;
         if (_characterStats != null)
-            cd *= (1f - _characterStats.CooldownReduction);
+            cd *= (1f - _characterStats.EffectiveCooldownReduction);
         return cd;
     }
 

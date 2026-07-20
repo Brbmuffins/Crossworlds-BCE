@@ -33,10 +33,14 @@ public class WaveSpawner : NetworkBehaviour
     [Tooltip("Assign a ZoneConfig asset to drive wave settings from one place.")]
     public ZoneConfig zoneConfig;
 
-    [Header("Dynamic Difficulty (optional — layers on top of ZoneConfig)")]
-    [Tooltip("Per-wave + co-op HP/damage escalation and concurrency cap. " +
-             "Multiplies on top of the ZoneConfig base — never replaces it.")]
-    public DynamicDifficultyScaler difficultyScaler;
+    [Header("Dynamic Difficulty (fallback — CombatBalanceConfig wins when present)")]
+    [Tooltip("Per-wave HP escalation used ONLY when no Resources/CombatBalanceConfig " +
+             "asset is loaded. When it exists, CombatBalanceConfig.hpScalePerWave wins. " +
+             "0.08 = +8% enemy HP per wave beyond wave 1.")]
+    [Min(0f)] public float fallbackHpScalePerWave = 0.08f;
+    [Tooltip("Per-wave damage escalation (fallback only; CombatBalanceConfig." +
+             "damageScalePerWave wins). 0.05 = +5% enemy damage per wave.")]
+    [Min(0f)] public float fallbackDamageScalePerWave = 0.05f;
 
     [Header("Wave Config")]
     public int   baseEnemiesPerWave  = 4;
@@ -144,8 +148,6 @@ public class WaveSpawner : NetworkBehaviour
         for (int i = 0; i < count; i++)
         {
             if (!_running) yield break;
-            yield return WaitForConcurrencyRoom();
-            if (!_running) yield break;
             SpawnEnemy(PickEnemyPrefab());
             yield return new WaitForSeconds(spawnStagger);
         }
@@ -153,8 +155,6 @@ public class WaveSpawner : NetworkBehaviour
         if (spawnElite)
         {
             yield return new WaitForSeconds(1f);
-            yield return WaitForConcurrencyRoom();
-            if (!_running) yield break;
             SpawnEnemy(elitePrefab);
             RpcAnnounce("ELITE has arrived!");
         }
@@ -164,8 +164,6 @@ public class WaveSpawner : NetworkBehaviour
             yield return new WaitForSeconds(0.8f);
             for (int w = 0; w < wispCountPerSwarm; w++)
             {
-                if (!_running) yield break;
-                yield return WaitForConcurrencyRoom();
                 if (!_running) yield break;
                 SpawnEnemy(wispPrefab);
                 yield return new WaitForSeconds(0.3f);
@@ -194,17 +192,20 @@ public class WaveSpawner : NetworkBehaviour
 
         // Difficulty scaling before the object goes live.
         // Start from the zone's original base multipliers (the "combat root"
-        // tuning), then fold the dynamic per-wave + co-op overlay in on top.
-        // Multiplicative compose — the dynamic layer never clobbers the zone base.
+        // tuning), then fold per-wave escalation in on top. Multiplicative
+        // compose — the dynamic layer never clobbers the zone base. Per-wave
+        // rates come from CombatBalanceConfig (single balance surface); the
+        // Inspector fallbacks are used only when no asset is loaded.
         float dmgMult    = zoneConfig != null ? zoneConfig.damageMult : 1f;
         float healthMult = zoneConfig != null ? zoneConfig.healthMult : 1f;
 
-        if (difficultyScaler != null)
-        {
-            var s = difficultyScaler.GetScaling(currentWave, CountActivePlayers());
-            dmgMult    *= s.damageMult;
-            healthMult *= s.healthMult;
-        }
+        var balance      = CombatBalanceConfig.Instance;
+        float hpPerWave  = balance != null ? balance.hpScalePerWave     : fallbackHpScalePerWave;
+        float dmgPerWave = balance != null ? balance.damageScalePerWave : fallbackDamageScalePerWave;
+
+        int wavesPast = Mathf.Max(0, currentWave - 1);
+        healthMult *= 1f + hpPerWave  * wavesPast;
+        dmgMult    *= 1f + dmgPerWave * wavesPast;
 
         if (dmgMult != 1f)
         {
@@ -268,31 +269,6 @@ public class WaveSpawner : NetworkBehaviour
     {
         if (spawnPoints == null || spawnPoints.Count == 0) return transform;
         return spawnPoints[Random.Range(0, spawnPoints.Count)];
-    }
-
-    /// <summary>
-    /// Holds the spawn loop while at the concurrency cap so the wave drains
-    /// over time instead of flooding the arena. Keeps the full wave count —
-    /// just paces it — so late waves stay readable and perf-safe (see
-    /// aiming_cone_combat_feel §4). Returns immediately when uncapped.
-    /// </summary>
-    [Server]
-    IEnumerator WaitForConcurrencyRoom()
-    {
-        int cap = difficultyScaler != null ? difficultyScaler.maxConcurrentAlive : 0;
-        if (cap <= 0) yield break;
-        while (_running && enemiesAlive >= cap)
-            yield return new WaitForSeconds(0.25f);
-    }
-
-    /// <summary>Number of live player connections (server-side), clamped to >= 1.</summary>
-    [Server]
-    int CountActivePlayers()
-    {
-        int n = 0;
-        foreach (var conn in NetworkServer.connections.Values)
-            if (conn != null && conn.identity != null) n++;
-        return Mathf.Max(1, n);
     }
 
     void OnWaveChanged(int _, int newVal)

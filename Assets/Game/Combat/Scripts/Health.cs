@@ -79,6 +79,20 @@ public class Health : NetworkBehaviour
     public  bool IsDowned  => _isDowned;
     public  bool IsAlive   => !_isDowned && currentHealth > 0f;
 
+    // ── Networked Stun flag ────────────────────────────────────────
+    // Status effects live server-side in StatusEffectManager. Client-authoritative
+    // systems (player movement, ability cast) can't read that list, so the server
+    // mirrors stun state here as a SyncVar for them to gate on — same pattern as
+    // _isDowned. Set by StatusEffectManager on the server; read-only for clients.
+    [SyncVar] private bool _stunned = false;
+    public  bool IsStunned => _stunned;
+
+    public void SetStunned(bool value)
+    {
+        if (!CanMutateCombatState()) return;   // server / offline only
+        _stunned = value;
+    }
+
     // ── Damage Redirect (Transfer Protocol) ───────────────────────
     // When set, a fraction of incoming damage is sent to redirectTarget instead.
     private Health _redirectTarget      = null;
@@ -215,11 +229,14 @@ public class Health : NetworkBehaviour
         if (_statusEffects != null && _statusEffects.IsWeakened)
             amount *= 1.25f;
 
-        // Damage reduction (source-keyed: Siege Mode, Threat Protocol, resist flasks, immunity)
-        amount *= (1f - DamageReductionBonus);
-
-        // Gear damage reduction (attunement system) — stacks multiplicatively
-        amount *= (1f - _gearDamageReduction);
+        // Damage reduction — ability DR (source-keyed: Siege Mode, Threat Protocol,
+        // resist flasks, immunity) and gear DR (attunement system) stack
+        // multiplicatively, then a FINAL total-DR clamp closes the stacking hole so no
+        // combination pushes effective DR past the ceiling (guarantees a damage floor).
+        float totalDR = 1f - (1f - DamageReductionBonus) * (1f - _gearDamageReduction);
+        var balanceCfg = CombatBalanceConfig.Instance;
+        totalDR = balanceCfg != null ? balanceCfg.ClampTotalDR(totalDR) : Mathf.Min(totalDR, 0.85f);
+        amount *= (1f - totalDR);
 
         // Damage redirect (Transfer Protocol) — redirect sends a portion to the medic.
         // _isRedirecting prevents an infinite loop when two Healths redirect to each
@@ -267,12 +284,29 @@ public class Health : NetworkBehaviour
     {
         if (!CanMutateCombatState()) return;
         if (_isDowned || currentHealth <= 0f) return;
-        float actual = Mathf.Min(amount, maxHealth - currentHealth);
-        if (actual <= 0f) return;
-        currentHealth += actual;
-        onHealthChanged?.Invoke(currentHealth, maxHealth);
-        onHealApplied?.Invoke(actual);
-        ShowHealFeedback(actual);
+
+        float actual   = Mathf.Min(amount, maxHealth - currentHealth);
+        float overheal = amount - actual;   // healing beyond max HP
+
+        if (actual > 0f)
+        {
+            currentHealth += actual;
+            onHealthChanged?.Invoke(currentHealth, maxHealth);
+            onHealApplied?.Invoke(actual);
+            ShowHealFeedback(actual);
+        }
+
+        // Overheal spills into shield so HealMultiplier is never wasted on a
+        // topped-off ally (throughput always converts to value). Additive, capped.
+        if (overheal > 0f)
+        {
+            var cfg      = CombatBalanceConfig.Instance;
+            float rate   = cfg != null ? cfg.overhealToShieldRate : 0.25f;
+            float cap    = cfg != null ? cfg.overhealShieldCap    : 80f;
+            float spill  = overheal * rate;
+            if (spill > 0f)
+                _shieldRemaining = Mathf.Min(_shieldRemaining + spill, cap);
+        }
     }
 
     // Defibrillator: revive a downed player at hpPercent (e.g. 0.3 = 30%)
