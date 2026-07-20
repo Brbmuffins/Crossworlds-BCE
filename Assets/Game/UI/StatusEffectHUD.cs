@@ -40,6 +40,7 @@ public class StatusEffectHUD : MonoBehaviour
         { StatusEffectType.Cursed,   new Color(0.65f, 0.10f, 0.90f) },
         { StatusEffectType.Weakened, new Color(0.85f, 0.15f, 0.15f) },
         { StatusEffectType.Bound,    new Color(0.90f, 0.85f, 0.20f) },
+        { StatusEffectType.Stun,     new Color(0.95f, 0.95f, 0.55f) },
     };
 
     static readonly Dictionary<StatusEffectType, string> EffectNames = new()
@@ -50,6 +51,7 @@ public class StatusEffectHUD : MonoBehaviour
         { StatusEffectType.Cursed,   "Cursed"   },
         { StatusEffectType.Weakened, "Weakened" },
         { StatusEffectType.Bound,    "Bound"    },
+        { StatusEffectType.Stun,     "Stun"     },
     };
 
     // ── UI refs ───────────────────────────────────────────────────────────────

@@ -8,7 +8,8 @@ public enum StatusEffectType
     Silenced,       // cannot use abilities (Silence Ward)
     Cursed,         // damage over time per second (Silence Ward) — Dark Harvest fuel
     Weakened,       // incoming damage +25% (Collapsing Void)
-    Bound           // cannot move beyond max range (Rune Chain)
+    Bound,          // cannot move beyond max range (Rune Chain)
+    Stun            // full action lockout (movement + abilities); has diminishing returns
 }
 
 [Serializable]

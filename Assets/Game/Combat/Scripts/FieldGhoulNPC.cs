@@ -132,7 +132,7 @@ public class FieldGhoulNPC : MonoBehaviour
         if (!enableAggro || HasExternalEnemyAI()) return;
         if (_stoppedForDeath || (_health != null && !_health.IsAlive)) return;
 
-        if (_status != null && (_status.IsStaggered || _status.IsBound))
+        if (_status != null && (_status.IsStaggered || _status.IsBound || _status.IsStunned))
         {
             StopAgent();
             SetWalking(false);

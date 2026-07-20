@@ -163,7 +163,7 @@ public class PlayerMovement : NetworkBehaviour
 
     void Update()
     {
-        if (health != null && health.IsDowned)
+        if (health != null && (health.IsDowned || health.IsStunned))
         {
             ClearMovementIntent();
             return;
@@ -214,7 +214,8 @@ public class PlayerMovement : NetworkBehaviour
         // ── Dodge roll input (Left Alt or V) ─────────────────────
         bool dodgePressed = Keyboard.current.leftAltKey.wasPressedThisFrame
                          || Keyboard.current.vKey.wasPressedThisFrame;
-        if (dodgePressed && _dodgeCharges > 0 && !_isDodging)
+        if (dodgePressed && _dodgeCharges > 0 && !_isDodging
+            && (health == null || !health.IsStunned))
         {
             StartCoroutine(DodgeRoutine());
         }
@@ -251,7 +252,7 @@ public class PlayerMovement : NetworkBehaviour
         if (rb == null)
             return;
 
-        if (health != null && health.IsDowned)
+        if (health != null && (health.IsDowned || health.IsStunned))
         {
             ClearMovementIntent();
             StopHorizontalMotion();

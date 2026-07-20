@@ -107,7 +107,7 @@ public class EnemyAI : MonoBehaviour
             return;
         }
 
-        if (_status != null && (_status.IsStaggered || _status.IsBound))
+        if (_status != null && (_status.IsStaggered || _status.IsBound || _status.IsStunned))
         {
             StopMoving();
             return;

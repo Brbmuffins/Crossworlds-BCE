@@ -78,6 +78,12 @@ public class EnemyController : NetworkBehaviour
     private bool                 _hasDeathParam;
     private bool                 _returningHome;
 
+    // Aggro-cap accounting (server-only): how many enemies are actively chasing
+    // each player transform. Capped by CombatBalanceConfig.globalAggroCapPerPlayer
+    // so a single player never gets dogpiled (readability, see combat-feel §4/§6).
+    static readonly Dictionary<Transform, int> _chaserCounts = new Dictionary<Transform, int>();
+    private Transform            _countedTarget;
+
     static readonly int SpeedHash = Animator.StringToHash("Speed");
     static readonly int AttackHash = Animator.StringToHash("Attack");
     static readonly int DeathHash = Animator.StringToHash("Death");
@@ -106,6 +112,8 @@ public class EnemyController : NetworkBehaviour
 
     public override void OnStopServer()
     {
+        AssignTarget(null);            // release aggro-cap slot on despawn/scene unload
+
         if (_health != null)
         {
             _health.onDeath.RemoveListener(OnDeath);
@@ -120,10 +128,42 @@ public class EnemyController : NetworkBehaviour
         if (NetworkClient.active && !NetworkServer.active) return;
         if (state == EnemyState.Dead) return;
 
-        _target = target;
+        AssignTarget(target);
         _returningHome = false;
         state = _target != null ? EnemyState.Chase : EnemyState.Idle;
     }
+
+    /// <summary>
+    /// Central target assignment with per-player chaser-count accounting for the
+    /// aggro cap. Server-only. Every _target mutation routes through here so the
+    /// tally stays balanced; releasing (null) decrements the previous target.
+    /// </summary>
+    void AssignTarget(Transform target)
+    {
+        if (target == _countedTarget) { _target = target; return; }
+
+        if (_countedTarget != null &&
+            _chaserCounts.TryGetValue(_countedTarget, out int prev))
+        {
+            if (prev <= 1) _chaserCounts.Remove(_countedTarget);
+            else           _chaserCounts[_countedTarget] = prev - 1;
+        }
+
+        _countedTarget = target;
+        if (target != null)
+            _chaserCounts[target] = (_chaserCounts.TryGetValue(target, out int n) ? n : 0) + 1;
+
+        _target = target;
+    }
+
+    /// <summary>Enemies already chasing this target (aggro-cap read).</summary>
+    static int ChaserCount(Transform t)
+        => t != null && _chaserCounts.TryGetValue(t, out int n) ? n : 0;
+
+    // Reset the server-only aggro accounting when the runtime (re)starts, so stale
+    // counts can't survive a domain-reload-disabled Editor play session.
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    static void ResetAggroAccounting() => _chaserCounts.Clear();
 
     // ─────────────────────────────────────────────────────────────────────────────
     // Behavior loop
@@ -138,8 +178,8 @@ public class EnemyController : NetworkBehaviour
         {
             yield return tick;
 
-            // Stagger: cannot act this tick
-            if (_status != null && _status.IsStaggered) continue;
+            // Stagger / Stun: cannot act this tick
+            if (_status != null && (_status.IsStaggered || _status.IsStunned)) continue;
 
             switch (state)
             {
@@ -172,11 +212,16 @@ public class EnemyController : NetworkBehaviour
             if (d < nearest) { nearest = d; found = col.transform; }
         }
 
-        // NOTE: DynamicDifficultyScaler.maxAggroPerPlayer is intended to cap how
-        // many enemies chase one player here — skip acquisition when `found`
-        // already has that many chasers. Not yet wired (needs a per-player
-        // chaser count); left as the enforcement seam. See §4 combat-feel doc.
-        if (found != null) SetAggroTarget(found);
+        if (found != null)
+        {
+            // Aggro cap: don't pile more than N passive chasers onto one player.
+            // Forced aggro (taunt / Threat Protocol) and retaliation call
+            // SetAggroTarget directly and intentionally bypass this gate.
+            var cfg = CombatBalanceConfig.Instance;
+            int cap = cfg != null ? cfg.globalAggroCapPerPlayer : 0;
+            if (cap > 0 && ChaserCount(found) >= cap) return;
+            SetAggroTarget(found);
+        }
     }
 
     [Server]
@@ -421,6 +466,7 @@ public class EnemyController : NetworkBehaviour
     void OnDeath()
     {
         state = EnemyState.Dead;
+        AssignTarget(null);            // release aggro-cap slot on the player we were chasing
         _returningHome = false;
         StopAllCoroutines();
 
@@ -549,7 +595,7 @@ public class EnemyController : NetworkBehaviour
     void RespawnAtSpawnPoint()
     {
         transform.SetPositionAndRotation(_spawnPos, _spawnRot);
-        _target = null;
+        AssignTarget(null);
         _attackTimer = 0f;
         _returningHome = false;
         state = EnemyState.Idle;
@@ -619,7 +665,7 @@ public class EnemyController : NetworkBehaviour
     [Server]
     void ResetToIdle()
     {
-        _target      = null;
+        AssignTarget(null);
         state        = EnemyState.Idle;
         _attackTimer = 0f;
         if (_agent != null && _agent.isActiveAndEnabled) _agent.ResetPath();
