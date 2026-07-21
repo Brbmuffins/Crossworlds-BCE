@@ -11,39 +11,50 @@ using UnityEditor;
 public enum AbilityShape { Circle, Cone, Rectangle }
 public enum AbilityCategory { Damage, Heal, Support }
 
-// One zone outcome for a variant-spell. Cursor distance picks the active zone.
+// One zone selector for a variant-spell. Cursor distance picks the active referenced spell.
 [System.Serializable]
 public class AbilityVariant
 {
+    [HideInInspector]
     public string variantName = "Variant";
-    [Tooltip("Indicator tint while this zone is active.")]
-    public Color  indicatorTint = new Color(0.2f, 1f, 0.3f, 0.7f);
 
-    [Header("Instant Heal")]
+    [Header("Spellbook Reference")]
+    [Tooltip("When true and no abilityName is set, this variant resolves its payload from spellbookAbilityIndex.")]
+    public bool useSpellbookAbilityIndex = false;
+
+    [Tooltip("Optional index of another entry in this AbilityCaster spellbook. Use -1 when using abilityName or leaving the zone unassigned.")]
+    public int spellbookAbilityIndex = -1;
+
+    [Tooltip("Optional abilityName of another entry in this AbilityCaster spellbook. When set, this zone resolves that spell's AbilityDef payload.")]
+    public string spellbookAbilityName;
+
+    [HideInInspector]
+    public Color indicatorTint = new Color(0.2f, 1f, 0.3f, 0.7f);
+    [HideInInspector]
     public float healAmount;
-
-    [Header("Heal over Time")]
+    [HideInInspector]
     public float hotTickAmount;
+    [HideInInspector]
     public int   hotTicks;
+    [HideInInspector]
     [Min(0.1f)] public float hotInterval = 1f;
-
-    [Header("Shield")]
+    [HideInInspector]
     public float shieldAbsorb;
+    [HideInInspector]
     public float shieldDuration = 5f;
-
-    [Header("Damage")]
+    [HideInInspector]
     public float damage;
-
-    [Header("Status on hit")]
+    [HideInInspector]
     public StatusEffectType statusEffect;
+    [HideInInspector]
     public float            statusDuration;
+    [HideInInspector]
     public float            statusValue;
-
-    [Header("Targeting — leave empty to inherit from AbilityDef")]
+    [HideInInspector]
     public string targetTag;  // "Player", "Enemy", or "" to use ability's default
-
-    [Header("VFX (null = inherit from AbilityDef)")]
+    [HideInInspector]
     public GameObject castVFX;
+    [HideInInspector]
     public GameObject hitVFX;
 }
 
@@ -51,6 +62,15 @@ public class AbilityVariant
 public class AbilityDef
 {
     public string abilityName = "Ability";
+
+    [Header("Spellbook Visibility")]
+    [Tooltip("When true, this spell can be referenced by another spell's variants but is hidden from the spellbook UI and cannot be equipped directly.")]
+    public bool variantOnly = false;
+
+    [Header("Variant Visuals")]
+    [Tooltip("Tint used when this spell is selected as another spell's active variant zone.")]
+    public Color variantIndicatorTint = new Color(0.2f, 1f, 0.3f, 0.7f);
+
     public AbilityShape shape = AbilityShape.Circle;
     public AbilityCategory category = AbilityCategory.Damage;
     public float range = 4f;
@@ -88,6 +108,16 @@ public class AbilityDef
     [Header("Heal")]
     public float healAmount = 0f;          // Field Repair single-target heal
 
+    [Header("Heal over Time")]
+    public float hotTickAmount = 0f;
+    public int   hotTicks = 0;
+    [Min(0.1f)] public float hotInterval = 1f;
+
+    [Header("Status on hit")]
+    public StatusEffectType statusEffect;
+    public float            statusDuration;
+    public float            statusValue;
+
     [Header("Timed Effects")]
     public float activeDuration = 0f;      // Phase Cloak, Siege Mode, Iron Tether, Transfer Protocol
 
@@ -118,8 +148,8 @@ public class AbilityDef
     // The runtime object spawned in the world by this ability (mine, wall, zone, etc.)
     public GameObject deployablePrefab;
 
-    [Header("Charge Variants (cursor distance selects zone; overrides sweetspot for this spell)")]
-    [Tooltip("2–4 zones ordered near→far. Empty array = legacy behaviour unchanged.")]
+    [Header("Charge Variants (cursor distance selects referenced spellbook zone)")]
+    [Tooltip("2-4 zones ordered near-to-far. Each zone must reference another spellbook entry for its behavior.")]
     public AbilityVariant[] variants;
 }
 
@@ -141,6 +171,85 @@ public class AbilityCaster : NetworkBehaviour
     static readonly Vector3 GroundDecalPivot = new Vector3(0f, 0f, 0.5f);
     static bool s_warnedInvalidRectDecal;
     static bool s_loggedRectIndicatorPath;
+    static readonly string[] SharedClassAbilityNames =
+    {
+        "Runic Sentinel",
+        "Void Bolt",
+        "Mending Circle",
+        "Storm Lash",
+        "Ember Surge",
+        "Mind Spike",
+        "Binding Wave",
+        "Arcane Ward",
+    };
+    static readonly string[] WardenAbilityNames =
+    {
+        "Runic Snare",
+        "Battle Hymn",
+        "Spirit Redirect",
+        "Mend",
+        "Conjurer's Surge",
+        "Thorn Volley",
+        "Earth Surge",
+        "Vine Grasp",
+    };
+    static readonly string[] IroncladAbilityNames =
+    {
+        "Counter Blow",
+        "Gravity Slam",
+        "Shieldwall Charge",
+        "Stalwart Stance",
+        "Rune Chain",
+        "Iron Rampart",
+        "Hammer Strike",
+        "War Cry",
+        "Juggernaut Rush",
+    };
+    static readonly string[] ArcanistAbilityNames =
+    {
+        "Arcane Step",
+        "Void Maw",
+        "Forked Lightning",
+        "Collapsing Void",
+        "Ether Lance",
+        "Conflagration Cone",
+        "Ember Beam",
+        "Ice Spikes",
+        "Meteor Shower",
+        "Fireball",
+        "Chain Lightning",
+        "Frost Nova",
+    };
+    static readonly string[] ClericAbilityNames =
+    {
+        "Soul Bond",
+        "Spirit Wisps",
+        "Divine Spark",
+        "Sacred Aegis",
+        "Dispel",
+        "Temporal Grace",
+        "Healing Cone",
+        "Mending Beam",
+        "Holy Bolt",
+        "Divine Shield",
+        "Smite",
+    };
+    static readonly string[] ShadowbladeAbilityNames =
+    {
+        "Shadow Veil",
+        "Silence Ward",
+        "Dark Harvest",
+        "Dark Mark",
+        "Fan of Blades",
+        "Blade Flurry",
+        "Poison Cloud",
+        "Death Strike",
+    };
+    static readonly string[] WardenDefaultAbilityNames = { "Runic Sentinel", "Runic Snare", "Battle Hymn", "Mend" };
+    static readonly string[] IroncladDefaultAbilityNames = { "Arcane Ward", "Shieldwall Charge", "Stalwart Stance", "Iron Rampart" };
+    static readonly string[] ArcanistDefaultAbilityNames = { "Conflagration Cone", "Ember Beam", "Void Maw", "Collapsing Void" };
+    static readonly string[] ClericDefaultAbilityNames = { "Healing Cone", "Mending Beam", "Sacred Aegis", "Temporal Grace" };
+    static readonly string[] ShadowbladeDefaultAbilityNames = { "Fan of Blades", "Dark Mark", "Dark Harvest", "Shadow Veil" };
 
     public Camera cam;
     public CastAnimator castAnimator;
@@ -363,6 +472,7 @@ public class AbilityCaster : NetworkBehaviour
     private int committedCastSlot = -1;
     private GameObject committedCastIndicator;
     private AbilityDef committedCastAbility;
+    private int committedCastVariantIndex = -1;
     private float committedCastDuration;
     private float committedCastElapsed;
 
@@ -390,9 +500,97 @@ public class AbilityCaster : NetworkBehaviour
     public int ActiveVariantIndex  => _activeVariantIndex;
     public bool IsCommittedCasting => committedCastRoutine != null && committedCastAbility != null && committedCastDuration > 0f;
     public string CommittedCastName => committedCastAbility != null ? committedCastAbility.abilityName : "";
-    public AbilityCategory CommittedCastCategory => committedCastAbility != null ? committedCastAbility.category : AbilityCategory.Damage;
+    public int CommittedCastVariantIndex => IsCommittedCasting ? committedCastVariantIndex : -1;
+    public string CommittedCastVariantName
+    {
+        get
+        {
+            return IsCommittedCasting
+                ? GetVariantDisplayName(committedCastAbility, committedCastVariantIndex)
+                : "";
+        }
+    }
+    public string CommittedCastDisplayName
+    {
+        get
+        {
+            string abilityName = CommittedCastName;
+            string variantName = CommittedCastVariantName;
+            return string.IsNullOrEmpty(variantName) ? abilityName : $"{abilityName} - {variantName}";
+        }
+    }
+    public AbilityCategory CommittedCastCategory
+    {
+        get
+        {
+            if (committedCastAbility == null) return AbilityCategory.Damage;
+            AbilityDef payload = GetVariantPayload(committedCastAbility, committedCastVariantIndex);
+            return payload != null ? payload.category : committedCastAbility.category;
+        }
+    }
     public float CommittedCastProgress => committedCastDuration > 0f ? Mathf.Clamp01(committedCastElapsed / committedCastDuration) : 0f;
     public float CommittedCastRemaining => Mathf.Max(0f, committedCastDuration - committedCastElapsed);
+
+    public AbilityDef GetVariantPayload(AbilityDef ability, int variantIndex)
+    {
+        AbilityVariant variant = GetVariant(ability, variantIndex);
+        return ResolveVariantSpellbookAbility(ability, variant);
+    }
+
+    public string GetVariantDisplayName(AbilityDef ability, int variantIndex)
+    {
+        AbilityVariant variant = GetVariant(ability, variantIndex);
+        if (variant == null) return "";
+
+        AbilityDef payload = ResolveVariantSpellbookAbility(ability, variant);
+        if (payload != null && !string.IsNullOrEmpty(payload.abilityName)) return payload.abilityName;
+        if (!string.IsNullOrEmpty(variant.spellbookAbilityName)) return variant.spellbookAbilityName;
+        if (variant.useSpellbookAbilityIndex && variant.spellbookAbilityIndex >= 0) return $"Spellbook #{variant.spellbookAbilityIndex}";
+        return "Missing Variant";
+    }
+
+    public Color GetVariantTint(AbilityDef ability, int variantIndex)
+    {
+        AbilityDef payload = GetVariantPayload(ability, variantIndex);
+        if (payload != null) return payload.variantIndicatorTint;
+
+        return new Color(1f, 0.1f, 0.3f, 0.75f);
+    }
+
+    AbilityVariant GetVariant(AbilityDef ability, int variantIndex)
+    {
+        if (ability?.variants == null || ability.variants.Length == 0) return null;
+        int idx = Mathf.Clamp(variantIndex, 0, ability.variants.Length - 1);
+        return ability.variants[idx];
+    }
+
+    AbilityDef ResolveVariantSpellbookAbility(AbilityDef owner, AbilityVariant variant)
+    {
+        if (variant == null || !HasVariantSpellbookReference(variant)) return null;
+
+        AbilityDef payload = null;
+        string abilityName = string.IsNullOrEmpty(variant.spellbookAbilityName) ? "" : variant.spellbookAbilityName.Trim();
+        if (!string.IsNullOrEmpty(abilityName))
+            payload = FindSpellbookAbilityByName(abilityName);
+
+        if (payload == null
+            && variant.useSpellbookAbilityIndex
+            && variant.spellbookAbilityIndex >= 0
+            && spellbook != null
+            && variant.spellbookAbilityIndex < spellbook.Length)
+            payload = spellbook[variant.spellbookAbilityIndex];
+
+        if (payload == null || ReferenceEquals(payload, owner)) return null;
+        return payload;
+    }
+
+    static bool HasVariantSpellbookReference(AbilityVariant variant)
+    {
+        return variant != null
+            && ((variant.useSpellbookAbilityIndex && variant.spellbookAbilityIndex >= 0)
+                || (!string.IsNullOrEmpty(variant.spellbookAbilityName)
+                    && !string.IsNullOrEmpty(variant.spellbookAbilityName.Trim())));
+    }
 
     void Awake()
     {
@@ -400,20 +598,18 @@ public class AbilityCaster : NetworkBehaviour
         // isLocalPlayer is NOT set in Awake (Mirror sets it after instantiation),
         // so any enabled-check here would wrongly disable the local player too.
 
-        // Seed the equipped loadout from the class pool so the action bar matches the
-        // selected class. Without this, equippedIndices stays at the hardcoded shared
-        // pool {0,1,2,3} for every class (bar wouldn't match Character Select).
-        if (classPool != null && classPool.defaultEquipped != null)
-            for (int i = 0; i < equippedIndices.Length && i < 4; i++)
-                equippedIndices[i] = (i < classPool.defaultEquipped.Length)
-                    ? classPool.defaultEquipped[i] : -1;
+        BackfillMissingSpellbookEntries();
+
+        // Seed by ability name for known classes so old prefab spellbook order cannot
+        // make class-pool indices point at the wrong spell.
+        ApplyDefaultLoadoutFromClassPool();
 
         useScrollWheelVariants = PlayerPrefs.GetInt("VariantScrollMode", 0) == 1;
 
-        BackfillMissingSpellbookEntries(); // must run before Sync so class-pool indices exist
-        SyncEquippedFromSpellbook();
         BackfillVariantDefaults();
+        MigrateInlineVariantsToSpellbookReferences();
         BackfillVariantVFX();
+        SyncEquippedFromSpellbook();
         GenerateProceduralIcons();
 
         _passive        = GetComponent<ClassPassive>();
@@ -450,7 +646,11 @@ public class AbilityCaster : NetworkBehaviour
 #if UNITY_EDITOR
     protected override void OnValidate()
     {
+        BackfillMissingSpellbookEntries();
         BackfillSpellBehaviorDefaults();
+        BackfillVariantDefaults();
+        MigrateInlineVariantsToSpellbookReferences();
+        BackfillVariantVFX();
     }
 
     void BackfillSpellBehaviorDefaults()
@@ -580,7 +780,9 @@ public class AbilityCaster : NetworkBehaviour
         for (int i = 0; i < 4; i++)
         {
             int idx = (i < equippedIndices.Length) ? equippedIndices[i] : -1;
-            _equippedAbilities[i] = (idx >= 0 && idx < spellbook.Length) ? spellbook[idx] : null;
+            _equippedAbilities[i] = (idx >= 0 && idx < spellbook.Length && spellbook[idx] != null && !spellbook[idx].variantOnly)
+                ? spellbook[idx]
+                : null;
         }
     }
 
@@ -620,10 +822,23 @@ public class AbilityCaster : NetworkBehaviour
     // Always returns true when no classPool is assigned (editor / testing).
     public bool IsAllowedByClass(int spellbookIndex)
     {
+        if (IsVariantOnlySpellbookIndex(spellbookIndex)) return false;
         if (classPool == null) return true;
-        foreach (int idx in classPool.availableIndices)
-            if (idx == spellbookIndex) return true;
-        return false;
+
+        if (TryGetClassAbilityNames(classPool.className, out string[] classAbilityNames))
+        {
+            string abilityName = GetSpellbookAbilityName(spellbookIndex);
+            if (string.IsNullOrEmpty(abilityName)) return false;
+            if (ContainsAbilityName(SharedClassAbilityNames, abilityName)
+                || ContainsAbilityName(classAbilityNames, abilityName))
+                return true;
+
+            // Known spells are resolved by name to protect stale prefab order. Brand-new
+            // custom names can still be enabled through the class pool's index list.
+            return !IsKnownAbilityName(abilityName) && PoolContainsIndex(classPool, spellbookIndex);
+        }
+
+        return PoolContainsIndex(classPool, spellbookIndex);
     }
 
     // Apply a class pool and reset to its default loadout.
@@ -632,10 +847,158 @@ public class AbilityCaster : NetworkBehaviour
         classPool = pool;
         if (pool == null) return;
 
-        for (int i = 0; i < 4; i++)
-            equippedIndices[i] = (i < pool.defaultEquipped.Length) ? pool.defaultEquipped[i] : -1;
+        BackfillMissingSpellbookEntries();
+        ApplyDefaultLoadoutFromClassPool();
 
         SyncEquippedFromSpellbook();
+    }
+
+    void ApplyDefaultLoadoutFromClassPool()
+    {
+        if (classPool == null || equippedIndices == null) return;
+
+        if (TryGetDefaultAbilityNames(classPool.className, out string[] defaultAbilityNames))
+        {
+            for (int i = 0; i < equippedIndices.Length && i < 4; i++)
+            {
+                int idx = (i < defaultAbilityNames.Length) ? FindDefaultAbilityIndex(defaultAbilityNames[i]) : -1;
+                equippedIndices[i] = idx >= 0 ? idx : GetPoolDefaultIndex(classPool, i);
+            }
+            return;
+        }
+
+        for (int i = 0; i < equippedIndices.Length && i < 4; i++)
+            equippedIndices[i] = GetPoolDefaultIndex(classPool, i);
+    }
+
+    int FindDefaultAbilityIndex(string abilityName)
+    {
+        int idx = FindSpellbookIndexByName(abilityName);
+        if (idx >= 0) return idx;
+
+        if (classPool != null && classPool.className == "Arcanist" && abilityName == "Collapsing Void")
+            return FindSpellbookIndexByName("Meteor Shower");
+
+        return -1;
+    }
+
+    static int GetPoolDefaultIndex(ClassAbilityPool pool, int slot)
+    {
+        if (pool?.defaultEquipped == null) return -1;
+        return slot < pool.defaultEquipped.Length ? pool.defaultEquipped[slot] : -1;
+    }
+
+    string GetSpellbookAbilityName(int spellbookIndex)
+    {
+        if (spellbook == null || spellbookIndex < 0 || spellbookIndex >= spellbook.Length)
+            return "";
+        return spellbook[spellbookIndex]?.abilityName ?? "";
+    }
+
+    bool IsVariantOnlySpellbookIndex(int spellbookIndex)
+    {
+        return spellbook != null
+            && spellbookIndex >= 0
+            && spellbookIndex < spellbook.Length
+            && spellbook[spellbookIndex] != null
+            && spellbook[spellbookIndex].variantOnly;
+    }
+
+    int FindSpellbookIndexByName(string abilityName)
+    {
+        if (spellbook == null || string.IsNullOrEmpty(abilityName)) return -1;
+        string searchName = abilityName.Trim();
+        for (int i = 0; i < spellbook.Length; i++)
+        {
+            if (string.Equals(spellbook[i]?.abilityName, searchName, System.StringComparison.OrdinalIgnoreCase))
+                return i;
+        }
+        return -1;
+    }
+
+    AbilityDef FindSpellbookAbilityByName(string abilityName)
+    {
+        int idx = FindSpellbookIndexByName(abilityName);
+        return idx >= 0 ? spellbook[idx] : null;
+    }
+
+    static bool TryGetClassAbilityNames(string className, out string[] abilityNames)
+    {
+        switch (className)
+        {
+            case "Warden":
+                abilityNames = WardenAbilityNames;
+                return true;
+            case "Ironclad":
+                abilityNames = IroncladAbilityNames;
+                return true;
+            case "Arcanist":
+                abilityNames = ArcanistAbilityNames;
+                return true;
+            case "Cleric":
+                abilityNames = ClericAbilityNames;
+                return true;
+            case "Shadowblade":
+                abilityNames = ShadowbladeAbilityNames;
+                return true;
+            default:
+                abilityNames = null;
+                return false;
+        }
+    }
+
+    static bool TryGetDefaultAbilityNames(string className, out string[] abilityNames)
+    {
+        switch (className)
+        {
+            case "Warden":
+                abilityNames = WardenDefaultAbilityNames;
+                return true;
+            case "Ironclad":
+                abilityNames = IroncladDefaultAbilityNames;
+                return true;
+            case "Arcanist":
+                abilityNames = ArcanistDefaultAbilityNames;
+                return true;
+            case "Cleric":
+                abilityNames = ClericDefaultAbilityNames;
+                return true;
+            case "Shadowblade":
+                abilityNames = ShadowbladeDefaultAbilityNames;
+                return true;
+            default:
+                abilityNames = null;
+                return false;
+        }
+    }
+
+    static bool ContainsAbilityName(string[] abilityNames, string abilityName)
+    {
+        if (abilityNames == null || string.IsNullOrEmpty(abilityName)) return false;
+        for (int i = 0; i < abilityNames.Length; i++)
+        {
+            if (string.Equals(abilityNames[i], abilityName, System.StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+        return false;
+    }
+
+    static bool IsKnownAbilityName(string abilityName)
+    {
+        return ContainsAbilityName(SharedClassAbilityNames, abilityName)
+            || ContainsAbilityName(WardenAbilityNames, abilityName)
+            || ContainsAbilityName(IroncladAbilityNames, abilityName)
+            || ContainsAbilityName(ArcanistAbilityNames, abilityName)
+            || ContainsAbilityName(ClericAbilityNames, abilityName)
+            || ContainsAbilityName(ShadowbladeAbilityNames, abilityName);
+    }
+
+    static bool PoolContainsIndex(ClassAbilityPool pool, int spellbookIndex)
+    {
+        if (pool?.availableIndices == null) return false;
+        foreach (int idx in pool.availableIndices)
+            if (idx == spellbookIndex) return true;
+        return false;
     }
 
     public bool IsEquipped(int spellbookIndex, out int slot)
@@ -801,9 +1164,18 @@ public class AbilityCaster : NetworkBehaviour
         committedCastSlot = slot;
         committedCastIndicator = indicator;
         committedCastAbility = ability;
+        committedCastVariantIndex = NormalizeVariantIndex(ability, variantIndex);
         committedCastDuration = castTime;
         committedCastElapsed = 0f;
         committedCastRoutine = StartCoroutine(CommittedCastRoutine(slot, ability, indicator, aimTime, castTime, variantIndex));
+    }
+
+    int NormalizeVariantIndex(AbilityDef ability, int variantIndex)
+    {
+        if (ability?.variants == null || ability.variants.Length == 0)
+            return -1;
+
+        return Mathf.Clamp(variantIndex, 0, ability.variants.Length - 1);
     }
 
     void RequestCommitMovementLock()
@@ -919,6 +1291,7 @@ public class AbilityCaster : NetworkBehaviour
         committedCastSlot = -1;
         committedCastIndicator = null;
         committedCastAbility = null;
+        committedCastVariantIndex = -1;
         committedCastDuration = 0f;
         committedCastElapsed = 0f;
     }
@@ -1452,7 +1825,7 @@ public class AbilityCaster : NetworkBehaviour
                 }
 
                 UpdateRectZoneMarkers(indicator, ability, rectData);
-                Color vc = ability.variants[_activeVariantIndex].indicatorTint;
+                Color vc = GetVariantTint(ability, _activeVariantIndex);
                 if (lr != null) lr.startColor = lr.endColor = vc;
                 SetProjectedRectColor(indicator, vc);
             }
@@ -1503,7 +1876,7 @@ public class AbilityCaster : NetworkBehaviour
                 }
 
                 UpdateConeZoneArcs(indicator, ability, coneData);
-                SetConeIndicatorColor(indicator, ability.variants[_activeVariantIndex].indicatorTint);
+                SetConeIndicatorColor(indicator, GetVariantTint(ability, _activeVariantIndex));
             }
         }
 
@@ -2345,18 +2718,6 @@ public class AbilityCaster : NetworkBehaviour
                 spellbookIndex = i;
                 return;
             }
-            if (spellbook[i].variants != null)
-            {
-                for (int v = 0; v < spellbook[i].variants.Length; v++)
-                {
-                    if (spellbook[i].variants[v] != null && spellbook[i].variants[v].hitVFX == hitVFXPrefab)
-                    {
-                        spellbookIndex = i;
-                        variantIndex = v;
-                        return;
-                    }
-                }
-            }
         }
     }
 
@@ -2368,11 +2729,6 @@ public class AbilityCaster : NetworkBehaviour
         if (ability == null) return;
 #if UNITY_EDITOR || !UNITY_SERVER
         GameObject hitVfxPrefab = ability.hitVFX;
-        if (variantIndex >= 0 && ability.variants != null && variantIndex < ability.variants.Length)
-        {
-            if (ability.variants[variantIndex].hitVFX != null)
-                hitVfxPrefab = ability.variants[variantIndex].hitVFX;
-        }
         SpawnVFX(hitVfxPrefab, position, Quaternion.identity, lifetime);
 #endif
     }
@@ -2416,7 +2772,7 @@ public class AbilityCaster : NetworkBehaviour
             Vector3    castScale    = indicator != null ? indicator.transform.localScale : Vector3.one;
 
             CmdFinalizeCast(spellbookIndex, castPosition, castRotation, castScale, aimTime, variantIndex);
-            PlayLocalCastVFX(ability, castPosition, castRotation);
+            PlayLocalCastVFX(ability, castPosition, castRotation, variantIndex);
 
             if (indicator != null)
                 Destroy(indicator);
@@ -2425,12 +2781,14 @@ public class AbilityCaster : NetworkBehaviour
 
         Debug.Log("Cast ability: " + ability.abilityName);
 
+        AbilityDef passiveAbility = GetVariantPayload(ability, variantIndex) ?? ability;
+
         // Notify passive (Phase Charge meter, etc.)
-        _passive?.OnAbilityCast(ability);
+        _passive?.OnAbilityCast(passiveAbility);
 
         // Phase Charge: scale next damage ability
         float damageMultiplier = _phaseCharge != null
-            ? _phaseCharge.ConsumeBonusIfCharged(ability)
+            ? _phaseCharge.ConsumeBonusIfCharged(passiveAbility)
             : 1f;
 
         // Gear + attunement damage bonus (CharacterStats) — applies to every
@@ -2449,17 +2807,24 @@ public class AbilityCaster : NetworkBehaviour
         if (ability == null) return;
 
 #if UNITY_EDITOR || !UNITY_SERVER
-        // Variant spells raise OnHealCast inside ResolveVariantCast to avoid double-fire.
         if (ability.category == AbilityCategory.Heal && (ability.variants == null || ability.variants.Length == 0))
             OnHealCast?.Invoke();
 #endif
 
-        // Variant spells: route to variant resolution and skip legacy sweetspot paths.
+        // Variant spells must resolve one of their zones to a spellbook payload.
         if (ability.variants != null && ability.variants.Length > 0)
         {
             int clampedIdx = Mathf.Clamp(variantIndex, 0, ability.variants.Length - 1);
-            ResolveVariantCast(ability, indicator, ability.variants[clampedIdx], damageMultiplier, castOrigin);
-            // Still dispatch special behaviours (e.g. Arcane Step teleport) and VFX below.
+            AbilityVariant variant = ability.variants[clampedIdx];
+            AbilityDef referencedAbility = ResolveVariantSpellbookAbility(ability, variant);
+            if (referencedAbility == null)
+            {
+                Debug.LogWarning($"[COMBAT] Variant {clampedIdx} on '{ability.abilityName}' has no spellbook payload reference.");
+                return;
+            }
+
+            ResolveReferencedVariantCast(ability, referencedAbility, indicator, aimTime, damageMultiplier, castOrigin);
+            return;
         }
         else if (ability.abilityName == "Healing Cone" || ability.abilityName == "Mending Beam" ||
             ability.abilityName == "Conflagration Cone" || ability.abilityName == "Ember Beam")
@@ -2514,12 +2879,6 @@ public class AbilityCaster : NetworkBehaviour
 
 #if UNITY_EDITOR || !UNITY_SERVER
         GameObject castVfxPrefab = ability.castVFX;
-        if (ability.variants != null && ability.variants.Length > 0)
-        {
-            int clampedIdx = Mathf.Clamp(variantIndex, 0, ability.variants.Length - 1);
-            if (ability.variants[clampedIdx].castVFX != null)
-                castVfxPrefab = ability.variants[clampedIdx].castVFX;
-        }
 
         if (castVfxPrefab != null)
         {
@@ -2606,22 +2965,18 @@ public class AbilityCaster : NetworkBehaviour
     {
         if (ability == null) return;
 
+        AbilityDef displayAbility = GetVariantPayload(ability, variantIndex) ?? ability;
+
 #if UNITY_EDITOR || !UNITY_SERVER
-        if (ability.category == AbilityCategory.Heal) OnHealCast?.Invoke();
+        if (displayAbility.category == AbilityCategory.Heal) OnHealCast?.Invoke();
 #endif
 
-        GameObject castVfxPrefab = ability.castVFX;
-        if (ability.variants != null && ability.variants.Length > 0)
-        {
-            int clampedIdx = Mathf.Clamp(variantIndex, 0, ability.variants.Length - 1);
-            if (ability.variants[clampedIdx].castVFX != null)
-                castVfxPrefab = ability.variants[clampedIdx].castVFX;
-        }
+        GameObject castVfxPrefab = displayAbility.castVFX != null ? displayAbility.castVFX : ability.castVFX;
 
         if (castVfxPrefab == null) return;
 
 #if UNITY_EDITOR || !UNITY_SERVER
-        if (ability.shape == AbilityShape.Rectangle)
+        if (displayAbility.shape == AbilityShape.Rectangle)
             StartCoroutine(TravelVFX(castVfxPrefab,
                 castOrigin + Vector3.up * 1.2f,
                 position + Vector3.up * 0.5f,
@@ -4067,8 +4422,202 @@ public class AbilityCaster : NetworkBehaviour
     {
         if (vi >= ab.variants.Length || ab.variants[vi] == null) return;
         var v = ab.variants[vi];
-        if (v.castVFX == null) v.castVFX = Resources.Load<GameObject>(castPath);
-        if (v.hitVFX  == null) v.hitVFX  = Resources.Load<GameObject>(hitPath);
+
+        AbilityDef payload = ResolveVariantSpellbookAbility(ab, v);
+        if (payload != null)
+        {
+            if (payload.castVFX == null) payload.castVFX = Resources.Load<GameObject>(castPath);
+            if (payload.hitVFX  == null) payload.hitVFX  = Resources.Load<GameObject>(hitPath);
+        }
+    }
+
+    void MigrateInlineVariantsToSpellbookReferences()
+    {
+        if (spellbook == null) return;
+
+        for (int i = 0; i < spellbook.Length; i++)
+        {
+            AbilityDef owner = spellbook[i];
+            if (owner == null || owner.variantOnly || owner.variants == null || owner.variants.Length == 0)
+                continue;
+
+            for (int v = 0; v < owner.variants.Length; v++)
+            {
+                AbilityVariant variant = owner.variants[v];
+                if (variant == null) continue;
+
+                bool hasReference = HasVariantSpellbookReference(variant);
+                bool hasLegacyPayload = HasLegacyInlineVariantPayload(variant);
+                bool hasLegacyName = HasLegacyVariantName(variant);
+                if (hasReference && !hasLegacyPayload && !hasLegacyName)
+                {
+                    AbilityDef referencedPayload = ResolveVariantSpellbookAbility(owner, variant);
+                    if (referencedPayload != null && !ReferenceEquals(referencedPayload, owner))
+                        referencedPayload.variantOnly = true;
+                    continue;
+                }
+
+                AbilityDef payload = hasReference
+                    ? ResolveVariantSpellbookAbility(owner, variant)
+                    : null;
+
+                if (payload == null)
+                {
+                    string payloadName = BuildVariantPayloadName(owner, variant, v);
+                    payload = FindOrCreateVariantPayloadAbility(payloadName);
+                }
+
+                if (payload == null || ReferenceEquals(payload, owner))
+                    continue;
+
+                bool canCopyLegacyData = !hasReference || payload.variantOnly;
+                if ((hasLegacyPayload || hasLegacyName) && canCopyLegacyData)
+                    CopyInlineVariantToPayload(owner, variant, payload);
+
+                payload.variantOnly = true;
+                variant.spellbookAbilityName = payload.abilityName;
+                variant.useSpellbookAbilityIndex = false;
+                variant.spellbookAbilityIndex = -1;
+                ClearInlineVariantPayload(variant);
+            }
+        }
+    }
+
+    AbilityDef FindOrCreateVariantPayloadAbility(string payloadName)
+    {
+        if (string.IsNullOrEmpty(payloadName)) return null;
+
+        AbilityDef existing = FindSpellbookAbilityByName(payloadName);
+        if (existing != null) return existing;
+
+        var payload = new AbilityDef
+        {
+            abilityName = payloadName,
+            variantOnly = true,
+            damage = 0f,
+            maxChargeDamage = 0f,
+            cooldown = 0f
+        };
+
+        int oldLength = spellbook != null ? spellbook.Length : 0;
+        AbilityDef[] expanded = new AbilityDef[oldLength + 1];
+        if (oldLength > 0) System.Array.Copy(spellbook, expanded, oldLength);
+        expanded[oldLength] = payload;
+        spellbook = expanded;
+        return payload;
+    }
+
+    string BuildVariantPayloadName(AbilityDef owner, AbilityVariant variant, int variantIndex)
+    {
+        string ownerName = !string.IsNullOrEmpty(owner?.abilityName) ? owner.abilityName.Trim() : "Ability";
+        string variantName = HasLegacyVariantName(variant) ? variant.variantName.Trim() : $"Variant {variantIndex + 1}";
+        string baseName = string.Equals(ownerName, variantName, System.StringComparison.OrdinalIgnoreCase)
+            ? $"{ownerName} Variant {variantIndex + 1}"
+            : $"{ownerName} {variantName}";
+
+        string candidate = baseName;
+        int suffix = 2;
+        while (FindSpellbookAbilityByName(candidate) != null)
+        {
+            candidate = $"{baseName} {suffix}";
+            suffix++;
+        }
+        return candidate;
+    }
+
+    static bool HasLegacyVariantName(AbilityVariant variant)
+    {
+        return variant != null
+            && !string.IsNullOrEmpty(variant.variantName)
+            && !string.Equals(variant.variantName, "Variant", System.StringComparison.OrdinalIgnoreCase);
+    }
+
+    static bool HasLegacyInlineVariantPayload(AbilityVariant variant)
+    {
+        if (variant == null) return false;
+        return variant.damage > 0f
+            || variant.healAmount > 0f
+            || (variant.hotTicks > 0 && variant.hotTickAmount > 0f)
+            || variant.shieldAbsorb > 0f
+            || variant.statusDuration > 0f
+            || !string.IsNullOrEmpty(variant.targetTag)
+            || variant.castVFX != null
+            || variant.hitVFX != null
+            || !IsDefaultLegacyVariantTint(variant.indicatorTint);
+    }
+
+    static bool IsDefaultLegacyVariantTint(Color tint)
+    {
+        return Mathf.Approximately(tint.r, 0.2f)
+            && Mathf.Approximately(tint.g, 1f)
+            && Mathf.Approximately(tint.b, 0.3f)
+            && Mathf.Approximately(tint.a, 0.7f);
+    }
+
+    void CopyInlineVariantToPayload(AbilityDef owner, AbilityVariant variant, AbilityDef payload)
+    {
+        if (owner == null || variant == null || payload == null) return;
+
+        payload.variantOnly = true;
+        payload.shape = owner.shape;
+        payload.range = owner.range;
+        payload.coneAngle = owner.coneAngle;
+        payload.rectWidth = owner.rectWidth;
+        payload.indicatorSize = owner.indicatorSize;
+        payload.cooldown = owner.cooldown;
+        payload.castTime = owner.castTime;
+        payload.icon = owner.icon;
+        payload.category = InferVariantPayloadCategory(owner, variant);
+        payload.targetTag = !string.IsNullOrEmpty(variant.targetTag) ? variant.targetTag : owner.targetTag;
+
+        payload.damage = variant.damage;
+        payload.maxChargeDamage = variant.damage;
+        payload.chargeable = false;
+        payload.healAmount = variant.healAmount;
+        payload.hotTickAmount = variant.hotTickAmount;
+        payload.hotTicks = variant.hotTicks;
+        payload.hotInterval = variant.hotInterval;
+        payload.shieldAbsorb = variant.shieldAbsorb;
+        payload.shieldDuration = variant.shieldDuration;
+        payload.statusEffect = variant.statusEffect;
+        payload.statusDuration = variant.statusDuration;
+        payload.statusValue = variant.statusValue;
+
+        payload.castVFX = variant.castVFX;
+        payload.hitVFX = variant.hitVFX;
+        payload.variantIndicatorTint = variant.indicatorTint.a > 0f
+            ? variant.indicatorTint
+            : owner.variantIndicatorTint;
+    }
+
+    static AbilityCategory InferVariantPayloadCategory(AbilityDef owner, AbilityVariant variant)
+    {
+        if (variant.healAmount > 0f || (variant.hotTicks > 0 && variant.hotTickAmount > 0f))
+            return AbilityCategory.Heal;
+        if (variant.shieldAbsorb > 0f && variant.damage <= 0f)
+            return AbilityCategory.Support;
+        return owner != null ? owner.category : AbilityCategory.Damage;
+    }
+
+    static void ClearInlineVariantPayload(AbilityVariant variant)
+    {
+        if (variant == null) return;
+
+        variant.variantName = "";
+        variant.indicatorTint = Color.clear;
+        variant.healAmount = 0f;
+        variant.hotTickAmount = 0f;
+        variant.hotTicks = 0;
+        variant.hotInterval = 1f;
+        variant.shieldAbsorb = 0f;
+        variant.shieldDuration = 0f;
+        variant.damage = 0f;
+        variant.statusEffect = default(StatusEffectType);
+        variant.statusDuration = 0f;
+        variant.statusValue = 0f;
+        variant.targetTag = "";
+        variant.castVFX = null;
+        variant.hitVFX = null;
     }
 
     void BackfillVariantDefaults()
@@ -4077,7 +4626,9 @@ public class AbilityCaster : NetworkBehaviour
         foreach (AbilityDef ability in spellbook)
         {
             if (ability == null) continue;
-            if (ability.variants != null && ability.variants.Length > 0) continue;
+            // One serialized zone is a stale/invalid setup: variant spells need
+            // at least two zones to create a real aiming decision.
+            if (ability.variants != null && ability.variants.Length > 1) continue;
 
             switch (ability.abilityName)
             {
@@ -4949,7 +5500,7 @@ public class AbilityCaster : NetworkBehaviour
         float pulse  = 0.5f + 0.5f * Mathf.Sin(Time.time * 6f);    // 0→1 at 6 Hz
         float pulseW = 0.08f + 0.08f * pulse;                        // width breathes 0.08→0.16
 
-        Color activeVariantTint = ability.variants[_activeVariantIndex].indicatorTint;
+        Color activeVariantTint = GetVariantTint(ability, _activeVariantIndex);
 
         for (int z = 1; z < ability.variants.Length; z++)
         {
@@ -5003,7 +5554,7 @@ public class AbilityCaster : NetworkBehaviour
         float pulse  = 0.5f + 0.5f * Mathf.Sin(Time.time * 6f);
         float pulseW = 0.08f + 0.08f * pulse;
 
-        Color activeVariantTint = ability.variants[_activeVariantIndex].indicatorTint;
+        Color activeVariantTint = GetVariantTint(ability, _activeVariantIndex);
 
         for (int z = 1; z < ability.variants.Length; z++)
         {
@@ -5113,7 +5664,7 @@ public class AbilityCaster : NetworkBehaviour
         var tmp2 = lblT.GetComponent<TMPro.TextMeshPro>();
         if (tmp2 != null)
         {
-            tmp2.text  = ability.variants[_activeVariantIndex].variantName.ToUpper();
+            tmp2.text  = GetVariantDisplayName(ability, _activeVariantIndex).ToUpper();
             tmp2.color = new Color(tint.r * 0.7f + 0.3f, tint.g * 0.7f + 0.3f, tint.b * 0.7f + 0.3f, 0.95f);
         }
     }
@@ -5150,99 +5701,182 @@ public class AbilityCaster : NetworkBehaviour
         var tmp2 = lblT.GetComponent<TMPro.TextMeshPro>();
         if (tmp2 != null)
         {
-            tmp2.text  = ability.variants[_activeVariantIndex].variantName.ToUpper();
+            tmp2.text  = GetVariantDisplayName(ability, _activeVariantIndex).ToUpper();
             tmp2.color = new Color(tint.r * 0.7f + 0.3f, tint.g * 0.7f + 0.3f, tint.b * 0.7f + 0.3f, 0.95f);
         }
     }
 
-    // Applies a single variant's effect to every target found in the spell's shape.
-    // Runs server-side in networked play (called via CmdFinalizeCast → FinalizeCast).
-    void ResolveVariantCast(AbilityDef ability, GameObject indicator, AbilityVariant variant, float damageMultiplier, Vector3 castOrigin)
+    // Resolves a variant by using another spellbook entry as its payload.
+    // Runs server-side in networked play (called via CmdFinalizeCast -> FinalizeCast).
+    void ResolveReferencedVariantCast(
+        AbilityDef selectorAbility,
+        AbilityDef effectAbility,
+        GameObject indicator,
+        float aimTime,
+        float damageMultiplier,
+        Vector3 castOrigin)
     {
-        if (variant == null || indicator == null) return;
+        if (selectorAbility == null || effectAbility == null) return;
 
-        // Per-variant targeting overrides the ability's default (lets one ability have
-        // a heal variant that targets "Player" and a damage variant that targets "Enemy").
-        string tag = !string.IsNullOrEmpty(variant.targetTag) ? variant.targetTag : ability.targetTag;
-        if (string.IsNullOrEmpty(tag)) return;
+#if UNITY_EDITOR || !UNITY_SERVER
+        if (effectAbility.category == AbilityCategory.Heal) OnHealCast?.Invoke();
+#endif
 
-        var hits = new System.Collections.Generic.List<Collider>();
+        GameObject hitVfxPrefab = effectAbility.hitVFX != null ? effectAbility.hitVFX : selectorAbility.hitVFX;
 
-        if (ability.shape == AbilityShape.Cone)
+        if (indicator != null && HasDirectPayload(effectAbility))
         {
-            float maxRange = ability.range * indicator.transform.localScale.x;
+            var hits = new System.Collections.Generic.List<Collider>();
+            CollectHitsForAbilityShape(effectAbility, indicator, castOrigin, effectAbility.targetTag, hits);
+            foreach (Collider hit in hits)
+                ApplyAbilityDefPayloadToHit(effectAbility, hit, hitVfxPrefab, damageMultiplier, aimTime);
+        }
+
+        Vector3 castPoint = GetCastPointForAbility(effectAbility, indicator, castOrigin);
+        Quaternion castRotation = indicator != null ? indicator.transform.rotation : transform.rotation;
+        GameObject castVfxPrefab = effectAbility.castVFX != null ? effectAbility.castVFX : selectorAbility.castVFX;
+        SpawnCastVFXForAbility(effectAbility, castVfxPrefab, castPoint, castRotation, castOrigin);
+
+        if (effectAbility.spawnTurret && indicator != null)
+            SpawnTurret(effectAbility, indicator.transform.position);
+
+        DispatchAbility(effectAbility, castPoint, damageMultiplier);
+        StartPulseDamageIfNeeded(effectAbility, castPoint, damageMultiplier);
+    }
+
+    static bool HasDirectPayload(AbilityDef ability)
+    {
+        if (ability == null) return false;
+        return ability.damage > 0f
+            || ability.healAmount > 0f
+            || (ability.hotTicks > 0 && ability.hotTickAmount > 0f)
+            || ability.shieldAbsorb > 0f
+            || ability.statusDuration > 0f;
+    }
+
+    void CollectHitsForAbilityShape(AbilityDef shapeAbility, GameObject indicator, Vector3 castOrigin, string targetTag, System.Collections.Generic.List<Collider> hits)
+    {
+        if (shapeAbility == null || indicator == null || hits == null) return;
+
+        bool acceptsAnyTag = string.IsNullOrEmpty(targetTag);
+        if (shapeAbility.shape == AbilityShape.Cone)
+        {
+            float maxRange = shapeAbility.range * indicator.transform.localScale.x;
             foreach (Collider c in Physics.OverlapSphere(castOrigin, maxRange))
             {
-                if (!c.CompareTag(tag)) continue;
+                if (!acceptsAnyTag && !c.CompareTag(targetTag)) continue;
                 Vector3 toHit = c.transform.position - castOrigin;
                 toHit.y = 0f;
                 if (toHit.sqrMagnitude > 0.0001f &&
-                    Vector3.Angle(indicator.transform.forward, toHit) > ability.coneAngle * 0.5f)
+                    Vector3.Angle(indicator.transform.forward, toHit) > shapeAbility.coneAngle * 0.5f)
                     continue;
                 hits.Add(c);
             }
         }
-        else if (ability.shape == AbilityShape.Rectangle)
+        else if (shapeAbility.shape == AbilityShape.Rectangle)
         {
             RectangleAimData rectData = indicator.GetComponent<RectangleAimData>();
             if (rectData != null && rectData.valid)
             {
                 foreach (Collider c in Physics.OverlapBox(rectData.damageCenter, rectData.damageHalfExtents, rectData.damageRotation))
-                {
-                    if (c.CompareTag(tag)) hits.Add(c);
-                }
+                    if (acceptsAnyTag || c.CompareTag(targetTag)) hits.Add(c);
+            }
+            else
+            {
+                float rectangleLength = Mathf.Abs(indicator.transform.localScale.z);
+                Vector3 halfExtents = new Vector3(
+                    Mathf.Abs(indicator.transform.localScale.x) * 0.5f,
+                    1f,
+                    rectangleLength * 0.5f);
+
+                foreach (Collider c in Physics.OverlapBox(indicator.transform.position, halfExtents, indicator.transform.rotation))
+                    if (acceptsAnyTag || c.CompareTag(targetTag)) hits.Add(c);
             }
         }
-        else // Circle
+        else
         {
-            foreach (Collider c in Physics.OverlapSphere(indicator.transform.position, ability.indicatorSize * 0.5f))
-            {
-                if (c.CompareTag(tag)) hits.Add(c);
-            }
+            float radius = Mathf.Max(0f, shapeAbility.indicatorSize * 0.5f);
+            foreach (Collider c in Physics.OverlapSphere(indicator.transform.position, radius))
+                if (acceptsAnyTag || c.CompareTag(targetTag)) hits.Add(c);
         }
+    }
 
-        foreach (Collider hit in hits)
+    void ApplyAbilityDefPayloadToHit(AbilityDef ability, Collider hit, GameObject hitVfxPrefab, float damageMultiplier, float aimTime)
+    {
+        if (ability == null || hit == null) return;
+
+        Health health = hit.GetComponent<Health>() ?? hit.GetComponentInParent<Health>();
+        if (health == null) return;
+
+        Vector3 hitPos = health.transform.position + Vector3.up * 0.5f;
+        bool playedHitVfx = false;
+
+        if (ability.healAmount > 0f)
         {
-            Health health = hit.GetComponent<Health>();
-            if (health == null) continue;
-            Vector3 hitPos = hit.transform.position + Vector3.up * 0.5f;
-
-            if (variant.healAmount > 0f)
-            {
-                health.Heal(variant.healAmount);
-                FloatingDamageText.Spawn(hitPos + Vector3.up, variant.healAmount, FloatingDamageText.DamageType.Heal);
-            }
-
-            if (variant.hotTicks > 0 && variant.hotTickAmount > 0f)
-            {
-                StartCoroutine(ApplyHealOverTime(health, variant.hotTickAmount, variant.hotTicks, variant.hotInterval));
-                float totalHot = variant.hotTickAmount * variant.hotTicks;
-                FloatingDamageText.Spawn(hitPos + Vector3.up * 1.3f, totalHot, FloatingDamageText.DamageType.Heal);
-            }
-
-            if (variant.shieldAbsorb > 0f)
-            {
-                health.ApplyShield(variant.shieldAbsorb);
-                FloatingDamageText.Spawn(hitPos + Vector3.up * 1.3f, variant.shieldAbsorb, FloatingDamageText.DamageType.Shield);
-            }
-
-            if (variant.damage > 0f)
-            {
-                health.TakeDamage(variant.damage * damageMultiplier, gameObject);
-                EmitHitVFX(variant.hitVFX ?? ability.hitVFX, hitPos);
-            }
-
-            if (variant.statusDuration > 0f)
-            {
-                var sem = hit.GetComponent<StatusEffectManager>();
-                sem?.AddEffect(new StatusEffect(variant.statusEffect, variant.statusDuration, variant.statusValue, gameObject));
-            }
-
-            EmitHitVFX(variant.hitVFX ?? ability.hitVFX, hitPos);
+            health.Heal(ability.healAmount);
+            FloatingDamageText.Spawn(hitPos + Vector3.up, ability.healAmount, FloatingDamageText.DamageType.Heal);
+            playedHitVfx = true;
         }
 
+        if (ability.hotTicks > 0 && ability.hotTickAmount > 0f)
+        {
+            StartCoroutine(ApplyHealOverTime(health, ability.hotTickAmount, ability.hotTicks, ability.hotInterval));
+            float totalHot = ability.hotTickAmount * ability.hotTicks;
+            FloatingDamageText.Spawn(hitPos + Vector3.up * 1.3f, totalHot, FloatingDamageText.DamageType.Heal);
+            playedHitVfx = true;
+        }
+
+        if (ability.shieldAbsorb > 0f)
+        {
+            health.ApplyShield(ability.shieldAbsorb);
+            FloatingDamageText.Spawn(hitPos + Vector3.up * 1.3f, ability.shieldAbsorb, FloatingDamageText.DamageType.Shield);
+            playedHitVfx = true;
+        }
+
+        if (ability.damage > 0f)
+        {
+            float chargeFraction = GetChargeFraction(ability, aimTime);
+            float damage = ability.chargeable
+                ? Mathf.Lerp(ability.damage, ability.maxChargeDamage, chargeFraction)
+                : ability.damage;
+            health.TakeDamage(damage * damageMultiplier, gameObject);
+            playedHitVfx = true;
+        }
+
+        if (ability.statusDuration > 0f)
+        {
+            StatusEffectManager sem = hit.GetComponent<StatusEffectManager>() ?? health.GetComponent<StatusEffectManager>();
+            sem?.AddEffect(new StatusEffect(ability.statusEffect, ability.statusDuration, ability.statusValue, gameObject));
+            playedHitVfx = true;
+        }
+
+        if (playedHitVfx)
+            EmitHitVFX(hitVfxPrefab, hitPos);
+    }
+
+    Vector3 GetCastPointForAbility(AbilityDef ability, GameObject indicator, Vector3 castOrigin)
+    {
+        Vector3 castPoint = indicator != null ? indicator.transform.position : transform.position;
+        if (ability != null && ability.shape == AbilityShape.Cone && indicator != null)
+        {
+            float coneRange = ability.range * indicator.transform.localScale.x;
+            castPoint = castOrigin + indicator.transform.forward * coneRange;
+        }
+        return castPoint;
+    }
+
+    void SpawnCastVFXForAbility(AbilityDef ability, GameObject castVfxPrefab, Vector3 castPoint, Quaternion castRotation, Vector3 castOrigin)
+    {
 #if UNITY_EDITOR || !UNITY_SERVER
-        if (ability.category == AbilityCategory.Heal) OnHealCast?.Invoke();
+        if (castVfxPrefab == null) return;
+
+        if (ability != null && ability.shape == AbilityShape.Rectangle)
+            StartCoroutine(TravelVFX(castVfxPrefab,
+                castOrigin + Vector3.up * 1.2f,
+                castPoint + Vector3.up * 0.5f,
+                castRotation, 0.3f));
+        else
+            SpawnVFX(castVfxPrefab, castPoint + Vector3.up * 0.8f, castRotation);
 #endif
     }
 

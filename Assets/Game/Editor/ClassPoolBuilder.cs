@@ -24,23 +24,23 @@ public static class ClassPoolBuilder
         }
 
         CreatePool("Warden",
-            availableIndices: new[] { 0,1,2,3,4,5,6,7,8,9,10,11,12 },
+            availableIndices: new[] { 0,1,2,3,4,5,6,7,8,9,10,11,12,44,45,46 },
             defaultEquipped:  new[] { 0,8,9,11 });          // Sentinel, Snare, Hymn, Mend
 
         CreatePool("Ironclad",
-            availableIndices: new[] { 0,1,2,3,4,5,6,7,13,14,15,16,17,18 },
+            availableIndices: new[] { 0,1,2,3,4,5,6,7,13,14,15,16,17,18,47,48,49 },
             defaultEquipped:  new[] { 7,15,16,18 });         // Shield, Charge, Stance, Rampart
 
         CreatePool("Arcanist",
-            availableIndices: new[] { 0,1,2,3,4,5,6,7,19,20,21,22,34,37,38 },  // +34 Ether Lance, +37 Conflagration Cone, +38 Ember Beam
+            availableIndices: new[] { 0,1,2,3,4,5,6,7,19,20,21,22,34,37,38,39,40,41,42,43 },
             defaultEquipped:  new[] { 37,38,20,22 });         // Conflagration Cone, Ember Beam, Void Maw, Collapsing Void
 
         CreatePool("Cleric",
-            availableIndices: new[] { 0,1,2,3,4,5,6,7,23,24,25,26,27,28,35,36 }, // +35 Healing Cone, +36 Mending Beam
+            availableIndices: new[] { 0,1,2,3,4,5,6,7,23,24,25,26,27,28,35,36,53,54,55 },
             defaultEquipped:  new[] { 35,36,26,28 });        // Healing Cone, Mending Beam, Sacred Aegis, Temporal Grace
 
         CreatePool("Shadowblade",
-            availableIndices: new[] { 0,1,2,3,4,5,6,7,29,30,31,32,33 },  // +32 Dark Mark, +33 Fan of Blades
+            availableIndices: new[] { 0,1,2,3,4,5,6,7,29,30,31,32,33,50,51,52 },
             defaultEquipped:  new[] { 33,32,31,29 });        // Fan of Blades, Dark Mark, Dark Harvest, Shadow Veil
 
         AssetDatabase.SaveAssets();

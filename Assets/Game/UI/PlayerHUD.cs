@@ -431,13 +431,13 @@ public class PlayerHUD : MonoBehaviour
             {
                 int vi = _caster.ActiveVariantIndex;
                 vi = Mathf.Clamp(vi, 0, heldAbility.variants.Length - 1);
-                string vName = heldAbility.variants[vi].variantName;
+                string vName = _caster.GetVariantDisplayName(heldAbility, vi);
                 if (_slotName[held] != null && _slotName[held].text != vName)
                     _slotName[held].text = vName;
 
                 if (_slotIcon[held] != null)
                 {
-                    _slotIcon[held].color = heldAbility.variants[vi].indicatorTint;
+                    _slotIcon[held].color = _caster.GetVariantTint(heldAbility, vi);
                 }
             }
         }
@@ -569,7 +569,7 @@ public class PlayerHUD : MonoBehaviour
 
         SetCastBarProgress(progress);
         _castBarFill.color = Color.Lerp(tint, Color.white, 0.16f);
-        _castBarName.text = _caster.CommittedCastName.ToUpperInvariant();
+        _castBarName.text = _caster.CommittedCastDisplayName.ToUpperInvariant();
         _castBarTime.text = $"{remaining:0.0}s";
     }
 
@@ -675,7 +675,8 @@ public class PlayerHUD : MonoBehaviour
         for (int i = _spellbookGridParent.childCount - 1; i >= 0; i--)
             Destroy(_spellbookGridParent.GetChild(i).gameObject);
 
-        AbilityDef[] pool = (_caster != null && _caster.spellbook != null && _caster.spellbook.Length > 0)
+        bool usingSpellbook = _caster != null && _caster.spellbook != null && _caster.spellbook.Length > 0;
+        AbilityDef[] pool = usingSpellbook
             ? _caster.spellbook
             : (_caster != null && _caster.abilities != null ? _caster.abilities : null);
 
@@ -684,6 +685,10 @@ public class PlayerHUD : MonoBehaviour
         for (int i = 0; i < pool.Length; i++)
         {
             if (pool[i] == null) continue;
+            if (usingSpellbook && pool[i].variantOnly)
+                continue;
+            if (usingSpellbook && _caster.classPool != null && !_caster.IsAllowedByClass(i))
+                continue;
             int idx = i;
             BuildSpellCard(_spellbookGridParent, pool[i], idx);
         }
@@ -691,6 +696,8 @@ public class PlayerHUD : MonoBehaviour
 
     void BuildSpellCard(Transform parent, AbilityDef ab, int idx)
     {
+        bool hasVariants = HasVariants(ab);
+
         var card = new GameObject("Card_" + idx); card.transform.SetParent(parent, false);
         var cardRt = card.AddComponent<RectTransform>();
 
@@ -715,7 +722,7 @@ public class PlayerHUD : MonoBehaviour
         iconImg.rectTransform.anchorMax = new Vector2(0.32f, 0.95f);
         iconImg.rectTransform.offsetMin = iconImg.rectTransform.offsetMax = Vector2.zero;
 
-        // Name — auto-sizes down from 13pt if text is long
+        // Name - auto-sizes down from 13pt if text is long
         var name = Lbl(cardRt, "Name", ab.abilityName.ToUpper(), 13f);
         name.fontStyle          = FontStyles.Bold;
         name.color              = Color.white;
@@ -734,7 +741,8 @@ public class PlayerHUD : MonoBehaviour
                         : ab.spawnTurret                     ? "DEPLOY"
                         : ab.range <= 0f                     ? "SELF"
                         :                                      "AoE";
-        var cat = Lbl(cardRt, "Cat", $"{delivery}  ·  {ab.category.ToString().ToUpper()}", 10f);
+        string variantBadge = hasVariants ? $"  |  {CountValidVariants(ab)} ZONES" : "";
+        var cat = Lbl(cardRt, "Cat", $"{delivery}  |  {ab.category.ToString().ToUpper()}{variantBadge}", 10f);
         cat.color     = CategoryTint(ab.category);
         cat.fontStyle = FontStyles.Bold;
         cat.rectTransform.anchorMin = new Vector2(0.35f, 0.44f);
@@ -744,29 +752,39 @@ public class PlayerHUD : MonoBehaviour
 
         // Readable stat lines (one fact per line, colour-coded)
         var sb = new System.Text.StringBuilder();
-        if (ab.chargeable && ab.maxChargeDamage > ab.damage)
-            sb.Append($"<color=#ff6b4a>Damage</color> {ab.damage:0}–{ab.maxChargeDamage:0}  <i><color=#94a3b8>hold to charge</color></i>\n");
-        else if (ab.damage > 0f)
-            sb.Append($"<color=#ff6b4a>Damage</color> {ab.damage:0}\n");
-        if (ab.healAmount > 0f)
-            sb.Append($"<color=#39e67a>Heal</color> +{ab.healAmount:0}\n");
-        if (ab.shieldAbsorb > 0f)
-            sb.Append($"<color=#5aa0ff>Shield</color> {ab.shieldAbsorb:0}" + (ab.shieldDuration > 0f ? $" · {ab.shieldDuration:0.#}s\n" : "\n"));
+        if (hasVariants)
+        {
+            AppendVariantStats(sb, ab, _caster);
+        }
+        else
+        {
+            if (ab.chargeable && ab.maxChargeDamage > ab.damage)
+                sb.Append($"<color=#ff6b4a>Damage</color> {ab.damage:0}-{ab.maxChargeDamage:0}  <i><color=#94a3b8>hold to charge</color></i>\n");
+            else if (ab.damage > 0f)
+                sb.Append($"<color=#ff6b4a>Damage</color> {ab.damage:0}\n");
+            if (ab.healAmount > 0f)
+                sb.Append($"<color=#39e67a>Heal</color> +{ab.healAmount:0}\n");
+            if (ab.shieldAbsorb > 0f)
+                sb.Append($"<color=#5aa0ff>Shield</color> {ab.shieldAbsorb:0}" + (ab.shieldDuration > 0f ? $" | {ab.shieldDuration:0.#}s\n" : "\n"));
+        }
         sb.Append(ab.range > 0f
             ? $"<color=#94a3b8>Range</color> {ab.range:0.#}m"
             : "<color=#94a3b8>Self-cast</color>");
 
-        var desc = Lbl(cardRt, "Desc", sb.ToString(), 10.5f);
+        var desc = Lbl(cardRt, "Desc", sb.ToString(), hasVariants ? 9.4f : 10.5f);
         desc.color             = new Color(0.88f, 0.88f, 0.92f, 1f);
         desc.richText          = true;
+        desc.enableAutoSizing  = hasVariants;
+        desc.fontSizeMin       = 7.5f;
+        desc.fontSizeMax       = hasVariants ? 9.4f : 10.5f;
         desc.textWrappingMode  = TextWrappingModes.Normal;
-        desc.lineSpacing       = 6f;
+        desc.lineSpacing       = hasVariants ? 2f : 6f;
         desc.rectTransform.anchorMin = new Vector2(0.06f, 0.05f);
         desc.rectTransform.anchorMax = new Vector2(0.97f, 0.42f);
         desc.rectTransform.offsetMin = desc.rectTransform.offsetMax = Vector2.zero;
         desc.alignment = TextAlignmentOptions.TopLeft;
 
-        // Cooldown pill — top-right, unmistakable
+        // Cooldown pill - top-right, unmistakable
         var cdPill = Img(cardRt, "CdPill", ab.cooldown > 0f
             ? new Color(0.14f, 0.11f, 0.03f, 0.95f)
             : new Color(0.05f, 0.14f, 0.07f, 0.95f));
@@ -780,6 +798,143 @@ public class PlayerHUD : MonoBehaviour
         cdLabel.fontStyle = FontStyles.Bold;
         Stretch(cdLabel.rectTransform);
         cdLabel.alignment = TextAlignmentOptions.Center;
+    }
+
+    static bool HasVariants(AbilityDef ab)
+    {
+        return ab != null && ab.variants != null && ab.variants.Length > 0;
+    }
+
+    static int CountValidVariants(AbilityDef ab)
+    {
+        if (!HasVariants(ab)) return 0;
+
+        int count = 0;
+        for (int i = 0; i < ab.variants.Length; i++)
+            if (ab.variants[i] != null) count++;
+
+        return Mathf.Max(count, ab.variants.Length);
+    }
+
+    static string BuildVariantNameList(AbilityDef ab, AbilityCaster caster = null)
+    {
+        if (!HasVariants(ab)) return "";
+
+        var names = new System.Text.StringBuilder();
+        int count = 0;
+        for (int i = 0; i < ab.variants.Length; i++)
+        {
+            AbilityVariant variant = ab.variants[i];
+            if (variant == null) continue;
+
+            if (count > 0) names.Append(" / ");
+            string variantName = caster != null ? caster.GetVariantDisplayName(ab, i) : variant.spellbookAbilityName;
+            names.Append(string.IsNullOrEmpty(variantName) ? $"Zone {i + 1}" : variantName);
+            count++;
+        }
+
+        string text = names.ToString();
+        return text.Length > 48 ? text.Substring(0, 45) + "..." : text;
+    }
+
+    static void AppendVariantStats(System.Text.StringBuilder sb, AbilityDef ab, AbilityCaster caster = null)
+    {
+        sb.Append($"<color=#f6c453>Variants</color> {BuildVariantNameList(ab, caster)}\n");
+
+        bool hasDamage = false;
+        bool hasHeal = false;
+        bool hasHot = false;
+        bool hasShield = false;
+        bool hasStatus = false;
+        float minDamage = float.MaxValue;
+        float maxDamage = 0f;
+        float maxHeal = 0f;
+        float maxHot = 0f;
+        float maxShield = 0f;
+
+        for (int i = 0; i < ab.variants.Length; i++)
+        {
+            AbilityVariant variant = ab.variants[i];
+            if (variant == null) continue;
+            AbilityDef payload = caster != null ? caster.GetVariantPayload(ab, i) : null;
+            if (payload == null) continue;
+
+            float damage = payload.damage;
+            float heal = payload.healAmount;
+            float hotTickAmount = payload.hotTickAmount;
+            int hotTicks = payload.hotTicks;
+            float shield = payload.shieldAbsorb;
+            float statusDuration = payload.statusDuration;
+
+            if (damage > 0f)
+            {
+                hasDamage = true;
+                minDamage = Mathf.Min(minDamage, damage);
+                maxDamage = Mathf.Max(maxDamage, damage);
+            }
+
+            if (heal > 0f)
+            {
+                hasHeal = true;
+                maxHeal = Mathf.Max(maxHeal, heal);
+            }
+
+            if (hotTickAmount > 0f && hotTicks > 0)
+            {
+                hasHot = true;
+                maxHot = Mathf.Max(maxHot, hotTickAmount * hotTicks);
+            }
+
+            if (shield > 0f)
+            {
+                hasShield = true;
+                maxShield = Mathf.Max(maxShield, shield);
+            }
+
+            if (statusDuration > 0f)
+                hasStatus = true;
+        }
+
+        bool wrote = false;
+        if (hasDamage)
+        {
+            sb.Append($"<color=#ff6b4a>Damage</color> {FormatRange(minDamage, maxDamage)}");
+            wrote = true;
+        }
+        if (hasHeal)
+        {
+            if (wrote) sb.Append("  ");
+            sb.Append($"<color=#39e67a>Heal</color> +{maxHeal:0}");
+            wrote = true;
+        }
+        if (hasHot)
+        {
+            if (wrote) sb.Append("  ");
+            sb.Append($"<color=#39e67a>HoT</color> +{maxHot:0}");
+            wrote = true;
+        }
+        if (hasShield)
+        {
+            if (wrote) sb.Append("  ");
+            sb.Append($"<color=#5aa0ff>Shield</color> {maxShield:0}");
+            wrote = true;
+        }
+        if (hasStatus)
+        {
+            if (wrote) sb.Append("  ");
+            sb.Append("<color=#f6c453>Status</color>");
+            wrote = true;
+        }
+        if (wrote)
+            sb.Append("\n");
+    }
+
+    static string FormatRange(float min, float max)
+    {
+        if (Mathf.Abs(max - min) < 0.05f)
+            return max.ToString("0");
+
+        return $"{min:0}-{max:0}";
     }
 
     int _pendingSpellIdx = -1;
