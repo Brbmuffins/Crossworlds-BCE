@@ -247,7 +247,6 @@ public class AbilityCaster : NetworkBehaviour
     };
     static readonly string[] WardenDefaultAbilityNames = { "Runic Sentinel", "Runic Snare", "Battle Hymn", "Mend" };
     static readonly string[] IroncladDefaultAbilityNames = { "Arcane Ward", "Shieldwall Charge", "Stalwart Stance", "Iron Rampart" };
-    static readonly string[] ArcanistDefaultAbilityNames = { "Conflagration Cone", "Ember Beam", "Void Maw", "Collapsing Void" };
     static readonly string[] ClericDefaultAbilityNames = { "Healing Cone", "Mending Beam", "Sacred Aegis", "Temporal Grace" };
     static readonly string[] ShadowbladeDefaultAbilityNames = { "Fan of Blades", "Dark Mark", "Dark Harvest", "Shadow Veil" };
 
@@ -876,9 +875,6 @@ public class AbilityCaster : NetworkBehaviour
         int idx = FindSpellbookIndexByName(abilityName);
         if (idx >= 0) return idx;
 
-        if (classPool != null && classPool.className == "Arcanist" && abilityName == "Collapsing Void")
-            return FindSpellbookIndexByName("Meteor Shower");
-
         return -1;
     }
 
@@ -956,9 +952,6 @@ public class AbilityCaster : NetworkBehaviour
                 return true;
             case "Ironclad":
                 abilityNames = IroncladDefaultAbilityNames;
-                return true;
-            case "Arcanist":
-                abilityNames = ArcanistDefaultAbilityNames;
                 return true;
             case "Cleric":
                 abilityNames = ClericDefaultAbilityNames;
@@ -3281,6 +3274,24 @@ public class AbilityCaster : NetworkBehaviour
         return root != null && root.CompareTag(targetTag);
     }
 
+    static bool TryGetMatchingHealth(Collider hit, string targetTag, out Health health)
+    {
+        health = hit != null ? hit.GetComponentInParent<Health>() : null;
+        return health != null && HitMatchesTargetTag(hit, health, targetTag);
+    }
+
+    static bool AddMatchingHit(Collider hit, string targetTag, System.Collections.Generic.List<Collider> hits, System.Collections.Generic.HashSet<Health> matched)
+    {
+        if (!TryGetMatchingHealth(hit, targetTag, out Health health))
+            return false;
+
+        if (matched != null && !matched.Add(health))
+            return false;
+
+        hits?.Add(hit);
+        return true;
+    }
+
     void CastOverdrive(AbilityDef ability)
     {
         float duration  = ability.activeDuration > 0f ? ability.activeDuration : 8f;
@@ -3450,17 +3461,18 @@ public class AbilityCaster : NetworkBehaviour
 
         for (int i = 0; i < maxChain && nearest != null; i++)
         {
-            Health h = nearest.GetComponent<Health>();
+            Health h = nearest.GetComponentInParent<Health>();
             h?.TakeDamage(Mathf.Max(1f, dmg), gameObject);
 
-            EmitHitVFX(ability.hitVFX, nearest.transform.position + Vector3.up * 0.5f);
+            Vector3 nearestPos = h != null ? h.transform.position : nearest.transform.position;
+            EmitHitVFX(ability.hitVFX, nearestPos + Vector3.up * 0.5f);
 
             // Draw lightning between jumps (quick LineRenderer)
             Vector3 from = last != null ? last.position + Vector3.up * 0.8f
                                         : startPoint    + Vector3.up * 0.8f;
-            DrawLightningLine(from, nearest.transform.position + Vector3.up * 0.8f, 0.15f);
+            DrawLightningLine(from, nearestPos + Vector3.up * 0.8f, 0.15f);
 
-            last  = nearest.transform;
+            last  = h != null ? h.transform : nearest.transform;
             dmg   = Mathf.Max(1f, dmg - falloff);
             nearest = FindNearestInRadius(last.position, jumpRadius, tag, last);
         }
@@ -3473,9 +3485,9 @@ public class AbilityCaster : NetworkBehaviour
         Collider found = null;
         foreach (var col in hits)
         {
-            if (!col.CompareTag(tag)) continue;
-            if (exclude != null && col.transform == exclude) continue;
-            float d = Vector3.Distance(center, col.transform.position);
+            if (!TryGetMatchingHealth(col, tag, out Health health)) continue;
+            if (exclude != null && health.transform == exclude) continue;
+            float d = Vector3.Distance(center, health.transform.position);
             if (d < best) { best = d; found = col; }
         }
         return found;
@@ -3569,12 +3581,11 @@ public class AbilityCaster : NetworkBehaviour
         Collider[] enemies = Physics.OverlapSphere(castPoint, 2f);
         foreach (var col in enemies)
         {
-            if (!col.CompareTag("Enemy")) continue;
-            Health h = col.GetComponent<Health>();
+            if (!TryGetMatchingHealth(col, "Enemy", out Health h)) continue;
             if (h == null || !h.isRobotic) continue;
             float dmg = (ability.damage > 0f ? ability.damage : 60f) * dmgMult;
             h.TakeDamage(dmg, gameObject);
-            EmitHitVFX(ability.hitVFX, col.transform.position + Vector3.up);
+            EmitHitVFX(ability.hitVFX, h.transform.position + Vector3.up);
         }
     }
 
@@ -3620,17 +3631,18 @@ public class AbilityCaster : NetworkBehaviour
         float radius  = ability.indicatorSize > 0f ? ability.indicatorSize / 2f : 4f;
 
         Collider[] hits = Physics.OverlapSphere(castPoint, radius);
+        var damaged = new System.Collections.Generic.HashSet<Health>();
         foreach (var col in hits)
         {
-            if (!col.CompareTag(ability.targetTag)) continue;
-            var sem = col.GetComponent<StatusEffectManager>();
+            if (!TryGetMatchingHealth(col, ability.targetTag, out Health health) || !damaged.Add(health)) continue;
+            var sem = col.GetComponent<StatusEffectManager>() ?? health.GetComponent<StatusEffectManager>();
             if (sem == null) continue;
             int stacks = sem.ConsumeDebuffStacks();
             if (stacks > 0)
             {
                 float dmg = baseDmg * stacks * dmgMult;
-                col.GetComponent<Health>()?.TakeDamage(dmg, gameObject);
-                EmitHitVFX(ability.hitVFX, col.transform.position + Vector3.up * 0.5f);
+                health.TakeDamage(dmg, gameObject);
+                EmitHitVFX(ability.hitVFX, health.transform.position + Vector3.up * 0.5f);
             }
         }
     }
@@ -3666,17 +3678,15 @@ public class AbilityCaster : NetworkBehaviour
     {
         Vector3 center = indicator != null ? indicator.transform.position : transform.position;
         Collider[] hits = Physics.OverlapSphere(center, ability.indicatorSize / 2f);
+        var damaged = new System.Collections.Generic.HashSet<Health>();
 
         foreach (Collider hit in hits)
         {
-            if (!hit.CompareTag(ability.targetTag)) continue;
+            if (!TryGetMatchingHealth(hit, ability.targetTag, out Health health) || !damaged.Add(health))
+                continue;
 
-            Health health = hit.GetComponent<Health>();
-            if (health != null)
-            {
-                health.TakeDamage(ability.damage * damageMultiplier, gameObject);
-                EmitHitVFX(ability.hitVFX, hit.transform.position + Vector3.up * 0.5f);
-            }
+            health.TakeDamage(ability.damage * damageMultiplier, gameObject);
+            EmitHitVFX(ability.hitVFX, health.transform.position + Vector3.up * 0.5f);
         }
     }
 
@@ -3711,28 +3721,28 @@ public class AbilityCaster : NetworkBehaviour
             rotation
         );
 
+        var damaged = new System.Collections.Generic.HashSet<Health>();
         foreach (Collider hit in hits)
         {
-            if (!hit.CompareTag(ability.targetTag)) continue;
+            if (!TryGetMatchingHealth(hit, ability.targetTag, out Health health) || !damaged.Add(health))
+                continue;
 
-            Health health = hit.GetComponent<Health>();
-            if (health != null)
-            {
-                health.TakeDamage(damage, gameObject);
-                EmitHitVFX(ability.hitVFX, hit.transform.position + Vector3.up * 0.5f);
-            }
+            health.TakeDamage(damage, gameObject);
+            EmitHitVFX(ability.hitVFX, health.transform.position + Vector3.up * 0.5f);
         }
     }
 
     void ApplyConeDamage(AbilityDef ability, GameObject indicator, float damage, float coneRange, Vector3 castOrigin)
     {
         Collider[] hits = Physics.OverlapSphere(castOrigin, coneRange);
+        var damaged = new System.Collections.Generic.HashSet<Health>();
 
         foreach (Collider hit in hits)
         {
-            if (!hit.CompareTag(ability.targetTag)) continue;
+            if (!TryGetMatchingHealth(hit, ability.targetTag, out Health health) || damaged.Contains(health))
+                continue;
 
-            Vector3 toHit = hit.transform.position - castOrigin;
+            Vector3 toHit = health.transform.position - castOrigin;
             toHit.y = 0;
 
             if (toHit.sqrMagnitude < 0.0001f) continue;
@@ -3740,12 +3750,9 @@ public class AbilityCaster : NetworkBehaviour
             float angle = Vector3.Angle(indicator.transform.forward, toHit);
             if (angle > ability.coneAngle / 2f) continue;
 
-            Health health = hit.GetComponent<Health>();
-            if (health != null)
-            {
-                health.TakeDamage(damage, gameObject);
-                EmitHitVFX(ability.hitVFX, hit.transform.position + Vector3.up * 0.5f);
-            }
+            damaged.Add(health);
+            health.TakeDamage(damage, gameObject);
+            EmitHitVFX(ability.hitVFX, health.transform.position + Vector3.up * 0.5f);
         }
     }
 
@@ -3754,6 +3761,7 @@ public class AbilityCaster : NetworkBehaviour
         if (indicator == null) return;
 
         System.Collections.Generic.List<Collider> hitColliders = new System.Collections.Generic.List<Collider>();
+        var matched = new System.Collections.Generic.HashSet<Health>();
         float maxRange = ability.range;
 
         if (ability.shape == AbilityShape.Cone)
@@ -3762,13 +3770,17 @@ public class AbilityCaster : NetworkBehaviour
             Collider[] sphereHits = Physics.OverlapSphere(castOrigin, maxRange);
             foreach (var hit in sphereHits)
             {
-                if (!hit.CompareTag(ability.targetTag)) continue;
-                Vector3 toHit = hit.transform.position - castOrigin;
+                if (!TryGetMatchingHealth(hit, ability.targetTag, out Health health) || matched.Contains(health))
+                    continue;
+
+                Vector3 toHit = health.transform.position - castOrigin;
                 toHit.y = 0;
                 if (toHit.sqrMagnitude < 0.0001f) continue;
 
                 float angle = Vector3.Angle(indicator.transform.forward, toHit);
                 if (angle > ability.coneAngle / 2f) continue;
+
+                matched.Add(health);
                 hitColliders.Add(hit);
             }
         }
@@ -3802,17 +3814,18 @@ public class AbilityCaster : NetworkBehaviour
             Collider[] boxHits = Physics.OverlapBox(center, halfExtents, rotation);
             foreach (var hit in boxHits)
             {
-                if (!hit.CompareTag(ability.targetTag)) continue;
-                hitColliders.Add(hit);
+                AddMatchingHit(hit, ability.targetTag, hitColliders, matched);
             }
         }
 
         foreach (Collider hit in hitColliders)
         {
-            Health targetHealth = hit.GetComponent<Health>();
+            Health targetHealth = hit.GetComponentInParent<Health>();
             if (targetHealth == null) continue;
 
-            Vector3 toTarget = hit.transform.position - castOrigin;
+            Vector3 hitPos = targetHealth.transform.position + Vector3.up * 0.5f;
+            Vector3 floatingTextPos = targetHealth.transform.position + Vector3.up * 1.5f;
+            Vector3 toTarget = targetHealth.transform.position - castOrigin;
             toTarget.y = 0;
 
             float distance = 0f;
@@ -3834,8 +3847,8 @@ public class AbilityCaster : NetworkBehaviour
                     // Zone 1: HPS / Instant Burst
                     float healVal = (ability.healAmount > 0f ? ability.healAmount : 25f) * 1.5f;
                     targetHealth.Heal(healVal);
-                    EmitHitVFX(ability.hitVFX, hit.transform.position + Vector3.up * 0.5f);
-                    FloatingDamageText.Spawn(hit.transform.position + Vector3.up * 1.5f, healVal, FloatingDamageText.DamageType.HealCrit);
+                    EmitHitVFX(ability.hitVFX, hitPos);
+                    FloatingDamageText.Spawn(floatingTextPos, healVal, FloatingDamageText.DamageType.HealCrit);
                 }
                 else if (fraction <= 0.66f)
                 {
@@ -3846,8 +3859,8 @@ public class AbilityCaster : NetworkBehaviour
                     float tickAmount = (ability.healAmount > 0f ? ability.healAmount : 25f) * 0.25f;
                     StartCoroutine(ApplyHealOverTime(targetHealth, tickAmount, 5, 1f));
 
-                    EmitHitVFX(ability.hitVFX, hit.transform.position + Vector3.up * 0.5f);
-                    FloatingDamageText.Spawn(hit.transform.position + Vector3.up * 1.5f, instantHeal, FloatingDamageText.DamageType.Heal);
+                    EmitHitVFX(ability.hitVFX, hitPos);
+                    FloatingDamageText.Spawn(floatingTextPos, instantHeal, FloatingDamageText.DamageType.Heal);
                 }
                 else
                 {
@@ -3855,8 +3868,8 @@ public class AbilityCaster : NetworkBehaviour
                     float shieldAmount = ability.shieldAbsorb > 0f ? ability.shieldAbsorb : 30f;
                     targetHealth.ApplyShield(shieldAmount);
 
-                    EmitHitVFX(ability.hitVFX, hit.transform.position + Vector3.up * 0.5f);
-                    FloatingDamageText.Spawn(hit.transform.position + Vector3.up * 1.5f, shieldAmount, FloatingDamageText.DamageType.Shield);
+                    EmitHitVFX(ability.hitVFX, hitPos);
+                    FloatingDamageText.Spawn(floatingTextPos, shieldAmount, FloatingDamageText.DamageType.Shield);
                 }
             }
             else
@@ -3867,13 +3880,13 @@ public class AbilityCaster : NetworkBehaviour
                     float dmgVal = (ability.damage > 0f ? ability.damage : 20f) * 1.6f * damageMultiplier;
                     targetHealth.TakeDamage(dmgVal, gameObject);
 
-                    StatusEffectManager sem = hit.GetComponent<StatusEffectManager>();
+                    StatusEffectManager sem = hit.GetComponent<StatusEffectManager>() ?? targetHealth.GetComponent<StatusEffectManager>();
                     if (sem != null)
                     {
                         sem.AddEffect(new StatusEffect(StatusEffectType.Stagger, 0.8f, 0f, gameObject));
                     }
 
-                    EmitHitVFX(ability.hitVFX, hit.transform.position + Vector3.up * 0.5f);
+                    EmitHitVFX(ability.hitVFX, hitPos);
                 }
                 else if (fraction <= 0.66f)
                 {
@@ -3881,14 +3894,14 @@ public class AbilityCaster : NetworkBehaviour
                     float instantDmg = (ability.damage > 0f ? ability.damage : 20f) * 0.6f * damageMultiplier;
                     targetHealth.TakeDamage(instantDmg, gameObject);
 
-                    StatusEffectManager sem = hit.GetComponent<StatusEffectManager>();
+                    StatusEffectManager sem = hit.GetComponent<StatusEffectManager>() ?? targetHealth.GetComponent<StatusEffectManager>();
                     if (sem != null)
                     {
                         float dps = (ability.damage > 0f ? ability.damage : 20f) * 0.3f;
                         sem.AddEffect(new StatusEffect(StatusEffectType.Cursed, 6f, dps, gameObject));
                     }
 
-                    EmitHitVFX(ability.hitVFX, hit.transform.position + Vector3.up * 0.5f);
+                    EmitHitVFX(ability.hitVFX, hitPos);
                 }
                 else
                 {
@@ -3896,14 +3909,14 @@ public class AbilityCaster : NetworkBehaviour
                     float dmgVal = (ability.damage > 0f ? ability.damage : 20f) * 0.8f * damageMultiplier;
                     targetHealth.TakeDamage(dmgVal, gameObject);
 
-                    StatusEffectManager sem = hit.GetComponent<StatusEffectManager>();
+                    StatusEffectManager sem = hit.GetComponent<StatusEffectManager>() ?? targetHealth.GetComponent<StatusEffectManager>();
                     if (sem != null)
                     {
                         sem.AddEffect(new StatusEffect(StatusEffectType.Slow, 4f, 0.4f, gameObject));
                         sem.AddEffect(new StatusEffect(StatusEffectType.Weakened, 4f, 0.25f, gameObject));
                     }
 
-                    EmitHitVFX(ability.hitVFX, hit.transform.position + Vector3.up * 0.5f);
+                    EmitHitVFX(ability.hitVFX, hitPos);
                 }
             }
         }
@@ -4543,7 +4556,7 @@ public class AbilityCaster : NetworkBehaviour
             || !string.IsNullOrEmpty(variant.targetTag)
             || variant.castVFX != null
             || variant.hitVFX != null
-            || !IsDefaultLegacyVariantTint(variant.indicatorTint);
+            || (variant.indicatorTint.a > 0f && !IsDefaultLegacyVariantTint(variant.indicatorTint));
     }
 
     static bool IsDefaultLegacyVariantTint(Color tint)
@@ -4628,7 +4641,8 @@ public class AbilityCaster : NetworkBehaviour
             if (ability == null) continue;
             // One serialized zone is a stale/invalid setup: variant spells need
             // at least two zones to create a real aiming decision.
-            if (ability.variants != null && ability.variants.Length > 1) continue;
+            if (ability.variants != null && ability.variants.Length > 1 && !HasBrokenMigratedVariantPayloads(ability))
+                continue;
 
             switch (ability.abilityName)
             {
@@ -5744,6 +5758,37 @@ public class AbilityCaster : NetworkBehaviour
         StartPulseDamageIfNeeded(effectAbility, castPoint, damageMultiplier);
     }
 
+    bool HasBrokenMigratedVariantPayloads(AbilityDef ability)
+    {
+        if (ability?.variants == null || ability.variants.Length <= 1) return false;
+
+        for (int i = 0; i < ability.variants.Length; i++)
+        {
+            AbilityVariant variant = ability.variants[i];
+            if (variant == null) continue;
+            if (!HasVariantSpellbookReference(variant)) return false;
+
+            AbilityDef payload = ResolveVariantSpellbookAbility(ability, variant);
+            if (payload != null && payload.variantOnly && !HasMeaningfulPayload(payload))
+                return true;
+        }
+
+        return false;
+    }
+
+    static bool HasMeaningfulPayload(AbilityDef ability)
+    {
+        if (ability == null) return false;
+        return HasDirectPayload(ability)
+            || ability.spawnTurret
+            || ability.deployablePrefab != null
+            || ability.usePulseDamage
+            || ability.chainTargets > 0
+            || ability.pullRadius > 0f
+            || ability.pullDuration > 0f
+            || ability.activeDuration > 0f;
+    }
+
     static bool HasDirectPayload(AbilityDef ability)
     {
         if (ability == null) return false;
@@ -5758,18 +5803,22 @@ public class AbilityCaster : NetworkBehaviour
     {
         if (shapeAbility == null || indicator == null || hits == null) return;
 
-        bool acceptsAnyTag = string.IsNullOrEmpty(targetTag);
+        var matched = new System.Collections.Generic.HashSet<Health>();
         if (shapeAbility.shape == AbilityShape.Cone)
         {
             float maxRange = shapeAbility.range * indicator.transform.localScale.x;
             foreach (Collider c in Physics.OverlapSphere(castOrigin, maxRange))
             {
-                if (!acceptsAnyTag && !c.CompareTag(targetTag)) continue;
-                Vector3 toHit = c.transform.position - castOrigin;
+                if (!TryGetMatchingHealth(c, targetTag, out Health health) || matched.Contains(health))
+                    continue;
+
+                Vector3 toHit = health.transform.position - castOrigin;
                 toHit.y = 0f;
                 if (toHit.sqrMagnitude > 0.0001f &&
                     Vector3.Angle(indicator.transform.forward, toHit) > shapeAbility.coneAngle * 0.5f)
                     continue;
+
+                matched.Add(health);
                 hits.Add(c);
             }
         }
@@ -5779,7 +5828,7 @@ public class AbilityCaster : NetworkBehaviour
             if (rectData != null && rectData.valid)
             {
                 foreach (Collider c in Physics.OverlapBox(rectData.damageCenter, rectData.damageHalfExtents, rectData.damageRotation))
-                    if (acceptsAnyTag || c.CompareTag(targetTag)) hits.Add(c);
+                    AddMatchingHit(c, targetTag, hits, matched);
             }
             else
             {
@@ -5790,14 +5839,14 @@ public class AbilityCaster : NetworkBehaviour
                     rectangleLength * 0.5f);
 
                 foreach (Collider c in Physics.OverlapBox(indicator.transform.position, halfExtents, indicator.transform.rotation))
-                    if (acceptsAnyTag || c.CompareTag(targetTag)) hits.Add(c);
+                    AddMatchingHit(c, targetTag, hits, matched);
             }
         }
         else
         {
             float radius = Mathf.Max(0f, shapeAbility.indicatorSize * 0.5f);
             foreach (Collider c in Physics.OverlapSphere(indicator.transform.position, radius))
-                if (acceptsAnyTag || c.CompareTag(targetTag)) hits.Add(c);
+                AddMatchingHit(c, targetTag, hits, matched);
         }
     }
 

@@ -33,7 +33,7 @@ public static class ClassPoolBuilder
 
         CreatePool("Arcanist",
             availableIndices: new[] { 0,1,2,3,4,5,6,7,19,20,21,22,34,37,38,39,40,41,42,43 },
-            defaultEquipped:  new[] { 37,38,20,22 });         // Conflagration Cone, Ember Beam, Void Maw, Collapsing Void
+            defaultEquipped:  new[] { 0,1,2,3 });             // Arcanist uses the first four spellbook entries by default
 
         CreatePool("Cleric",
             availableIndices: new[] { 0,1,2,3,4,5,6,7,23,24,25,26,27,28,35,36,53,54,55 },
