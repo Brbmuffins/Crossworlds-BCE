@@ -1,43 +1,37 @@
 using UnityEngine;
 
-// Central hub for gear-driven character power.
-// DESIGN PILLAR: no leveling — every bonus here comes from equipped gear and
-// the attunements socketed into it.
+// Central hub for character power modifiers.
+// The old local Equipment/Inventory path has been retired; live bonuses now come
+// from mastery and temporary effects until server-backed gear stats are wired in.
 //
-// Reads Equipment, sums every StatModifier, and:
-//   • pushes Max Health + Damage Reduction into Health (which owns those)
-//   • exposes DamageMultiplier / CooldownReduction / MoveSpeedMultiplier /
-//     HealMultiplier as read-only properties for AbilityCaster, PlayerMovement,
-//     and healing code to consume.
-//
-// Call Recalculate() whenever equipped gear or its attunements change
-// (Equipment does this automatically on equip/unequip).
+// Pushes Max Health + Damage Reduction into Health, and exposes
+// DamageMultiplier / CooldownReduction / MoveSpeedMultiplier / HealMultiplier
+// for AbilityCaster, PlayerMovement, and healing code to consume.
 [RequireComponent(typeof(Health))]
 public class CharacterStats : MonoBehaviour
 {
-    private Health    _health;
-    private Equipment _equipment;
+    private Health _health;
 
-    // ── Aggregated results (recomputed on every gear change) ──────────
-    public float MaxHealthBonus      { get; private set; }        // flat HP added
-    public float DamageMultiplier    { get; private set; } = 1f;  // ×outgoing damage
-    public float DamageReduction     { get; private set; }        // 0..0.8 fraction
-    public float MoveSpeedMultiplier { get; private set; } = 1f;  // ×movement speed
-    public float CooldownReduction   { get; private set; }        // 0..0.6 fraction
-    public float HealMultiplier      { get; private set; } = 1f;  // ×healing dealt
+    public float MaxHealthBonus      { get; private set; }
+    public float DamageMultiplier    { get; private set; } = 1f;
+    public float DamageReduction     { get; private set; }
+    public float MoveSpeedMultiplier { get; private set; } = 1f;
+    public float CooldownReduction   { get; private set; }
+    public float HealMultiplier      { get; private set; } = 1f;
 
-    // ── Mastery overlay (driven by HeroMasteryManager) ───────────
-    // Percentages, additive on top of gear values. Updated via SetMasteryBonuses().
-    private float _masteryDmgPct   = 0f;   // e.g. 0.08 = +8% damage
-    private float _masteryHealPct  = 0f;
-    private float _masteryCdrPct   = 0f;
-    private float _masteryMaxHpPct = 0f;   // fraction of BaseMaxHealth added as flat HP
+    // Mastery overlay, driven by HeroMasteryManager.
+    private float _masteryDmgPct;
+    private float _masteryHealPct;
+    private float _masteryCdrPct;
+    private float _masteryMaxHpPct;
 
-    /// <summary>
-    /// Called by HeroMasteryManager when mastery data loads or levels change.
-    /// All params are additive percentages (0.08 = 8%).
-    /// maxHpPct is applied as a fraction of Health.BaseMaxHealth.
-    /// </summary>
+    // Temporary channels, driven by active effects.
+    private float _temporaryCDR;
+    private float _temporaryDmgPct;
+
+    public float EffectiveCooldownReduction =>
+        Mathf.Clamp(CooldownReduction + _temporaryCDR, 0f, 0.6f);
+
     public void SetMasteryBonuses(float dmgPct, float healPct, float cdrPct, float maxHpPct)
     {
         _masteryDmgPct   = dmgPct;
@@ -47,22 +41,10 @@ public class CharacterStats : MonoBehaviour
         Recalculate();
     }
 
-    // ── Temporary CDR bonus (Overdrive ability) ────────────────────
-    // Additive on top of gear CDR. Clamped alongside gear CDR to the 0.6 ceiling.
-    // Call AddTemporaryCDR(+0.30f) to apply, AddTemporaryCDR(-0.30f) to remove.
-    private float _temporaryCDR = 0f;
-    public float EffectiveCooldownReduction =>
-        Mathf.Clamp(CooldownReduction + _temporaryCDR, 0f, 0.6f);
-
     public void AddTemporaryCDR(float delta)
     {
         _temporaryCDR = Mathf.Clamp(_temporaryCDR + delta, -0.6f, 0.6f);
     }
-
-    // ── Temporary damage bonus (consumable flasks) ─────────────────
-    // Additive percentage folded into DamageMultiplier on Recalculate.
-    // Call AddTemporaryDamagePct(+0.15f) to apply, AddTemporaryDamagePct(-0.15f) to remove.
-    private float _temporaryDmgPct = 0f;
 
     public void AddTemporaryDamagePct(float delta)
     {
@@ -72,8 +54,7 @@ public class CharacterStats : MonoBehaviour
 
     void Awake()
     {
-        _health    = GetComponent<Health>();
-        _equipment = GetComponent<Equipment>();
+        _health = GetComponent<Health>();
     }
 
     void Start()
@@ -81,47 +62,17 @@ public class CharacterStats : MonoBehaviour
         Recalculate();
     }
 
-    // Re-reads all equipped gear + attunements and re-applies the totals.
     public void Recalculate()
     {
-        float flatHealth = 0f;
-        float pctDamage = 0f, pctDR = 0f, pctSpeed = 0f, pctCdr = 0f, pctHeal = 0f;
-
-        if (_equipment != null)
-        {
-            foreach (var kvp in _equipment.equippedItems)
-            {
-                ItemData item = kvp.Value;
-                if (item == null) continue;
-
-                foreach (var m in item.AllModifiers())
-                {
-                    switch (m.stat)
-                    {
-                        case StatType.MaxHealth:
-                            flatHealth += m.kind == ModifierKind.Percent
-                                ? _health.BaseMaxHealth * m.value
-                                : m.value;
-                            break;
-                        case StatType.Damage:            pctDamage += m.value; break;
-                        case StatType.DamageReduction:   pctDR     += m.value; break;
-                        case StatType.MoveSpeed:         pctSpeed  += m.value; break;
-                        case StatType.CooldownReduction: pctCdr    += m.value; break;
-                        case StatType.HealPower:         pctHeal   += m.value; break;
-                    }
-                }
-            }
-        }
-
         float masteryHpFlat = _health != null ? _health.BaseMaxHealth * _masteryMaxHpPct : 0f;
-        MaxHealthBonus      = flatHealth + masteryHpFlat;
-        DamageMultiplier    = Mathf.Max(0f,   1f + pctDamage + _masteryDmgPct + _temporaryDmgPct);
-        DamageReduction     = Mathf.Clamp(pctDR,  0f, 0.8f);
-        MoveSpeedMultiplier = Mathf.Max(0.1f, 1f + pctSpeed);
-        CooldownReduction   = Mathf.Clamp(pctCdr + _masteryCdrPct, 0f, 0.6f);
-        HealMultiplier      = Mathf.Max(0f,   1f + pctHeal + _masteryHealPct);
 
-        // Hand off the channels Health owns.
+        MaxHealthBonus      = masteryHpFlat;
+        DamageMultiplier    = Mathf.Max(0f, 1f + _masteryDmgPct + _temporaryDmgPct);
+        DamageReduction     = 0f;
+        MoveSpeedMultiplier = 1f;
+        CooldownReduction   = Mathf.Clamp(_masteryCdrPct, 0f, 0.6f);
+        HealMultiplier      = Mathf.Max(0f, 1f + _masteryHealPct);
+
         if (_health != null)
         {
             _health.SetGearMaxHealthBonus(MaxHealthBonus);

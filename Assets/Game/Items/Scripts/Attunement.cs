@@ -2,8 +2,8 @@ using UnityEngine;
 
 // An attunement is a gear UPGRADE socketed into an equippable item.
 // This is the game's progression vector — there is no XP and no levels.
-// Create via: Assets > Create > Inventory > Attunement
-[CreateAssetMenu(fileName = "New Attunement", menuName = "Inventory/Attunement")]
+// Legacy local item socket data. Server-backed inventory does not use this yet.
+[CreateAssetMenu(fileName = "New Attunement", menuName = "Legacy/Inventory/Attunement")]
 public class Attunement : ScriptableObject
 {
     public string itemName = "Attunement";

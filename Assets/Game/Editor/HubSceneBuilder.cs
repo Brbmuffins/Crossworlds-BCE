@@ -150,11 +150,11 @@ public static class HubSceneBuilder
     }
 
     // ─────────────────────────────────────────────────────────────────────────────
-    //  Step 8: Add Forge NPC + Mining Nodes
+    //  Step 8: Add Forge NPC + Mining Stations
     //  Run AFTER BCE/Build Hub Scene. Adds:
     //    • 1 Forge Master NPC (ForgeNPC, opens ForgeCraftingPanel)
-    //    • 3 Copper Ore nodes (ResourceNode, yieldItem=Copper Ore, respawn=60s)
-    //  Mining nodes are scattered at radius 14 from center.
+    //    • 3 Copper Ore gathering stations (server-backed inventory add)
+    //  Mining stations are scattered at radius 14 from center.
     // ─────────────────────────────────────────────────────────────────────────────
     [MenuItem("BCE/Hub Setup/8 - Add Forge and Mining NPCs")]
     static void AddForgeAndMining()
@@ -198,15 +198,13 @@ public static class HubSceneBuilder
 
         Debug.Log("[HubSceneBuilder] ✓ Added Forge Master NPC at (-12, 0, -4).");
 
-        // ── Mining Nodes (3 × Copper Ore) ──────────────────────────────────────
+        // ── Mining Stations (3 × Copper Ore) ───────────────────────────────────
         var minePositions = new Vector3[]
         {
             new Vector3( 14f, 0f,  6f),
             new Vector3( 18f, 0f, -2f),
             new Vector3( 10f, 0f, 10f),
         };
-
-        ItemData copperOre = GetOrCreateCopperOreItem();
 
         for (int i = 0; i < minePositions.Length; i++)
         {
@@ -224,62 +222,28 @@ public static class HubSceneBuilder
             oreMat.color = new Color(0.35f, 0.55f, 0.65f); // copper-tinted stone
             oreMesh.GetComponent<Renderer>().sharedMaterial = oreMat;
 
-            // Collider on parent (ResourceNode looks for GetComponent<Collider>())
+            // Collider on parent for proximity/selection.
             var bc = mineGO.AddComponent<BoxCollider>();
             bc.center = new Vector3(0f, 0.4f, 0f);
             bc.size   = new Vector3(0.9f, 0.7f, 0.9f);
 
-            // ResourceNode script (client-only component — guard against server build target)
+            // Server-backed gathering station.
 #if !UNITY_SERVER
-            var rn = mineGO.AddComponent<ResourceNode>();
-            rn.yieldItem     = copperOre;
-            rn.hitsToDeplete = 3;
-            rn.respawnTime   = 60f;
-            rn.interactRange = 3f;
+            var station = mineGO.AddComponent<AfkGatheringStation>();
+            station.stationName      = "Copper Vein";
+            station.professionId     = 2;
+            station.minLevelRequired = 1;
+            station.itemId           = "ore_copper";
+            station.itemQuantity     = 1;
+            station.tickInterval     = 5f;
+            station.xpPerTick        = 10;
+            station.interactRange    = 3f;
+            station.cancelRadius     = 4f;
 #endif
         }
 
-        Debug.Log("[HubSceneBuilder] ✓ Added 3 Copper Ore nodes. Press Ctrl+S to save scene.");
+        Debug.Log("[HubSceneBuilder] ✓ Added 3 Copper Ore gathering stations. Press Ctrl+S to save scene.");
         EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
-    }
-
-    static ItemData GetOrCreateCopperOreItem()
-    {
-        const string itemDir = "Assets/Game/Data/Items";
-        const string itemPath = itemDir + "/Ore_Copper.asset";
-
-        var existing = AssetDatabase.LoadAssetAtPath<ItemData>(itemPath);
-        if (existing != null)
-            return existing;
-
-        EnsureAssetFolder(itemDir);
-
-        var item = ScriptableObject.CreateInstance<ItemData>();
-        item.itemName = "Copper Ore";
-        item.description = "Raw copper ore gathered from mining nodes.";
-        item.stackable = true;
-        item.maxStackSize = 99;
-        item.itemType = ItemType.Generic;
-        item.rarity = ItemRarity.Common;
-
-        AssetDatabase.CreateAsset(item, itemPath);
-        AssetDatabase.SaveAssets();
-        AssetDatabase.Refresh();
-        return item;
-    }
-
-    static void EnsureAssetFolder(string path)
-    {
-        if (AssetDatabase.IsValidFolder(path))
-            return;
-
-        string parent = System.IO.Path.GetDirectoryName(path)?.Replace('\\', '/');
-        string folder = System.IO.Path.GetFileName(path);
-
-        if (!string.IsNullOrEmpty(parent))
-            EnsureAssetFolder(parent);
-
-        AssetDatabase.CreateFolder(string.IsNullOrEmpty(parent) ? "Assets" : parent, folder);
     }
 
     //  Step 9: Place HangmanNPC (arena entrance challenge NPC)

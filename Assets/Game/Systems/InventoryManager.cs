@@ -100,7 +100,7 @@ public class InventoryManager : MonoBehaviour
 
     /// <summary>
     /// Mark an item equipped/unequipped in local cache and POST to /api/inventory/equip.
-    /// Call after Equipment.EquipItem() / UnequipItem() succeeds.
+    /// Used by server-backed bag/equipment flows.
     /// </summary>
     public void OnItemEquipped(string itemId, bool equipped)
     {

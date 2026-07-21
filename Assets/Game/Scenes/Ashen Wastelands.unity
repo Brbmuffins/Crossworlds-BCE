@@ -1048,6 +1048,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 3023697292944781321, guid: bbae198992dff6240a0d425f3b7b48dd, type: 3}
+      propertyPath: m_ApplyRootMotion
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8385043705182367945, guid: bbae198992dff6240a0d425f3b7b48dd, type: 3}
       propertyPath: m_Name
       value: model_aw_instigator_3D_rigged
@@ -2941,6 +2945,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: model_schmerlin_3D_rigged
       objectReference: {fileID: 0}
+    - target: {fileID: 8573882060933432526, guid: 22e23071002f5c441a7f9fc4cd9f16e2, type: 3}
+      propertyPath: m_ApplyRootMotion
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -4144,6 +4152,10 @@ PrefabInstance:
     - target: {fileID: 4321598387678600048, guid: 89050c116003d8942834b9775465ef59, type: 3}
       propertyPath: m_Name
       value: prefab_devastator_3D_rigged
+      objectReference: {fileID: 0}
+    - target: {fileID: 7373125612756949936, guid: 89050c116003d8942834b9775465ef59, type: 3}
+      propertyPath: m_ApplyRootMotion
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -5887,6 +5899,10 @@ PrefabInstance:
     - target: {fileID: 717008883907886705, guid: 75f3f067cd5d48742a7ac3110acddd5d, type: 3}
       propertyPath: m_Name
       value: prefab_aw_pummeler_3D_rigged
+      objectReference: {fileID: 0}
+    - target: {fileID: 6077800936001863345, guid: 75f3f067cd5d48742a7ac3110acddd5d, type: 3}
+      propertyPath: m_ApplyRootMotion
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -11716,6 +11732,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2079038184193954440, guid: 90c96be108d0af747bd3561427767be7, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6571694338151856503, guid: 90c96be108d0af747bd3561427767be7, type: 3}
+      propertyPath: m_ApplyRootMotion
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7216052742977417957, guid: 90c96be108d0af747bd3561427767be7, type: 3}

@@ -59,7 +59,6 @@ public class AbilityDef
     public float indicatorSize = 1.5f;
     public bool spawnTurret = false;
     public GameObject turretPrefab;
-    public ItemData turretItem;
     public float cooldown = 3f;
     public Sprite icon;
 
@@ -144,7 +143,6 @@ public class AbilityCaster : NetworkBehaviour
     static bool s_loggedRectIndicatorPath;
 
     public Camera cam;
-    public Inventory inventory;
     public CastAnimator castAnimator;
 
     [Header("Cast Time")]
@@ -702,13 +700,7 @@ public class AbilityCaster : NetworkBehaviour
             KeyControl key = GetDigitKey(i);
             if (key == null) continue;
 
-            bool hasTurretAvailable =
-                !abilities[i].spawnTurret ||
-                abilities[i].turretItem == null ||
-                inventory == null ||
-                inventory.HasItem(abilities[i].turretItem);
-
-            if (key.wasPressedThisFrame && cooldownTimers[i] <= 0f && hasTurretAvailable)
+            if (key.wasPressedThisFrame && cooldownTimers[i] <= 0f)
             {
                 // Self-cast shields skip aiming but still respect cast time.
                 if (abilities[i].shieldAbsorb > 0f && abilities[i].range <= 0f)
@@ -3600,18 +3592,6 @@ public class AbilityCaster : NetworkBehaviour
             turret.name = "Turret";
 
             ConfigureSpawnedTurret(turret);
-
-            if (ability.turretItem != null && inventory != null)
-            {
-                inventory.RemoveItem(ability.turretItem);
-
-                TurretPickup pickup = turret.GetComponent<TurretPickup>();
-                if (pickup != null)
-                {
-                    pickup.item = ability.turretItem;
-                    pickup.inventory = inventory;
-                }
-            }
         }
         else
         {

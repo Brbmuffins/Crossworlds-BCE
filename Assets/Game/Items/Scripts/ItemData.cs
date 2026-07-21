@@ -26,7 +26,7 @@ public enum ItemRarity
     Legendary
 }
 
-[CreateAssetMenu(fileName = "New Item", menuName = "Inventory/Item")]
+[CreateAssetMenu(fileName = "New Item", menuName = "Legacy/Inventory/Item")]
 public class ItemData : ScriptableObject
 {
     public string itemName;
