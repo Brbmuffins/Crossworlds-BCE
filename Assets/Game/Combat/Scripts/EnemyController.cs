@@ -1005,7 +1005,9 @@ public class EnemyController : NetworkBehaviour
         else
         {
             TriggerAnimator(AttackHash, _hasAttackParam);
+#if UNITY_EDITOR || !UNITY_SERVER
             CombatAudio.Instance?.PlayMeleeHit();
+#endif
         }
     }
 
@@ -1029,7 +1031,9 @@ public class EnemyController : NetworkBehaviour
         else
         {
             TriggerAnimator(AttackHash, _hasAttackParam);
+#if UNITY_EDITOR || !UNITY_SERVER
             CombatAudio.Instance?.PlayRangedHit();
+#endif
         }
     }
 
@@ -1061,7 +1065,9 @@ public class EnemyController : NetworkBehaviour
         else
         {
             TriggerAnimator(DeathHash, _hasDeathParam);
+#if UNITY_EDITOR || !UNITY_SERVER
             CombatAudio.Instance?.PlayDeath();
+#endif
         }
     }
 

@@ -3879,7 +3879,9 @@ public class AbilityCaster : NetworkBehaviour
                     float healVal = (ability.healAmount > 0f ? ability.healAmount : 25f) * 1.5f;
                     targetHealth.Heal(healVal);
                     EmitHitVFX(ability.hitVFX, hitPos);
+#if UNITY_EDITOR || !UNITY_SERVER
                     FloatingDamageText.SpawnAnchored(floatingTextPos, healVal, FloatingDamageText.DamageType.HealCrit);
+#endif
                 }
                 else if (fraction <= 0.66f)
                 {
@@ -3891,7 +3893,9 @@ public class AbilityCaster : NetworkBehaviour
                     StartCoroutine(ApplyHealOverTime(targetHealth, tickAmount, 5, 1f));
 
                     EmitHitVFX(ability.hitVFX, hitPos);
+#if UNITY_EDITOR || !UNITY_SERVER
                     FloatingDamageText.SpawnAnchored(floatingTextPos, instantHeal, FloatingDamageText.DamageType.Heal);
+#endif
                 }
                 else
                 {
@@ -3900,7 +3904,9 @@ public class AbilityCaster : NetworkBehaviour
                     targetHealth.ApplyShield(shieldAmount);
 
                     EmitHitVFX(ability.hitVFX, hitPos);
+#if UNITY_EDITOR || !UNITY_SERVER
                     FloatingDamageText.SpawnAnchored(floatingTextPos, shieldAmount, FloatingDamageText.DamageType.Shield);
+#endif
                 }
             }
             else
@@ -5895,7 +5901,9 @@ public class AbilityCaster : NetworkBehaviour
         if (ability.healAmount > 0f)
         {
             health.Heal(ability.healAmount);
+#if UNITY_EDITOR || !UNITY_SERVER
             FloatingDamageText.SpawnAnchored(floatingTextPos, ability.healAmount, FloatingDamageText.DamageType.Heal);
+#endif
             playedHitVfx = true;
         }
 
@@ -5903,14 +5911,18 @@ public class AbilityCaster : NetworkBehaviour
         {
             StartCoroutine(ApplyHealOverTime(health, ability.hotTickAmount, ability.hotTicks, ability.hotInterval));
             float totalHot = ability.hotTickAmount * ability.hotTicks;
+#if UNITY_EDITOR || !UNITY_SERVER
             FloatingDamageText.SpawnAnchored(floatingTextPos, totalHot, FloatingDamageText.DamageType.Heal);
+#endif
             playedHitVfx = true;
         }
 
         if (ability.shieldAbsorb > 0f)
         {
             health.ApplyShield(ability.shieldAbsorb);
+#if UNITY_EDITOR || !UNITY_SERVER
             FloatingDamageText.SpawnAnchored(floatingTextPos, ability.shieldAbsorb, FloatingDamageText.DamageType.Shield);
+#endif
             playedHitVfx = true;
         }
 
