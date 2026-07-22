@@ -18,10 +18,17 @@ using Mirror;
 [RequireComponent(typeof(NavMeshAgent))]
 public class EnemyController : NetworkBehaviour
 {
+    public const int EnemyForgeRuntimeProfileVersion = 8;
+
     public enum EnemyState { Idle, Chase, Attack, Dead }
 
     [SyncVar(hook = nameof(OnStateChanged))]
     public EnemyState state = EnemyState.Idle;
+
+    [Header("Runtime Authority")]
+    [Tooltip("Allows this enemy to run without an active Mirror server. Enemy Forge enables this only for Offline Local Testing.")]
+    public bool allowOfflineSimulation = false;
+    [HideInInspector] public int enemyForgeRuntimeProfileVersion;
 
     // ── Detection ────────────────────────────────────────────────────────────────
     [Header("Detection")]
@@ -35,6 +42,12 @@ public class EnemyController : NetworkBehaviour
     public float attackRange    = 1.5f;
     public float attackInterval = 1.5f;
     public float damage         = 12f;
+    [Tooltip("Degrees per second used to face the target while attacking.")]
+    [Min(0f)] public float combatTurnSpeed = 1080f;
+    [Tooltip("Seconds between starting the attack animation and applying its hit. Enemy Forge derives this from the selected attack clip.")]
+    [Min(0f)] public float attackImpactDelay = 0.35f;
+    [Tooltip("Immediately faces the aggro target and keeps facing it during chase and attack.")]
+    public bool lockFacingOnAggro = false;
 
     // ── Ranged ───────────────────────────────────────────────────────────────────
     [Header("Ranged")]
@@ -62,6 +75,10 @@ public class EnemyController : NetworkBehaviour
     public bool respawnAfterDeath = false;
     [Tooltip("Seconds after despawn before this enemy respawns.")]
     public float respawnDelay = 30f;
+    [Tooltip("Seconds of damage immunity after respawning, preventing persistent area effects from immediately killing the enemy again.")]
+    [Min(0f)] public float respawnProtectionSeconds = 2f;
+    [Tooltip("Keeps the rendered corpse grounded if the selected death animation contains vertical root or skeleton drift.")]
+    public bool keepCorpseGrounded = true;
 
     // ── Private ──────────────────────────────────────────────────────────────────
     private Health               _health;
@@ -75,11 +92,24 @@ public class EnemyController : NetworkBehaviour
     private Animator             _animator;
     private bool                 _hasSpeedParam;
     private bool                 _hasAttackParam;
+    private bool                 _hasGetHitParam;
     private bool                 _hasDeathParam;
     private bool                 _returningHome;
+    private float                _targetAnimatorSpeed;
+    private readonly List<Collider> _deathDisabledColliders = new List<Collider>();
+    private bool                 _simulationInitialized;
+    private bool                 _attackInProgress;
+    private float                _deathGroundY;
+    private bool                 _hasDeathGround;
+    private SkinnedMeshRenderer  _corpseBodyRenderer;
+    private Mesh                 _corpseBakedMesh;
+
+    bool HasSimulationAuthority => NetworkServer.active ||
+        (allowOfflineSimulation && !NetworkClient.active && !NetworkServer.active);
 
     static readonly int SpeedHash = Animator.StringToHash("Speed");
     static readonly int AttackHash = Animator.StringToHash("Attack");
+    static readonly int GetHitHash = Animator.StringToHash("GetHit");
     static readonly int DeathHash = Animator.StringToHash("Death");
 
     // ─────────────────────────────────────────────────────────────────────────────
@@ -94,25 +124,222 @@ public class EnemyController : NetworkBehaviour
         CacheAnimatorParameters();
     }
 
+    void Start()
+    {
+        if (allowOfflineSimulation && !NetworkClient.active && !NetworkServer.active)
+            InitializeSimulation();
+    }
+
     public override void OnStartServer()
     {
         base.OnStartServer();
-        _spawnPos = transform.position;
-        _spawnRot = transform.rotation;
-        _health.onDeath.AddListener(OnDeath);
-        _health.onDamagedBy.AddListener(OnDamagedByServer);
-        StartCoroutine(BehaviorLoop());
+        InitializeSimulation();
     }
 
     public override void OnStopServer()
     {
-        if (_health != null)
-        {
-            _health.onDeath.RemoveListener(OnDeath);
-            _health.onDamagedBy.RemoveListener(OnDamagedByServer);
-        }
+        ShutdownSimulation();
 
         base.OnStopServer();
+    }
+
+    void OnDestroy()
+    {
+        ShutdownSimulation();
+        if (_corpseBakedMesh != null) Destroy(_corpseBakedMesh);
+    }
+
+    void InitializeSimulation()
+    {
+        if (_simulationInitialized || !HasSimulationAuthority) return;
+        _simulationInitialized = true;
+        // Preserve the authored transform position. NavMeshAgent.nextPosition may
+        // include an internal vertical projection and caused respawns to drift upward.
+        _spawnPos = transform.position;
+        _spawnRot = transform.rotation;
+        _health.onDeath.AddListener(OnDeath);
+        _health.onDamageTaken.AddListener(OnDamageTakenServer);
+        _health.onDamagedBy.AddListener(OnDamagedByServer);
+        StartCoroutine(BehaviorLoop());
+    }
+
+    void ShutdownSimulation()
+    {
+        if (!_simulationInitialized || _health == null) return;
+        _simulationInitialized = false;
+        _health.onDeath.RemoveListener(OnDeath);
+        _health.onDamageTaken.RemoveListener(OnDamageTakenServer);
+        _health.onDamagedBy.RemoveListener(OnDamagedByServer);
+    }
+
+    void Update()
+    {
+        if (_animator != null && _hasSpeedParam)
+            _animator.SetFloat(SpeedHash, _targetAnimatorSpeed, 0.12f, Time.deltaTime);
+
+        // The behaviour state machine runs at 5 Hz, but combat facing needs to be
+        // updated every frame or quick-moving targets visibly outrun the turn.
+        if (HasSimulationAuthority && state == EnemyState.Attack && _target != null && !lockFacingOnAggro)
+            FaceAttackTarget();
+    }
+
+    void LateUpdate()
+    {
+        if (keepCorpseGrounded && state == EnemyState.Dead && HasSimulationAuthority)
+            StabilizeCorpseGrounding();
+
+        if (lockFacingOnAggro && HasSimulationAuthority && _target != null &&
+            (state == EnemyState.Chase || state == EnemyState.Attack))
+            FaceTargetImmediately();
+    }
+
+    void StabilizeCorpseGrounding()
+    {
+        if (!_hasDeathGround || !TryGetVisibleRendererBottom(out float currentBottom)) return;
+
+        float correction = _deathGroundY - currentBottom;
+        if (Mathf.Abs(correction) < 0.002f) return;
+
+        // Limit each correction to avoid a one-frame pop when a death clip changes pose.
+        Vector3 position = transform.position;
+        position.y += Mathf.Clamp(correction, -0.15f, 0.15f);
+        transform.position = position;
+    }
+
+    bool TryGetVisibleRendererBottom(out float bottom)
+    {
+        bottom = 0f;
+        Renderer primary = _corpseBodyRenderer;
+        float largestVolume = -1f;
+
+        // Prefer the largest skinned renderer: accessory meshes, weapons, VFX,
+        // and selection rings must not decide where the corpse touches ground.
+        foreach (var renderer in GetComponentsInChildren<SkinnedMeshRenderer>(true))
+        {
+            if (renderer == null || !renderer.enabled || !renderer.gameObject.activeInHierarchy) continue;
+            Vector3 size = renderer.bounds.size;
+            float volume = size.x * size.y * size.z;
+            if (volume <= largestVolume) continue;
+            largestVolume = volume;
+            primary = renderer;
+        }
+
+        _corpseBodyRenderer = primary as SkinnedMeshRenderer;
+
+        // Renderer.bounds may remain at the imported standing pose. BakeMesh reads
+        // the currently deformed death pose, including hips/root-bone translation.
+        if (_corpseBodyRenderer != null)
+        {
+            if (_corpseBakedMesh == null)
+            {
+                _corpseBakedMesh = new Mesh { name = name + "_CorpseGroundProbe" };
+                _corpseBakedMesh.MarkDynamic();
+            }
+
+            _corpseBodyRenderer.BakeMesh(_corpseBakedMesh, true);
+            Bounds bakedBounds = _corpseBakedMesh.bounds;
+            if (bakedBounds.size.sqrMagnitude > 0f)
+            {
+                bottom = float.PositiveInfinity;
+                Transform bodyTransform = _corpseBodyRenderer.transform;
+                Vector3 min = bakedBounds.min;
+                Vector3 max = bakedBounds.max;
+                for (int x = 0; x < 2; x++)
+                for (int y = 0; y < 2; y++)
+                for (int z = 0; z < 2; z++)
+                {
+                    Vector3 corner = new Vector3(x == 0 ? min.x : max.x,
+                        y == 0 ? min.y : max.y, z == 0 ? min.z : max.z);
+                    bottom = Mathf.Min(bottom, bodyTransform.TransformPoint(corner).y);
+                }
+                return !float.IsInfinity(bottom);
+            }
+        }
+
+        if (primary == null)
+        {
+            foreach (var renderer in GetComponentsInChildren<MeshRenderer>(true))
+            {
+                if (renderer == null || !renderer.enabled || !renderer.gameObject.activeInHierarchy) continue;
+                Vector3 size = renderer.bounds.size;
+                float volume = size.x * size.y * size.z;
+                if (volume <= largestVolume) continue;
+                largestVolume = volume;
+                primary = renderer;
+            }
+        }
+
+        if (primary == null) return false;
+        bottom = primary.bounds.min.y;
+        return true;
+    }
+
+    bool TryResolveDeathGround(out float groundY)
+    {
+        groundY = 0f;
+        float sampleRadius = _agent != null ? Mathf.Max(2f, _agent.height) : 3f;
+        int areaMask = _agent != null ? _agent.areaMask : NavMesh.AllAreas;
+        if (NavMesh.SamplePosition(transform.position, out NavMeshHit navHit, sampleRadius, areaMask))
+        {
+            groundY = navHit.position.y;
+            return true;
+        }
+
+        Vector3 origin = transform.position + Vector3.up * sampleRadius;
+        float nearestDistance = float.PositiveInfinity;
+        bool foundSurface = false;
+        foreach (var hit in Physics.RaycastAll(origin, Vector3.down, sampleRadius * 3f,
+                     Physics.AllLayers, QueryTriggerInteraction.Ignore))
+        {
+            if (hit.collider != null && hit.collider.transform.IsChildOf(transform)) continue;
+            if (hit.distance >= nearestDistance) continue;
+            nearestDistance = hit.distance;
+            groundY = hit.point.y;
+            foundSurface = true;
+        }
+        if (foundSurface) return true;
+
+        return TryGetVisibleRendererBottom(out groundY);
+    }
+
+    void FaceTargetImmediately()
+    {
+        Vector3 direction = _target.position - transform.position;
+        direction.y = 0f;
+        if (direction.sqrMagnitude > 0.0001f)
+            transform.rotation = Quaternion.LookRotation(direction);
+    }
+
+    void FaceAttackTarget()
+    {
+        Vector3 direction = _target.position - transform.position;
+        direction.y = 0f;
+        if (direction.sqrMagnitude <= 0.0001f) return;
+
+        Quaternion targetRotation = Quaternion.LookRotation(direction);
+        transform.rotation = combatTurnSpeed <= 0f
+            ? targetRotation
+            : Quaternion.RotateTowards(transform.rotation, targetRotation, combatTurnSpeed * Time.deltaTime);
+    }
+
+    void OnDamageTakenServer(float amount)
+    {
+        if (amount > 0f && state != EnemyState.Dead)
+            PlayGetHitAnimation();
+    }
+
+    [ClientRpc]
+    void RpcPlayGetHitAnimation()
+    {
+#if UNITY_EDITOR || !UNITY_SERVER
+        TriggerAnimator(GetHitHash, _hasGetHitParam);
+#endif
+    }
+
+    void PlayGetHitAnimation()
+    {
+        if (NetworkServer.active) RpcPlayGetHitAnimation();
+        else TriggerAnimator(GetHitHash, _hasGetHitParam);
     }
 
     public void SetAggroTarget(Transform target)
@@ -123,6 +350,8 @@ public class EnemyController : NetworkBehaviour
         _target = target;
         _returningHome = false;
         state = _target != null ? EnemyState.Chase : EnemyState.Idle;
+        if (lockFacingOnAggro && _target != null)
+            FaceTargetImmediately();
         _attackTimer = _target != null ? EnemyCrowdUtility.FirstAttackDelay(this, attackInterval) : 0f;
     }
 
@@ -130,7 +359,6 @@ public class EnemyController : NetworkBehaviour
     // Behavior loop
     // ─────────────────────────────────────────────────────────────────────────────
 
-    [Server]
     IEnumerator BehaviorLoop()
     {
         var tick = new WaitForSeconds(0.2f);
@@ -155,7 +383,6 @@ public class EnemyController : NetworkBehaviour
     // State logic
     // ─────────────────────────────────────────────────────────────────────────────
 
-    [Server]
     void TickIdle()
     {
         TickReturnHomeFacing();
@@ -180,7 +407,6 @@ public class EnemyController : NetworkBehaviour
         if (found != null) SetAggroTarget(found);
     }
 
-    [Server]
     void OnDamagedByServer(GameObject source)
     {
         if (!aggroWhenDamaged || state == EnemyState.Dead) return;
@@ -238,7 +464,6 @@ public class EnemyController : NetworkBehaviour
         return found;
     }
 
-    [Server]
     void ReturnToSpawnPoint()
     {
         if (_agent == null || !_agent.isActiveAndEnabled) return;
@@ -250,7 +475,6 @@ public class EnemyController : NetworkBehaviour
         FaceMoveDirection(_spawnPos);
     }
 
-    [Server]
     void TickReturnHomeFacing()
     {
         if (!_returningHome) return;
@@ -289,7 +513,6 @@ public class EnemyController : NetworkBehaviour
             transform.rotation = Quaternion.LookRotation(dir);
     }
 
-    [Server]
     void TickChase()
     {
         // Target gone or dead → return home
@@ -355,7 +578,6 @@ public class EnemyController : NetworkBehaviour
         }
     }
 
-    [Server]
     void TickAttack()
     {
         if (_target == null || !(_target.GetComponent<Health>()?.IsAlive ?? false))
@@ -393,9 +615,7 @@ public class EnemyController : NetworkBehaviour
             _agent?.SetDestination(slot);
         }
 
-        // Face target
-        Vector3 dir = (_target.position - transform.position); dir.y = 0f;
-        if (dir.sqrMagnitude > 0.01f) transform.rotation = Quaternion.LookRotation(dir);
+        FaceAttackTarget();
 
         // Tick attack cooldown (0.2s = one BehaviorLoop tick)
         _attackTimer -= 0.2f;
@@ -409,9 +629,9 @@ public class EnemyController : NetworkBehaviour
     // Attack
     // ─────────────────────────────────────────────────────────────────────────────
 
-    [Server]
     void PerformAttack()
     {
+        if (_attackInProgress) return;
         if (_target == null) return;
         var targetHealth = _target.GetComponent<Health>();
         if (targetHealth == null || !targetHealth.IsAlive) return;
@@ -423,54 +643,69 @@ public class EnemyController : NetworkBehaviour
         var targetNetId = _target.GetComponent<NetworkIdentity>();
         uint hitNetId = targetNetId != null ? targetNetId.netId : 0u;
 
-        if (!isRanged)
+        if (isRanged) PlayRangedShot(hitNetId);
+        else PlayMeleeSwing(hitNetId);
+
+        StartCoroutine(ResolveAttackImpact(targetHealth));
+    }
+
+    IEnumerator ResolveAttackImpact(Health intendedTarget)
+    {
+        _attackInProgress = true;
+        if (attackImpactDelay > 0f)
+            yield return new WaitForSeconds(attackImpactDelay);
+
+        _attackInProgress = false;
+        if (!_simulationInitialized || state == EnemyState.Dead || intendedTarget == null || !intendedTarget.IsAlive)
+            yield break;
+
+        float allowedRange = isRanged ? attackRange * 1.3f : EnemyCrowdUtility.MeleeAttackReach(attackRange);
+        if (Vector3.Distance(transform.position, intendedTarget.transform.position) > allowedRange)
+            yield break;
+
+        if (!isRanged || projectilePrefab == null)
         {
-            targetHealth.TakeDamage(damage, gameObject);
-            RpcMeleeSwing(hitNetId);
+            intendedTarget.TakeDamage(damage, gameObject);
+            yield break;
         }
-        else
-        {
-            if (projectilePrefab != null)
-            {
-                Vector3    spawnPos = transform.position + Vector3.up * 1.2f;
-                Quaternion spawnRot = Quaternion.LookRotation(
-                    (_target.position + Vector3.up * 0.5f) - spawnPos);
-                var proj = Instantiate(projectilePrefab, spawnPos, spawnRot);
-                var ep   = proj.GetComponent<EnemyProjectile>();
-                if (ep != null) ep.Init(damage);
-                NetworkServer.Spawn(proj);
-            }
-            else
-            {
-                // Fallback instant damage if no projectile prefab set
-                targetHealth.TakeDamage(damage, gameObject);
-            }
-            RpcRangedShot(hitNetId);
-        }
+
+        Vector3 spawnPos = transform.position + Vector3.up * 1.2f;
+        Quaternion spawnRot = Quaternion.LookRotation(
+            (intendedTarget.transform.position + Vector3.up * 0.5f) - spawnPos);
+        var proj = Instantiate(projectilePrefab, spawnPos, spawnRot);
+        var ep = proj.GetComponent<EnemyProjectile>();
+        if (ep != null) ep.Init(damage);
+        if (NetworkServer.active) NetworkServer.Spawn(proj);
     }
 
     // ─────────────────────────────────────────────────────────────────────────────
     // Death
     // ─────────────────────────────────────────────────────────────────────────────
 
-    [Server]
     void OnDeath()
     {
+        _corpseBodyRenderer = null;
+        _hasDeathGround = keepCorpseGrounded && TryResolveDeathGround(out _deathGroundY);
         state = EnemyState.Dead;
         _returningHome = false;
         StopAllCoroutines();
 
         _health.SetEnemyTargetTagActive(false);
         if (_agent != null && _agent.isActiveAndEnabled) _agent.enabled = false;
-        foreach (var col in GetComponents<Collider>()) col.enabled = false;
+        _deathDisabledColliders.Clear();
+        foreach (var col in GetComponentsInChildren<Collider>(true))
+        {
+            if (!col.enabled) continue;
+            col.enabled = false;
+            _deathDisabledColliders.Add(col);
+        }
 
         StartCoroutine(DeathSequence());
     }
 
-    [Server]
     IEnumerator DeathSequence()
     {
-        RpcPlayDeathEffect();
+        PlayDeathEffect();
         yield return new WaitForSeconds(0.4f);   // brief VFX moment
 
         if (dropTable != null)
@@ -497,23 +732,24 @@ public class EnemyController : NetworkBehaviour
         // Notify clients of the kill so the LOCAL client can POST /api/combat/kill
         // with its own JWT. The server doesn't hold player JWTs — client-initiated
         // kill reports with the hit-gate anti-exploit design is the correct pattern.
-        if (!string.IsNullOrEmpty(enemyTemplateId))
+        if (NetworkServer.active && !string.IsNullOrEmpty(enemyTemplateId))
             RpcNotifyEnemyKilled(enemyTemplateId);
 
         if (!respawnAfterDeath)
         {
-            NetworkServer.Destroy(gameObject);
+            if (NetworkServer.active) NetworkServer.Destroy(gameObject);
+            else Destroy(gameObject);
             yield break;
         }
 
         SetVisualsVisible(false);
-        RpcSetVisualsVisible(false);
+        if (NetworkServer.active) RpcSetVisualsVisible(false);
 
         float delay = Mathf.Max(0f, respawnDelay);
         if (delay > 0f)
             yield return new WaitForSeconds(delay);
 
-        RespawnAtSpawnPoint();
+        yield return RespawnAtSpawnPoint();
     }
 
     /// <summary>
@@ -564,7 +800,6 @@ public class EnemyController : NetworkBehaviour
 #endif
     }
 
-    [Server]
     void SpawnWorldItem(string itemId, int qty)
     {
         if (worldItemPrefab == null)
@@ -579,45 +814,98 @@ public class EnemyController : NetworkBehaviour
         var wi   = Instantiate(worldItemPrefab, transform.position + offset, Quaternion.identity);
         var comp = wi.GetComponent<WorldItem>();
         if (comp != null) { comp.itemId = itemId; comp.quantity = qty; }
-        NetworkServer.Spawn(wi);
+        if (NetworkServer.active) NetworkServer.Spawn(wi);
     }
 
-    [Server]
-    void RespawnAtSpawnPoint()
+    IEnumerator RespawnAtSpawnPoint()
     {
-        transform.SetPositionAndRotation(_spawnPos, _spawnRot);
+        Debug.Log($"[EnemyController] Respawn started for '{name}' near {_spawnPos}.", this);
+        Vector3 respawnPosition = _spawnPos;
+        if (_agent != null)
+        {
+            if (_agent.enabled) _agent.enabled = false;
+            const int attempts = 10;
+            bool found = false;
+            float sampleRadius = Mathf.Max(4f, _agent.height * 2f);
+            for (int attempt = 0; attempt < attempts; attempt++)
+            {
+                if (NavMesh.SamplePosition(_spawnPos, out NavMeshHit hit, sampleRadius,
+                    _agent.areaMask))
+                {
+                    respawnPosition = hit.position;
+                    found = true;
+                    break;
+                }
+                yield return new WaitForSeconds(0.5f);
+            }
+
+            if (!found)
+            {
+                Debug.LogError($"[EnemyController] Cannot respawn '{name}': no NavMesh point was found near {_spawnPos}.", this);
+                yield break;
+            }
+        }
+
+        transform.SetPositionAndRotation(respawnPosition, _spawnRot);
         _target = null;
         _attackTimer = 0f;
         _returningHome = false;
-        state = EnemyState.Idle;
-
-        _status?.RemoveAll();
-        _health.currentHealth = _health.maxHealth;
-        _health.SetEnemyTargetTagActive(true);
-        _health.onHealthChanged?.Invoke(_health.currentHealth, _health.maxHealth);
-
-        foreach (var col in GetComponents<Collider>())
-            col.enabled = true;
 
         if (_agent != null)
         {
             _agent.enabled = true;
             if (_agent.isOnNavMesh)
             {
-                _agent.Warp(_spawnPos);
+                _agent.Warp(respawnPosition);
                 _agent.ResetPath();
                 _agent.velocity = Vector3.zero;
                 _agent.isStopped = false;
                 _agent.speed = _baseSpeed;
             }
+            else
+            {
+                Debug.LogError($"[EnemyController] Respawn point for '{name}' was sampled but the agent could not join the NavMesh.", this);
+                _agent.enabled = false;
+                yield break;
+            }
         }
+
+        state = EnemyState.Idle;
+        _status?.RemoveAll();
+        _health.currentHealth = _health.maxHealth;
+        _health.isInvulnerable = respawnProtectionSeconds > 0f;
+        _health.SetEnemyTargetTagActive(true);
+        _health.onHealthChanged?.Invoke(_health.currentHealth, _health.maxHealth);
+
+        foreach (var col in _deathDisabledColliders)
+            if (col != null) col.enabled = true;
+        _deathDisabledColliders.Clear();
 
         SetVisualsVisible(true);
         ResetAnimators();
+        _targetAnimatorSpeed = 0f;
+        if (_animator != null)
+        {
+            _animator.ResetTrigger(AttackHash);
+            _animator.ResetTrigger(GetHitHash);
+            _animator.ResetTrigger(DeathHash);
+            _animator.Play("Idle", 0, 0f);
+            _animator.Update(0f);
+        }
+        Physics.SyncTransforms();
         BroadcastMessage("OnEnemyRespawned", SendMessageOptions.DontRequireReceiver);
-        RpcRespawn(_spawnPos, _spawnRot);
+        if (NetworkServer.active) RpcRespawn(respawnPosition, _spawnRot);
 
         StartCoroutine(BehaviorLoop());
+        if (respawnProtectionSeconds > 0f)
+            StartCoroutine(ClearRespawnProtection(respawnProtectionSeconds));
+        Debug.Log($"[EnemyController] Respawn completed for '{name}' at {respawnPosition}; agentOnNavMesh={_agent == null || _agent.isOnNavMesh}.", this);
+    }
+
+    IEnumerator ClearRespawnProtection(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        if (_health != null) _health.isInvulnerable = false;
     }
 
     [ClientRpc]
@@ -633,6 +921,16 @@ public class EnemyController : NetworkBehaviour
         _health.SetEnemyTargetTagActive(true);
         SetVisualsVisible(true);
         ResetAnimators();
+        _targetAnimatorSpeed = 0f;
+        if (_animator != null)
+        {
+            _animator.ResetTrigger(AttackHash);
+            _animator.ResetTrigger(GetHitHash);
+            _animator.ResetTrigger(DeathHash);
+            _animator.Play("Idle", 0, 0f);
+            _animator.Update(0f);
+        }
+        Physics.SyncTransforms();
         BroadcastMessage("OnEnemyRespawned", SendMessageOptions.DontRequireReceiver);
     }
 
@@ -656,7 +954,6 @@ public class EnemyController : NetworkBehaviour
     // Helpers
     // ─────────────────────────────────────────────────────────────────────────────
 
-    [Server]
     void ResetToIdle()
     {
         _target      = null;
@@ -702,6 +999,16 @@ public class EnemyController : NetworkBehaviour
 #endif
     }
 
+    void PlayMeleeSwing(uint targetNetId)
+    {
+        if (NetworkServer.active) RpcMeleeSwing(targetNetId);
+        else
+        {
+            TriggerAnimator(AttackHash, _hasAttackParam);
+            CombatAudio.Instance?.PlayMeleeHit();
+        }
+    }
+
     [ClientRpc]
     void RpcRangedShot(uint targetNetId)
     {
@@ -714,6 +1021,16 @@ public class EnemyController : NetworkBehaviour
                           && NetworkClient.localPlayer.GetComponent<NetworkIdentity>()?.netId == targetNetId;
         if (isLocalTarget) ScreenShake.AddTrauma(0.10f);
 #endif
+    }
+
+    void PlayRangedShot(uint targetNetId)
+    {
+        if (NetworkServer.active) RpcRangedShot(targetNetId);
+        else
+        {
+            TriggerAnimator(AttackHash, _hasAttackParam);
+            CombatAudio.Instance?.PlayRangedHit();
+        }
     }
 
     [ClientRpc]
@@ -738,6 +1055,16 @@ public class EnemyController : NetworkBehaviour
 #endif
     }
 
+    void PlayDeathEffect()
+    {
+        if (NetworkServer.active) RpcPlayDeathEffect();
+        else
+        {
+            TriggerAnimator(DeathHash, _hasDeathParam);
+            CombatAudio.Instance?.PlayDeath();
+        }
+    }
+
     // ─────────────────────────────────────────────────────────────────────────────
     // Gizmos
     // ─────────────────────────────────────────────────────────────────────────────
@@ -753,15 +1080,25 @@ public class EnemyController : NetworkBehaviour
                 _hasSpeedParam = true;
             else if (parameter.nameHash == AttackHash && parameter.type == AnimatorControllerParameterType.Trigger)
                 _hasAttackParam = true;
+            else if (parameter.nameHash == GetHitHash && parameter.type == AnimatorControllerParameterType.Trigger)
+                _hasGetHitParam = true;
             else if (parameter.nameHash == DeathHash && parameter.type == AnimatorControllerParameterType.Trigger)
                 _hasDeathParam = true;
+        }
+
+        if (_hasGetHitParam && _animator.runtimeAnimatorController is AnimatorOverrideController overrideController)
+        {
+            var mappings = new List<KeyValuePair<AnimationClip, AnimationClip>>();
+            overrideController.GetOverrides(mappings);
+            bool hasGetHitClip = mappings.Exists(pair => pair.Key != null &&
+                pair.Key.name == "EnemyForge_GetHit" && pair.Value != null);
+            _hasGetHitParam = hasGetHitClip;
         }
     }
 
     void SetAnimatorSpeed(float speed)
     {
-        if (_animator != null && _hasSpeedParam)
-            _animator.SetFloat(SpeedHash, speed);
+        _targetAnimatorSpeed = speed;
     }
 
     void TriggerAnimator(int hash, bool hasParameter)
