@@ -139,7 +139,8 @@ public class Health : NetworkBehaviour
     public int EnemyLevel => enemyLevel;
     public bool HasEnemyLevel => enemyLevel > 0;
     public string EnemyHoverDisplayName => GetEnemyHoverDisplayName();
-    public bool ShouldShowEnemyHoverInfo() => showEnemyHoverInfo && !isPlayer && IsEnemyLikeForHud();
+    public bool ShouldShowEnemyHoverInfo() => showEnemyHoverInfo && !isPlayer && IsAlive &&
+        _enemyTargetTagActive && IsEnemyLikeForHud();
 
     // ── StatusEffect integration ───────────────────────────────────
     private StatusEffectManager _statusEffects;
@@ -395,7 +396,7 @@ public class Health : NetworkBehaviour
     {
         ApplyEnemyTargetTagActive(active);
 
-        if (NetworkServer.active)
+        if (NetworkServer.active || (!NetworkClient.active && !NetworkServer.active))
             _enemyTargetTagActive = active;
     }
 

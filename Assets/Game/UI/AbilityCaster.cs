@@ -3268,7 +3268,7 @@ public class AbilityCaster : NetworkBehaviour
         foreach (Collider hit in hits)
         {
             Health health = hit.GetComponentInParent<Health>();
-            if (health == null || damaged.Contains(health))
+            if (health == null || !health.IsAlive || damaged.Contains(health))
                 continue;
 
             if (!HitMatchesTargetTag(hit, health, targetTag))
@@ -3295,7 +3295,7 @@ public class AbilityCaster : NetworkBehaviour
     static bool TryGetMatchingHealth(Collider hit, string targetTag, out Health health)
     {
         health = hit != null ? hit.GetComponentInParent<Health>() : null;
-        return health != null && HitMatchesTargetTag(hit, health, targetTag);
+        return health != null && health.IsAlive && HitMatchesTargetTag(hit, health, targetTag);
     }
 
     void DealAbilityDamage(Health health, float damage)
