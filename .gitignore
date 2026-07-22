@@ -67,6 +67,13 @@ Crossworlds Windows/
 *_BackUpThisFolder_ButDontShipItWithYourGame/
 CrossWorlds/README.md
 
+# ── Local-only Assets folders (contents already ignored above, so their folder
+#    .metas must be ignored too or meta_guard flags them as stale) ─────────────
+Assets/AI Toolkit/
+Assets/AI Toolkit.meta
+Assets/brbmuffins Trails/
+Assets/brbmuffins Trails.meta
+
 # ── Local CI/CD setup helper (one-shot, prompts for secrets — not for git) ───
 tools/ci-setup.sh
 _CONTEXT/VFX_VARIANT_ASSIGNMENT_PROMPT.txt.md
