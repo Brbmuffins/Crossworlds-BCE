@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Mirror;
 using TMPro;
 using UnityEngine;
@@ -13,10 +14,17 @@ public sealed class WaypointMapTrigger : NetworkBehaviour
     const string AshenWastelandsSpawnId = "AshenWastelandsSpawnPoint";
     const string DarkwoodSpawnId = "DarkwoodSpawnLocation";
 
+#if UNITY_EDITOR || !UNITY_SERVER
+    static readonly List<WaypointMapTrigger> ActiveTriggers = new List<WaypointMapTrigger>();
+    static int _lastHotkeyFrame = -1;
+#endif
+
     [Header("Interaction")]
     [Min(0.5f)] public float interactionRange = 5f;
     public bool allowKeyboardInteract = true;
     public Key interactKey = Key.E;
+    public bool allowMapHotkey = true;
+    public Key mapHotkey = Key.M;
     public bool allowMouseClick = true;
     public LayerMask clickableLayers = ~0;
     [Min(1f)] public float clickRaycastDistance = 200f;
@@ -60,6 +68,19 @@ public sealed class WaypointMapTrigger : NetworkBehaviour
 
     }
 
+#if UNITY_EDITOR || !UNITY_SERVER
+    void OnEnable()
+    {
+        if (!ActiveTriggers.Contains(this))
+            ActiveTriggers.Add(this);
+    }
+
+    void OnDisable()
+    {
+        ActiveTriggers.Remove(this);
+    }
+#endif
+
     void Start()
     {
 #if UNITY_EDITOR || !UNITY_SERVER
@@ -72,6 +93,8 @@ public sealed class WaypointMapTrigger : NetworkBehaviour
     {
 #if UNITY_EDITOR || !UNITY_SERVER
         if (_loading) return;
+
+        HandleMapHotkey();
 
         if (_localPlayer == null)
             _localPlayer = FindLocalPlayer();
@@ -110,6 +133,64 @@ public sealed class WaypointMapTrigger : NetworkBehaviour
     void OpenMap()
     {
         WaypointMapUI.Show(mapTitle, mapBackground, nodes, connections, HandleNodeSelected);
+    }
+
+    void HandleMapHotkey()
+    {
+        if (!allowMapHotkey || mapHotkey == Key.None || _lastHotkeyFrame == Time.frameCount)
+            return;
+
+        var keyboard = Keyboard.current;
+        if (keyboard == null || !keyboard[mapHotkey].wasPressedThisFrame || IsTypingInInputField())
+            return;
+
+        WaypointMapTrigger trigger = ChooseHotkeyTrigger(mapHotkey);
+        if (trigger == null)
+            return;
+
+        _lastHotkeyFrame = Time.frameCount;
+        trigger.OpenMap();
+    }
+
+    static WaypointMapTrigger ChooseHotkeyTrigger(Key hotkey)
+    {
+        Transform localPlayer = FindLocalPlayer();
+        WaypointMapTrigger fallback = null;
+        WaypointMapTrigger nearest = null;
+        float nearestSqrDistance = float.PositiveInfinity;
+
+        for (int i = ActiveTriggers.Count - 1; i >= 0; i--)
+        {
+            WaypointMapTrigger trigger = ActiveTriggers[i];
+            if (trigger == null)
+            {
+                ActiveTriggers.RemoveAt(i);
+                continue;
+            }
+
+            if (!trigger.isActiveAndEnabled ||
+                !trigger.allowMapHotkey ||
+                trigger.mapHotkey != hotkey ||
+                trigger._loading)
+            {
+                continue;
+            }
+
+            if (fallback == null)
+                fallback = trigger;
+
+            if (localPlayer == null)
+                continue;
+
+            float sqrDistance = (trigger.transform.position - localPlayer.position).sqrMagnitude;
+            if (sqrDistance < nearestSqrDistance)
+            {
+                nearestSqrDistance = sqrDistance;
+                nearest = trigger;
+            }
+        }
+
+        return nearest != null ? nearest : fallback;
     }
 #endif
 
@@ -258,12 +339,28 @@ public sealed class WaypointMapTrigger : NetworkBehaviour
         return hit == transform || hit.IsChildOf(transform) || transform.IsChildOf(hit);
     }
 
-    bool IsTypingInInputField()
+    static bool IsTypingInInputField()
     {
+        if (RodChatManager.Instance != null && RodChatManager.Instance.IsOpen)
+            return true;
+
         var selected = EventSystem.current?.currentSelectedGameObject;
-        return selected != null &&
-               (selected.GetComponent<TMP_InputField>() != null ||
-                selected.GetComponent<UnityEngine.UI.InputField>() != null);
+        if (selected != null &&
+            (selected.GetComponent<TMP_InputField>() != null ||
+             selected.GetComponent<UnityEngine.UI.InputField>() != null))
+        {
+            return true;
+        }
+
+        foreach (var field in FindObjectsByType<TMP_InputField>(FindObjectsInactive.Exclude))
+            if (field.isFocused)
+                return true;
+
+        foreach (var field in FindObjectsByType<UnityEngine.UI.InputField>(FindObjectsInactive.Exclude))
+            if (field.isFocused)
+                return true;
+
+        return false;
     }
 
     static bool IsLocalPlayer(Collider other)

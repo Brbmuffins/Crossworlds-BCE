@@ -131,12 +131,12 @@ public class HeroMasteryUI : MonoBehaviour
         {
             if (_open)
             {
-                if (kb.escapeKey.wasPressedThisFrame || kb.mKey.wasPressedThisFrame)
+                if (kb.escapeKey.wasPressedThisFrame || kb.hKey.wasPressedThisFrame)
                     Close();
             }
             else
             {
-                if (kb.mKey.wasPressedThisFrame && !AnyInputFocused())
+                if (kb.hKey.wasPressedThisFrame && !AnyInputFocused())
                     Open();
             }
         }
@@ -295,7 +295,7 @@ public class HeroMasteryUI : MonoBehaviour
         hintRT.anchorMax = new Vector2(1f, 0.10f);
         hintRT.offsetMin = hintRT.offsetMax = Vector2.zero;
         var hintTxt = hintGO.AddComponent<TextMeshProUGUI>();
-        hintTxt.text      = "Press M or Esc to close";
+        hintTxt.text      = "Press H or Esc to close";
         hintTxt.fontSize  = 8f;
         hintTxt.color     = ColDim;
         hintTxt.alignment = TextAlignmentOptions.Center;
