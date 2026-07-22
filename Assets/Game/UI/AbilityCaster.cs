@@ -215,6 +215,7 @@ public class AbilityCaster : NetworkBehaviour
         "Conflagration Cone",
         "Ember Beam",
         "Ice Spikes",
+        "Ice Guardian",
         "Meteor Shower",
         "Fireball",
         "Chain Lightning",
@@ -556,6 +557,12 @@ public class AbilityCaster : NetworkBehaviour
         return new Color(1f, 0.1f, 0.3f, 0.75f);
     }
 
+    protected virtual bool ShouldBackfillMissingSpellbookEntries => true;
+
+    protected virtual void ConfigureInitialSpellbook()
+    {
+    }
+
     AbilityVariant GetVariant(AbilityDef ability, int variantIndex)
     {
         if (ability?.variants == null || ability.variants.Length == 0) return null;
@@ -591,13 +598,16 @@ public class AbilityCaster : NetworkBehaviour
                     && !string.IsNullOrEmpty(variant.spellbookAbilityName.Trim())));
     }
 
-    void Awake()
+    protected virtual void Awake()
     {
         // Remote-player gating is handled by ShouldProcessLocalInput() in Update.
         // isLocalPlayer is NOT set in Awake (Mirror sets it after instantiation),
         // so any enabled-check here would wrongly disable the local player too.
 
-        BackfillMissingSpellbookEntries();
+        ConfigureInitialSpellbook();
+
+        if (ShouldBackfillMissingSpellbookEntries)
+            BackfillMissingSpellbookEntries();
 
         // Seed by ability name for known classes so old prefab spellbook order cannot
         // make class-pool indices point at the wrong spell.
@@ -645,7 +655,11 @@ public class AbilityCaster : NetworkBehaviour
 #if UNITY_EDITOR
     protected override void OnValidate()
     {
-        BackfillMissingSpellbookEntries();
+        ConfigureInitialSpellbook();
+
+        if (ShouldBackfillMissingSpellbookEntries)
+            BackfillMissingSpellbookEntries();
+
         BackfillSpellBehaviorDefaults();
         BackfillVariantDefaults();
         MigrateInlineVariantsToSpellbookReferences();
@@ -846,7 +860,11 @@ public class AbilityCaster : NetworkBehaviour
         classPool = pool;
         if (pool == null) return;
 
-        BackfillMissingSpellbookEntries();
+        ConfigureInitialSpellbook();
+
+        if (ShouldBackfillMissingSpellbookEntries)
+            BackfillMissingSpellbookEntries();
+
         ApplyDefaultLoadoutFromClassPool();
 
         SyncEquippedFromSpellbook();
