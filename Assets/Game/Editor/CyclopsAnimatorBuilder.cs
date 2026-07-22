@@ -115,7 +115,7 @@ public static class CyclopsAnimatorBuilder
         Health health = root.AddComponent<Health>();
         health.maxHealth = 180f;
 
-        FieldGhoulNPC roaming = root.AddComponent<FieldGhoulNPC>();
+        EnemyWanderAI roaming = root.AddComponent<EnemyWanderAI>();
         roaming.wanderRadius = 8f;
         roaming.minWaitTime = 2f;
         roaming.maxWaitTime = 5f;
@@ -397,9 +397,9 @@ public static class CyclopsAnimatorBuilder
 
         health.maxHealth = 180f;
 
-        FieldGhoulNPC roaming = go.GetComponent<FieldGhoulNPC>();
+        EnemyWanderAI roaming = go.GetComponent<EnemyWanderAI>();
         if (roaming == null)
-            roaming = Undo.AddComponent<FieldGhoulNPC>(go);
+            roaming = Undo.AddComponent<EnemyWanderAI>(go);
 
         roaming.wanderRadius = 8f;
         roaming.minWaitTime = 2f;

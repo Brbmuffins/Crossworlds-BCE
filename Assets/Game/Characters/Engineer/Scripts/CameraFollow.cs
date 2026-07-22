@@ -18,8 +18,11 @@ using UnityEngine.InputSystem;
 // ═══════════════════════════════════════════════════════════════════════════
 public class CameraFollow : MonoBehaviour
 {
+    public const string ZoomDistancePrefKey = "CameraZoomDistance";
+    public const float DefaultZoomDistance = 7f;
+
     [Header("Distance")]
-    public float distance    = 7f;
+    public float distance    = DefaultZoomDistance;
     public float minDistance = 1.5f;
     public float maxDistance = 20f;
     public float zoomSpeed   = 4f;
@@ -59,6 +62,8 @@ public class CameraFollow : MonoBehaviour
     {
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible   = true;
+
+        LoadZoomPreference();
 
         if (_target != null) SnapToTarget();
 
@@ -138,8 +143,7 @@ public class CameraFollow : MonoBehaviour
 
         float scroll = mouse.scroll.ReadValue().y;
         if (Mathf.Abs(scroll) > 0.01f && !AbilityCaster.IsAimingLocally)
-            distance = Mathf.Clamp(distance - scroll * zoomSpeed * 0.01f,
-                                   minDistance, maxDistance);
+            SetZoomDistance(distance - scroll * zoomSpeed * 0.01f);
 
         Vector3    pos     = _target.position;
         Quaternion rot     = Quaternion.Euler(_pitch, _yaw, 0f);
@@ -149,6 +153,31 @@ public class CameraFollow : MonoBehaviour
 
         transform.position = ResolveCameraPosition(lookAt, desired);
         transform.LookAt(lookAt);
+    }
+
+    public void SetZoomDistance(float value, bool savePreference = true)
+    {
+        distance = Mathf.Clamp(value, minDistance, maxDistance);
+
+        if (!savePreference) return;
+
+        PlayerPrefs.SetFloat(ZoomDistancePrefKey, distance);
+        PlayerPrefs.Save();
+    }
+
+    public void SetZoomNormalized(float normalized, bool savePreference = true)
+    {
+        SetZoomDistance(Mathf.Lerp(minDistance, maxDistance, Mathf.Clamp01(normalized)), savePreference);
+    }
+
+    public float GetZoomNormalized()
+    {
+        return Mathf.InverseLerp(minDistance, maxDistance, distance);
+    }
+
+    void LoadZoomPreference()
+    {
+        SetZoomDistance(PlayerPrefs.GetFloat(ZoomDistancePrefKey, distance), savePreference: false);
     }
 
     public void SnapToTarget()

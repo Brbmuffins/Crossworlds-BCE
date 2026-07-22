@@ -36,7 +36,9 @@ public class EscMenu : MonoBehaviour
     GameObject  _mainView;
     GameObject  _optionsView;
     Slider      _musicSlider;
+    Slider      _zoomSlider;
     TextMeshProUGUI _musicValueLabel;
+    TextMeshProUGUI _zoomValueLabel;
     TextMeshProUGUI _variantModeValueLabel;
     bool        _open;
 
@@ -89,6 +91,7 @@ public class EscMenu : MonoBehaviour
     void ShowOptions()
     {
         RefreshMusicSlider();
+        RefreshZoomSlider();
         RefreshVariantModeLabel();
         _mainView.SetActive(false);
         _optionsView.SetActive(true);
@@ -143,6 +146,7 @@ public class EscMenu : MonoBehaviour
         {
             ShowMainMenu();
             RefreshMusicSlider();
+            RefreshZoomSlider();
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible   = true;
         }
@@ -228,7 +232,7 @@ public class EscMenu : MonoBehaviour
     void BuildOptionsView(RectTransform parent)
     {
         var header = MakeTmp("OptionsHeader", parent,
-            new Vector2(0.1f, 0.61f), new Vector2(0.9f, 0.70f));
+            new Vector2(0.1f, 0.66f), new Vector2(0.9f, 0.74f));
         header.text      = "OPTIONS";
         header.fontSize  = 16f;
         header.color     = new Color(0.5f, 0.8f, 1f);
@@ -236,7 +240,7 @@ public class EscMenu : MonoBehaviour
         header.alignment = TextAlignmentOptions.Center;
 
         var musicLabel = MakeTmp("MusicVolumeLabel", parent,
-            new Vector2(0.1f, 0.48f), new Vector2(0.58f, 0.56f));
+            new Vector2(0.1f, 0.55f), new Vector2(0.58f, 0.62f));
         musicLabel.text      = "MUSIC";
         musicLabel.fontSize  = 13f;
         musicLabel.color     = Color.white;
@@ -244,19 +248,38 @@ public class EscMenu : MonoBehaviour
         musicLabel.alignment = TextAlignmentOptions.MidlineLeft;
 
         _musicValueLabel = MakeTmp("MusicVolumeValue", parent,
-            new Vector2(0.6f, 0.48f), new Vector2(0.9f, 0.56f));
+            new Vector2(0.6f, 0.55f), new Vector2(0.9f, 0.62f));
         _musicValueLabel.fontSize  = 13f;
         _musicValueLabel.color     = new Color(0.75f, 0.9f, 1f);
         _musicValueLabel.fontStyle = FontStyles.Bold;
         _musicValueLabel.alignment = TextAlignmentOptions.MidlineRight;
 
         _musicSlider = MakeSlider("MusicVolumeSlider", parent,
-            new Vector2(0.1f, 0.38f), new Vector2(0.9f, 0.45f));
+            new Vector2(0.1f, 0.48f), new Vector2(0.9f, 0.53f));
         _musicSlider.onValueChanged.AddListener(OnMusicVolumeChanged);
+
+        var zoomLabel = MakeTmp("CameraZoomLabel", parent,
+            new Vector2(0.1f, 0.39f), new Vector2(0.58f, 0.46f));
+        zoomLabel.text      = "CAMERA ZOOM";
+        zoomLabel.fontSize  = 13f;
+        zoomLabel.color     = Color.white;
+        zoomLabel.fontStyle = FontStyles.Bold;
+        zoomLabel.alignment = TextAlignmentOptions.MidlineLeft;
+
+        _zoomValueLabel = MakeTmp("CameraZoomValue", parent,
+            new Vector2(0.6f, 0.39f), new Vector2(0.9f, 0.46f));
+        _zoomValueLabel.fontSize  = 13f;
+        _zoomValueLabel.color     = new Color(0.75f, 0.9f, 1f);
+        _zoomValueLabel.fontStyle = FontStyles.Bold;
+        _zoomValueLabel.alignment = TextAlignmentOptions.MidlineRight;
+
+        _zoomSlider = MakeSlider("CameraZoomSlider", parent,
+            new Vector2(0.1f, 0.32f), new Vector2(0.9f, 0.37f));
+        _zoomSlider.onValueChanged.AddListener(OnCameraZoomChanged);
 
         // Variant zone selector mode
         var variantLabel = MakeTmp("VariantModeLabel", parent,
-            new Vector2(0.1f, 0.29f), new Vector2(0.58f, 0.37f));
+            new Vector2(0.1f, 0.23f), new Vector2(0.58f, 0.30f));
         variantLabel.text      = "ABILITY ZONE";
         variantLabel.fontSize  = 13f;
         variantLabel.color     = Color.white;
@@ -265,7 +288,7 @@ public class EscMenu : MonoBehaviour
 
         // Clickable value — toggles between MOUSE and SCROLL WHEEL
         var variantValueGo = MakeRect("VariantModeValueBtn", parent,
-            new Vector2(0.58f, 0.29f), new Vector2(0.9f, 0.37f));
+            new Vector2(0.58f, 0.23f), new Vector2(0.9f, 0.30f));
         _variantModeValueLabel = variantValueGo.AddComponent<TextMeshProUGUI>();
         _variantModeValueLabel.fontSize  = 13f;
         _variantModeValueLabel.color     = new Color(0.75f, 0.9f, 1f);
@@ -274,10 +297,11 @@ public class EscMenu : MonoBehaviour
         var variantBtn = variantValueGo.AddComponent<Button>();
         variantBtn.onClick.AddListener(ToggleVariantMode);
 
-        MakeButton("Back", parent, new Vector2(0.1f, 0.13f), new Vector2(0.9f, 0.25f),
+        MakeButton("Back", parent, new Vector2(0.1f, 0.10f), new Vector2(0.9f, 0.20f),
             new Color(0.16f, 0.16f, 0.26f), ShowMainMenu);
 
         RefreshMusicSlider();
+        RefreshZoomSlider();
         RefreshVariantModeLabel();
     }
 
@@ -317,6 +341,61 @@ public class EscMenu : MonoBehaviour
     {
         if (_musicValueLabel != null)
             _musicValueLabel.text = $"{Mathf.RoundToInt(Mathf.Clamp01(value) * 100f)}%";
+    }
+
+    void RefreshZoomSlider()
+    {
+        if (_zoomSlider == null) return;
+
+        CameraFollow follow = FindCameraFollow();
+        float min = follow != null ? follow.minDistance : 1.5f;
+        float max = follow != null ? follow.maxDistance : 20f;
+        float distance = follow != null
+            ? follow.distance
+            : PlayerPrefs.GetFloat(CameraFollow.ZoomDistancePrefKey, CameraFollow.DefaultZoomDistance);
+
+        distance = Mathf.Clamp(distance, min, max);
+        _zoomSlider.SetValueWithoutNotify(Mathf.InverseLerp(min, max, distance));
+        UpdateZoomValueLabel(distance);
+    }
+
+    void OnCameraZoomChanged(float value)
+    {
+        CameraFollow follow = FindCameraFollow();
+        float distance;
+
+        if (follow != null)
+        {
+            follow.SetZoomNormalized(value);
+            distance = follow.distance;
+        }
+        else
+        {
+            distance = Mathf.Lerp(1.5f, 20f, Mathf.Clamp01(value));
+            PlayerPrefs.SetFloat(CameraFollow.ZoomDistancePrefKey, distance);
+            PlayerPrefs.Save();
+        }
+
+        UpdateZoomValueLabel(distance);
+    }
+
+    void UpdateZoomValueLabel(float distance)
+    {
+        if (_zoomValueLabel != null)
+            _zoomValueLabel.text = $"{Mathf.Max(0f, distance):0.0}m";
+    }
+
+    static CameraFollow FindCameraFollow()
+    {
+        Camera cam = Camera.main;
+        if (cam != null)
+        {
+            CameraFollow follow = cam.GetComponent<CameraFollow>();
+            if (follow != null)
+                return follow;
+        }
+
+        return FindFirstObjectByType<CameraFollow>();
     }
 
     void ToggleVariantMode()

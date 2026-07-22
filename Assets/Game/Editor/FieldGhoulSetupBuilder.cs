@@ -11,7 +11,7 @@ using UnityEngine.AI;
 ///   1. Tag → "Enemy"   — abilities use CompareTag("Enemy") for targeting
 ///   2. Health           — required for TakeDamage; 200 HP, passive (no aggro)
 ///   3. NavMeshAgent     — pathfinding (speed 2, stopping 0.5)
-///   4. FieldGhoulNPC    — wander loop (plain MonoBehaviour, editor + server)
+///   4. EnemyWanderAI    — wander loop (plain MonoBehaviour, editor + server)
 ///   5. CapsuleCollider  — if no collider exists, so raycasts/overlaps can hit it
 ///
 /// Re-running is safe — components are added only if missing.
@@ -98,14 +98,14 @@ public static class FieldGhoulSetupBuilder
             cap.height = 1.8f;
         }
 
-        var npc = go.GetComponent<FieldGhoulNPC>();
-        if (npc == null) npc = go.AddComponent<FieldGhoulNPC>();
+        var npc = go.GetComponent<EnemyWanderAI>();
+        if (npc == null) npc = go.AddComponent<EnemyWanderAI>();
         npc.wanderRadius = 8f;
         npc.minWaitTime  = 2f;
         npc.maxWaitTime  = 5f;
 
         EditorUtility.SetDirty(go);
-        Debug.Log($"[GhoulNPC] Wired: {go.name}");
+        Debug.Log($"[EnemyWanderAI] Wired: {go.name}");
     }
 }
 #endif

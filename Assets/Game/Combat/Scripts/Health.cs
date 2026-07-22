@@ -464,7 +464,7 @@ public class Health : NetworkBehaviour
     {
         return CompareTag(EnemyTag)
             || GetComponent<EnemyAI>() != null
-            || GetComponent<FieldGhoulNPC>() != null
+            || GetComponent<EnemyWanderAI>() != null
             || GetComponent<EnemyController>() != null
             || GetComponent<IronWardenController>() != null
             || GetComponent<WorldBossController>() != null
@@ -517,7 +517,7 @@ public class Health : NetworkBehaviour
 
     void GetSimpleEnemyRespawnTransform(out Vector3 position, out Quaternion rotation)
     {
-        FieldGhoulNPC fieldMob = GetComponent<FieldGhoulNPC>();
+        EnemyWanderAI fieldMob = GetComponent<EnemyWanderAI>();
         if (fieldMob != null && fieldMob.HasLeashReturnPoint)
         {
             position = fieldMob.LeashReturnPosition;

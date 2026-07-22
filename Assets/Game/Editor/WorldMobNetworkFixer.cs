@@ -21,7 +21,7 @@ using UnityEngine.AI;
 ///   no server is running). These are Darkwood combat mobs, not Hub set dressing, so they
 ///   get the same treatment as Enemy_Grunt/Ranged/Elite instead.
 ///
-///   FieldGhoulNPC is already safe to network: every AI path (Update, WanderLoop,
+///   EnemyWanderAI is already safe to network: every AI path (Update, WanderLoop,
 ///   OnDamagedBy) is gated behind CanRunServerSide(), so the NavMesh wander/chase runs
 ///   server-only and will not fight the NetworkTransform on clients. No AI changes needed.
 ///

@@ -77,7 +77,7 @@ public class PassiveThreatProtocol : ClassPassive
             EnemyController enemy = col.GetComponentInParent<EnemyController>();
             enemy?.SetAggroTarget(transform);
 
-            FieldGhoulNPC fieldMob = col.GetComponentInParent<FieldGhoulNPC>();
+            EnemyWanderAI fieldMob = col.GetComponentInParent<EnemyWanderAI>();
             fieldMob?.SetAggroTarget(transform);
         }
 

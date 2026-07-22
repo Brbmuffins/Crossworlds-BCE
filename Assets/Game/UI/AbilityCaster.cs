@@ -4657,9 +4657,9 @@ public class AbilityCaster : NetworkBehaviour
         foreach (AbilityDef ability in spellbook)
         {
             if (ability == null) continue;
-            // One serialized zone is a stale/invalid setup: variant spells need
-            // at least two zones to create a real aiming decision.
-            if (ability.variants != null && ability.variants.Length > 1 && !HasBrokenMigratedVariantPayloads(ability))
+            // A serialized variants list, even empty, is designer-authored. Do not
+            // recreate default variants after the Inspector minus button removes them.
+            if (ability.variants != null && !HasBrokenMigratedVariantPayloads(ability))
                 continue;
 
             switch (ability.abilityName)

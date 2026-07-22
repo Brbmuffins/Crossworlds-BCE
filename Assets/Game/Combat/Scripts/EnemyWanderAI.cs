@@ -8,7 +8,7 @@ using UnityEngine.AI;
 /// who enter its aggro radius or damage it.
 /// </summary>
 [RequireComponent(typeof(NavMeshAgent))]
-public class FieldGhoulNPC : MonoBehaviour
+public class EnemyWanderAI : MonoBehaviour
 {
     [Header("Wander")]
     public float wanderRadius = 8f;
@@ -77,7 +77,7 @@ public class FieldGhoulNPC : MonoBehaviour
             if (NavMesh.SamplePosition(transform.position, out NavMeshHit hit, 5f, NavMesh.AllAreas))
             {
                 _agent.Warp(hit.position);
-                Debug.Log($"[FieldGhoulNPC] Snapped '{gameObject.name}' to NavMesh at {hit.position}");
+                Debug.Log($"[EnemyWanderAI] Snapped '{gameObject.name}' to NavMesh at {hit.position}");
             }
         }
 

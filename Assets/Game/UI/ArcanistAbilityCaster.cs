@@ -178,6 +178,7 @@ public class ArcanistAbilityCaster : AbilityCaster
                 maxChargeDamage = 50f,
                 maxChargeSizeMultiplier = 1.8f,
                 targetTag = "Enemy",
+                variants = new AbilityVariant[0],
             },
             new AbilityDef
             {
@@ -192,6 +193,7 @@ public class ArcanistAbilityCaster : AbilityCaster
                 castTime = 0.6f,
                 damage = 25f,
                 targetTag = "Enemy",
+                variants = new AbilityVariant[0],
             },
             new AbilityDef
             {
@@ -205,6 +207,7 @@ public class ArcanistAbilityCaster : AbilityCaster
                 castTime = 0.6f,
                 damage = 3f,
                 targetTag = "Enemy",
+                variants = new AbilityVariant[0],
             },
             new AbilityDef
             {
@@ -224,6 +227,7 @@ public class ArcanistAbilityCaster : AbilityCaster
                 pulseInterval = 0.3f,
                 pulseDamage = 7f,
                 pulseVFXLifetime = 1f,
+                variants = new AbilityVariant[0],
             },
         };
     }
