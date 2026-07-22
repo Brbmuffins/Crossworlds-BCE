@@ -994,11 +994,16 @@ public class PlayerHUD : MonoBehaviour
         var tmp = go.AddComponent<TextMeshProUGUI>();
 
         tmp.text      = isHeal ? $"+{Mathf.RoundToInt(amount)}" : $"-{Mathf.RoundToInt(amount)}";
-        tmp.fontSize  = 22f;
+        tmp.fontSize  = 28f;
         tmp.fontStyle = FontStyles.Bold;
         tmp.color     = isHeal ? HealColor : DmgColor;
         tmp.alignment = TextAlignmentOptions.Center;
-        rt.sizeDelta  = new Vector2(100f, 40f);
+        rt.sizeDelta  = new Vector2(130f, 48f);
+
+        var shadow = go.AddComponent<Shadow>();
+        shadow.effectColor = new Color(0f, 0f, 0f, 0.65f);
+        shadow.effectDistance = new Vector2(2f, -2f);
+        shadow.useGraphicAlpha = true;
 
         float elapsed = 0f;
         float dur     = 1.2f;

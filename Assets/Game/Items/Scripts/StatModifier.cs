@@ -10,7 +10,8 @@ public enum StatType
     DamageReduction,    // incoming damage cut   (Percent: 0.10 = -10% taken)
     MoveSpeed,          // movement speed        (Percent: 0.10 = +10%)
     CooldownReduction,  // ability cooldowns     (Percent: 0.10 = -10% cd)
-    HealPower           // healing dealt         (Percent: 0.10 = +10%)
+    HealPower,          // healing dealt         (Percent: 0.10 = +10%)
+    CriticalStrikeChance // crit chance          (Percent: 0.10 = +10%)
 }
 
 public enum ModifierKind
@@ -54,6 +55,7 @@ public struct StatModifier
             case StatType.MoveSpeed:         return "Move Speed";
             case StatType.CooldownReduction: return "Cooldown Reduction";
             case StatType.HealPower:         return "Heal Power";
+            case StatType.CriticalStrikeChance: return "Critical Strike Chance";
             default:                         return s.ToString();
         }
     }

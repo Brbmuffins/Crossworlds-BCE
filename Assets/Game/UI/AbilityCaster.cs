@@ -3275,7 +3275,7 @@ public class AbilityCaster : NetworkBehaviour
                 continue;
 
             damaged.Add(health);
-            health.TakeDamage(damage, gameObject);
+            DealAbilityDamage(health, damage);
             EmitHitVFX(hitVFX, health.transform.position + Vector3.up * 0.5f, hitVFXLifetime);
         }
     }
@@ -3296,6 +3296,18 @@ public class AbilityCaster : NetworkBehaviour
     {
         health = hit != null ? hit.GetComponentInParent<Health>() : null;
         return health != null && HitMatchesTargetTag(hit, health, targetTag);
+    }
+
+    void DealAbilityDamage(Health health, float damage)
+    {
+        if (health == null) return;
+
+        bool wasCritical = false;
+        float finalDamage = _characterStats != null
+            ? _characterStats.ApplyCriticalStrike(damage, out wasCritical)
+            : Mathf.Max(0f, damage);
+
+        health.TakeDamage(finalDamage, gameObject, wasCritical);
     }
 
     static bool AddMatchingHit(Collider hit, string targetTag, System.Collections.Generic.List<Collider> hits, System.Collections.Generic.HashSet<Health> matched)
@@ -3480,7 +3492,8 @@ public class AbilityCaster : NetworkBehaviour
         for (int i = 0; i < maxChain && nearest != null; i++)
         {
             Health h = nearest.GetComponentInParent<Health>();
-            h?.TakeDamage(Mathf.Max(1f, dmg), gameObject);
+            if (h != null)
+                DealAbilityDamage(h, Mathf.Max(1f, dmg));
 
             Vector3 nearestPos = h != null ? h.transform.position : nearest.transform.position;
             EmitHitVFX(ability.hitVFX, nearestPos + Vector3.up * 0.5f);
@@ -3602,7 +3615,7 @@ public class AbilityCaster : NetworkBehaviour
             if (!TryGetMatchingHealth(col, "Enemy", out Health h)) continue;
             if (h == null || !h.isRobotic) continue;
             float dmg = (ability.damage > 0f ? ability.damage : 60f) * dmgMult;
-            h.TakeDamage(dmg, gameObject);
+            DealAbilityDamage(h, dmg);
             EmitHitVFX(ability.hitVFX, h.transform.position + Vector3.up);
         }
     }
@@ -3659,7 +3672,7 @@ public class AbilityCaster : NetworkBehaviour
             if (stacks > 0)
             {
                 float dmg = baseDmg * stacks * dmgMult;
-                health.TakeDamage(dmg, gameObject);
+                DealAbilityDamage(health, dmg);
                 EmitHitVFX(ability.hitVFX, health.transform.position + Vector3.up * 0.5f);
             }
         }
@@ -3703,7 +3716,7 @@ public class AbilityCaster : NetworkBehaviour
             if (!TryGetMatchingHealth(hit, ability.targetTag, out Health health) || !damaged.Add(health))
                 continue;
 
-            health.TakeDamage(ability.damage * damageMultiplier, gameObject);
+            DealAbilityDamage(health, ability.damage * damageMultiplier);
             EmitHitVFX(ability.hitVFX, health.transform.position + Vector3.up * 0.5f);
         }
     }
@@ -3745,7 +3758,7 @@ public class AbilityCaster : NetworkBehaviour
             if (!TryGetMatchingHealth(hit, ability.targetTag, out Health health) || !damaged.Add(health))
                 continue;
 
-            health.TakeDamage(damage, gameObject);
+            DealAbilityDamage(health, damage);
             EmitHitVFX(ability.hitVFX, health.transform.position + Vector3.up * 0.5f);
         }
     }
@@ -3769,7 +3782,7 @@ public class AbilityCaster : NetworkBehaviour
             if (angle > ability.coneAngle / 2f) continue;
 
             damaged.Add(health);
-            health.TakeDamage(damage, gameObject);
+            DealAbilityDamage(health, damage);
             EmitHitVFX(ability.hitVFX, health.transform.position + Vector3.up * 0.5f);
         }
     }
@@ -3842,7 +3855,7 @@ public class AbilityCaster : NetworkBehaviour
             if (targetHealth == null) continue;
 
             Vector3 hitPos = targetHealth.transform.position + Vector3.up * 0.5f;
-            Vector3 floatingTextPos = targetHealth.transform.position + Vector3.up * 1.5f;
+            Vector3 floatingTextPos = targetHealth.GetFloatingNumberWorldPosition();
             Vector3 toTarget = targetHealth.transform.position - castOrigin;
             toTarget.y = 0;
 
@@ -3866,7 +3879,7 @@ public class AbilityCaster : NetworkBehaviour
                     float healVal = (ability.healAmount > 0f ? ability.healAmount : 25f) * 1.5f;
                     targetHealth.Heal(healVal);
                     EmitHitVFX(ability.hitVFX, hitPos);
-                    FloatingDamageText.Spawn(floatingTextPos, healVal, FloatingDamageText.DamageType.HealCrit);
+                    FloatingDamageText.SpawnAnchored(floatingTextPos, healVal, FloatingDamageText.DamageType.HealCrit);
                 }
                 else if (fraction <= 0.66f)
                 {
@@ -3878,7 +3891,7 @@ public class AbilityCaster : NetworkBehaviour
                     StartCoroutine(ApplyHealOverTime(targetHealth, tickAmount, 5, 1f));
 
                     EmitHitVFX(ability.hitVFX, hitPos);
-                    FloatingDamageText.Spawn(floatingTextPos, instantHeal, FloatingDamageText.DamageType.Heal);
+                    FloatingDamageText.SpawnAnchored(floatingTextPos, instantHeal, FloatingDamageText.DamageType.Heal);
                 }
                 else
                 {
@@ -3887,7 +3900,7 @@ public class AbilityCaster : NetworkBehaviour
                     targetHealth.ApplyShield(shieldAmount);
 
                     EmitHitVFX(ability.hitVFX, hitPos);
-                    FloatingDamageText.Spawn(floatingTextPos, shieldAmount, FloatingDamageText.DamageType.Shield);
+                    FloatingDamageText.SpawnAnchored(floatingTextPos, shieldAmount, FloatingDamageText.DamageType.Shield);
                 }
             }
             else
@@ -5876,12 +5889,13 @@ public class AbilityCaster : NetworkBehaviour
         if (health == null) return;
 
         Vector3 hitPos = health.transform.position + Vector3.up * 0.5f;
+        Vector3 floatingTextPos = health.GetFloatingNumberWorldPosition();
         bool playedHitVfx = false;
 
         if (ability.healAmount > 0f)
         {
             health.Heal(ability.healAmount);
-            FloatingDamageText.Spawn(hitPos + Vector3.up, ability.healAmount, FloatingDamageText.DamageType.Heal);
+            FloatingDamageText.SpawnAnchored(floatingTextPos, ability.healAmount, FloatingDamageText.DamageType.Heal);
             playedHitVfx = true;
         }
 
@@ -5889,14 +5903,14 @@ public class AbilityCaster : NetworkBehaviour
         {
             StartCoroutine(ApplyHealOverTime(health, ability.hotTickAmount, ability.hotTicks, ability.hotInterval));
             float totalHot = ability.hotTickAmount * ability.hotTicks;
-            FloatingDamageText.Spawn(hitPos + Vector3.up * 1.3f, totalHot, FloatingDamageText.DamageType.Heal);
+            FloatingDamageText.SpawnAnchored(floatingTextPos, totalHot, FloatingDamageText.DamageType.Heal);
             playedHitVfx = true;
         }
 
         if (ability.shieldAbsorb > 0f)
         {
             health.ApplyShield(ability.shieldAbsorb);
-            FloatingDamageText.Spawn(hitPos + Vector3.up * 1.3f, ability.shieldAbsorb, FloatingDamageText.DamageType.Shield);
+            FloatingDamageText.SpawnAnchored(floatingTextPos, ability.shieldAbsorb, FloatingDamageText.DamageType.Shield);
             playedHitVfx = true;
         }
 

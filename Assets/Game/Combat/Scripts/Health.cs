@@ -13,6 +13,9 @@ public class Health : NetworkBehaviour
 {
     const string EnemyTag = "Enemy";
     const string UntaggedTag = "Untagged";
+    const float FloatingNumberDefaultHeight = 1.65f;
+    const float FloatingNumberMinHeight = 0.2f;
+    const float FloatingNumberBelowBarWorldOffset = 0.35f;
 
     [Header("Settings")]
     [SyncVar(hook = nameof(OnMaxHealthSynced))]
@@ -222,7 +225,7 @@ public class Health : NetworkBehaviour
     // Set to true by PlayerMovement during a dodge. While true, all damage is ignored.
     [HideInInspector] public bool isInvulnerable = false;
 
-    public void TakeDamage(float amount, GameObject source = null)
+    public void TakeDamage(float amount, GameObject source = null, bool isCritical = false)
     {
         if (!CanMutateCombatState()) return;
         if (_isDowned) return;
@@ -275,7 +278,7 @@ public class Health : NetworkBehaviour
         onHealthChanged?.Invoke(currentHealth, maxHealth);
         onDamageTaken?.Invoke(amount);
         onDamagedBy?.Invoke(source);
-        ShowDamageFeedback(amount);
+        ShowDamageFeedback(amount, isCritical);
 
         if (currentHealth <= 0f)
             HandleDeath(source);
@@ -797,24 +800,66 @@ public class Health : NetworkBehaviour
         _respawnInvulnerabilityRoutine = null;
     }
 
-    void ShowDamageFeedback(float amount)
+    void ShowDamageFeedback(float amount, bool isCritical)
     {
         if (!showFloatingNumbers || amount <= 0f) return;
 
+        Vector3 numberPosition = GetFloatingNumberWorldPosition();
+        bool damageAgainstPlayer = isPlayer;
         if (CanRpcCombatFeedback())
-            RpcShowDamageNumber(amount, transform.position);
+            RpcShowDamageNumber(amount, numberPosition, damageAgainstPlayer, isCritical);
         else if (!NetworkClient.active || NetworkServer.active)
-            SpawnDamageNumber(amount, transform.position);
+            SpawnDamageNumber(amount, numberPosition, damageAgainstPlayer, isCritical);
     }
 
     void ShowHealFeedback(float amount)
     {
         if (!showFloatingNumbers || amount <= 0f) return;
 
+        Vector3 numberPosition = GetFloatingNumberWorldPosition();
         if (CanRpcCombatFeedback())
-            RpcShowHealNumber(amount, transform.position);
+            RpcShowHealNumber(amount, numberPosition);
         else if (!NetworkClient.active || NetworkServer.active)
-            SpawnHealNumber(amount, transform.position);
+            SpawnHealNumber(amount, numberPosition);
+    }
+
+    public Vector3 GetFloatingNumberWorldPosition()
+    {
+        if (isPlayer || !IsEnemyLikeForHud())
+            return transform.position;
+
+        float barHeight = GetHealthBarLocalHeight();
+        Vector3 barWorldPosition = transform.TransformPoint(new Vector3(0f, barHeight, 0f));
+        return barWorldPosition - Vector3.up * FloatingNumberBelowBarWorldOffset;
+    }
+
+    float GetHealthBarLocalHeight()
+    {
+        if (enemyHealthBarFixedHeight >= 0f)
+            return Mathf.Max(FloatingNumberMinHeight, enemyHealthBarFixedHeight);
+
+        float top = float.NegativeInfinity;
+
+        foreach (var renderer in GetComponentsInChildren<Renderer>())
+        {
+            if (renderer == null || !renderer.enabled)
+                continue;
+
+            top = Mathf.Max(top, transform.InverseTransformPoint(renderer.bounds.max).y);
+        }
+
+        foreach (var collider in GetComponentsInChildren<Collider>())
+        {
+            if (collider == null || !collider.enabled)
+                continue;
+
+            top = Mathf.Max(top, transform.InverseTransformPoint(collider.bounds.max).y);
+        }
+
+        if (float.IsNegativeInfinity(top))
+            top = FloatingNumberDefaultHeight - enemyHealthBarHeightOffset;
+
+        return Mathf.Max(FloatingNumberMinHeight, top + enemyHealthBarHeightOffset);
     }
 
     bool CanRpcCombatFeedback()
@@ -825,9 +870,9 @@ public class Health : NetworkBehaviour
     }
 
     [ClientRpc]
-    void RpcShowDamageNumber(float amount, Vector3 worldPosition)
+    void RpcShowDamageNumber(float amount, Vector3 worldPosition, bool damageAgainstPlayer, bool isCritical)
     {
-        SpawnDamageNumber(amount, worldPosition);
+        SpawnDamageNumber(amount, worldPosition, damageAgainstPlayer, isCritical);
     }
 
     [ClientRpc]
@@ -836,17 +881,24 @@ public class Health : NetworkBehaviour
         SpawnHealNumber(amount, worldPosition);
     }
 
-    static void SpawnDamageNumber(float amount, Vector3 worldPosition)
+    static void SpawnDamageNumber(float amount, Vector3 worldPosition, bool damageAgainstPlayer, bool isCritical)
     {
 #if UNITY_EDITOR || !UNITY_SERVER
-        FloatingDamageText.Spawn(worldPosition, amount, FloatingDamageText.DamageType.Normal);
+        FloatingDamageText.DamageType damageType = damageAgainstPlayer
+            ? FloatingDamageText.DamageType.PlayerDamage
+            : isCritical ? FloatingDamageText.DamageType.Critical : FloatingDamageText.DamageType.Normal;
+
+        FloatingDamageText.SpawnAnchored(
+            worldPosition,
+            amount,
+            damageType);
 #endif
     }
 
     static void SpawnHealNumber(float amount, Vector3 worldPosition)
     {
 #if UNITY_EDITOR || !UNITY_SERVER
-        FloatingDamageText.Spawn(worldPosition, amount, FloatingDamageText.DamageType.Heal);
+        FloatingDamageText.SpawnAnchored(worldPosition, amount, FloatingDamageText.DamageType.Heal);
 #endif
     }
 

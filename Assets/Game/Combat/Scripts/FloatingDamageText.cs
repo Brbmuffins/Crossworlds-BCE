@@ -1,227 +1,341 @@
 #if UNITY_EDITOR || !UNITY_SERVER
 using System.Collections;
+using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 /// <summary>
-/// FloatingDamageText — spawns world-space damage numbers that float up and fade.
-///
-/// Usage (call from ClientRpc or client-side damage callbacks):
-///   FloatingDamageText.Spawn(worldPosition, amount, type);
-///
-/// Types: Normal, Critical, Heal, Miss
-/// Pool of 32 text objects; reused automatically via generation tokens.
-/// When a slot is recycled mid-animation the old coroutine self-terminates.
+/// Spawns fixed-size screen UI combat numbers from world-space anchors.
+/// Callers still pass a world position; this class projects it onto the UI canvas.
 /// </summary>
 public class FloatingDamageText : MonoBehaviour
 {
-    // ── Public types ──────────────────────────────────────────────────────────
-    public enum DamageType { Normal, Critical, Heal, Miss, HealCrit, Shield, TriageReturn }
+    public enum DamageType { Normal, PlayerDamage, Critical, Heal, Miss, HealCrit, Shield, TriageReturn }
 
-    // ── Singleton / pool ──────────────────────────────────────────────────────
     static FloatingDamageText _instance;
+
     const int PoolSize = 32;
+    const float TextSizeMultiplier = 1.71f;
+    const float ShadowAlpha = 0.68f;
+    const float DefaultLifetime = 1.0f;
+    const float CritLifetime = 1.35f;
+    const float DefaultScreenRise = 88f;
+    const float HealScreenRise = 104f;
+    const float CritScreenRise = 116f;
+    const float TriageScreenRise = 54f;
 
-    GameObject[]    _pool;
-    TextMesh[]      _meshes;
-    int[]           _gen;       // generation token per slot — incremented on recycle
-    int             _poolHead;
+    GameObject[] _pool;
+    RectTransform[] _rects;
+    TextMeshProUGUI[] _labels;
+    Shadow[] _shadows;
+    int[] _gen;
+    int _poolHead;
 
-    // ── Bootstrap ─────────────────────────────────────────────────────────────
+    RectTransform _canvasRect;
+
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void Bootstrap()
     {
         if (_instance != null) return;
+
         var go = new GameObject("[FloatingDamageText]");
         DontDestroyOnLoad(go);
         _instance = go.AddComponent<FloatingDamageText>();
     }
 
-    // ── Lifecycle ─────────────────────────────────────────────────────────────
     void Awake()
     {
-        _pool     = new GameObject[PoolSize];
-        _meshes   = new TextMesh[PoolSize];
-        _gen      = new int[PoolSize];
-        _poolHead = 0;
-
-        for (int i = 0; i < PoolSize; i++)
+        if (_instance != null && _instance != this)
         {
-            var obj = new GameObject($"DmgText_{i}");
-            obj.transform.SetParent(transform, false);
-            obj.SetActive(false);
-            // Children of a DontDestroyOnLoad root persist automatically — no call needed.
-
-            var tm = obj.AddComponent<TextMesh>();
-            tm.characterSize = 0.12f;
-            tm.fontSize      = 48;
-            tm.fontStyle     = FontStyle.Bold;
-            tm.anchor        = TextAnchor.MiddleCenter;
-            tm.alignment     = TextAlignment.Center;
-
-            // RodBillboard faces camera if available; else inline fallback
-            var bbType = System.Type.GetType("RodBillboard");
-            if (bbType != null) obj.AddComponent(bbType);
-            else obj.AddComponent<DmgTextBillboard>();
-
-            _pool[i]   = obj;
-            _meshes[i] = tm;
+            Destroy(gameObject);
+            return;
         }
+
+        _instance = this;
+
+        CreateCanvas();
+        CreatePool();
     }
 
-    // ── Static API ────────────────────────────────────────────────────────────
-
-    /// <summary>Spawn a floating damage number at a world position.</summary>
     public static void Spawn(Vector3 worldPos, float amount, DamageType type = DamageType.Normal,
                              string textOverride = null)
     {
         if (_instance == null) return;
-        _instance.SpawnInternal(worldPos, amount, type, textOverride);
+        _instance.SpawnInternal(worldPos, amount, type, textOverride, false);
     }
 
-    /// <summary>Integer overload.</summary>
+    public static void SpawnAnchored(Vector3 worldPos, float amount, DamageType type = DamageType.Normal,
+                                     string textOverride = null)
+    {
+        if (_instance == null) return;
+        _instance.SpawnInternal(worldPos, amount, type, textOverride, true);
+    }
+
     public static void Spawn(Vector3 worldPos, int amount, DamageType type = DamageType.Normal,
                              string textOverride = null)
         => Spawn(worldPos, (float)amount, type, textOverride);
 
-    // ── Internal spawn ────────────────────────────────────────────────────────
-    void SpawnInternal(Vector3 worldPos, float amount, DamageType type, string textOverride = null)
+    public static void SpawnAnchored(Vector3 worldPos, int amount, DamageType type = DamageType.Normal,
+                                     string textOverride = null)
+        => SpawnAnchored(worldPos, (float)amount, type, textOverride);
+
+    void CreateCanvas()
+    {
+        var canvasObj = new GameObject("FloatingDamageCanvas", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler));
+        canvasObj.transform.SetParent(transform, false);
+
+        _canvasRect = canvasObj.GetComponent<RectTransform>();
+        _canvasRect.anchorMin = Vector2.zero;
+        _canvasRect.anchorMax = Vector2.one;
+        _canvasRect.offsetMin = Vector2.zero;
+        _canvasRect.offsetMax = Vector2.zero;
+
+        var canvas = canvasObj.GetComponent<Canvas>();
+        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+        canvas.sortingOrder = 10000;
+
+        var scaler = canvasObj.GetComponent<CanvasScaler>();
+        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        scaler.referenceResolution = new Vector2(1920f, 1080f);
+        scaler.matchWidthOrHeight = 0.5f;
+    }
+
+    void CreatePool()
+    {
+        _pool = new GameObject[PoolSize];
+        _rects = new RectTransform[PoolSize];
+        _labels = new TextMeshProUGUI[PoolSize];
+        _shadows = new Shadow[PoolSize];
+        _gen = new int[PoolSize];
+        _poolHead = 0;
+
+        for (int i = 0; i < PoolSize; i++)
+        {
+            var obj = new GameObject($"DmgText_{i}", typeof(RectTransform));
+            obj.transform.SetParent(_canvasRect, false);
+            obj.SetActive(false);
+
+            var rect = obj.GetComponent<RectTransform>();
+            rect.anchorMin = new Vector2(0.5f, 0.5f);
+            rect.anchorMax = new Vector2(0.5f, 0.5f);
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.sizeDelta = new Vector2(180f, 58f);
+
+            var label = obj.AddComponent<TextMeshProUGUI>();
+            ConfigureLabel(label);
+
+            var shadow = obj.AddComponent<Shadow>();
+            shadow.effectColor = new Color(0f, 0f, 0f, ShadowAlpha);
+            shadow.effectDistance = new Vector2(2.5f, -2.5f);
+            shadow.useGraphicAlpha = true;
+
+            _pool[i] = obj;
+            _rects[i] = rect;
+            _labels[i] = label;
+            _shadows[i] = shadow;
+        }
+    }
+
+    void SpawnInternal(Vector3 worldPos, float amount, DamageType type, string textOverride = null, bool anchored = false)
     {
         int idx = _poolHead;
         _poolHead = (_poolHead + 1) % PoolSize;
 
-        // Invalidate any running animation on this slot
         _gen[idx]++;
         int myGen = _gen[idx];
 
-        var obj  = _pool[idx];
-        var mesh = _meshes[idx];
+        var obj = _pool[idx];
+        var rect = _rects[idx];
+        var label = _labels[idx];
+        var shadow = _shadows[idx];
+
         obj.SetActive(false);
 
-        // Configure text content & colour
-        switch (type)
-        {
-            case DamageType.Critical:
-                mesh.text          = textOverride ?? $"{Mathf.RoundToInt(amount)}!";
-                mesh.color         = new Color(1.00f, 0.35f, 0.05f);
-                mesh.characterSize = 0.18f;
-                break;
-            case DamageType.Heal:
-                mesh.text          = textOverride ?? $"+{Mathf.RoundToInt(amount)}";
-                mesh.color         = new Color(0.20f, 0.90f, 0.30f);
-                mesh.characterSize = 0.12f;
-                break;
-            case DamageType.HealCrit:
-                mesh.text          = textOverride ?? $"+{Mathf.RoundToInt(amount)}!";
-                mesh.color         = new Color(0.40f, 1.00f, 0.40f);
-                mesh.characterSize = 0.16f;
-                break;
-            case DamageType.Shield:
-                mesh.text          = textOverride ?? $"[{Mathf.RoundToInt(amount)}]";
-                mesh.color         = new Color(0.40f, 0.70f, 1.00f);
-                mesh.characterSize = 0.11f;
-                break;
-            case DamageType.TriageReturn:
-                mesh.text          = textOverride ?? $"+{Mathf.RoundToInt(amount)}";
-                mesh.color         = new Color(1.00f, 0.80f, 0.20f);
-                mesh.characterSize = 0.09f;
-                break;
-            case DamageType.Miss:
-                mesh.text          = textOverride ?? "MISS";
-                mesh.color         = new Color(0.75f, 0.75f, 0.75f);
-                mesh.characterSize = 0.10f;
-                break;
-            default:
-                mesh.text          = textOverride ?? Mathf.RoundToInt(amount).ToString();
-                mesh.color         = new Color(1.00f, 0.92f, 0.80f);
-                mesh.characterSize = 0.12f;
-                break;
-        }
+        ConfigureForType(rect, label, shadow, amount, type, textOverride);
 
-        // Position with slight random scatter
-        obj.transform.position = worldPos + new Vector3(
-            Random.Range(-0.3f, 0.3f),
-            Random.Range( 0.8f, 1.4f),
-            Random.Range(-0.2f, 0.2f));
+        Vector3 worldAnchor = anchored
+            ? worldPos
+            : worldPos + Vector3.up * Random.Range(0.8f, 1.4f);
 
-        // Type-specific scale
-        float startScale = type switch
-        {
-            DamageType.HealCrit     => 1.4f,
-            DamageType.Heal         => 1.1f,
-            DamageType.TriageReturn => 0.75f,
-            _                       => 1.0f
-        };
-        obj.transform.localScale = Vector3.one * startScale;
+        Vector2 screenScatter = new Vector2(
+            Random.Range(-30f, 30f),
+            anchored ? Random.Range(-8f, 8f) : Random.Range(-12f, 12f));
+
+        if (!TrySetScreenPosition(rect, worldAnchor, screenScatter))
+            return;
+
+        rect.localScale = Vector3.one * StartingScale(type);
         obj.SetActive(true);
 
-        // Heal types drift upward faster; TriageReturn is subtle
-        bool isCrit       = type == DamageType.Critical || type == DamageType.HealCrit;
-        bool isHealType   = type == DamageType.Heal || type == DamageType.HealCrit;
-        float riseOverride = isHealType ? 2.0f : (type == DamageType.TriageReturn ? 1.0f : 0f);
-
-        StartCoroutine(Animate(obj, mesh, idx, myGen, isCrit, riseOverride));
+        StartCoroutine(Animate(obj, rect, label, idx, myGen, worldAnchor, screenScatter, type));
     }
 
-    IEnumerator Animate(GameObject obj, TextMesh mesh, int idx, int gen, bool isCrit,
-                        float riseOverride = 0f)
+    IEnumerator Animate(GameObject obj, RectTransform rect, TextMeshProUGUI label, int idx, int gen,
+                        Vector3 worldAnchor, Vector2 screenScatter, DamageType type)
     {
-        float lifetime  = isCrit ? 1.4f : 1.0f;
-        float riseSpeed = riseOverride > 0f ? riseOverride : (isCrit ? 2.5f : 1.6f);
-        Vector3 startPos = obj.transform.position;
-        Color   startCol = mesh.color;
-
-        // Crit: quick punch-in scale
-        if (isCrit)
-        {
-            float pe = 0f, punchDur = 0.15f;
-            while (pe < punchDur)
-            {
-                if (_gen[idx] != gen) { obj.SetActive(false); yield break; }
-                pe += Time.deltaTime;
-                float s = Mathf.LerpUnclamped(1f, 1.4f, Mathf.Sin(pe / punchDur * Mathf.PI));
-                obj.transform.localScale = new Vector3(s, s, 1f);
-                yield return null;
-            }
-            obj.transform.localScale = Vector3.one;
-        }
+        float lifetime = type == DamageType.Critical || type == DamageType.HealCrit
+            ? CritLifetime
+            : DefaultLifetime;
+        float rise = RiseDistance(type);
+        float startScale = StartingScale(type);
+        Color startColor = label.color;
 
         float elapsed = 0f;
         while (elapsed < lifetime)
         {
-            // Generation check — slot was recycled, bail out
-            if (_gen[idx] != gen) { obj.SetActive(false); yield break; }
+            if (_gen[idx] != gen)
+            {
+                obj.SetActive(false);
+                yield break;
+            }
 
             elapsed += Time.deltaTime;
-            float t = elapsed / lifetime;
+            float t = Mathf.Clamp01(elapsed / lifetime);
+            float easedRise = Mathf.SmoothStep(0f, rise, t);
+            Vector2 screenOffset = screenScatter + Vector2.up * easedRise;
 
-            obj.transform.position = startPos + Vector3.up * (riseSpeed * elapsed);
+            if (!TrySetScreenPosition(rect, worldAnchor, screenOffset))
+            {
+                obj.SetActive(false);
+                yield break;
+            }
 
-            // Fade out in last 40%
+            float scale = startScale;
+            if (type == DamageType.Critical || type == DamageType.HealCrit)
+            {
+                float punch = Mathf.Clamp01(t / 0.18f);
+                scale *= Mathf.LerpUnclamped(1f, 1.28f, Mathf.Sin(punch * Mathf.PI));
+            }
+            rect.localScale = new Vector3(scale, scale, 1f);
+
             if (t > 0.6f)
             {
                 float alpha = 1f - (t - 0.6f) / 0.4f;
-                Color c = startCol; c.a = alpha; mesh.color = c;
+                Color c = startColor;
+                c.a = alpha;
+                label.color = c;
             }
 
             yield return null;
         }
 
         obj.SetActive(false);
-        obj.transform.localScale = Vector3.one;
+        rect.localScale = Vector3.one;
     }
-}
 
-// ── Inline billboard fallback — faces camera each LateUpdate ─────────────────
-// Only instantiated when RodBillboard is not available in the project.
-internal class DmgTextBillboard : MonoBehaviour
-{
-    void LateUpdate()
+    bool TrySetScreenPosition(RectTransform rect, Vector3 worldAnchor, Vector2 screenOffset)
     {
+        Vector2 screenPoint;
         var cam = Camera.main;
-        if (cam == null) return;
-        transform.rotation = Quaternion.LookRotation(
-            transform.position - cam.transform.position,
-            cam.transform.up);
+
+        if (cam != null)
+        {
+            Vector3 projected = cam.WorldToScreenPoint(worldAnchor);
+            if (projected.z <= 0f)
+                return false;
+
+            screenPoint = new Vector2(projected.x + screenOffset.x, projected.y + screenOffset.y);
+        }
+        else
+        {
+            screenPoint = new Vector2(
+                Screen.width * 0.5f + screenOffset.x,
+                Screen.height * 0.5f + screenOffset.y);
+        }
+
+        if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(_canvasRect, screenPoint, null, out Vector2 localPoint))
+            return false;
+
+        rect.anchoredPosition = localPoint;
+        return true;
     }
+
+    static void ConfigureLabel(TextMeshProUGUI label)
+    {
+        label.alignment = TextAlignmentOptions.Center;
+        label.enableAutoSizing = false;
+        label.enableWordWrapping = false;
+        label.fontStyle = FontStyles.Bold;
+        label.raycastTarget = false;
+    }
+
+    static void ConfigureForType(RectTransform rect, TextMeshProUGUI label, Shadow shadow,
+                                 float amount, DamageType type, string textOverride)
+    {
+        label.color = Color.white;
+        label.text = textOverride ?? Mathf.RoundToInt(amount).ToString();
+        label.fontSize = ScaledFont(30f);
+        rect.sizeDelta = new Vector2(180f, 58f);
+
+        switch (type)
+        {
+            case DamageType.Critical:
+                label.text = textOverride ?? $"{Mathf.RoundToInt(amount)}!";
+                label.color = new Color(1.00f, 0.35f, 0.05f);
+                label.fontSize = ScaledFont(40f);
+                rect.sizeDelta = new Vector2(220f, 72f);
+                break;
+            case DamageType.PlayerDamage:
+                label.text = textOverride ?? $"-{Mathf.RoundToInt(amount)}";
+                label.color = new Color(1.00f, 0.16f, 0.10f);
+                label.fontSize = ScaledFont(32f);
+                rect.sizeDelta = new Vector2(190f, 62f);
+                break;
+            case DamageType.Heal:
+                label.text = textOverride ?? $"+{Mathf.RoundToInt(amount)}";
+                label.color = new Color(0.20f, 0.90f, 0.30f);
+                label.fontSize = ScaledFont(31f);
+                break;
+            case DamageType.HealCrit:
+                label.text = textOverride ?? $"+{Mathf.RoundToInt(amount)}!";
+                label.color = new Color(0.40f, 1.00f, 0.40f);
+                label.fontSize = ScaledFont(37f);
+                rect.sizeDelta = new Vector2(210f, 68f);
+                break;
+            case DamageType.Shield:
+                label.text = textOverride ?? $"[{Mathf.RoundToInt(amount)}]";
+                label.color = new Color(0.40f, 0.70f, 1.00f);
+                label.fontSize = ScaledFont(29f);
+                break;
+            case DamageType.TriageReturn:
+                label.text = textOverride ?? $"+{Mathf.RoundToInt(amount)}";
+                label.color = new Color(1.00f, 0.80f, 0.20f);
+                label.fontSize = ScaledFont(23f);
+                rect.sizeDelta = new Vector2(150f, 48f);
+                break;
+            case DamageType.Miss:
+                label.text = textOverride ?? "MISS";
+                label.color = new Color(0.75f, 0.75f, 0.75f);
+                label.fontSize = ScaledFont(28f);
+                rect.sizeDelta = new Vector2(170f, 54f);
+                break;
+            default:
+                label.text = textOverride ?? Mathf.RoundToInt(amount).ToString();
+                label.color = new Color(1.00f, 0.92f, 0.80f);
+                label.fontSize = ScaledFont(30f);
+                break;
+        }
+
+        shadow.effectColor = new Color(0f, 0f, 0f, ShadowAlpha);
+    }
+
+    static float ScaledFont(float size) => size * TextSizeMultiplier;
+
+    static float StartingScale(DamageType type) => type switch
+    {
+        DamageType.Critical     => 1.08f,
+        DamageType.HealCrit     => 1.08f,
+        DamageType.TriageReturn => 0.9f,
+        _                       => 1.0f
+    };
+
+    static float RiseDistance(DamageType type) => type switch
+    {
+        DamageType.Critical     => CritScreenRise,
+        DamageType.HealCrit     => CritScreenRise,
+        DamageType.Heal         => HealScreenRise,
+        DamageType.TriageReturn => TriageScreenRise,
+        _                       => DefaultScreenRise
+    };
 }
 #endif
