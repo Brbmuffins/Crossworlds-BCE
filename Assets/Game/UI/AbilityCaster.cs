@@ -3909,7 +3909,7 @@ public class AbilityCaster : NetworkBehaviour
                 {
                     // Zone 1: Burst Damage + Stagger
                     float dmgVal = (ability.damage > 0f ? ability.damage : 20f) * 1.6f * damageMultiplier;
-                    targetHealth.TakeDamage(dmgVal, gameObject);
+                    DealAbilityDamage(targetHealth, dmgVal);
 
                     StatusEffectManager sem = hit.GetComponent<StatusEffectManager>() ?? targetHealth.GetComponent<StatusEffectManager>();
                     if (sem != null)
@@ -3923,7 +3923,7 @@ public class AbilityCaster : NetworkBehaviour
                 {
                     // Zone 2: Burn DoT (Cursed effect)
                     float instantDmg = (ability.damage > 0f ? ability.damage : 20f) * 0.6f * damageMultiplier;
-                    targetHealth.TakeDamage(instantDmg, gameObject);
+                    DealAbilityDamage(targetHealth, instantDmg);
 
                     StatusEffectManager sem = hit.GetComponent<StatusEffectManager>() ?? targetHealth.GetComponent<StatusEffectManager>();
                     if (sem != null)
@@ -3938,7 +3938,7 @@ public class AbilityCaster : NetworkBehaviour
                 {
                     // Zone 3: Slow & Weakened
                     float dmgVal = (ability.damage > 0f ? ability.damage : 20f) * 0.8f * damageMultiplier;
-                    targetHealth.TakeDamage(dmgVal, gameObject);
+                    DealAbilityDamage(targetHealth, dmgVal);
 
                     StatusEffectManager sem = hit.GetComponent<StatusEffectManager>() ?? targetHealth.GetComponent<StatusEffectManager>();
                     if (sem != null)
@@ -5920,7 +5920,7 @@ public class AbilityCaster : NetworkBehaviour
             float damage = ability.chargeable
                 ? Mathf.Lerp(ability.damage, ability.maxChargeDamage, chargeFraction)
                 : ability.damage;
-            health.TakeDamage(damage * damageMultiplier, gameObject);
+            DealAbilityDamage(health, damage * damageMultiplier);
             playedHitVfx = true;
         }
 
