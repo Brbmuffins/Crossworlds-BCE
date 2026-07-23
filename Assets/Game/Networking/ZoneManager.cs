@@ -70,6 +70,8 @@ public class ZoneManager : MonoBehaviour
     readonly Dictionary<string, int> _instances = new Dictionary<string, int>();
     // scene handles with a pending unload, so we can cancel on re-entry
     readonly Dictionary<int, Coroutine> _pendingUnloads = new Dictionary<int, Coroutine>();
+    // zones that own a physics scene we must step ourselves — see FixedUpdate
+    readonly List<Scene> _simulated = new List<Scene>();
 
     void Awake()
     {
@@ -80,6 +82,40 @@ public class ZoneManager : MonoBehaviour
     void OnDestroy()
     {
         if (Instance == this) Instance = null;
+    }
+
+    /// <summary>
+    /// Steps each zone's physics scene.
+    ///
+    /// Unity auto-simulates ONLY the default physics scene. A scene loaded with
+    /// localPhysicsMode gets its own PhysicsScene that nothing advances unless we
+    /// do it here — so every Rigidbody in a zone would sit frozen: no gravity, no
+    /// collision, and MovePosition silently doing nothing. That is exactly what
+    /// happened the first time a player spawned into Hub and could not move.
+    ///
+    /// (Mirror's MultipleAdditiveScenes example passes localPhysicsMode and never
+    /// simulates, which is where the omission was copied from.)
+    ///
+    /// NavMeshAgent movement is unaffected either way — it is not physics — which
+    /// is why enemies kept moving while the player could not.
+    /// </summary>
+    void FixedUpdate()
+    {
+        if (!NetworkServer.active) return;
+
+        for (int i = _simulated.Count - 1; i >= 0; i--)
+        {
+            Scene scene = _simulated[i];
+
+            if (!scene.IsValid() || !scene.isLoaded)
+            {
+                _simulated.RemoveAt(i);
+                continue;
+            }
+
+            PhysicsScene physics = scene.GetPhysicsScene();
+            if (physics.IsValid()) physics.Simulate(Time.fixedDeltaTime);
+        }
     }
 
     public bool IsInstanced(string zoneName)
@@ -287,6 +323,12 @@ public class ZoneManager : MonoBehaviour
         if (instanced) _instances[key] = loaded.handle;
         else           _sharedZones[zoneName] = loaded.handle;
 
+        // Register for manual physics stepping. Compared against the default scene so
+        // that if the LocalPhysicsMode above is ever dropped, we don't double-simulate.
+        PhysicsScene physics = loaded.GetPhysicsScene();
+        if (physics.IsValid() && physics != Physics.defaultPhysicsScene)
+            _simulated.Add(loaded);
+
         // Mirror only auto-spawns scene objects for the initial scene load, so an
         // additively-loaded zone's baked NetworkIdentities need spawning explicitly.
         NetworkServer.SpawnObjects();
@@ -368,6 +410,9 @@ public class ZoneManager : MonoBehaviour
         _occupants.Remove(handle);
         _scenesByHandle.Remove(handle);
 
+        for (int i = _simulated.Count - 1; i >= 0; i--)
+            if (_simulated[i].handle == handle) _simulated.RemoveAt(i);
+
         // Collect keys first — removing during a foreach over the dictionary throws.
         RemoveByValue(_sharedZones, handle);
         RemoveByValue(_instances, handle);
@@ -407,6 +452,14 @@ public class ZoneManager : MonoBehaviour
         // Without ServerTeleport the NetworkTransform treats a cross-zone jump as
         // ordinary movement and interpolates the player across the whole map —
         // visible as the character streaking through the world on every client.
+        //
+        // Only valid once the object is actually spawned: ServerTeleport sends a
+        // ClientRpc, and the initial-spawn path calls this BEFORE
+        // AddPlayerForConnection. There the plain transform write above is already
+        // correct — Mirror ships the starting pose in the spawn message.
+        var identity = player.GetComponent<NetworkIdentity>();
+        if (identity == null || identity.netId == 0) return;
+
         var networkTransform = player.GetComponent<NetworkTransformBase>();
         if (networkTransform != null)
             networkTransform.ServerTeleport(position, rotation);
