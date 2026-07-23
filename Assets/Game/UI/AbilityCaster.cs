@@ -3710,6 +3710,10 @@ public class AbilityCaster : NetworkBehaviour
         GameObject go = Instantiate(prefab, pos, rot ?? Quaternion.identity);
         init?.Invoke(go);
 
+        // Keep the deployable in the caster's zone before it goes live — observers are
+        // keyed off gameObject.scene once zones load additively (ROADMAP 6.1/6.3).
+        ZoneScene.PlaceWith(go, gameObject);
+
         // Replicate to clients when authoritative. Guard on NetworkIdentity so this
         // degrades to a server-local object (old behaviour) if the prefab hasn't been
         // given a NetworkIdentity yet — run BCE ▶ Setup ▶ 4d to add them.
@@ -4043,6 +4047,9 @@ public class AbilityCaster : NetworkBehaviour
         GuardianFollower guardian = turret.GetComponent<GuardianFollower>();
         if (guardian != null)
             guardian.BindToOwner(transform);
+
+        // Keep the turret in the caster's zone before it goes live (ROADMAP 6.1/6.3).
+        ZoneScene.PlaceWith(turret, gameObject);
 
         // Replicate to clients so other players see the sentinel/guardian. Guard on
         // NetworkIdentity: non-networked prefabs still work in solo/editor play.

@@ -675,6 +675,7 @@ public class EnemyController : NetworkBehaviour
         var proj = Instantiate(projectilePrefab, spawnPos, spawnRot);
         var ep = proj.GetComponent<EnemyProjectile>();
         if (ep != null) ep.Init(damage);
+        ZoneScene.PlaceWith(proj, gameObject);   // keep the projectile in this enemy's zone
         if (NetworkServer.active) NetworkServer.Spawn(proj);
     }
 
@@ -814,6 +815,7 @@ public class EnemyController : NetworkBehaviour
         var wi   = Instantiate(worldItemPrefab, transform.position + offset, Quaternion.identity);
         var comp = wi.GetComponent<WorldItem>();
         if (comp != null) { comp.itemId = itemId; comp.quantity = qty; }
+        ZoneScene.PlaceWith(wi, gameObject);   // drop belongs to the zone the enemy died in
         if (NetworkServer.active) NetworkServer.Spawn(wi);
     }
 

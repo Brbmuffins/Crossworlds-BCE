@@ -167,6 +167,10 @@ public class RodNetworkManager : NetworkManager
         {
             var chatGO = Instantiate(chatManagerPrefab);
             DontDestroyOnLoad(chatGO);
+            // ZoneScene placement is deliberately NOT applied here: the ChatManager is
+            // world-global, not zone-scoped, so it stays in the DontDestroyOnLoad scene.
+            // ⚠ That makes it invisible to SceneInterestManagement (strict scene equality),
+            // which would silence chat for everyone once IM is enabled — see ROADMAP 6.5.
             NetworkServer.Spawn(chatGO);
             Debug.Log("[RodNM] ChatManager spawned and marked DontDestroyOnLoad.");
         }

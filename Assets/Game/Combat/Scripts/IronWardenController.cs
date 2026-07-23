@@ -270,6 +270,7 @@ public class IronWardenController : NetworkBehaviour
         var go = Instantiate(siegeTurretPrefab, pos, Quaternion.identity);
         var turret = go.GetComponent<SiegeTurretBehaviour>();
         if (turret != null) turret.warden = this;
+        ZoneScene.PlaceWith(go, gameObject);   // keep turrets in the warden's zone
         NetworkServer.Spawn(go);
         _liveTurrets.Add(go);
     }
@@ -404,6 +405,7 @@ public class IronWardenController : NetworkBehaviour
         var wi   = Instantiate(worldItemPrefab, pos, Quaternion.identity);
         var comp = wi.GetComponent<WorldItem>();
         if (comp != null) { comp.itemId = itemId; comp.quantity = 1; }
+        ZoneScene.PlaceWith(wi, gameObject);   // drop belongs to the warden's zone
         NetworkServer.Spawn(wi);
         Debug.Log($"[WARDEN] Dropped: {itemId}");
     }
