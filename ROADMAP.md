@@ -513,10 +513,84 @@ copies of one scene rather than one shared copy.
 core and everything else waits on it. 6.7 should land before real players accumulate saved
 positions.
 
+> **⚠ Two zones in `SceneNames.Zones` have no scene file:** `Arena_Copper` (task 1.1, never
+> built) and `Gathering Zone`. `NormalizeZone` accepts both as valid, and `PortalTransition`
+> defaults `arenaSceneName` to `SceneNames.ArenaCopper` — so a portal left on defaults sends
+> players somewhere that does not exist. ZoneManager now pre-checks
+> `Application.CanStreamedLevelBeLoaded` and falls back to Hub rather than stranding the player
+> with no scene at all (which at login means they never spawn). **Remove them from `Zones[]` or
+> build the scenes** — the fallback is a safety net, not a fix. The VPS allowlist in
+> `_CONTEXT/HANDOFF_zone_persistence.md` must not include them either.
+
 **Bandwidth note.** Two known bugs go from "multiplayer is janky" to "the world does not function"
 at this scale: hero and base-enemy prefabs are missing `NetworkTransform` (fix: BCE ▶ Setup ▶ 4n,
 `Editor/NetworkSyncFixer.cs`), and ability deployables still lack prefabs entirely (task 2.7).
 Neither is a Phase 6 task, but Phase 6 is not shippable with either outstanding.
+
+---
+
+## Phase 7 — Party System (added 2026-07-23)
+
+*Entry:* Phase 6 through 6.6. *Exit:* two players can group up and enter the same copy of an
+instanced zone, and see each other's health in the HUD.
+
+**Why this exists.** Phase 6 delivered shared-world co-op: two people in Darkwood see each other
+and fight the same mobs. Instanced content did **not** come with it. `ZoneManager` keys instances
+on `instanceKey`, which defaults to the connection id, so two friends both entering VoidDungeon
+get two separate private copies and never meet. Dungeons and arenas are solo until this phase
+lands. That is the gap between "shared world" and "play together" for the content that matters.
+
+**Deliberate design constraint.** `instanceKey` is already threaded through
+`ZoneManager.MovePlayerToZone(conn, zone, spawnId, instanceKey)` and ignored by shared zones.
+Wiring parties is a one-line change at each of the six travel call sites — passing the party id
+instead of null. Do not redesign ZoneManager for this.
+
+**Recommended scope: parties are ephemeral.** A party lives in server memory and dies when the
+last member disconnects. No DB tables, no VPS work, no cross-relog persistence. That is how most
+ARPGs behave, it removes the entire persistence surface from v1, and it can be upgraded later
+without changing the client contract. Only revisit if guilds or persistent groups get designed —
+see the note in `_CONTEXT/HANDOFF_zone_persistence.md`.
+
+- **7.1 — Server-side party state.** New `Assets/Game/Networking/PartyManager.cs`, server-only,
+  same shape as ZoneManager (plain MonoBehaviour on the NetworkManager GameObject, `Instance`
+  singleton, no `[Server]` attributes — Mirror's weaver rejects those outside a NetworkBehaviour).
+  Owns: party id generation, `Dictionary<int partyId, List<int connId>>`, leader, a
+  `maxPartySize` cap (recommend 4, matching `DynamicDifficultyScaler`'s co-op assumptions), and
+  invite/accept/decline/leave/kick with a pending-invite table that expires. Disconnect must
+  remove the member and promote a new leader — reuse the `OnServerDisconnect` hook that already
+  calls `ZoneManager.OnPlayerDisconnected`. *Accept:* two connections can form a party and the
+  server log shows correct membership through invite, leave, kick, and disconnect.
+  *Deps:* 6.6. **READY**
+
+- **7.2 — Party network messages + client mirror.** Mirror messages for the invite handshake
+  (server-authoritative — the client asks, never asserts) and a `SyncList`/message push of the
+  member roster to each member. Follow the existing `RodChatManager` pattern rather than inventing
+  a new one. Client-side singleton behind `#if UNITY_EDITOR || !UNITY_SERVER`, notified from
+  `OnStartClient` and NOT from server spawn paths — the host-mode-only bug in CLAUDE.md.
+  *Accept:* both clients see identical roster state after every operation. *Deps:* 7.1.
+
+- **7.3 — Party UI.** Invite prompt, party frames (name / class / HP), leave and kick controls.
+  Client-only, guarded. `/invite <name>` and `/leave` chat commands via `GmCommandRouter`'s
+  existing parser are the cheap first cut and worth doing before the panel.
+  *Accept:* invite by name from chat, accept from a prompt, see teammate HP update live.
+  *Deps:* 7.2.
+
+- **7.4 — Wire parties into instancing.** Pass the party id as `instanceKey` at the six travel
+  call sites (`WaypointMapTrigger`, `HubReturnTrigger`, `GmCommandRouter`, `HangmanNPC`,
+  `ArenaPortalTrigger`, `PortalTransition`). Decide and record the entry rule: does the whole
+  party get pulled in when the leader enters, or does each member walk in themselves and land in
+  the leader's existing instance? Recommend the latter — it needs no extra machinery, since
+  `AcquireZone` already reuses an existing instance for a matching key.
+  *Accept:* two partied players entering VoidDungeon separately end up in ONE copy and can see
+  each other; two unpartied players get two copies. *Deps:* 7.1, 6.3. **This is the task that
+  makes dungeons co-op.**
+
+- **7.5 — Party-aware combat plumbing.** `DynamicDifficultyScaler.GetScaling(wave, playerCount)`
+  currently counts players by proximity or connection; it should scale on party size in an
+  instance. Also confirm XP/loot attribution across a party — `EnemyController.PostCombatKill`
+  posts to `/api/combat/kill` per killer, so a party wipes out shared-credit rules unless the
+  server is told. **⚠ Needs a design decision** (shared XP? contribution-weighted? loot rolls?)
+  and, unlike the rest of Phase 7, likely VPS work. *Deps:* 7.4, owner decision.
 
 ---
 

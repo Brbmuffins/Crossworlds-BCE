@@ -125,6 +125,17 @@ public class ZoneManager : MonoBehaviour
         Scene destination = default;
         yield return AcquireZone(zoneName, instanceKey, conn, s => destination = s);
 
+        // Falling back to Hub beats stranding the player with no scene at all — which
+        // is what an unbuilt or misspelled destination would otherwise do, and at login
+        // it would mean they simply never spawn.
+        if ((!destination.IsValid() || !destination.isLoaded) && zoneName != SceneNames.Hub)
+        {
+            Debug.LogError($"[Zone] Could not acquire '{zoneName}' for conn {conn.connectionId} — " +
+                           $"falling back to {SceneNames.Hub}.");
+            zoneName = SceneNames.Hub;
+            yield return AcquireZone(zoneName, null, conn, s => destination = s);
+        }
+
         if (!destination.IsValid() || !destination.isLoaded)
         {
             Debug.LogError($"[Zone] Could not acquire '{zoneName}' for conn {conn.connectionId}.");
@@ -235,6 +246,17 @@ public class ZoneManager : MonoBehaviour
             yield break;
         }
 
+        // Not every name in SceneNames.Zones has a scene file yet (Arena_Copper and
+        // Gathering Zone are still unbuilt). Without this check a character whose saved
+        // zone is one of them would fail to spawn at all — caught before it can strand
+        // anyone, rather than after.
+        if (!Application.CanStreamedLevelBeLoaded(zoneName))
+        {
+            Debug.LogError($"[Zone] '{zoneName}' is not in Build Settings — cannot load.");
+            onReady(default);
+            yield break;
+        }
+
         // Load a fresh copy. Physics3D keeps zones from colliding with each other
         // until the world-space offsets in 6.7 land.
         AsyncOperation load = SceneManager.LoadSceneAsync(zoneName, new LoadSceneParameters
@@ -245,7 +267,7 @@ public class ZoneManager : MonoBehaviour
 
         if (load == null)
         {
-            Debug.LogError($"[Zone] '{zoneName}' is not in Build Settings — cannot load.");
+            Debug.LogError($"[Zone] LoadSceneAsync returned null for '{zoneName}'.");
             onReady(default);
             yield break;
         }
