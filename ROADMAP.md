@@ -492,15 +492,50 @@ copies of one scene rather than one shared copy.
   large zone stop arriving until approached. *Deps:* 6.3, 6.5. **Editor step** (component add +
   Inspector tuning).
 
-- **6.7 — Offset each zone in world space. Editor step.** Legacy baked NavMesh from additive
-  scenes merges into one navmesh; if two zones occupy the same coordinates, agents path between
-  maps and colliders interpenetrate. `LocalPhysicsMode.Physics3D` fixes the physics half but not
-  NavMesh. Since these are distinct hand-built maps rather than instances of one arena, give each
-  zone a distinct world-space origin (Hub x=0, Darkwood x=10000, Ashen x=20000, …), move each
-  map's root, and rebake. Cheaper and more debuggable than runtime machinery. *Accept:* no mob in
-  zone A can path into zone B; nothing renders at a neighbouring zone's coordinates.
-  *Deps:* 6.3. **⚠ Also affects 6.2** — saved coordinates are absolute, so this must land before
-  players accumulate saved positions, or those positions need migrating.
+- **6.7 — Zone spatial overlap. ⚠ RE-SCOPED 2026-07-23 — do not execute the original plan.**
+  The original spec said: offset every zone in world space (Hub x=0, Darkwood x=10000, …), move
+  each map's root, rebake. Measuring the actual scenes before doing that changed the answer.
+
+  **What was measured.** The zones do overlap, heavily — footprints from scene YAML:
+  HUB `x[-148..744] z[-8..498]`, Darkwood `x[-571..71] z[-457..292]`,
+  Ashen Wastelands `x[-500..1000] z[-1500..586]`, VoidDungeon `x[-12..34] z[-12..87]`.
+  All stacked around the origin. (Toujam Basin and GM Island report nothing under a plain
+  `m_LocalPosition` scan — their roots are prefab instances, whose overrides serialize
+  differently. That alone makes a scripted root-mover unreliable.)
+
+  **But two of the three problems turned out not to exist:**
+  - *Rendering overlap is not a client problem.* A client holds exactly ONE zone: ZoneManager
+    sends `UnloadAdditive` for the old zone on every travel. Only the brief transition window
+    has two, which is task 6.9's territory, not this one. The server is headless and renders
+    nothing.
+  - *Physics overlap is already solved.* ZoneManager loads every zone with
+    `LocalPhysicsMode.Physics3D`, so each zone gets its own physics scene.
+
+  **The one real remaining issue is NavMesh.** These zones use **NavMeshSurface**, not legacy
+  scene bakes (`Assets/Game/Scenes/<Zone>/NavMesh-*.asset` — Darkwood 3.8 MB, Ashen 8.9 MB).
+  Every loaded surface registers into one global navmesh via `NavMesh.AddNavMeshData`, so
+  overlapping surfaces sharing an agent type let an agent path from one zone into another.
+
+  **Cost of the original plan is much higher than specced:** moving roots invalidates every one
+  of those multi-megabyte bakes (full rebake per zone, an editor operation a CLI session cannot
+  run or verify), prefab-instance roots resist scripted moving, and float precision degrades
+  meaningfully past ~10k units from the origin.
+
+  **Options, cheapest first — needs an owner decision:**
+  1. **Measure, then probably do nothing.** Mobs already leash: `EnemyController.leashRadius`
+     and `EnemyWanderAI.leashRadius` default to 20 units, and `EnemyWanderAI` returns to origin
+     past that. A mob would have to path 20+ units off its spawn to cross into another zone's
+     surface, and leashing pulls it back first. Verify in play before spending anything.
+  2. **Per-zone NavMesh agent type.** Give each zone's NavMeshSurface its own agent type ID so
+     agents physically cannot traverse another zone's surface. No geometry moves, but still a
+     rebake per surface plus setting `agent.agentTypeID` per zone at spawn.
+  3. **The original world-space offset.** Correct and permanent, but the most expensive and the
+     only one that invalidates saved player coordinates.
+
+  *Recommendation:* option 1 — verify against a running server first. This is the one Phase 6
+  task whose cost/benefit does not currently justify doing it. *Deps:* 6.3, and a playtest.
+  **⚠ If option 3 is ever chosen** it must land before players accumulate saved positions, or
+  those absolute coordinates need migrating (keep Hub at offset 0 to spare existing rows).
 
 - **6.9 — One camera, not one per zone. Editor step.** Discovered 2026-07-23 right after 6z ran:
   every zone scene carries its own Camera and Audio Listener (HUB: 1 camera + 4 lights;
