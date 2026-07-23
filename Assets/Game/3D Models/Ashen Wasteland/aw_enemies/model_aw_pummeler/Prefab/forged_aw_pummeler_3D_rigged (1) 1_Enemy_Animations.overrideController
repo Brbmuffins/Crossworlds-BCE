@@ -6,16 +6,16 @@ AnimatorOverrideController:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: model_aw_instigator_3D_rigged_Enemy_Animations
+  m_Name: forged_aw_pummeler_3D_rigged (1) 1_Enemy_Animations
   m_Controller: {fileID: 9100000, guid: 2d55088586664f24893e070f14f968cd, type: 2}
   m_Clips:
   - m_OriginalClip: {fileID: 7400000, guid: f283c8a9dbece50468d61480f9326a94, type: 2}
-    m_OverrideClip: {fileID: -203655887218126122, guid: 3b761a80867551e4494b813e255079ec, type: 3}
+    m_OverrideClip: {fileID: 7400000, guid: 506a9cab234a2fe40937ffee9282f434, type: 2}
   - m_OriginalClip: {fileID: 7400000, guid: 476acfc86aca82d488dc5d97d74daf3d, type: 2}
-    m_OverrideClip: {fileID: -203655887218126122, guid: b100eb6237515fd4db37c21ba6d05d91, type: 3}
+    m_OverrideClip: {fileID: 7400000, guid: 374438a506185d84da14c4e34c8c8344, type: 2}
   - m_OriginalClip: {fileID: 7400000, guid: 9b815b00ae7adb34c8fe5d5ea5c80b04, type: 2}
-    m_OverrideClip: {fileID: -203655887218126122, guid: 31551bdf2b4ff744c802c696eb3989fc, type: 3}
+    m_OverrideClip: {fileID: 7400000, guid: 484c1e686e84f1c46b465a55a0932a82, type: 2}
   - m_OriginalClip: {fileID: 7400000, guid: a5770a5f078ab694eb2e86223bdb9de3, type: 2}
     m_OverrideClip: {fileID: 0}
   - m_OriginalClip: {fileID: 7400000, guid: cd4165dc47b728e45ae0fe232a6a63ce, type: 2}
-    m_OverrideClip: {fileID: -203655887218126122, guid: 6f0ee25a0c037ed469ab568039d31fff, type: 3}
+    m_OverrideClip: {fileID: 7400000, guid: 067e2d9a08e13814996a4aa44f6df1c5, type: 2}
