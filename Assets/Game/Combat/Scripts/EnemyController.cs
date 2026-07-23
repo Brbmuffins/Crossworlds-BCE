@@ -1,6 +1,5 @@
 using System.Collections;
 using System.Collections.Generic;
-using System;
 using UnityEngine;
 using UnityEngine.AI;
 using Mirror;
@@ -981,10 +980,10 @@ public class EnemyController : NetworkBehaviour
             return true;
 
         if (!string.IsNullOrEmpty(enemyTemplateId)
-            && enemyTemplateId.IndexOf("elite", StringComparison.OrdinalIgnoreCase) >= 0)
+            && enemyTemplateId.IndexOf("elite", System.StringComparison.OrdinalIgnoreCase) >= 0)
             return true;
 
-        return name.IndexOf("elite", StringComparison.OrdinalIgnoreCase) >= 0;
+        return name.IndexOf("elite", System.StringComparison.OrdinalIgnoreCase) >= 0;
     }
 
     // ─────────────────────────────────────────────────────────────────────────────

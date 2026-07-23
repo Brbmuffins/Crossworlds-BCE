@@ -50,27 +50,56 @@ public class PlayerHUD : MonoBehaviour
     static readonly Color CooldownCol = new Color(0.00f, 0.00f, 0.00f, 0.72f);
     static readonly Color HpFull      = new Color(0.20f, 0.80f, 0.35f, 1.00f);
     static readonly Color HpLow       = new Color(0.85f, 0.18f, 0.12f, 1.00f);
+    static readonly Color HealthWellFull = new Color(0.90f, 0.02f, 0.01f, 0.96f);
+    static readonly Color HealthWellLow  = new Color(0.55f, 0.00f, 0.00f, 0.96f);
+    static readonly Color HealthWellBg   = new Color(0.24f, 0.24f, 0.24f, 0.88f);
+    static readonly Color ManaWellFull   = new Color(0.02f, 0.20f, 0.76f, 0.96f);
+    static readonly Color ManaWellBg     = new Color(0.20f, 0.22f, 0.28f, 0.88f);
     static readonly Color ShieldCol   = new Color(0.35f, 0.70f, 1.00f, 0.80f);
     static readonly Color DmgColor    = new Color(1.00f, 0.32f, 0.15f, 1.00f);
     static readonly Color HealColor   = new Color(0.22f, 0.90f, 0.45f, 1.00f);
     static readonly Color TextPrimary = new Color(0.95f, 0.93f, 0.88f, 1.00f);
     static readonly Color TextDim     = new Color(0.55f, 0.53f, 0.50f, 1.00f);
     static readonly Color Transparent = new Color(0, 0, 0, 0);
+    static readonly Color IconReady   = new Color(1.20f, 1.20f, 1.20f, 1.00f);
+    static readonly Color IconCooldown = new Color(0.36f, 0.36f, 0.40f, 1.00f);
 
     // ── UI state ──────────────────────────────────────────────────────────────
     Canvas      _canvas;
     Canvas      _spellbookCanvas;
+    static Sprite _healthWellSprite;
+    static Sprite _slotRingSprite;
 
     // HP bar
     Image       _hpFill;
     Image       _hpBg;
     Image       _shieldFill;
+    Image       _actionHealthFill;
     TextMeshProUGUI _hpLabel;
     float       _displayedHp   = 1f;
     float       _hpFlashTimer  = 0f;
 
     // Ability bar
     const int Slots = 4;
+    const string ActionBarFrameResource = "UI/ActionBarHealthManaCombo";
+    const string HealthWellGlassResource = "UI/HealthBubbleGlass";
+    const float ActionBarFrameWidth = 760f;
+    const float ActionBarFrameHeight = 507f;
+    const float ActionBarBottomOffset = -190f;
+    const float ActionBarSlotSize = 74f;
+    const float ActionBarSlotCenterY = 280f;
+    const float ActionBarSlotStartX = -137f;
+    const float ActionBarSlotStepX = 91f;
+    const float ActionBarNameY = 228f;
+    const float ActionBarSlotContentInset = 6f;
+    const float ActionBarHealthWellCenterY = 280f;
+    const float ActionBarHealthWellCenterX = -255f;
+    const float ActionBarHealthWellSize = 124f;
+    const float ActionBarHealthGlassSize = 148f;
+    const float ActionBarManaWellCenterX = 276f;
+    const float ActionBarManaWellCenterY = 282f;
+    const float ActionBarManaWellSize = 124f;
+    const float ActionBarManaGlassSize = 148f;
     Image[]             _slotBg       = new Image[Slots];
     Image[]             _slotIcon     = new Image[Slots];
     Image[]             _slotCooldown = new Image[Slots];
@@ -271,12 +300,19 @@ public class PlayerHUD : MonoBehaviour
         _displayedHp = Mathf.MoveTowards(_displayedHp, target, Time.deltaTime * 1.5f);
         _hpFill.fillAmount = _displayedHp;
         _hpFill.color = Color.Lerp(HpLow, HpFull, _displayedHp);
+        if (_actionHealthFill != null)
+        {
+            _actionHealthFill.fillAmount = _displayedHp;
+            _actionHealthFill.color = Color.Lerp(HealthWellLow, HealthWellFull, _displayedHp);
+        }
 
         if (_hpFlashTimer > 0f)
         {
             _hpFlashTimer -= Time.deltaTime;
             float t = _hpFlashTimer / 0.25f;
             _hpFill.color = Color.Lerp(_hpFill.color, Color.white, t * 0.6f);
+            if (_actionHealthFill != null)
+                _actionHealthFill.color = Color.Lerp(_actionHealthFill.color, Color.white, t * 0.35f);
         }
 
         // Shield
@@ -303,55 +339,135 @@ public class PlayerHUD : MonoBehaviour
 
     void BuildAbilityBar()
     {
-        float slotSize  = 72f;
-        float gap       = 8f;
-        float barWidth  = Slots * slotSize + (Slots - 1) * gap + 24f;
-        float barHeight = slotSize + 32f;
-
         var root = Rt(_canvas.transform, "AbilityBar");
         root.anchorMin        = new Vector2(0.5f, 0f);
         root.anchorMax        = new Vector2(0.5f, 0f);
         root.pivot            = new Vector2(0.5f, 0f);
-        root.anchoredPosition = new Vector2(0f, 50f);
-        root.sizeDelta        = new Vector2(barWidth, barHeight);
+        root.anchoredPosition = new Vector2(0f, ActionBarBottomOffset);
+        root.sizeDelta        = new Vector2(ActionBarFrameWidth, ActionBarFrameHeight);
 
-        // Panel background
-        var bg = Img(root, "BarBg", BgDark);
-        Stretch(bg.rectTransform);
+        BuildHealthWell(root);
+        BuildManaWell(root);
 
-        // Build 4 slots
-        float startX = -(Slots * slotSize + (Slots - 1) * gap) / 2f + slotSize / 2f;
+        var frame = Img(root, "ActionBarFrame", Color.white);
+        frame.sprite = Resources.Load<Sprite>(ActionBarFrameResource);
+        frame.preserveAspect = true;
+        frame.raycastTarget = false;
+        if (frame.sprite == null)
+            frame.color = BgDark;
+        Stretch(frame.rectTransform);
 
         for (int i = 0; i < Slots; i++)
         {
-            float x = startX + i * (slotSize + gap);
-            BuildSlot(root, i, x, slotSize);
+            float x = ActionBarSlotStartX + i * ActionBarSlotStepX;
+            BuildSlot(root, i, x, ActionBarSlotCenterY, ActionBarSlotSize);
         }
     }
 
-    void BuildSlot(RectTransform parent, int i, float x, float size)
+    void BuildHealthWell(RectTransform parent)
+    {
+        var wellRt = Rt(parent, "HealthWell");
+        wellRt.anchorMin        = new Vector2(0.5f, 0f);
+        wellRt.anchorMax        = new Vector2(0.5f, 0f);
+        wellRt.pivot            = new Vector2(0.5f, 0.5f);
+        wellRt.anchoredPosition = new Vector2(ActionBarHealthWellCenterX, ActionBarHealthWellCenterY);
+        wellRt.sizeDelta        = new Vector2(ActionBarHealthWellSize, ActionBarHealthWellSize);
+
+        var bg = Img(wellRt, "Bg", HealthWellBg);
+        bg.sprite = HealthWellSprite();
+        bg.raycastTarget = false;
+        Stretch(bg.rectTransform);
+
+        _actionHealthFill = Img(wellRt, "Fill", HealthWellFull);
+        _actionHealthFill.sprite = HealthWellSprite();
+        _actionHealthFill.type = Image.Type.Filled;
+        _actionHealthFill.fillMethod = Image.FillMethod.Vertical;
+        _actionHealthFill.fillOrigin = (int)Image.OriginVertical.Bottom;
+        _actionHealthFill.fillAmount = 1f;
+        _actionHealthFill.raycastTarget = false;
+        Stretch(_actionHealthFill.rectTransform);
+
+        var glass = Img(wellRt, "Glass", Color.white);
+        glass.sprite = Resources.Load<Sprite>(HealthWellGlassResource);
+        glass.preserveAspect = true;
+        glass.raycastTarget = false;
+        if (glass.sprite == null)
+            glass.color = Transparent;
+
+        var glassRt = glass.rectTransform;
+        glassRt.anchorMin        = new Vector2(0.5f, 0.5f);
+        glassRt.anchorMax        = new Vector2(0.5f, 0.5f);
+        glassRt.pivot            = new Vector2(0.5f, 0.5f);
+        glassRt.anchoredPosition = Vector2.zero;
+        glassRt.sizeDelta        = new Vector2(ActionBarHealthGlassSize, ActionBarHealthGlassSize);
+    }
+
+    void BuildManaWell(RectTransform parent)
+    {
+        var wellRt = Rt(parent, "ManaWell");
+        wellRt.anchorMin        = new Vector2(0.5f, 0f);
+        wellRt.anchorMax        = new Vector2(0.5f, 0f);
+        wellRt.pivot            = new Vector2(0.5f, 0.5f);
+        wellRt.anchoredPosition = new Vector2(ActionBarManaWellCenterX, ActionBarManaWellCenterY);
+        wellRt.sizeDelta        = new Vector2(ActionBarManaWellSize, ActionBarManaWellSize);
+
+        var bg = Img(wellRt, "Bg", ManaWellBg);
+        bg.sprite = HealthWellSprite();
+        bg.raycastTarget = false;
+        Stretch(bg.rectTransform);
+
+        var fill = Img(wellRt, "Fill", ManaWellFull);
+        fill.sprite = HealthWellSprite();
+        fill.type = Image.Type.Filled;
+        fill.fillMethod = Image.FillMethod.Vertical;
+        fill.fillOrigin = (int)Image.OriginVertical.Bottom;
+        fill.fillAmount = 1f;
+        fill.raycastTarget = false;
+        Stretch(fill.rectTransform);
+
+        var glass = Img(wellRt, "Glass", Color.white);
+        glass.sprite = Resources.Load<Sprite>(HealthWellGlassResource);
+        glass.preserveAspect = true;
+        glass.raycastTarget = false;
+        if (glass.sprite == null)
+            glass.color = Transparent;
+
+        var glassRt = glass.rectTransform;
+        glassRt.anchorMin        = new Vector2(0.5f, 0.5f);
+        glassRt.anchorMax        = new Vector2(0.5f, 0.5f);
+        glassRt.pivot            = new Vector2(0.5f, 0.5f);
+        glassRt.anchoredPosition = Vector2.zero;
+        glassRt.sizeDelta        = new Vector2(ActionBarManaGlassSize, ActionBarManaGlassSize);
+    }
+
+    void BuildSlot(RectTransform parent, int i, float x, float y, float size)
     {
         // Container — anchored to bar bottom so slots sit inside the panel
         var slotRt = Rt(parent, "Slot_" + i);
         slotRt.anchorMin        = new Vector2(0.5f, 0f);
         slotRt.anchorMax        = new Vector2(0.5f, 0f);
-        slotRt.pivot            = new Vector2(0.5f, 0f);
-        slotRt.anchoredPosition = new Vector2(x, 20f);
+        slotRt.pivot            = new Vector2(0.5f, 0.5f);
+        slotRt.anchoredPosition = new Vector2(x, y);
         slotRt.sizeDelta        = new Vector2(size, size);
 
+        var contentRt = Rt(slotRt, "Content");
+        Stretch(contentRt);
+        contentRt.offsetMin = new Vector2(ActionBarSlotContentInset, ActionBarSlotContentInset);
+        contentRt.offsetMax = new Vector2(-ActionBarSlotContentInset, -ActionBarSlotContentInset);
+
         // Background
-        _slotBg[i] = Img(slotRt, "Bg", SlotNormal);
+        _slotBg[i] = Img(contentRt, "Bg", SlotNormal);
         Stretch(_slotBg[i].rectTransform);
 
         // Icon
-        _slotIcon[i] = Img(slotRt, "Icon", Transparent);
+        _slotIcon[i] = Img(contentRt, "Icon", Transparent);
         _slotIcon[i].preserveAspect = true;
-        _slotIcon[i].rectTransform.anchorMin = new Vector2(0.08f, 0.08f);
-        _slotIcon[i].rectTransform.anchorMax = new Vector2(0.92f, 0.92f);
+        _slotIcon[i].rectTransform.anchorMin = new Vector2(0.02f, 0.02f);
+        _slotIcon[i].rectTransform.anchorMax = new Vector2(0.98f, 0.98f);
         _slotIcon[i].rectTransform.offsetMin = _slotIcon[i].rectTransform.offsetMax = Vector2.zero;
 
         // Cooldown overlay (filled from top)
-        _slotCooldown[i] = Img(slotRt, "Cooldown", CooldownCol);
+        _slotCooldown[i] = Img(contentRt, "Cooldown", Transparent);
         _slotCooldown[i].type       = Image.Type.Filled;
         _slotCooldown[i].fillMethod = Image.FillMethod.Vertical;
         _slotCooldown[i].fillOrigin = (int)Image.OriginVertical.Top;
@@ -359,20 +475,22 @@ public class PlayerHUD : MonoBehaviour
         Stretch(_slotCooldown[i].rectTransform);
 
         // Cooldown countdown number (centred over the icon, hidden when ready)
-        _slotCdText[i] = Lbl(slotRt, "CdText", "", 20f);
+        _slotCdText[i] = Lbl(contentRt, "CdText", "", 20f);
         _slotCdText[i].fontStyle = FontStyles.Bold;
         _slotCdText[i].color     = Color.white;
         _slotCdText[i].alignment = TextAlignmentOptions.Center;
         Stretch(_slotCdText[i].rectTransform);
 
-        // Active ring (border glow)
+        // Active ring (border glow only; transparent center)
         _slotRing[i] = Img(slotRt, "Ring", Transparent);
+        _slotRing[i].sprite = SlotRingSprite();
+        _slotRing[i].type = Image.Type.Sliced;
         _slotRing[i].rectTransform.anchorMin = new Vector2(-0.06f, -0.06f);
         _slotRing[i].rectTransform.anchorMax = new Vector2(1.06f, 1.06f);
         _slotRing[i].rectTransform.offsetMin = _slotRing[i].rectTransform.offsetMax = Vector2.zero;
 
         // Key label (number)
-        _slotKey[i] = Lbl(slotRt, "Key", (i + 1).ToString(), 12f);
+        _slotKey[i] = Lbl(contentRt, "Key", (i + 1).ToString(), 12f);
         _slotKey[i].fontStyle = FontStyles.Bold;
         _slotKey[i].color     = new Color(1f, 1f, 1f, 0.55f);
         _slotKey[i].rectTransform.anchorMin = new Vector2(0.02f, 0.72f);
@@ -388,7 +506,7 @@ public class PlayerHUD : MonoBehaviour
         nameRt.anchorMin        = new Vector2(0.5f, 0f);
         nameRt.anchorMax        = new Vector2(0.5f, 0f);
         nameRt.pivot            = new Vector2(0.5f, 0f);
-        nameRt.anchoredPosition = new Vector2(x, 2f);
+        nameRt.anchoredPosition = new Vector2(x, ActionBarNameY);
         nameRt.sizeDelta        = new Vector2(size, 16f);
     }
 
@@ -402,7 +520,7 @@ public class PlayerHUD : MonoBehaviour
             if (ab != null)
             {
                 _slotIcon[i].sprite = ab.icon;
-                _slotIcon[i].color  = ab.icon != null ? Color.white
+                _slotIcon[i].color  = ab.icon != null ? IconReady
                     : CategoryTint(ab.category);
                 if (_slotName[i] != null) _slotName[i].text = ab.abilityName;
             }
@@ -452,7 +570,7 @@ public class PlayerHUD : MonoBehaviour
 
                 if (_slotIcon[s] != null)
                 {
-                    _slotIcon[s].color = (ab != null && ab.icon != null) ? Color.white
+                    _slotIcon[s].color = (ab != null && ab.icon != null) ? IconReady
                         : (ab != null ? CategoryTint(ab.category) : new Color(0.25f, 0.25f, 0.30f, 0.6f));
                 }
             }
@@ -464,6 +582,16 @@ public class PlayerHUD : MonoBehaviour
         {
             float cd = (_caster != null) ? _caster.GetCooldownFraction(i) : 0f;
             _slotCooldown[i].fillAmount = cd;
+            _slotCooldown[i].color = cd > 0.001f
+                ? new Color(CooldownCol.r, CooldownCol.g, CooldownCol.b, Mathf.Lerp(0.35f, CooldownCol.a, cd))
+                : Transparent;
+
+            AbilityDef ab = (_caster != null && _caster.abilities != null && i < _caster.abilities.Length)
+                ? _caster.abilities[i] : null;
+            bool showingVariantTint = isAiming && i == _caster.HeldAbilityIndex
+                && ab != null && ab.variants != null && ab.variants.Length > 0;
+            if (_slotIcon[i] != null && !showingVariantTint)
+                _slotIcon[i].color = SlotIconColor(ab, cd);
 
             // Live countdown number over the icon while on cooldown
             if (_slotCdText[i] != null)
@@ -1043,6 +1171,19 @@ public class PlayerHUD : MonoBehaviour
         _                       => DmgColor,
     };
 
+    Color SlotIconColor(AbilityDef ab, float cooldownFraction)
+    {
+        if (ab == null)
+            return new Color(0.25f, 0.25f, 0.30f, 0.6f);
+
+        Color ready = ab.icon != null ? IconReady : CategoryTint(ab.category);
+        if (cooldownFraction <= 0.001f)
+            return ready;
+
+        float dim = Mathf.Clamp01(0.35f + cooldownFraction * 0.65f);
+        return Color.Lerp(ready, IconCooldown, dim);
+    }
+
     RectTransform Rt(Transform parent, string name)
     {
         var go = new GameObject(name); go.transform.SetParent(parent, false);
@@ -1071,5 +1212,84 @@ public class PlayerHUD : MonoBehaviour
     {
         rt.anchorMin = Vector2.zero; rt.anchorMax = Vector2.one;
         rt.offsetMin = rt.offsetMax = Vector2.zero;
+    }
+
+    static Sprite HealthWellSprite()
+    {
+        if (_healthWellSprite != null)
+            return _healthWellSprite;
+
+        const int size = 128;
+        var tex = new Texture2D(size, size, TextureFormat.RGBA32, false)
+        {
+            name = "HUD_HealthWellCircle",
+            hideFlags = HideFlags.HideAndDontSave,
+            filterMode = FilterMode.Bilinear,
+            wrapMode = TextureWrapMode.Clamp
+        };
+
+        Color[] pixels = new Color[size * size];
+        Vector2 center = new Vector2((size - 1) * 0.5f, (size - 1) * 0.5f);
+        float radius = (size - 2) * 0.5f;
+
+        for (int y = 0; y < size; y++)
+        {
+            for (int x = 0; x < size; x++)
+            {
+                float distance = Vector2.Distance(new Vector2(x, y), center);
+                float alpha = Mathf.Clamp01(radius + 0.5f - distance);
+                pixels[y * size + x] = new Color(1f, 1f, 1f, alpha);
+            }
+        }
+
+        tex.SetPixels(pixels);
+        tex.Apply(false, true);
+        _healthWellSprite = Sprite.Create(tex, new Rect(0f, 0f, size, size), new Vector2(0.5f, 0.5f), size);
+        _healthWellSprite.name = "HUD_HealthWellCircle";
+        _healthWellSprite.hideFlags = HideFlags.HideAndDontSave;
+        return _healthWellSprite;
+    }
+
+    static Sprite SlotRingSprite()
+    {
+        if (_slotRingSprite != null)
+            return _slotRingSprite;
+
+        const int size = 32;
+        const int thickness = 3;
+        var tex = new Texture2D(size, size, TextureFormat.RGBA32, false)
+        {
+            name = "HUD_SlotRing",
+            hideFlags = HideFlags.HideAndDontSave,
+            filterMode = FilterMode.Point,
+            wrapMode = TextureWrapMode.Clamp
+        };
+
+        Color[] pixels = new Color[size * size];
+
+        for (int y = 0; y < size; y++)
+        {
+            for (int x = 0; x < size; x++)
+            {
+                bool border = x < thickness || x >= size - thickness
+                    || y < thickness || y >= size - thickness;
+                pixels[y * size + x] = border ? Color.white : Transparent;
+            }
+        }
+
+        tex.SetPixels(pixels);
+        tex.Apply(false, true);
+
+        _slotRingSprite = Sprite.Create(
+            tex,
+            new Rect(0f, 0f, size, size),
+            new Vector2(0.5f, 0.5f),
+            size,
+            0,
+            SpriteMeshType.FullRect,
+            new Vector4(thickness, thickness, thickness, thickness));
+        _slotRingSprite.name = "HUD_SlotRing";
+        _slotRingSprite.hideFlags = HideFlags.HideAndDontSave;
+        return _slotRingSprite;
     }
 }
