@@ -542,11 +542,27 @@ public class AbilityCaster : NetworkBehaviour
         AbilityVariant variant = GetVariant(ability, variantIndex);
         if (variant == null) return "";
 
-        AbilityDef payload = ResolveVariantSpellbookAbility(ability, variant);
-        if (payload != null && !string.IsNullOrEmpty(payload.abilityName)) return payload.abilityName;
-        if (!string.IsNullOrEmpty(variant.spellbookAbilityName)) return variant.spellbookAbilityName;
-        if (variant.useSpellbookAbilityIndex && variant.spellbookAbilityIndex >= 0) return $"Spellbook #{variant.spellbookAbilityIndex}";
-        return "Missing Variant";
+        string name = "";
+        if (variant != null && !string.IsNullOrEmpty(variant.variantName) && !string.Equals(variant.variantName, "Variant", System.StringComparison.OrdinalIgnoreCase))
+        {
+            name = variant.variantName;
+        }
+        else
+        {
+            AbilityDef payload = ResolveVariantSpellbookAbility(ability, variant);
+            if (payload != null && !string.IsNullOrEmpty(payload.abilityName)) name = payload.abilityName;
+            else if (!string.IsNullOrEmpty(variant.spellbookAbilityName)) name = variant.spellbookAbilityName;
+            else if (variant.useSpellbookAbilityIndex && variant.spellbookAbilityIndex >= 0) name = $"Spellbook #{variant.spellbookAbilityIndex}";
+            else name = "Missing Variant";
+        }
+
+        // Clean up any owner prefixes if they exist (e.g. "Ice Spikes Frostbolt" -> "Frostbolt")
+        string ownerPrefix = ability.abilityName + " ";
+        if (name.StartsWith(ownerPrefix, System.StringComparison.OrdinalIgnoreCase))
+        {
+            name = name.Substring(ownerPrefix.Length);
+        }
+        return name;
     }
 
     public Color GetVariantTint(AbilityDef ability, int variantIndex)
@@ -664,6 +680,11 @@ public class AbilityCaster : NetworkBehaviour
         BackfillVariantDefaults();
         MigrateInlineVariantsToSpellbookReferences();
         BackfillVariantVFX();
+    }
+
+    public void ForceValidate()
+    {
+        OnValidate();
     }
 
     void BackfillSpellBehaviorDefaults()
@@ -4455,8 +4476,8 @@ public class AbilityCaster : NetworkBehaviour
 
                 // ── HANGDANGER'S ARCANIST ─────────────────────────────────────────────────
                 case "Ice Spikes":
-                    FillVFX(ab,0,"FX/dark magic/Effects normal/Ice freeze skill", "FX/dark magic/Effects normal/Ice freeze skill");
-                    FillVFX(ab,1,"FX/Spells/Human_SpellAura_Ice",                 "FX/Particle Pack/EffectExamples/Magic Effects/Prefabs/Ice Lance");
+                    FillVFX(ab,0,"FX/Spells/Human_SpellAura_Ice",                 "FX/Particle Pack/EffectExamples/Magic Effects/Prefabs/Ice Lance");
+                    FillVFX(ab,1,"FX/dark magic/Effects normal/Ice freeze skill", "FX/dark magic/Effects normal/Ice freeze skill");
                     FillVFX(ab,2,"FX/dark magic/Effects with projectors/Ice freeze skill","FX/Spells/Ice Rend Large");
                     break;
                 case "Meteor Shower":
@@ -5281,15 +5302,15 @@ public class AbilityCaster : NetworkBehaviour
                     // Hangdanger: cone eruption changed from rect→cone; VFX = "Ice freeze skill"
                     ability.variants = new AbilityVariant[]
                     {
-                        new AbilityVariant { variantName="Frost Spikes",  indicatorTint=new Color(0.4f,0.85f,1f,0.75f), targetTag="Enemy", damage=20f, statusEffect=StatusEffectType.Slow,    statusDuration=3f,  statusValue=0.35f,
+                        new AbilityVariant { variantName="Frostbolt",  indicatorTint=new Color(0.4f,0.85f,1f,0.75f), targetTag="Enemy", damage=20f, statusEffect=StatusEffectType.Slow,    statusDuration=3f,  statusValue=0.35f,
+                            castVFX = Resources.Load<GameObject>("FX/Spells/Human_SpellAura_Ice"),
+                            hitVFX = Resources.Load<GameObject>("FX/Particle Pack/EffectExamples/Magic Effects/Prefabs/Ice Lance") },
+                        new AbilityVariant { variantName="Ice Spikes",     indicatorTint=new Color(0.2f,0.7f,1f,0.75f),  targetTag="Enemy", damage=30f, statusEffect=StatusEffectType.Stagger,  statusDuration=0.8f,
                             castVFX = Resources.Load<GameObject>("FX/dark magic/Effects normal/Ice freeze skill"),
                             hitVFX = Resources.Load<GameObject>("FX/dark magic/Effects normal/Ice freeze skill") },
-                        new AbilityVariant { variantName="Ice Lance",     indicatorTint=new Color(0.2f,0.7f,1f,0.75f),  targetTag="Enemy", damage=30f, statusEffect=StatusEffectType.Stagger,  statusDuration=0.8f,
-                            castVFX = Resources.Load<GameObject>("FX/dark magic/Effects normal/Ice freeze skill"),
-                            hitVFX = Resources.Load<GameObject>("FX/Spells/Ice Rend") },
-                        new AbilityVariant { variantName="Glacial Prison",indicatorTint=new Color(0.1f,0.5f,0.9f,0.75f), targetTag="Enemy", damage=15f, statusEffect=StatusEffectType.Bound,    statusDuration=2.5f,
-                            castVFX = Resources.Load<GameObject>("FX/dark magic/Effects normal/Ice freeze skill"),
-                            hitVFX = Resources.Load<GameObject>("FX/dark magic/Effects with projectors/Ice freeze skill") },
+                        new AbilityVariant { variantName="Frost Nova",indicatorTint=new Color(0.1f,0.5f,0.9f,0.75f), targetTag="Enemy", damage=15f, statusEffect=StatusEffectType.Bound,    statusDuration=2.5f,
+                            castVFX = Resources.Load<GameObject>("FX/dark magic/Effects with projectors/Ice freeze skill"),
+                            hitVFX = Resources.Load<GameObject>("FX/Spells/Ice Rend Large") },
                     };
                     break;
 
@@ -5595,6 +5616,9 @@ public class AbilityCaster : NetworkBehaviour
 
         // Zone name floats above the cursor
         UpdateZoneLabel(indicator, ability, coneData, activeVariantTint);
+
+        // Semi-opaque variant icon inside each slice; active slice lights up.
+        UpdateConeZoneIcons(indicator, ability, coneData, pulse, activeVariantTint);
     }
 
     // Draws crossbar zone-divider lines and animates the active band for rect variant spells.
@@ -5720,6 +5744,69 @@ public class AbilityCaster : NetworkBehaviour
         }
     }
 
+    // Semi-opaque variant icon lying flat inside each cone slice. The slice the
+    // player is aiming into (_activeVariantIndex) brightens and gently pulses;
+    // the other slices' icons dim, mirroring the arc/cursor hover feedback.
+    void UpdateConeZoneIcons(GameObject indicator, AbilityDef ability, ConeAimData coneData, float pulse, Color tint)
+    {
+        int n = ability.variants.Length;
+        for (int z = 0; z < n; z++)
+        {
+            string iconName = $"ZoneIcon_{z}";
+            Transform iconT = indicator.transform.Find(iconName);
+            if (iconT == null)
+            {
+                var go = new GameObject(iconName);
+                go.transform.SetParent(indicator.transform, false);
+                var newSr = go.AddComponent<SpriteRenderer>();
+                newSr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                newSr.receiveShadows = false;
+                newSr.sortingOrder = 5;   // above the ground fill, below the ZoneLabel (10)
+                iconT = go.transform;
+            }
+
+            var sr = iconT.GetComponent<SpriteRenderer>();
+            if (sr == null) continue;
+
+            AbilityDef payload = GetVariantPayload(ability, z);
+            Sprite icon = payload != null ? payload.icon : null;
+            if (icon == null) { sr.enabled = false; continue; }
+            sr.enabled = true;
+            if (sr.sprite != icon) sr.sprite = icon;
+
+            // Slice midpoint on the cone centre-axis.
+            float tMid     = (z + 0.5f) / n;
+            float midRange = coneData.visualRange * tMid;
+            Vector3 pos = ProjectToGround(coneData.origin + coneData.visualForward * midRange);
+            pos.y += 0.05f;
+            iconT.position = pos;
+            // Lie flat on the ground, top of the sprite pointing down-cone (same as ZoneLabel).
+            iconT.rotation = Quaternion.LookRotation(Vector3.down, coneData.visualForward);
+
+            // Fit inside the slice: limited by band depth and by cone width at this radius.
+            float bandDepth    = coneData.visualRange / n;
+            float lateralWidth = 2f * midRange * Mathf.Sin(coneData.halfAngle * Mathf.Deg2Rad);
+            float desired      = Mathf.Min(bandDepth, lateralWidth) * 0.62f;
+            Vector3 spriteSize = icon.bounds.size;
+            float maxDim       = Mathf.Max(spriteSize.x, spriteSize.y, 0.0001f);
+            iconT.localScale   = Vector3.one * (desired / maxDim);
+
+            // Hover feedback: active slice lights up and pulses, the rest dim.
+            if (z == _activeVariantIndex)
+            {
+                float a = 0.80f + 0.20f * pulse;
+                sr.color = new Color(
+                    tint.r * 0.35f + 0.65f,
+                    tint.g * 0.35f + 0.65f,
+                    tint.b * 0.35f + 0.65f, a);
+            }
+            else
+            {
+                sr.color = new Color(0.75f, 0.80f, 0.90f, 0.28f);
+            }
+        }
+    }
+
     // Same label for rectangle shapes.
     void UpdateRectZoneLabel(GameObject indicator, AbilityDef ability, RectangleAimData rectData, Color tint)
     {
@@ -5803,6 +5890,14 @@ public class AbilityCaster : NetworkBehaviour
         {
             AbilityVariant variant = ability.variants[i];
             if (variant == null) continue;
+
+            // Force a rebuild if we have the old variants for "Ice Spikes"
+            if (ability.abilityName == "Ice Spikes")
+            {
+                if (variant.variantName == "Frost Spikes" || variant.variantName == "Ice Lance" || variant.variantName == "Glacial Prison")
+                    return true;
+            }
+
             if (!HasVariantSpellbookReference(variant)) return false;
 
             AbilityDef payload = ResolveVariantSpellbookAbility(ability, variant);

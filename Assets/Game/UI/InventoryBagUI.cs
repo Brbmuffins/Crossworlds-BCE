@@ -72,6 +72,10 @@ public class InventoryBagUI : MonoBehaviour
     // ── Toggle ────────────────────────────────────────────────────────────────
     void Toggle()
     {
+        // Rebuild if the canvas was destroyed (e.g. scene change before the
+        // DontDestroyOnLoad fix, or external cleanup) instead of throwing.
+        if (_panel == null) { BuildUI(); HidePanel(); }
+
         _open = !_open;
         _panel.SetActive(_open);
         if (_open) StartCoroutine(FetchInventory());
@@ -269,6 +273,9 @@ public class InventoryBagUI : MonoBehaviour
         // Canvas
         var cgo = new GameObject("InventoryCanvas",
             typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
+        // Must persist with the DontDestroyOnLoad singleton — otherwise scene
+        // changes destroy the canvas and Toggle() hits a dead _panel.
+        DontDestroyOnLoad(cgo);
         _canvas = cgo.GetComponent<Canvas>();
         _canvas.renderMode   = RenderMode.ScreenSpaceOverlay;
         _canvas.sortingOrder = 120;

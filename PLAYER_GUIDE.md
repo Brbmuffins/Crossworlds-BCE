@@ -10,6 +10,10 @@
 **[⬅ Back to the README](README.md)** · Combat is **aim-based** — no auto-attack, no
 tab-target. Every shot is placed, every cone is faced, every telegraph is dodged.
 
+**Deep combat strategy:** see [`Docs/COMBAT_STRATEGY_GUIDE_2026.md`](Docs/COMBAT_STRATEGY_GUIDE_2026.md)
+for the current July 2026 class-maxing route, enemy behavior notes, mastery path,
+and party-combo playbook.
+
 ---
 
 ## Contents
