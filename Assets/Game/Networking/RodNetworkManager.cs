@@ -242,17 +242,13 @@ public class RodNetworkManager : NetworkManager
         }
         else
         {
-            Transform startPos = GetStartPosition();
-            if (startPos != null)
-            {
-                spawnPos = startPos.position;
-            }
-            else
-            {
-                // Scatter players in a ring so they don't spawn inside each other
-                float angle = UnityEngine.Random.Range(0f, Mathf.PI * 2f);
-                spawnPos = new Vector3(Mathf.Sin(angle) * 3f, 1f, Mathf.Cos(angle) * 3f);
-            }
+            // ROADMAP 6.5: GetStartPosition() searches every loaded scene, so with zones
+            // resident additively it could hand back another zone's start point. Without a
+            // saved position, SpawnPlayerIntoZone calls ZoneManager.PlaceAtSpawnPoint once
+            // the destination scene exists, which resolves the spawn INSIDE that zone.
+            // This value is only the pre-placement seed.
+            float angle = UnityEngine.Random.Range(0f, Mathf.PI * 2f);
+            spawnPos = new Vector3(Mathf.Sin(angle) * 3f, 1f, Mathf.Cos(angle) * 3f);
         }
 
         // Prefer server-verified username from auth data; fall back to client-sent value

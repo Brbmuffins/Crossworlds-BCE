@@ -38,6 +38,7 @@ public static class MultiZoneSetupBuilder
         CreateContainerSceneIfMissing(report);
         RegisterScenesInBuildSettings(report);
         AddZoneManagerToNetworkManager(report);
+        MarkChatManagerGlobal(report);
 
         string summary = string.Join("\n", report);
         Debug.Log("[BCE 6z] Multi-zone setup:\n" + summary);
@@ -146,15 +147,82 @@ public static class MultiZoneSetupBuilder
             return;
         }
 
-        if (nm.GetComponent<ZoneManager>() != null)
+        bool changed = false;
+
+        if (nm.GetComponent<ZoneManager>() == null)
+        {
+            Undo.AddComponent<ZoneManager>(nm.gameObject);
+            report.Add($"✓ Added ZoneManager to '{nm.gameObject.name}'.");
+            changed = true;
+        }
+        else
         {
             report.Add("✓ ZoneManager already on the RodNetworkManager GameObject.");
+        }
+
+        // ROADMAP 6.6 — interest management. Only ONE may exist per NetworkManager, so
+        // strip any stock Mirror one first; ours subclasses SceneDistance and adds the
+        // world-global exemption that keeps chat alive.
+        foreach (InterestManagementBase existing in nm.GetComponents<InterestManagementBase>())
+        {
+            if (existing is CrossworldsInterestManagement) continue;
+
+            report.Add($"⚠ Removed conflicting {existing.GetType().Name} — only one is allowed.");
+            Undo.DestroyObjectImmediate(existing);
+            changed = true;
+        }
+
+        if (nm.GetComponent<CrossworldsInterestManagement>() == null)
+        {
+            Undo.AddComponent<CrossworldsInterestManagement>(nm.gameObject);
+            report.Add("✓ Added CrossworldsInterestManagement (scene + distance scoping).");
+            changed = true;
+        }
+        else
+        {
+            report.Add("✓ CrossworldsInterestManagement already present.");
+        }
+
+        if (changed)
+        {
+            EditorSceneManager.MarkSceneDirty(login);
+            EditorSceneManager.SaveScene(login);
+            report.Add("✓ Saved LoginScene.");
+        }
+    }
+
+    // ── 4. ChatManager must survive interest management ───────────────────────
+
+    static void MarkChatManagerGlobal(List<string> report)
+    {
+        RodNetworkManager nm = Object.FindFirstObjectByType<RodNetworkManager>();
+        GameObject prefab = nm != null ? nm.chatManagerPrefab : null;
+
+        if (prefab == null)
+        {
+            report.Add("⚠ chatManagerPrefab not assigned — cannot mark it world-global. " +
+                       "Run BCE ▶ Setup ▶ 4p, then re-run 6z, or CHAT WILL BE SILENT once " +
+                       "interest management is active.");
             return;
         }
 
-        Undo.AddComponent<ZoneManager>(nm.gameObject);
-        EditorSceneManager.MarkSceneDirty(login);
-        EditorSceneManager.SaveScene(login);
-        report.Add($"✓ Added ZoneManager to '{nm.gameObject.name}' in LoginScene and saved.");
+        if (prefab.GetComponent<GlobalNetworkObject>() != null)
+        {
+            report.Add("✓ ChatManager prefab already marked world-global.");
+            return;
+        }
+
+        string path = AssetDatabase.GetAssetPath(prefab);
+        GameObject root = PrefabUtility.LoadPrefabContents(path);
+
+        var marker = root.AddComponent<GlobalNetworkObject>();
+        marker.rationale = "Chat is global across all zones (ROADMAP open question 9). " +
+                           "Lives in the DontDestroyOnLoad scene, which matches no player's " +
+                           "scene, so without this it would have zero observers.";
+
+        PrefabUtility.SaveAsPrefabAsset(root, path);
+        PrefabUtility.UnloadPrefabContents(root);
+
+        report.Add($"✓ Marked ChatManager prefab world-global: {path}");
     }
 }
