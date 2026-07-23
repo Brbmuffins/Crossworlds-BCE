@@ -5,7 +5,7 @@ using TMPro;
 using System.Collections;
 
 /// <summary>
-/// XpBar — bottom-centre HUD. Displays current XP progress and level.
+/// XpBar — action-bar HUD. Displays current XP progress and level.
 /// Reads from PlayerProgressManager.Local.
 /// Self-bootstrapping via RuntimeInitializeOnLoadMethod.
 /// Animates smoothly toward target fill. Flashes gold on level-up.
@@ -35,7 +35,13 @@ public class XpBar : MonoBehaviour
     float _displayFraction = 0f;
     float _targetFraction  = 0f;
 
-    static readonly Color NormalFill  = new Color(0.28f, 0.18f, 0.72f);
+    const int   CanvasOrder       = 101;
+    const float ActionBarXpWidth  = 380f;
+    const float ActionBarXpHeight = 20f;
+    const float ActionBarXpY      = 145f;
+
+    static readonly Color NormalFill  = new Color(0.52f, 0.18f, 0.72f);
+    static readonly Color NormalBg    = new Color(0.08f, 0.04f, 0.14f, 0.78f);
     static readonly Color LevelUpFill = new Color(1.0f,  0.80f, 0.10f);
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
@@ -111,7 +117,7 @@ public class XpBar : MonoBehaviour
             _fillBg.color = new Color(0.6f, 0.5f, 0f, 0.5f);
             yield return new WaitForSeconds(0.18f);
             _fill.color = NormalFill;
-            _fillBg.color = new Color(0.06f, 0.04f, 0.16f);
+            _fillBg.color = NormalBg;
             yield return new WaitForSeconds(0.18f);
         }
 
@@ -136,11 +142,11 @@ public class XpBar : MonoBehaviour
         DontDestroyOnLoad(cgo);
         _canvas = cgo.GetComponent<Canvas>();
         _canvas.renderMode   = RenderMode.ScreenSpaceOverlay;
-        _canvas.sortingOrder = 90;
+        _canvas.sortingOrder = CanvasOrder;
         _cg = cgo.GetComponent<CanvasGroup>();
         _cg.blocksRaycasts = false;
         _cg.interactable   = false;
-        _cg.alpha          = 0.3f; // 30% opacity to make it less glaring
+        _cg.alpha          = 0.95f;
 
         var scaler = cgo.GetComponent<CanvasScaler>();
         scaler.uiScaleMode         = CanvasScaler.ScaleMode.ScaleWithScreenSize;
@@ -149,21 +155,22 @@ public class XpBar : MonoBehaviour
 
         var root = _canvas.GetComponent<RectTransform>();
 
-        // Outer container — bottom centre, 40% wide, 22px tall
+        // Sits in the top channel of ActionBarHealthManaCombo, between the wells.
         var container = new GameObject("XpBarContainer", typeof(RectTransform));
         container.transform.SetParent(root, false);
         var cRt = container.GetComponent<RectTransform>();
-        cRt.anchorMin        = new Vector2(0.15f, 0f);
-        cRt.anchorMax        = new Vector2(0.85f, 0f);
-        cRt.pivot            = new Vector2(0.5f, 0f);
-        cRt.anchoredPosition = new Vector2(0f, 2f);   // flush at the very bottom
-        cRt.sizeDelta        = new Vector2(0f, 24f);
+        cRt.anchorMin        = new Vector2(0.5f, 0f);
+        cRt.anchorMax        = new Vector2(0.5f, 0f);
+        cRt.pivot            = new Vector2(0.5f, 0.5f);
+        cRt.anchoredPosition = new Vector2(0f, ActionBarXpY);
+        cRt.sizeDelta        = new Vector2(ActionBarXpWidth, ActionBarXpHeight);
 
         // Background
         var bgGO = new GameObject("BG", typeof(RectTransform), typeof(Image));
         bgGO.transform.SetParent(container.transform, false);
         _fillBg = bgGO.GetComponent<Image>();
-        _fillBg.color = new Color(0.14f, 0.09f, 0.32f);
+        _fillBg.color = NormalBg;
+        _fillBg.raycastTarget = false;
         StretchFull(bgGO.GetComponent<RectTransform>());
 
         // Fill
@@ -174,39 +181,42 @@ public class XpBar : MonoBehaviour
         _fill.type     = Image.Type.Filled;
         _fill.fillMethod = Image.FillMethod.Horizontal;
         _fill.fillAmount = 0f;
+        _fill.raycastTarget = false;
         StretchFull(fillGO.GetComponent<RectTransform>());
 
         // Thin highlight line at top
         var shine = new GameObject("Shine", typeof(RectTransform), typeof(Image));
         shine.transform.SetParent(container.transform, false);
-        shine.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0.12f);
+        var shineImage = shine.GetComponent<Image>();
+        shineImage.color = new Color(1f, 1f, 1f, 0.12f);
+        shineImage.raycastTarget = false;
         var shRt = shine.GetComponent<RectTransform>();
         shRt.anchorMin = new Vector2(0f, 1f); shRt.anchorMax = Vector2.one;
         shRt.offsetMin = new Vector2(0f, -2f); shRt.offsetMax = Vector2.zero;
 
-        // Level label — left of bar
+        // Level label — tucked into the left side of the bar.
         var lvGO = new GameObject("LevelText", typeof(RectTransform), typeof(TextMeshProUGUI));
         lvGO.transform.SetParent(container.transform, false);
         _levelText = lvGO.GetComponent<TextMeshProUGUI>();
         _levelText.text      = "Lv 1";
-        _levelText.fontSize  = 11f;
+        _levelText.fontSize  = 9f;
         _levelText.fontStyle = FontStyles.Bold;
-        _levelText.color     = Color.white;
-        _levelText.alignment = TextAlignmentOptions.Right;
+        _levelText.color     = new Color(1f, 1f, 1f, 0.90f);
+        _levelText.alignment = TextAlignmentOptions.MidlineLeft;
+        _levelText.raycastTarget = false;
         var lvRt = lvGO.GetComponent<RectTransform>();
-        lvRt.anchorMin = new Vector2(0f, 0f); lvRt.anchorMax = new Vector2(0f, 1f);
-        lvRt.pivot     = new Vector2(1f, 0.5f);
-        lvRt.anchoredPosition = new Vector2(-6f, 0f);
-        lvRt.sizeDelta = new Vector2(50f, 0f);
+        lvRt.anchorMin = new Vector2(0f, 0f); lvRt.anchorMax = new Vector2(0.22f, 1f);
+        lvRt.offsetMin = new Vector2(8f, 0f); lvRt.offsetMax = Vector2.zero;
 
         // XP label — centred on bar
         var xpGO = new GameObject("XpText", typeof(RectTransform), typeof(TextMeshProUGUI));
         xpGO.transform.SetParent(container.transform, false);
         _xpText = xpGO.GetComponent<TextMeshProUGUI>();
         _xpText.text      = "0 / 100 XP";
-        _xpText.fontSize  = 11f;
-        _xpText.color     = new Color(0.85f, 0.82f, 1f, 1f);
+        _xpText.fontSize  = 9f;
+        _xpText.color     = new Color(0.90f, 0.86f, 1f, 0.90f);
         _xpText.alignment = TextAlignmentOptions.Center;
+        _xpText.raycastTarget = false;
         StretchFull(xpGO.GetComponent<RectTransform>());
     }
 

@@ -256,7 +256,7 @@ public class WispCombat : NetworkBehaviour
         ScreenShake.AddTrauma(0.12f);
         CombatAudio.Instance?.PlayDeath();
         FloatingDamageText.Spawn(transform.position + Vector3.up * 1.5f,
-            0, FloatingDamageText.DamageType.Normal, "✕");
+            0, FloatingDamageText.DamageType.Normal, "×");
 #endif
     }
 

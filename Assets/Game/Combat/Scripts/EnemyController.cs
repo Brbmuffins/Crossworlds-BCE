@@ -18,7 +18,7 @@ using Mirror;
 [RequireComponent(typeof(NavMeshAgent))]
 public class EnemyController : NetworkBehaviour
 {
-    public const int EnemyForgeRuntimeProfileVersion = 8;
+    public const int EnemyForgeRuntimeProfileVersion = 19;
 
     public enum EnemyState { Idle, Chase, Attack, Dead }
 
@@ -36,9 +36,17 @@ public class EnemyController : NetworkBehaviour
     public float leashRadius = 20f;
     public bool aggroWhenDamaged = true;
     [Min(0f)] public float retaliationRadius = 20f;
+    [Header("Roaming")]
+    [Tooltip("Allows this enemy to choose server-authoritative NavMesh destinations while idle.")]
+    public bool enableRoaming = true;
+    [Min(0f)] public float roamingRadius = 8f;
+    [Min(0f)] public float roamingMinWait = 2f;
+    [Min(0f)] public float roamingMaxWait = 5f;
 
     // ── Combat ───────────────────────────────────────────────────────────────────
     [Header("Combat")]
+    [Tooltip("Treats this enemy as an elite for heavier hitstop/screen shake. Also auto-detected from enemyTemplateId/name containing 'elite'.")]
+    public bool isElite = false;
     public float attackRange    = 1.5f;
     public float attackInterval = 1.5f;
     public float damage         = 12f;
@@ -79,10 +87,15 @@ public class EnemyController : NetworkBehaviour
     [Min(0f)] public float respawnProtectionSeconds = 2f;
     [Tooltip("Keeps the rendered corpse grounded if the selected death animation contains vertical root or skeleton drift.")]
     public bool keepCorpseGrounded = true;
+    [Tooltip("Main animated body used for corpse grounding. Weapons and accessories must not be assigned.")]
+    public SkinnedMeshRenderer corpseGroundingRenderer;
+    [Tooltip("Model-specific vertical adjustment after grounding. Negative values lower the corpse.")]
+    [Range(-0.5f, 0.5f)] public float corpseGroundOffset = -0.05f;
 
     // ── Private ──────────────────────────────────────────────────────────────────
     private Health               _health;
     private NavMeshAgent         _agent;
+    private NetworkTransformBase _networkTransform;
     private StatusEffectManager  _status;   // may be null on basic enemies
     private float                _baseSpeed;
     private Transform            _target;
@@ -99,10 +112,20 @@ public class EnemyController : NetworkBehaviour
     private readonly List<Collider> _deathDisabledColliders = new List<Collider>();
     private bool                 _simulationInitialized;
     private bool                 _attackInProgress;
+    private bool                 _hasRoamDestination;
+    private float                _nextRoamTime;
     private float                _deathGroundY;
+    private float                _deathRootY;
     private bool                 _hasDeathGround;
+    private float                _corpseSnapUntil;
+    private bool                 _corpseGroundingReported;
     private SkinnedMeshRenderer  _corpseBodyRenderer;
     private Mesh                 _corpseBakedMesh;
+    private bool                 _corpseRenderStateCaptured;
+    private readonly List<Animator> _corpseAnimators = new List<Animator>();
+    private readonly List<AnimatorCullingMode> _corpseAnimatorCullingModes = new List<AnimatorCullingMode>();
+    private readonly List<SkinnedMeshRenderer> _corpseRenderers = new List<SkinnedMeshRenderer>();
+    private readonly List<bool> _corpseRendererUpdateModes = new List<bool>();
 
     bool HasSimulationAuthority => NetworkServer.active ||
         (allowOfflineSimulation && !NetworkClient.active && !NetworkServer.active);
@@ -118,6 +141,7 @@ public class EnemyController : NetworkBehaviour
     {
         _health    = GetComponent<Health>();
         _agent     = GetComponent<NavMeshAgent>();
+        _networkTransform = GetComponent<NetworkTransformBase>();
         _status    = GetComponent<StatusEffectManager>();
         _baseSpeed = _agent != null ? _agent.speed : 0f;
         _animator  = GetComponentInChildren<Animator>();
@@ -157,6 +181,8 @@ public class EnemyController : NetworkBehaviour
         // include an internal vertical projection and caused respawns to drift upward.
         _spawnPos = transform.position;
         _spawnRot = transform.rotation;
+        _hasRoamDestination = false;
+        ScheduleNextRoam();
         _health.onDeath.AddListener(OnDeath);
         _health.onDamageTaken.AddListener(OnDamageTakenServer);
         _health.onDamagedBy.AddListener(OnDamagedByServer);
@@ -174,13 +200,38 @@ public class EnemyController : NetworkBehaviour
 
     void Update()
     {
-        if (_animator != null && _hasSpeedParam)
+        if (HasSimulationAuthority)
+            UpdateAnimatorLocomotionTarget();
+
+        // On remote clients NetworkAnimator owns synchronized parameters. Writing
+        // Speed here would overwrite the value received from the server.
+        if (HasSimulationAuthority && _animator != null && _hasSpeedParam)
             _animator.SetFloat(SpeedHash, _targetAnimatorSpeed, 0.12f, Time.deltaTime);
 
         // The behaviour state machine runs at 5 Hz, but combat facing needs to be
         // updated every frame or quick-moving targets visibly outrun the turn.
         if (HasSimulationAuthority && state == EnemyState.Attack && _target != null && !lockFacingOnAggro)
             FaceAttackTarget();
+    }
+
+    void UpdateAnimatorLocomotionTarget()
+    {
+        if (state == EnemyState.Dead || _attackInProgress ||
+            (_status != null && _status.IsBound))
+        {
+            _targetAnimatorSpeed = 0f;
+            return;
+        }
+
+        if (_agent == null || !_agent.isActiveAndEnabled)
+        {
+            _targetAnimatorSpeed = state == EnemyState.Chase ? 1f : 0f;
+            return;
+        }
+
+        float movementSpeed = Mathf.Max(_agent.velocity.magnitude, _agent.desiredVelocity.magnitude);
+        float movingThreshold = Mathf.Max(0.05f, _baseSpeed * 0.05f);
+        _targetAnimatorSpeed = movementSpeed > movingThreshold ? 1f : 0f;
     }
 
     void LateUpdate()
@@ -195,33 +246,57 @@ public class EnemyController : NetworkBehaviour
 
     void StabilizeCorpseGrounding()
     {
-        if (!_hasDeathGround || !TryGetVisibleRendererBottom(out float currentBottom)) return;
+        if (!_hasDeathGround) return;
 
-        float correction = _deathGroundY - currentBottom;
+        // Apply the model-specific offset directly from the grounded root position
+        // captured at death. Animated mesh bounds can contain hidden/outlier
+        // vertices and previously counteracted the user's requested adjustment.
+        float targetRootY = _deathRootY + corpseGroundOffset;
+        float correction = targetRootY - transform.position.y;
         if (Mathf.Abs(correction) < 0.002f) return;
 
-        // Limit each correction to avoid a one-frame pop when a death clip changes pose.
+        bool snapImmediately = Time.time <= _corpseSnapUntil;
+        float appliedCorrection = snapImmediately
+            ? correction
+            : Mathf.Clamp(correction, -0.15f, 0.15f);
         Vector3 position = transform.position;
-        position.y += Mathf.Clamp(correction, -0.15f, 0.15f);
+        position.y += appliedCorrection;
         transform.position = position;
+
+        // Death grounding is a deliberate server-authoritative relocation.
+        // Teleport during the short opening correction window so Mirror
+        // interpolation cannot hide or delay model-specific corpse offsets.
+        if (snapImmediately && NetworkServer.active && _networkTransform != null)
+            _networkTransform.ServerTeleport(position, transform.rotation);
+
+        if (!_corpseGroundingReported)
+        {
+            _corpseGroundingReported = true;
+            Debug.Log($"[EnemyController] Corpse grounding '{name}': ground={_deathGroundY:F3}, " +
+                      $"baseRootY={_deathRootY:F3}, offset={corpseGroundOffset:F3}, " +
+                      $"targetRootY={targetRootY:F3}, applied={appliedCorrection:F3}.", this);
+        }
     }
 
     bool TryGetVisibleRendererBottom(out float bottom)
     {
         bottom = 0f;
-        Renderer primary = _corpseBodyRenderer;
+        Renderer primary = _corpseBodyRenderer != null ? _corpseBodyRenderer : corpseGroundingRenderer;
         float largestVolume = -1f;
 
-        // Prefer the largest skinned renderer: accessory meshes, weapons, VFX,
-        // and selection rings must not decide where the corpse touches ground.
-        foreach (var renderer in GetComponentsInChildren<SkinnedMeshRenderer>(true))
+        // An explicit Enemy Forge body reference is authoritative. Automatic
+        // selection remains as a safe fallback for older/non-forged prefabs.
+        if (primary == null)
         {
-            if (renderer == null || !renderer.enabled || !renderer.gameObject.activeInHierarchy) continue;
-            Vector3 size = renderer.bounds.size;
-            float volume = size.x * size.y * size.z;
-            if (volume <= largestVolume) continue;
-            largestVolume = volume;
-            primary = renderer;
+            foreach (var renderer in GetComponentsInChildren<SkinnedMeshRenderer>(true))
+            {
+                if (renderer == null || !renderer.enabled || !renderer.gameObject.activeInHierarchy) continue;
+                Vector3 size = renderer.bounds.size;
+                float volume = size.x * size.y * size.z;
+                if (volume <= largestVolume) continue;
+                largestVolume = volume;
+                primary = renderer;
+            }
         }
 
         _corpseBodyRenderer = primary as SkinnedMeshRenderer;
@@ -236,7 +311,9 @@ public class EnemyController : NetworkBehaviour
                 _corpseBakedMesh.MarkDynamic();
             }
 
-            _corpseBodyRenderer.BakeMesh(_corpseBakedMesh, true);
+            // Bake in renderer-local space. TransformPoint below applies the
+            // hierarchy scale exactly once; useScale=true would double-apply it.
+            _corpseBodyRenderer.BakeMesh(_corpseBakedMesh, false);
             Bounds bakedBounds = _corpseBakedMesh.bounds;
             if (bakedBounds.size.sqrMagnitude > 0f)
             {
@@ -278,26 +355,52 @@ public class EnemyController : NetworkBehaviour
     {
         groundY = 0f;
         float sampleRadius = _agent != null ? Mathf.Max(2f, _agent.height) : 3f;
+        Vector3 origin = transform.position + Vector3.up * sampleRadius;
+        float nearestGroundDistance = float.PositiveInfinity;
+        float nearestSurfaceDistance = float.PositiveInfinity;
+        float nearestGroundY = 0f;
+        float nearestSurfaceY = 0f;
+        bool foundTaggedGround = false;
+        bool foundSurface = false;
+        foreach (var hit in Physics.RaycastAll(origin, Vector3.down, sampleRadius * 3f,
+                     Physics.AllLayers, QueryTriggerInteraction.Ignore))
+        {
+            if (hit.collider == null || hit.collider.transform.IsChildOf(transform)) continue;
+            if (hit.normal.y < 0.5f) continue;
+
+            if (hit.collider.CompareTag("Ground"))
+            {
+                if (hit.distance >= nearestGroundDistance) continue;
+                nearestGroundDistance = hit.distance;
+                nearestGroundY = hit.point.y;
+                foundTaggedGround = true;
+                continue;
+            }
+
+            if (hit.distance >= nearestSurfaceDistance) continue;
+            nearestSurfaceDistance = hit.distance;
+            nearestSurfaceY = hit.point.y;
+            foundSurface = true;
+        }
+
+        if (foundTaggedGround)
+        {
+            groundY = nearestGroundY;
+            return true;
+        }
+
+        if (foundSurface)
+        {
+            groundY = nearestSurfaceY;
+            return true;
+        }
+
         int areaMask = _agent != null ? _agent.areaMask : NavMesh.AllAreas;
         if (NavMesh.SamplePosition(transform.position, out NavMeshHit navHit, sampleRadius, areaMask))
         {
             groundY = navHit.position.y;
             return true;
         }
-
-        Vector3 origin = transform.position + Vector3.up * sampleRadius;
-        float nearestDistance = float.PositiveInfinity;
-        bool foundSurface = false;
-        foreach (var hit in Physics.RaycastAll(origin, Vector3.down, sampleRadius * 3f,
-                     Physics.AllLayers, QueryTriggerInteraction.Ignore))
-        {
-            if (hit.collider != null && hit.collider.transform.IsChildOf(transform)) continue;
-            if (hit.distance >= nearestDistance) continue;
-            nearestDistance = hit.distance;
-            groundY = hit.point.y;
-            foundSurface = true;
-        }
-        if (foundSurface) return true;
 
         return TryGetVisibleRendererBottom(out groundY);
     }
@@ -346,9 +449,13 @@ public class EnemyController : NetworkBehaviour
     {
         if (NetworkClient.active && !NetworkServer.active) return;
         if (state == EnemyState.Dead) return;
+        if (_returningHome && target != null) return;
 
         _target = target;
         _returningHome = false;
+        _hasRoamDestination = false;
+        if (_agent != null && _agent.isActiveAndEnabled && _agent.isOnNavMesh)
+            _agent.ResetPath();
         state = _target != null ? EnemyState.Chase : EnemyState.Idle;
         if (lockFacingOnAggro && _target != null)
             FaceTargetImmediately();
@@ -386,6 +493,7 @@ public class EnemyController : NetworkBehaviour
     void TickIdle()
     {
         TickReturnHomeFacing();
+        if (_returningHome) return;
 
         var hits = Physics.OverlapSphere(transform.position, aggroRadius);
         float     nearest = float.MaxValue;
@@ -393,6 +501,7 @@ public class EnemyController : NetworkBehaviour
 
         foreach (var col in hits)
         {
+            if (col.transform.IsChildOf(transform)) continue;
             if (!col.CompareTag("Player")) continue;
             var h = col.GetComponent<Health>();
             if (h == null || !h.IsAlive) continue;
@@ -404,12 +513,67 @@ public class EnemyController : NetworkBehaviour
         // many enemies chase one player here — skip acquisition when `found`
         // already has that many chasers. Not yet wired (needs a per-player
         // chaser count); left as the enforcement seam. See §4 combat-feel doc.
-        if (found != null) SetAggroTarget(found);
+        if (found != null)
+        {
+            SetAggroTarget(found);
+            return;
+        }
+
+        TickRoaming();
+    }
+
+    void TickRoaming()
+    {
+        if (!enableRoaming || roamingRadius <= 0f || _returningHome ||
+            _agent == null || !_agent.isActiveAndEnabled || !_agent.isOnNavMesh)
+            return;
+
+        if (_hasRoamDestination)
+        {
+            if (_agent.pathPending) return;
+            float arrivalDistance = Mathf.Max(0.25f, _agent.stoppingDistance + 0.1f);
+            if (_agent.hasPath && _agent.remainingDistance > arrivalDistance) return;
+
+            _hasRoamDestination = false;
+            _agent.ResetPath();
+            ScheduleNextRoam();
+            return;
+        }
+
+        if (Time.time < _nextRoamTime) return;
+
+        int areaMask = _agent.areaMask;
+        for (int attempt = 0; attempt < 8; attempt++)
+        {
+            Vector2 offset2D = Random.insideUnitCircle * roamingRadius;
+            Vector3 candidate = _spawnPos + new Vector3(offset2D.x, 0f, offset2D.y);
+            float sampleRadius = Mathf.Max(1.5f, _agent.height);
+            if (!NavMesh.SamplePosition(candidate, out NavMeshHit hit, sampleRadius, areaMask)) continue;
+            Vector3 horizontal = hit.position - _spawnPos;
+            horizontal.y = 0f;
+            if (horizontal.sqrMagnitude > roamingRadius * roamingRadius) continue;
+
+            _agent.isStopped = false;
+            _agent.speed = _baseSpeed;
+            _agent.stoppingDistance = 0.15f;
+            if (!_agent.SetDestination(hit.position)) continue;
+            _hasRoamDestination = true;
+            return;
+        }
+
+        _nextRoamTime = Time.time + 1f;
+    }
+
+    void ScheduleNextRoam()
+    {
+        float minWait = Mathf.Max(0f, roamingMinWait);
+        float maxWait = Mathf.Max(minWait, roamingMaxWait);
+        _nextRoamTime = Time.time + Random.Range(minWait, maxWait);
     }
 
     void OnDamagedByServer(GameObject source)
     {
-        if (!aggroWhenDamaged || state == EnemyState.Dead) return;
+        if (!aggroWhenDamaged || state == EnemyState.Dead || _returningHome) return;
 
         Transform attacker = ResolvePlayerTransform(source);
         if (attacker == null)
@@ -468,6 +632,10 @@ public class EnemyController : NetworkBehaviour
     {
         if (_agent == null || !_agent.isActiveAndEnabled) return;
 
+        _target = null;
+        _attackTimer = 0f;
+        _attackInProgress = false;
+        _hasRoamDestination = false;
         _returningHome = true;
         _agent.isStopped = false;
         _agent.speed = _baseSpeed;
@@ -488,6 +656,7 @@ public class EnemyController : NetworkBehaviour
                 _agent.velocity = Vector3.zero;
             }
             transform.rotation = _spawnRot;
+            ScheduleNextRoam();
             return;
         }
 
@@ -656,7 +825,8 @@ public class EnemyController : NetworkBehaviour
             yield return new WaitForSeconds(attackImpactDelay);
 
         _attackInProgress = false;
-        if (!_simulationInitialized || state == EnemyState.Dead || intendedTarget == null || !intendedTarget.IsAlive)
+        if (!_simulationInitialized || state == EnemyState.Dead || _returningHome ||
+            intendedTarget == null || !intendedTarget.IsAlive)
             yield break;
 
         float allowedRange = isRanged ? attackRange * 1.3f : EnemyCrowdUtility.MeleeAttackReach(attackRange);
@@ -685,10 +855,15 @@ public class EnemyController : NetworkBehaviour
 
     void OnDeath()
     {
-        _corpseBodyRenderer = null;
+        PrepareCorpseRendering();
+        _corpseBodyRenderer = corpseGroundingRenderer;
+        _deathRootY = transform.position.y;
         _hasDeathGround = keepCorpseGrounded && TryResolveDeathGround(out _deathGroundY);
+        _corpseSnapUntil = Time.time + 0.3f;
+        _corpseGroundingReported = false;
         state = EnemyState.Dead;
         _returningHome = false;
+        _hasRoamDestination = false;
         StopAllCoroutines();
 
         _health.SetEnemyTargetTagActive(false);
@@ -873,6 +1048,8 @@ public class EnemyController : NetworkBehaviour
         }
 
         state = EnemyState.Idle;
+        _hasRoamDestination = false;
+        ScheduleNextRoam();
         _status?.RemoveAll();
         _health.currentHealth = _health.maxHealth;
         _health.isInvulnerable = respawnProtectionSeconds > 0f;
@@ -884,6 +1061,7 @@ public class EnemyController : NetworkBehaviour
         _deathDisabledColliders.Clear();
 
         SetVisualsVisible(true);
+        RestoreCorpseRendering();
         ResetAnimators();
         _targetAnimatorSpeed = 0f;
         if (_animator != null)
@@ -922,6 +1100,7 @@ public class EnemyController : NetworkBehaviour
         transform.SetPositionAndRotation(position, rotation);
         _health.SetEnemyTargetTagActive(true);
         SetVisualsVisible(true);
+        RestoreCorpseRendering();
         ResetAnimators();
         _targetAnimatorSpeed = 0f;
         if (_animator != null)
@@ -952,6 +1131,51 @@ public class EnemyController : NetworkBehaviour
         }
     }
 
+    void PrepareCorpseRendering()
+    {
+        if (_corpseRenderStateCaptured) return;
+        _corpseRenderStateCaptured = true;
+        _corpseAnimators.Clear();
+        _corpseAnimatorCullingModes.Clear();
+        _corpseRenderers.Clear();
+        _corpseRendererUpdateModes.Clear();
+
+        foreach (var animator in GetComponentsInChildren<Animator>(true))
+        {
+            if (animator == null) continue;
+            _corpseAnimators.Add(animator);
+            _corpseAnimatorCullingModes.Add(animator.cullingMode);
+            animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+        }
+
+        foreach (var renderer in GetComponentsInChildren<SkinnedMeshRenderer>(true))
+        {
+            if (renderer == null) continue;
+            _corpseRenderers.Add(renderer);
+            _corpseRendererUpdateModes.Add(renderer.updateWhenOffscreen);
+            renderer.updateWhenOffscreen = true;
+        }
+    }
+
+    void RestoreCorpseRendering()
+    {
+        if (!_corpseRenderStateCaptured) return;
+
+        for (int i = 0; i < _corpseAnimators.Count && i < _corpseAnimatorCullingModes.Count; i++)
+            if (_corpseAnimators[i] != null)
+                _corpseAnimators[i].cullingMode = _corpseAnimatorCullingModes[i];
+
+        for (int i = 0; i < _corpseRenderers.Count && i < _corpseRendererUpdateModes.Count; i++)
+            if (_corpseRenderers[i] != null)
+                _corpseRenderers[i].updateWhenOffscreen = _corpseRendererUpdateModes[i];
+
+        _corpseAnimators.Clear();
+        _corpseAnimatorCullingModes.Clear();
+        _corpseRenderers.Clear();
+        _corpseRendererUpdateModes.Clear();
+        _corpseRenderStateCaptured = false;
+    }
+
     // ─────────────────────────────────────────────────────────────────────────────
     // Helpers
     // ─────────────────────────────────────────────────────────────────────────────
@@ -961,6 +1185,8 @@ public class EnemyController : NetworkBehaviour
         _target      = null;
         state        = EnemyState.Idle;
         _attackTimer = 0f;
+        _hasRoamDestination = false;
+        ScheduleNextRoam();
         if (_agent != null && _agent.isActiveAndEnabled) _agent.ResetPath();
         // Restore full speed (slow may have been applied)
         if (_agent != null) _agent.speed = _baseSpeed;
@@ -974,6 +1200,18 @@ public class EnemyController : NetworkBehaviour
             TriggerAnimator(DeathHash, _hasDeathParam);
     }
 
+    bool IsEliteEnemy()
+    {
+        if (isElite)
+            return true;
+
+        if (!string.IsNullOrEmpty(enemyTemplateId)
+            && enemyTemplateId.IndexOf("elite", System.StringComparison.OrdinalIgnoreCase) >= 0)
+            return true;
+
+        return name.IndexOf("elite", System.StringComparison.OrdinalIgnoreCase) >= 0;
+    }
+
     // ─────────────────────────────────────────────────────────────────────────────
     // RPCs (Week 7: wire anim + SFX)
     // ─────────────────────────────────────────────────────────────────────────────
@@ -984,7 +1222,7 @@ public class EnemyController : NetworkBehaviour
 #if UNITY_EDITOR || !UNITY_SERVER
         TriggerAnimator(AttackHash, _hasAttackParam);
 
-        bool isElite = CompareTag("Elite");
+        bool eliteImpact = IsEliteEnemy();
 
         // Sound plays for everyone (positional audio sells the hit universally)
         CombatAudio.Instance?.PlayMeleeHit();
@@ -995,8 +1233,8 @@ public class EnemyController : NetworkBehaviour
                           && NetworkClient.localPlayer.GetComponent<NetworkIdentity>()?.netId == targetNetId;
         if (isLocalTarget)
         {
-            HitstopManager.Freeze(isElite ? HitstopManager.Weight.Medium : HitstopManager.Weight.Light);
-            ScreenShake.AddTrauma(isElite ? 0.20f : 0.12f);
+            HitstopManager.Freeze(eliteImpact ? HitstopManager.Weight.Medium : HitstopManager.Weight.Light);
+            ScreenShake.AddTrauma(eliteImpact ? 0.20f : 0.12f);
         }
 #endif
     }
@@ -1043,6 +1281,7 @@ public class EnemyController : NetworkBehaviour
     void RpcPlayDeathEffect()
     {
 #if UNITY_EDITOR || !UNITY_SERVER
+        PrepareCorpseRendering();
         TriggerAnimator(DeathHash, _hasDeathParam);
 
         // Layer 3 — Death sound
@@ -1050,14 +1289,14 @@ public class EnemyController : NetworkBehaviour
 
         // Layer 4 — Spawn death VFX at position (EnemyDeathVFX handles the actual prefab)
         FloatingDamageText.Spawn(transform.position + Vector3.up * 1.5f, 0,
-            FloatingDamageText.DamageType.Normal, "✕");
+            FloatingDamageText.DamageType.Normal, "×");
 
         // Layer 5 — Kill-blow shake (stronger for elites)
-        bool isElite = CompareTag("Elite");
-        ScreenShake.AddTrauma(isElite ? 0.45f : 0.20f);
+        bool eliteImpact = IsEliteEnemy();
+        ScreenShake.AddTrauma(eliteImpact ? 0.45f : 0.20f);
 
         // Kill-blow hitstop
-        HitstopManager.Freeze(isElite ? HitstopManager.Weight.Heavy : HitstopManager.Weight.Medium);
+        HitstopManager.Freeze(eliteImpact ? HitstopManager.Weight.Heavy : HitstopManager.Weight.Medium);
 #endif
     }
 
