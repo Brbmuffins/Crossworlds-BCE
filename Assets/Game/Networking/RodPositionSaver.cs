@@ -39,7 +39,7 @@ public class RodPositionSaver : MonoBehaviour
 
     void Start()
     {
-        _lastZone = CurrentZone();
+        _lastZone = ResolveZoneForSave();
         StartCoroutine(PeriodicSaveLoop());
     }
 
@@ -47,10 +47,26 @@ public class RodPositionSaver : MonoBehaviour
     void OnApplicationQuit() { TrySave(); }
 
     /// <summary>
-    /// Current zone for this player — the scene the server-side player object is
-    /// in, coerced to a known zone. See SceneNames.NormalizeZone.
+    /// Zone to persist for this player. Prefers the scene the server-side player
+    /// object is actually in, and remembers it.
+    ///
+    /// The fallback matters: during OnDestroy and OnApplicationQuit the scene may
+    /// already be tearing down, so gameObject.scene.name can come back empty. Naively
+    /// normalizing that would write Hub over everyone's real zone at shutdown — the
+    /// one save where being right counts most. So an unusable live value falls back
+    /// to the last zone we positively observed, not to Hub.
     /// </summary>
-    string CurrentZone() => SceneNames.NormalizeZone(gameObject.scene.name);
+    string ResolveZoneForSave()
+    {
+        string live = gameObject.scene.name;
+        if (SceneNames.IsZone(live))
+        {
+            _lastZone = live;
+            return live;
+        }
+
+        return SceneNames.NormalizeZone(_lastZone);
+    }
 
     /// <summary>
     /// Immediate save. Call before moving a player between zones so the DB never
@@ -59,7 +75,7 @@ public class RodPositionSaver : MonoBehaviour
     public void SaveNow()
     {
         if (!CanSave()) return;
-        _lastZone = CurrentZone();
+        _lastZone = ResolveZoneForSave();
         StartCoroutine(PositionSaveRoutine.Save(
             authServerURL, jwt, characterId, transform.position, transform.eulerAngles.y, _lastZone));
     }
@@ -75,7 +91,7 @@ public class RodPositionSaver : MonoBehaviour
             yield return new WaitForSeconds(saveInterval);
             if (!CanSave()) continue;
 
-            _lastZone = CurrentZone();
+            _lastZone = ResolveZoneForSave();
             yield return PositionSaveRoutine.Save(
                 authServerURL, jwt, characterId, transform.position, transform.eulerAngles.y, _lastZone);
         }
@@ -91,7 +107,7 @@ public class RodPositionSaver : MonoBehaviour
 
         // Can't use coroutines after OnDestroy — hand off to a detached host.
         SavePosition(authServerURL, jwt, characterId,
-            transform.position, transform.eulerAngles.y, CurrentZone());
+            transform.position, transform.eulerAngles.y, ResolveZoneForSave());
     }
 
     // Static so it can survive the MonoBehaviour being destroyed
