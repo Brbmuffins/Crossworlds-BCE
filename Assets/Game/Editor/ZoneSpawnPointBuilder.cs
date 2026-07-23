@@ -68,21 +68,19 @@ public static class ZoneSpawnPointBuilder
     {
         Scene scene = EditorSceneManager.OpenScene(path, OpenSceneMode.Single);
 
-        var existing = Object.FindObjectsByType<HubReturnSpawnPoint>(
-            FindObjectsInactive.Include, FindObjectsSortMode.None);
+        List<HubReturnSpawnPoint> existing = FindInScene<HubReturnSpawnPoint>(scene);
 
-        if (existing.Length > 0)
+        if (existing.Count > 0)
         {
-            report.Add($"✓ {zone}: already has {existing.Length} spawn point(s) — untouched.");
+            report.Add($"✓ {zone}: already has {existing.Count} spawn point(s) — untouched.");
             return;
         }
 
-        var starts = Object.FindObjectsByType<NetworkStartPosition>(
-            FindObjectsInactive.Include, FindObjectsSortMode.None);
+        List<NetworkStartPosition> starts = FindInScene<NetworkStartPosition>(scene);
 
-        if (starts.Length > 0)
+        if (starts.Count > 0)
         {
-            report.Add($"✓ {zone}: no HubReturnSpawnPoint, but {starts.Length} " +
+            report.Add($"✓ {zone}: no HubReturnSpawnPoint, but {starts.Count} " +
                        $"NetworkStartPosition(s) exist — FindInScene falls back to those, leaving alone.");
             return;
         }
@@ -100,6 +98,22 @@ public static class ZoneSpawnPointBuilder
 
         report.Add($"✚ {zone}: CREATED '{go.name}' at {position} (via {method}). " +
                    $"Move it to the real entrance.");
+    }
+
+    /// <summary>
+    /// Components of type T inside one scene, including inactive objects.
+    /// Deliberately not Object.FindObjectsByType: that overload is deprecated in
+    /// Unity 6, and it searches every loaded scene rather than the one we opened —
+    /// the same global-lookup mistake ROADMAP 6.5 exists to clean up.
+    /// </summary>
+    static List<T> FindInScene<T>(Scene scene) where T : Component
+    {
+        var results = new List<T>();
+
+        foreach (GameObject root in scene.GetRootGameObjects())
+            results.AddRange(root.GetComponentsInChildren<T>(true));
+
+        return results;
     }
 
     // ── Placement ─────────────────────────────────────────────────────────────
