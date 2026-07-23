@@ -381,6 +381,13 @@ public class ZoneManager : MonoBehaviour
         player.transform.SetPositionAndRotation(position, rotation);
 
         if (controller != null) controller.enabled = true;
+
+        // Without ServerTeleport the NetworkTransform treats a cross-zone jump as
+        // ordinary movement and interpolates the player across the whole map —
+        // visible as the character streaking through the world on every client.
+        var networkTransform = player.GetComponent<NetworkTransformBase>();
+        if (networkTransform != null)
+            networkTransform.ServerTeleport(position, rotation);
     }
 
     // ── Connection lifecycle ──────────────────────────────────────────────────
@@ -389,6 +396,18 @@ public class ZoneManager : MonoBehaviour
     {
         if (conn == null) return;
         RemoveOccupant(conn.connectionId);
+    }
+
+    /// <summary>
+    /// How many players share this connection's zone, including itself. 0 if unplaced.
+    /// Callers use this to answer "am I the last one out?" before tearing down
+    /// zone-wide state such as an arena run.
+    /// </summary>
+    public int OccupantCount(NetworkConnectionToClient conn)
+    {
+        if (conn == null) return 0;
+        if (!_connZone.TryGetValue(conn.connectionId, out int handle)) return 0;
+        return _occupants.TryGetValue(handle, out HashSet<int> set) ? set.Count : 0;
     }
 
     /// <summary>Zone a connection is currently in, or null if it has not been placed.</summary>

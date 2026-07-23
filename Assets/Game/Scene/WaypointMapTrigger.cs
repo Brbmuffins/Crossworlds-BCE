@@ -223,21 +223,15 @@ public sealed class WaypointMapTrigger : NetworkBehaviour
             WaypointMapUI.Hide();
 #endif
 
-        if (NetworkServer.active)
-        {
-            PrepareArrival(sceneName, node.arrivalSpawnId, node.useArrivalSpawnRotation, false);
-            ChangeScene(sceneName);
-            return;
-        }
-
-        if (NetworkClient.active)
+        if (NetworkClient.active || NetworkServer.active)
         {
             CmdRequestTravel(sceneName, node.arrivalSpawnId, node.useArrivalSpawnRotation);
             return;
         }
 
+        // Fully offline (no Mirror at all) — plain local load, unchanged.
         PrepareArrival(sceneName, node.arrivalSpawnId, node.useArrivalSpawnRotation, true);
-        ChangeScene(sceneName);
+        SceneManager.LoadScene(sceneName);
     }
 
     [Command(requiresAuthority = false)]
@@ -257,8 +251,17 @@ public sealed class WaypointMapTrigger : NetworkBehaviour
             return;
         }
 
-        PrepareArrival(sceneName, arrivalSpawnId, useArrivalSpawnRotation, false);
-        ChangeScene(sceneName);
+        if (sender == null) return;
+
+        if (ZoneManager.Instance == null)
+        {
+            TargetTravelRejected(sender, "Zone system is not running. Try again shortly.");
+            return;
+        }
+
+        // ROADMAP 6.4: moves ONLY the traveller. This used to be ServerChangeScene,
+        // which dragged every connected player to the destination.
+        ZoneManager.Instance.MovePlayerToZone(sender, sceneName, arrivalSpawnId);
     }
 
     [TargetRpc]
@@ -289,17 +292,6 @@ public sealed class WaypointMapTrigger : NetworkBehaviour
 
         HubReturnArrival.Clear();
 #endif
-    }
-
-    static void ChangeScene(string sceneName)
-    {
-        if (NetworkManager.singleton != null && NetworkServer.active)
-        {
-            NetworkManager.singleton.ServerChangeScene(sceneName);
-            return;
-        }
-
-        SceneManager.LoadScene(sceneName);
     }
 
     static bool CanLoadScene(string sceneName)

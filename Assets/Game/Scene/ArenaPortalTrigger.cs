@@ -100,10 +100,17 @@ public class ArenaPortalTrigger : NetworkBehaviour
 
         Debug.Log($"[PORTAL] Server received arena request for '{sceneName}'");
 
-        // Let NetworkManager handle the load if it supports it,
-        // or fall back to a direct scene load for the requesting client.
-        // For a full implementation, wire this to your NetworkManager.ServerChangeScene().
-        NetworkManager.singleton?.ServerChangeScene(sceneName);
+        if (sender == null) return;
+
+        // ROADMAP 6.4: only the requesting player enters, into their own instance of
+        // the arena. This was ServerChangeScene, which moved everyone on the server.
+        if (ZoneManager.Instance == null)
+        {
+            Debug.LogError("[PORTAL] ZoneManager missing — cannot enter arena. Run BCE ▶ Setup ▶ 6z.");
+            return;
+        }
+
+        ZoneManager.Instance.MovePlayerToZone(sender, sceneName);
     }
 
 #if UNITY_EDITOR

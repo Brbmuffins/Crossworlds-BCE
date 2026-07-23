@@ -141,28 +141,21 @@ public class HubReturnTrigger : NetworkBehaviour
         if (saveProgressBeforeReturn)
             PlayerProgressManager.Local?.SaveProgress();
 
-        PrepareHubArrival(hubSceneName);
-
-        if (NetworkServer.active)
-        {
-            EndArenaSessionIfNeeded();
-            ChangeToHubScene(hubSceneName);
-            return;
-        }
-
-        if (NetworkClient.active)
+        if (NetworkClient.active || NetworkServer.active)
         {
             CmdRequestReturnToHub(hubSceneName);
             return;
         }
 
-        Transform localPlayer = _localPlayer != null ? _localPlayer : FindLocalPlayer();
-        if (localPlayer != null)
-            HubReturnArrival.CarryLocalPlayer(localPlayer.gameObject);
-
+        // Fully offline (no Mirror at all) — plain local load, unchanged.
         SceneManager.LoadScene(hubSceneName);
     }
 
+    /// <summary>
+    /// ROADMAP 6.4: returns ONLY the requesting player to the hub. This used to call
+    /// ServerChangeScene, which moved every connected player — so one person leaving
+    /// an arena ended everyone else's run.
+    /// </summary>
     [Command(requiresAuthority = false)]
     void CmdRequestReturnToHub(string requestedHubSceneName, NetworkConnectionToClient sender = null)
     {
@@ -172,37 +165,50 @@ public class HubReturnTrigger : NetworkBehaviour
             return;
         }
 
-        EndArenaSessionIfNeeded();
-        PrepareHubArrival(requestedHubSceneName);
-        ChangeToHubScene(requestedHubSceneName);
-    }
-
-    void PrepareHubArrival(string sceneName)
-    {
-        if (!placePlayerAtHubArrival) return;
-
-        HubReturnArrival.Request(sceneName, hubArrivalSpawnId, useHubArrivalRotation);
-    }
-
-    void EndArenaSessionIfNeeded()
-    {
-        if (!runArenaCleanup) return;
-
-        ArenaSessionController.Instance?.EndSession();
-
-        var spawner = FindAnyObjectByType<WaveSpawner>();
-        spawner?.StopWaves();
-    }
-
-    static void ChangeToHubScene(string sceneName)
-    {
-        if (NetworkManager.singleton != null && NetworkServer.active)
+        if (sender == null)
         {
-            NetworkManager.singleton.ServerChangeScene(sceneName);
+            Debug.LogWarning("[HUB] Return request ignored: no sender connection.");
             return;
         }
 
-        SceneManager.LoadScene(sceneName);
+        EndArenaSessionIfNeeded(sender);
+
+        if (ZoneManager.Instance == null)
+        {
+            Debug.LogError("[HUB] ZoneManager missing — cannot return to hub. Run BCE ▶ Setup ▶ 6z.");
+            return;
+        }
+
+        ZoneManager.Instance.MovePlayerToZone(
+            sender,
+            requestedHubSceneName,
+            placePlayerAtHubArrival ? hubArrivalSpawnId : null);
+    }
+
+    /// <summary>
+    /// Stops the arena the leaver is in — but only if they are the last one out.
+    /// Before ROADMAP 6.4 everyone left together, so ending the session unconditionally
+    /// was fine. Now one player can walk out of a co-op arena while their team is still
+    /// fighting, and killing the waves out from under them would be a real bug.
+    /// The WaveSpawner lookup is scoped to the leaver's zone for the same reason —
+    /// FindAnyObjectByType is global and would happily stop another party's arena.
+    /// </summary>
+    void EndArenaSessionIfNeeded(NetworkConnectionToClient sender)
+    {
+        if (!runArenaCleanup) return;
+
+        if (ZoneManager.Instance != null && ZoneManager.Instance.OccupantCount(sender) > 1)
+            return;   // teammates still inside — leave their run alone
+
+        ArenaSessionController.Instance?.EndSession();
+
+        UnityEngine.SceneManagement.Scene? zone = ZoneManager.Instance?.ZoneOf(sender);
+        foreach (var spawner in FindObjectsByType<WaveSpawner>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+        {
+            if (spawner == null) continue;
+            if (zone.HasValue && spawner.gameObject.scene != zone.Value) continue;
+            spawner.StopWaves();
+        }
     }
 
     bool WasInteractPressed()

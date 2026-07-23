@@ -441,11 +441,9 @@ copies of one scene rather than one shared copy.
   `_Container.unity`, registers every zone in Build Settings, and adds ZoneManager to the
   RodNetworkManager GameObject. **Nothing works until 6z is run.** **Not compile-verified.**
 
-> **⚠ 6.3 and 6.4 must ship together.** 6.3 repoints `onlineScene` at the container, but the
-> four `ServerChangeScene` call sites still exist. Calling one now does a *Normal* scene change
-> that replaces the container and destroys every additively-loaded zone out from under
-> ZoneManager. Between 6.3 and 6.4 the world loads correctly and all travel is broken. Do not
-> deploy 6.3 alone.
+> **✅ RESOLVED 2026-07-23 by 6.4.** No live `ServerChangeScene` calls remain in `Assets/Game`
+> (`grep -rn "ServerChangeScene(" --include=*.cs Assets/Game | grep -v "//"` → empty). 6.3 and
+> 6.4 landed together as intended.
 
 - **6.4 — Route all travel through ZoneManager.** Replace the four `ServerChangeScene` call sites
   (`Scene/WaypointMapTrigger.cs:298`, `Scene/HubReturnTrigger.cs:201`,
@@ -454,6 +452,25 @@ copies of one scene rather than one shared copy.
   in `Networking/PortalTransition.cs:82-89` — `TargetBeginTransition` becomes a request into the
   same path. *Accept:* one player takes a portal or waypoint and nobody else's view changes;
   the traveller keeps their identity, inventory, and HP across the move. *Deps:* 6.3.
+  **✅ code-side 2026-07-23.** **Six** call sites, not four — the original audit missed
+  `Scene/ArenaPortalTrigger.cs:106`, which also called `ServerChangeScene`. All now route through
+  `ZoneManager.MovePlayerToZone`: WaypointMapTrigger, HubReturnTrigger, GmCommandRouter,
+  HangmanNPC, ArenaPortalTrigger, PortalTransition. The client-local `LoadScene` hack in
+  PortalTransition is gone — `TargetBeginTransition` is now cosmetics only (chat line + loading
+  screen) and the move is server-authoritative.
+  Three bugs fixed that only became reachable once travel actually worked:
+  (a) `ZoneManager.PlaceAtSpawnPoint` was missing `NetworkTransformBase.ServerTeleport`, so a
+  cross-zone jump would interpolate the player across the whole map on every client — found by
+  reading the GM `/arrive` helper this task deleted, which had it right;
+  (b) `PortalTransition._entered` / `_enteringLocally` were never cleared, so a portal worked
+  exactly once per server lifetime — harmless when travel was broken, fatal now;
+  (c) `HubReturnTrigger.EndArenaSessionIfNeeded` killed the arena session and stopped waves
+  unconditionally, which with co-op instances would end a team's run when one member left. Now
+  guarded on `ZoneManager.OccupantCount(sender) > 1` and the `WaveSpawner` lookup is scoped to
+  the leaver's zone instead of `FindAnyObjectByType`.
+  Dead code removed: `ChangeToHubScene`, `ChangeScene`, `PrepareHubArrival`,
+  `TryPlaceSenderAtCurrentSceneSpawn`, `SceneMatchesCurrent`. `HubReturnArrival` survives only
+  on WaypointMapTrigger's fully-offline path. **Not compile-verified.**
 
 - **6.5 — The two traps that break silently.** (a) `Scene/HubReturnSpawnPoint.cs:17` uses a global
   `FindObjectsByType`, and `GetStartPosition()` searches all Mirror start positions — with every
