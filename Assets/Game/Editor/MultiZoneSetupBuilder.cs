@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
+using Mirror;                       // InterestManagementBase — the 6.6 conflict check
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
