@@ -285,7 +285,7 @@ public class Health : NetworkBehaviour
             HandleDeath(source);
     }
 
-    public void Heal(float amount)
+    public void Heal(float amount, bool showFeedback = true, bool emitHealEvent = true)
     {
         if (!CanMutateCombatState()) return;
         if (_isDowned || currentHealth <= 0f) return;
@@ -293,8 +293,10 @@ public class Health : NetworkBehaviour
         if (actual <= 0f) return;
         currentHealth += actual;
         onHealthChanged?.Invoke(currentHealth, maxHealth);
-        onHealApplied?.Invoke(actual);
-        ShowHealFeedback(actual);
+        if (emitHealEvent)
+            onHealApplied?.Invoke(actual);
+        if (showFeedback)
+            ShowHealFeedback(actual);
     }
 
     // Defibrillator: revive a downed player at hpPercent (e.g. 0.3 = 30%)

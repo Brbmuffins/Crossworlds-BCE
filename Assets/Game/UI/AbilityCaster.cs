@@ -80,6 +80,10 @@ public class AbilityDef
     public bool spawnTurret = false;
     public GameObject turretPrefab;
     public float cooldown = 3f;
+
+    [Header("Resource Cost")]
+    [Min(0f)] public float manaCost = 0f;
+
     public Sprite icon;
 
     [Header("Spell Timing")]
@@ -535,6 +539,15 @@ public class AbilityCaster : NetworkBehaviour
     {
         AbilityVariant variant = GetVariant(ability, variantIndex);
         return ResolveVariantSpellbookAbility(ability, variant);
+    }
+
+    public float ManaCostFor(AbilityDef ability, int variantIndex = 0)
+    {
+        if (ability == null) return 0f;
+
+        AbilityDef payload = GetVariantPayload(ability, variantIndex);
+        AbilityDef costSource = payload != null ? payload : ability;
+        return Mathf.Max(0f, costSource.manaCost);
     }
 
     public string GetVariantDisplayName(AbilityDef ability, int variantIndex)
@@ -1097,6 +1110,13 @@ public class AbilityCaster : NetworkBehaviour
 
             if (key.wasPressedThisFrame && cooldownTimers[i] <= 0f)
             {
+                bool canPickDifferentVariantCost = abilities[i].variants != null && abilities[i].variants.Length > 0;
+                if (!canPickDifferentVariantCost && !HasEnoughManaForCast(abilities[i], 0))
+                {
+                    WarnInsufficientMana(abilities[i], 0);
+                    continue;
+                }
+
                 // Self-cast shields skip aiming but still respect cast time.
                 if (abilities[i].shieldAbsorb > 0f && abilities[i].range <= 0f)
                 {
@@ -1169,6 +1189,13 @@ public class AbilityCaster : NetworkBehaviour
     {
         if (ability == null)
         {
+            if (indicator != null) Destroy(indicator);
+            return;
+        }
+
+        if (!HasEnoughManaForCast(ability, variantIndex))
+        {
+            WarnInsufficientMana(ability, variantIndex);
             if (indicator != null) Destroy(indicator);
             return;
         }
@@ -2786,6 +2813,26 @@ public class AbilityCaster : NetworkBehaviour
         return ability != null ? Mathf.Max(0f, ability.castTime) : 0f;
     }
 
+    bool HasEnoughManaForCast(AbilityDef ability, int variantIndex = 0)
+    {
+        return _characterStats == null || _characterStats.HasMana(ManaCostFor(ability, variantIndex));
+    }
+
+    bool TrySpendManaForCast(AbilityDef ability, int variantIndex = 0)
+    {
+        return _characterStats == null || _characterStats.TrySpendMana(ManaCostFor(ability, variantIndex));
+    }
+
+    void WarnInsufficientMana(AbilityDef ability, int variantIndex = 0)
+    {
+        float cost = ManaCostFor(ability, variantIndex);
+        if (cost <= 0f) return;
+
+        string abilityName = ability != null ? ability.abilityName : "Ability";
+        float current = _characterStats != null ? _characterStats.CurrentMana : 0f;
+        Debug.Log($"[COMBAT] Not enough mana for {abilityName}. Need {cost:0.#}, have {current:0.#}.", this);
+    }
+
     bool FinalizeCast(AbilityDef ability, GameObject indicator, float aimTime, int variantIndex = 0)
     {
         if (ability == null) return false;
@@ -2803,6 +2850,12 @@ public class AbilityCaster : NetworkBehaviour
             Quaternion castRotation = indicator != null ? indicator.transform.rotation : transform.rotation;
             Vector3    castScale    = indicator != null ? indicator.transform.localScale : Vector3.one;
 
+            if (!TrySpendManaForCast(ability, variantIndex))
+            {
+                WarnInsufficientMana(ability, variantIndex);
+                return false;
+            }
+
             CmdFinalizeCast(spellbookIndex, castPosition, castRotation, castScale, aimTime, variantIndex);
             PlayLocalCastVFX(ability, castPosition, castRotation, variantIndex);
 
@@ -2812,6 +2865,12 @@ public class AbilityCaster : NetworkBehaviour
         }
 
         Debug.Log("Cast ability: " + ability.abilityName);
+
+        if (!TrySpendManaForCast(ability, variantIndex))
+        {
+            WarnInsufficientMana(ability, variantIndex);
+            return false;
+        }
 
         AbilityDef passiveAbility = GetVariantPayload(ability, variantIndex) ?? ability;
 
@@ -2942,6 +3001,7 @@ public class AbilityCaster : NetworkBehaviour
         AbilityDef ability = spellbook[spellbookIndex];
         if (ability == null) return;
         if (cooldownTimers[equippedSlot] > 0f) return;
+        if (!HasEnoughManaForCast(ability, variantIndex)) return;
 
         GameObject serverIndicator = CreateServerCastProxy(ability, castPosition, castRotation, castScale);
         if (!FinalizeCast(ability, serverIndicator, aimTime, variantIndex))
@@ -4636,6 +4696,7 @@ public class AbilityCaster : NetworkBehaviour
         payload.rectWidth = owner.rectWidth;
         payload.indicatorSize = owner.indicatorSize;
         payload.cooldown = owner.cooldown;
+        payload.manaCost = owner.manaCost;
         payload.castTime = owner.castTime;
         payload.icon = owner.icon;
         payload.category = InferVariantPayloadCategory(owner, variant);
