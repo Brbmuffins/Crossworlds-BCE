@@ -414,7 +414,38 @@ copies of one scene rather than one shared copy.
   `RespawnMissingPlayersAfterSceneChange` (`:277-352`) exist only to repair the mass-teleport and
   are deleted. *Accept:* two clients in two different zones simultaneously, each seeing only their
   own zone's objects; the last player leaving a zone unloads it (confirm via server log).
-  *Deps:* 6.1, 6.2. Sized large — if it balloons, split the unload/ref-count half out.
+  *Deps:* 6.1, 6.2.
+  **✅ code-side 2026-07-23. ⚠ NOT RUNNABLE UNTIL 6.4 — see warning below.**
+  New `Networking/ZoneManager.cs`: additive load with `LocalPhysicsMode.Physics3D`,
+  occupancy keyed on **scene handle** (instanced dungeons share a name), per-connection
+  `SceneMessage` Load/UnloadAdditive, `MoveGameObjectToScene`, and a delayed unload
+  (`unloadDelaySeconds`, default 30) so portalling out and straight back doesn't thrash a
+  scene load. `PrepareZone` is public so the initial spawn and later zone changes share one
+  path. `RodNetworkManager.onlineScene` → `SceneNames.ContainerPath`; `OnCreatePlayer` is now
+  the `SpawnPlayerIntoZone` coroutine that spawns into the player's saved zone (6.2's
+  `RodPlayerAuth.zone` is finally consumed); `OnServerDisconnect` frees the zone slot.
+  `OnServerSceneChanged` + `PlaceHubReturnPlayers` + `RespawnMissingPlayersAfterSceneChange`
+  + `SpawnPlayerForSceneChange` deleted (157 lines) along with two helpers they orphaned.
+  `HubReturnSpawnPoint.FindInScene` added — scene-scoped, and deliberately without the
+  `GameObject.Find` fallbacks, which are global and would reintroduce the cross-zone bug
+  (part of 6.5 pulled forward because ZoneManager needs it).
+  Three Mirror behaviours this depends on, verified against `Mirror/Core/NetworkManager.cs`
+  rather than assumed: clients instantiate spawned objects into their ACTIVE scene, so an
+  additive zone scene on a client holds only geometry and unloading it cannot destroy
+  networked objects; `ClientChangeScene` returns early when `NetworkServer.active`, so a host
+  client never processes its own `SceneMessage`; and `NetworkClient.isLoadingScene` pauses
+  message processing during the load, so spawn traffic queues rather than being lost.
+  Used `yield return null` rather than the Mirror example's `WaitForEndOfFrame`, which can
+  fail to resume in headless batchmode — the production path.
+  **Editor step: BCE ▶ Setup ▶ 6z** (new `Editor/MultiZoneSetupBuilder.cs`) creates
+  `_Container.unity`, registers every zone in Build Settings, and adds ZoneManager to the
+  RodNetworkManager GameObject. **Nothing works until 6z is run.** **Not compile-verified.**
+
+> **⚠ 6.3 and 6.4 must ship together.** 6.3 repoints `onlineScene` at the container, but the
+> four `ServerChangeScene` call sites still exist. Calling one now does a *Normal* scene change
+> that replaces the container and destroys every additively-loaded zone out from under
+> ZoneManager. Between 6.3 and 6.4 the world loads correctly and all travel is broken. Do not
+> deploy 6.3 alone.
 
 - **6.4 — Route all travel through ZoneManager.** Replace the four `ServerChangeScene` call sites
   (`Scene/WaypointMapTrigger.cs:298`, `Scene/HubReturnTrigger.cs:201`,

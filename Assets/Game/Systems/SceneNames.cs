@@ -6,6 +6,10 @@
 public static class SceneNames
 {
     // ── Scene names (as they appear in Build Settings) ────────────────────
+    // Empty scene holding only the NetworkManager. Zones load additively on top
+    // of it (ROADMAP 6.3) — it is never a place a player can stand, so it is
+    // deliberately absent from Zones[] below.
+    public const string Container       = "_Container";
     public const string Login           = "LoginScene";
     public const string CharacterSelect = "CharacterSelect";
     public const string Hub             = "HUB";
@@ -18,6 +22,7 @@ public static class SceneNames
     public const string GatheringZone   = "Gathering Zone";   // AFK gathering + crafting
 
     // ── Full asset paths (used by editor scripts and Mirror scene fields) ─
+    public const string ContainerPath       = "Assets/Game/Scenes/_Container.unity";
     public const string LoginPath           = "Assets/Game/Scenes/LoginScene.unity";
     public const string CharacterSelectPath = "Assets/Game/Scenes/CharacterSelect.unity";
     public const string HubPath             = "Assets/Game/Scenes/HUB.unity";
