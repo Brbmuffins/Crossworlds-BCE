@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System;
 using UnityEngine;
 using UnityEngine.AI;
 using Mirror;
@@ -39,6 +40,8 @@ public class EnemyController : NetworkBehaviour
 
     // ── Combat ───────────────────────────────────────────────────────────────────
     [Header("Combat")]
+    [Tooltip("Treats this enemy as an elite for heavier hitstop/screen shake. Also auto-detected from enemyTemplateId/name containing 'elite'.")]
+    public bool isElite = false;
     public float attackRange    = 1.5f;
     public float attackInterval = 1.5f;
     public float damage         = 12f;
@@ -972,6 +975,18 @@ public class EnemyController : NetworkBehaviour
             TriggerAnimator(DeathHash, _hasDeathParam);
     }
 
+    bool IsEliteEnemy()
+    {
+        if (isElite)
+            return true;
+
+        if (!string.IsNullOrEmpty(enemyTemplateId)
+            && enemyTemplateId.IndexOf("elite", StringComparison.OrdinalIgnoreCase) >= 0)
+            return true;
+
+        return name.IndexOf("elite", StringComparison.OrdinalIgnoreCase) >= 0;
+    }
+
     // ─────────────────────────────────────────────────────────────────────────────
     // RPCs (Week 7: wire anim + SFX)
     // ─────────────────────────────────────────────────────────────────────────────
@@ -982,7 +997,7 @@ public class EnemyController : NetworkBehaviour
 #if UNITY_EDITOR || !UNITY_SERVER
         TriggerAnimator(AttackHash, _hasAttackParam);
 
-        bool isElite = CompareTag("Elite");
+        bool eliteImpact = IsEliteEnemy();
 
         // Sound plays for everyone (positional audio sells the hit universally)
         CombatAudio.Instance?.PlayMeleeHit();
@@ -993,8 +1008,8 @@ public class EnemyController : NetworkBehaviour
                           && NetworkClient.localPlayer.GetComponent<NetworkIdentity>()?.netId == targetNetId;
         if (isLocalTarget)
         {
-            HitstopManager.Freeze(isElite ? HitstopManager.Weight.Medium : HitstopManager.Weight.Light);
-            ScreenShake.AddTrauma(isElite ? 0.20f : 0.12f);
+            HitstopManager.Freeze(eliteImpact ? HitstopManager.Weight.Medium : HitstopManager.Weight.Light);
+            ScreenShake.AddTrauma(eliteImpact ? 0.20f : 0.12f);
         }
 #endif
     }
@@ -1051,11 +1066,11 @@ public class EnemyController : NetworkBehaviour
             FloatingDamageText.DamageType.Normal, "✕");
 
         // Layer 5 — Kill-blow shake (stronger for elites)
-        bool isElite = CompareTag("Elite");
-        ScreenShake.AddTrauma(isElite ? 0.45f : 0.20f);
+        bool eliteImpact = IsEliteEnemy();
+        ScreenShake.AddTrauma(eliteImpact ? 0.45f : 0.20f);
 
         // Kill-blow hitstop
-        HitstopManager.Freeze(isElite ? HitstopManager.Weight.Heavy : HitstopManager.Weight.Medium);
+        HitstopManager.Freeze(eliteImpact ? HitstopManager.Weight.Heavy : HitstopManager.Weight.Medium);
 #endif
     }
 
