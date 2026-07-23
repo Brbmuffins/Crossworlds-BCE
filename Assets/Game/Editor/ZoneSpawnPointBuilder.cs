@@ -1,0 +1,180 @@
+using System.Collections.Generic;
+using System.IO;
+using Mirror;                       // NetworkStartPosition
+using UnityEditor;
+using UnityEditor.SceneManagement;
+using UnityEngine;
+using UnityEngine.AI;
+using UnityEngine.SceneManagement;
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  ZoneSpawnPointBuilder — BCE ▶ Setup ▶ 6s
+//
+//  Every zone needs at least one HubReturnSpawnPoint. ZoneManager resolves an
+//  arriving player's position with HubReturnSpawnPoint.FindInScene, which looks
+//  for (1) a matching spawnId, (2) any spawn point in that scene, (3) any
+//  NetworkStartPosition in that scene. A zone with none of those drops the
+//  player at (0, 1, 0) — which for a terrain-based map means under the ground.
+//
+//  Audit on 2026-07-23 found Darkwood with zero of both.
+//
+//  This places ONE fallback spawn point per zone that lacks one, on walkable
+//  ground. It is a safety net, not level design: drag the created object to the
+//  zone's intended entrance afterwards. Re-running never moves an existing point.
+//
+//  Placement, best method first:
+//    1. Raycast down from high above the centre of the zone's rendered bounds.
+//    2. Snap that hit to the NavMesh so the player lands somewhere an agent can
+//       actually stand.
+//    3. If there is no NavMesh, keep the raycast hit.
+//    4. If nothing is hit at all, (0, 1, 0) with a loud warning.
+// ═══════════════════════════════════════════════════════════════════════════
+
+public static class ZoneSpawnPointBuilder
+{
+    const float RaycastHeight = 1000f;
+    const float NavMeshSnapRadius = 50f;
+
+    [MenuItem("BCE/Setup/6s - Ensure Zone Spawn Points")]
+    public static void Run()
+    {
+        if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
+        {
+            Debug.Log("[BCE 6s] Cancelled — unsaved scenes were not saved.");
+            return;
+        }
+
+        var report = new List<string>();
+
+        foreach (string zone in SceneNames.Zones)
+        {
+            string path = PathForZone(zone);
+
+            if (path == null || !File.Exists(path))
+            {
+                report.Add($"— {zone}: no scene file, skipped.");
+                continue;
+            }
+
+            EnsureSpawnPoint(zone, path, report);
+        }
+
+        string summary = string.Join("\n", report);
+        Debug.Log("[BCE 6s] Zone spawn points:\n" + summary);
+        EditorUtility.DisplayDialog("BCE ▶ 6s Zone Spawn Points", summary, "OK");
+    }
+
+    static void EnsureSpawnPoint(string zone, string path, List<string> report)
+    {
+        Scene scene = EditorSceneManager.OpenScene(path, OpenSceneMode.Single);
+
+        var existing = Object.FindObjectsByType<HubReturnSpawnPoint>(
+            FindObjectsInactive.Include, FindObjectsSortMode.None);
+
+        if (existing.Length > 0)
+        {
+            report.Add($"✓ {zone}: already has {existing.Length} spawn point(s) — untouched.");
+            return;
+        }
+
+        var starts = Object.FindObjectsByType<NetworkStartPosition>(
+            FindObjectsInactive.Include, FindObjectsSortMode.None);
+
+        if (starts.Length > 0)
+        {
+            report.Add($"✓ {zone}: no HubReturnSpawnPoint, but {starts.Length} " +
+                       $"NetworkStartPosition(s) exist — FindInScene falls back to those, leaving alone.");
+            return;
+        }
+
+        Vector3 position = ResolveSpawnPosition(scene, out string method);
+
+        var go = new GameObject($"ZoneSpawn_{zone.Replace(" ", "")}");
+        go.transform.position = position;
+        var point = go.AddComponent<HubReturnSpawnPoint>();
+        point.spawnId = HubReturnSpawnPoint.DefaultSpawnId;
+
+        Undo.RegisterCreatedObjectUndo(go, "Create zone spawn point");
+        EditorSceneManager.MarkSceneDirty(scene);
+        EditorSceneManager.SaveScene(scene);
+
+        report.Add($"✚ {zone}: CREATED '{go.name}' at {position} (via {method}). " +
+                   $"Move it to the real entrance.");
+    }
+
+    // ── Placement ─────────────────────────────────────────────────────────────
+
+    static Vector3 ResolveSpawnPosition(Scene scene, out string method)
+    {
+        Vector2 centre = RenderedCentreXZ(scene);
+
+        // Physics queries in edit mode need transforms flushed to the physics scene.
+        Physics.SyncTransforms();
+
+        var origin = new Vector3(centre.x, RaycastHeight, centre.y);
+
+        if (Physics.Raycast(origin, Vector3.down, out RaycastHit hit, RaycastHeight * 2f))
+        {
+            Vector3 ground = hit.point + Vector3.up * 0.5f;
+
+            if (NavMesh.SamplePosition(ground, out NavMeshHit navHit, NavMeshSnapRadius, NavMesh.AllAreas))
+            {
+                method = "raycast + NavMesh snap";
+                return navHit.position + Vector3.up * 0.5f;
+            }
+
+            method = "raycast (no NavMesh found to snap to)";
+            return ground;
+        }
+
+        if (NavMesh.SamplePosition(new Vector3(centre.x, 0f, centre.y),
+                                   out NavMeshHit fallbackHit, NavMeshSnapRadius * 10f, NavMesh.AllAreas))
+        {
+            method = "NavMesh sample (nothing hit by raycast)";
+            return fallbackHit.position + Vector3.up * 0.5f;
+        }
+
+        method = "FALLBACK ORIGIN — verify this by hand";
+        return Vector3.up;
+    }
+
+    /// <summary>
+    /// Middle of everything the zone renders. Better than assuming the origin is
+    /// inside the playable area — Darkwood spans x[-571..71], so its origin sits
+    /// near an edge rather than in the middle of the map.
+    /// </summary>
+    static Vector2 RenderedCentreXZ(Scene scene)
+    {
+        bool any = false;
+        Bounds bounds = default;
+
+        foreach (GameObject root in scene.GetRootGameObjects())
+        {
+            foreach (Renderer r in root.GetComponentsInChildren<Renderer>(true))
+            {
+                if (r == null) continue;
+
+                if (!any) { bounds = r.bounds; any = true; }
+                else bounds.Encapsulate(r.bounds);
+            }
+        }
+
+        return any ? new Vector2(bounds.center.x, bounds.center.z) : Vector2.zero;
+    }
+
+    static string PathForZone(string zoneName)
+    {
+        switch (zoneName)
+        {
+            case SceneNames.Hub:             return SceneNames.HubPath;
+            case SceneNames.Darkwood:        return SceneNames.DarkwoodPath;
+            case SceneNames.ToujamBasin:     return SceneNames.ToujamBasinPath;
+            case SceneNames.AshenWastelands: return SceneNames.AshenWastelandsPath;
+            case SceneNames.GMIsland:        return SceneNames.GMIslandPath;
+            case SceneNames.VoidDungeon:     return SceneNames.VoidDungeonPath;
+            case SceneNames.GatheringZone:   return SceneNames.GatheringZonePath;
+            case SceneNames.ArenaCopper:     return SceneNames.ArenaCopperPath;
+            default:                         return null;
+        }
+    }
+}
