@@ -38,8 +38,8 @@ public static class MultiZoneSetupBuilder
 
         CreateContainerSceneIfMissing(report);
         RegisterScenesInBuildSettings(report);
-        AddZoneManagerToNetworkManager(report);
-        MarkChatManagerGlobal(report);
+        RodNetworkManager nm = AddZoneManagerToNetworkManager(report);
+        MarkChatManagerGlobal(nm, report);
 
         string summary = string.Join("\n", report);
         Debug.Log("[BCE 6z] Multi-zone setup:\n" + summary);
@@ -131,21 +131,22 @@ public static class MultiZoneSetupBuilder
 
     // ── 3. ZoneManager component ──────────────────────────────────────────────
 
-    static void AddZoneManagerToNetworkManager(List<string> report)
+    /// <summary>Returns the RodNetworkManager it configured, or null.</summary>
+    static RodNetworkManager AddZoneManagerToNetworkManager(List<string> report)
     {
         if (!File.Exists(SceneNames.LoginPath))
         {
             report.Add($"✗ {SceneNames.LoginPath} not found — cannot add ZoneManager.");
-            return;
+            return null;
         }
 
         Scene login = EditorSceneManager.OpenScene(SceneNames.LoginPath, OpenSceneMode.Single);
 
-        RodNetworkManager nm = Object.FindFirstObjectByType<RodNetworkManager>();
+        RodNetworkManager nm = FindInScene<RodNetworkManager>(login);
         if (nm == null)
         {
             report.Add("✗ No RodNetworkManager in LoginScene — run BCE ▶ Setup ▶ 4 first.");
-            return;
+            return null;
         }
 
         bool changed = false;
@@ -190,13 +191,31 @@ public static class MultiZoneSetupBuilder
             EditorSceneManager.SaveScene(login);
             report.Add("✓ Saved LoginScene.");
         }
+
+        return nm;
+    }
+
+    /// <summary>
+    /// First component of type T in one scene, including inactive objects.
+    /// Deliberately not Object.FindFirstObjectByType: the parameterless overload is
+    /// deprecated in Unity 6, and it searches every loaded scene rather than the one
+    /// just opened — the same global-lookup mistake ROADMAP 6.5 exists to remove.
+    /// </summary>
+    static T FindInScene<T>(Scene scene) where T : Component
+    {
+        foreach (GameObject root in scene.GetRootGameObjects())
+        {
+            T found = root.GetComponentInChildren<T>(true);
+            if (found != null) return found;
+        }
+
+        return null;
     }
 
     // ── 4. ChatManager must survive interest management ───────────────────────
 
-    static void MarkChatManagerGlobal(List<string> report)
+    static void MarkChatManagerGlobal(RodNetworkManager nm, List<string> report)
     {
-        RodNetworkManager nm = Object.FindFirstObjectByType<RodNetworkManager>();
         GameObject prefab = nm != null ? nm.chatManagerPrefab : null;
 
         if (prefab == null)
