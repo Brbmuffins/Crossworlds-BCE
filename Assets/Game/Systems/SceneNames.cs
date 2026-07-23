@@ -28,4 +28,38 @@ public static class SceneNames
     public const string GMIslandPath        = "Assets/Game/Scenes/GM Island.unity";
     public const string VoidDungeonPath     = "Assets/Game/Scenes/VoidDungeon.unity";
     public const string GatheringZonePath   = "Assets/Game/Scenes/Gathering Zone.unity";
+
+    // ── Zone helpers (ROADMAP 6.2) ────────────────────────────────────────
+    // A "zone" is a scene a character can be standing in when they log out, and
+    // therefore a value that can be persisted to characters.map. LoginScene and
+    // CharacterSelect are NOT zones — nobody is ever saved into them.
+
+    /// <summary>Every scene a character can legitimately be saved in.</summary>
+    public static readonly string[] Zones =
+    {
+        Hub, Darkwood, ToujamBasin, AshenWastelands, GMIsland, VoidDungeon,
+        GatheringZone, ArenaCopper,
+    };
+
+    public static bool IsZone(string sceneName)
+    {
+        if (string.IsNullOrWhiteSpace(sceneName)) return false;
+        foreach (string zone in Zones)
+            if (string.Equals(zone, sceneName, System.StringComparison.OrdinalIgnoreCase))
+                return true;
+        return false;
+    }
+
+    /// <summary>
+    /// Coerces a stored or observed scene name into a zone we can safely spawn into.
+    /// Unknown values — including the legacy "GameWorld" literal that every character
+    /// row still holds, and anything a tampered client might send — collapse to Hub,
+    /// which always has spawn points and a waypoint out.
+    /// The server-side allowlist is the authoritative check; this is belt-and-braces
+    /// so a bad value can never strand a player in a scene that does not exist.
+    /// </summary>
+    public static string NormalizeZone(string sceneName)
+    {
+        return IsZone(sceneName) ? sceneName : Hub;
+    }
 }

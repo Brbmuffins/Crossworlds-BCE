@@ -83,6 +83,7 @@ public class RodNetworkAuthenticator : NetworkAuthenticator
                 spawnX      = 0f,
                 spawnY      = 2f,
                 spawnZ      = 0f,
+                zone        = SceneNames.Hub,
                 fromDB      = false,
                 gmAllowed   = true,
                 gmActive    = true,
@@ -152,6 +153,7 @@ public class RodNetworkAuthenticator : NetworkAuthenticator
             spawnX      = character.pos_x,
             spawnY      = character.pos_y,
             spawnZ      = character.pos_z,
+            zone        = SceneNames.NormalizeZone(character.map),
             fromDB      = true,
             gmAllowed   = character.gm_enabled,
             gmLevel     = character.gm_level,
@@ -161,8 +163,14 @@ public class RodNetworkAuthenticator : NetworkAuthenticator
         conn.Send(new AuthResponseMessage { success = true, message = "Authenticated." });
         ServerAccept(conn);
 
+        string zone = SceneNames.NormalizeZone(character.map);
         Debug.Log($"[RodAuth] Accepted {msg.username} — class {character.class_index}, " +
-                  $"spawn ({character.pos_x:F1}, {character.pos_y:F1}, {character.pos_z:F1})");
+                  $"zone {zone}, spawn ({character.pos_x:F1}, {character.pos_y:F1}, {character.pos_z:F1})");
+
+        if (!SceneNames.IsZone(character.map))
+            Debug.LogWarning($"[RodAuth] {msg.username} had stored map '{character.map}' — not a known " +
+                             $"zone, falling back to {zone}. Expected until ROADMAP 6.2's VPS half " +
+                             $"lands and backfills characters.map.");
     }
 
     void Reject(NetworkConnectionToClient conn, string reason)
@@ -223,6 +231,10 @@ public class RodNetworkAuthenticator : NetworkAuthenticator
         public bool   gm_enabled;
         public int    gm_level;
         public string gm_permissions;
+        // characters.map — the zone the player logged out in (ROADMAP 6.2).
+        // Safe if the API omits it: JsonUtility leaves it null and
+        // SceneNames.NormalizeZone collapses that to Hub.
+        public string map;
     }
 }
 
@@ -236,5 +248,7 @@ public partial class RodPlayerAuth
     public int    classIndex;
     public int    characterId;  // DB row id — used when saving position on disconnect
     public float  spawnX, spawnY, spawnZ;
+    public string zone;         // scene the player logged out in (ROADMAP 6.2); always a real
+                                // zone name — NormalizeZone collapses unknown/legacy values to Hub
     public bool   fromDB;       // false in dev mode — falls back to CreatePlayerMessage class
 }

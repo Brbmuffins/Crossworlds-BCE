@@ -388,14 +388,27 @@ copies of one scene rather than one shared copy.
   periodic save tick (30–60s) plus save-on-zone-change. Companion VPS-side work is written up in
   `_CONTEXT/HANDOFF_zone_persistence.md` — run that as a server session per CLAUDE.md.
   *Accept:* log out in zone A, log back in, spawn in zone A at the saved coordinates; `kill -9` the
-  server and lose at most one save interval. *Deps:* VPS handoff for the API half. **READY**
+  server and lose at most one save interval. *Deps:* VPS handoff for the API half.
+  **✅ client half 2026-07-23.** `RodPositionSaver` rewritten: reports the player object's real
+  scene instead of the `"GameWorld"` literal, periodic save every 45s (staggered per player so
+  simultaneous joins don't burst the auth server), and a public `SaveNow()` for 6.4 to call before
+  a zone change. `SceneNames` gained `Zones` / `IsZone` / `NormalizeZone` — unknown and legacy
+  values collapse to Hub so a bad row can never strand a player in a nonexistent scene.
+  `CharacterResponse.map` is parsed and lands on `RodPlayerAuth.zone`; a non-zone stored value
+  logs a warning naming the VPS backfill as the fix. Deliberately still PATCHes the existing
+  `/character/position` body field `map` (Unity has always sent it) rather than depending on the
+  new `/api/character/:id/zone` endpoint — so the client half is useful before the VPS half lands
+  and breaks nothing if it never does. **Still open:** nothing consumes `RodPlayerAuth.zone` at
+  spawn time — the server is single-scene until 6.3, so a saved zone cannot be honored yet.
+  **Not compile-verified.**
 
 - **6.3 — Container scene + ZoneManager.** The core task. New empty
   `Assets/Game/Scenes/_Container.unity`; `RodNetworkManager.cs:63` `onlineScene` points at it
   instead of `SceneNames.HubPath` (`offlineScene` stays — Mirror's disconnect navigation depends on
   it). New `Assets/Game/Networking/ZoneManager.cs` owning: additive load with
   `LoadSceneParameters { loadSceneMode = Additive, localPhysicsMode = LocalPhysicsMode.Physics3D }`,
-  a player ref-count per zone, `SceneMessage` LoadAdditive/UnloadAdditive per connection,
+  a player ref-count **keyed on scene handle, not scene name** (open question 8 — instanced
+  dungeons mean several live scenes share a name), `SceneMessage` LoadAdditive/UnloadAdditive per connection,
   `MoveGameObjectToScene` for the player object, and `UnloadSceneAsync` when a zone's count hits
   zero. `RodNetworkManager.OnServerSceneChanged` / `PlaceHubReturnPlayers` /
   `RespawnMissingPlayersAfterSceneChange` (`:277-352`) exist only to repair the mass-teleport and
@@ -417,10 +430,11 @@ copies of one scene rather than one shared copy.
   (b) `RodNetworkManager.cs:169` marks the ChatManager `DontDestroyOnLoad`, which moves it to
   Unity's DDOL pseudo-scene. `SceneInterestManagement.OnCheckObserver` is strict scene equality
   (`identity.gameObject.scene == newObserver.identity.gameObject.scene`), so the DDOL scene matches
-  no player, the ChatManager gets zero observers, and **chat goes silent for everyone**. Fix with a
-  custom IM subclass that force-adds all connections for flagged identities, or one ChatManager per
-  zone. *Accept:* travel to a zone and land on that zone's spawn point; chat works cross-zone (or
-  is deliberately per-zone, recorded in CLAUDE.md). *Deps:* 6.3.
+  no player, the ChatManager gets zero observers, and **chat goes silent for everyone**. Chat is
+  global (open question 9), so the fix is a custom `SceneDistanceInterestManagement` subclass that
+  force-adds every connection as an observer for identities flagged world-global — keep the single
+  DDOL ChatManager. *Accept:* travel to a zone and land on that zone's spawn point; two players in
+  different zones see each other's chat messages. *Deps:* 6.3.
 
 - **6.6 — Enable interest management.** Add `SceneDistanceInterestManagement` to the
   RodNetworkManager GameObject and tune `visRange`; add `DistanceInterestManagementCustomRange` to
@@ -483,10 +497,13 @@ minimum-change ethos applied to the standards themselves.
    (Tasks 0.3 / 2.4)
 7. **Credential rotation:** the MySQL and dashboard passwords printed in `_CONTEXT/CLAUDE.md`
    are in git history — rotate them on the VPS after task 0.2?
-8. **Which zones are shared vs instanced?** (Task 6.3) The additive design handles both with the
-   same code — a shared open zone is one resident copy, an instance is N copies of the same scene.
-   Assumed: Hub / Darkwood / Ashen Wastelands / Toujam Basin shared; VoidDungeon and arenas
-   instanced per party. Confirm before ZoneManager is written, since it changes the ref-count key
-   from scene *name* to scene *handle*.
-9. **Chat scope.** (Task 6.5) Global across all zones, or per-zone with a global channel? The DDOL
-   ChatManager must be resolved either way; the answer decides which fix.
+8. ~~**Which zones are shared vs instanced?**~~ **ANSWERED 2026-07-23: open zones shared,
+   dungeons instanced.** Hub / Darkwood / Ashen Wastelands / Toujam Basin / GM Island /
+   Gathering Zone are single shared copies; VoidDungeon and arenas get one additive copy per
+   party. Consequence for 6.3: **ZoneManager must key on scene `handle`, not scene name** —
+   instanced copies share a name, so a name-keyed ref-count would merge two parties' dungeons
+   into one entry and unload a scene somebody is still standing in.
+9. ~~**Chat scope?**~~ **ANSWERED 2026-07-23: global.** Chat spans all zones. The DDOL
+   ChatManager therefore stays a single world-global instance, and 6.5's fix is the custom IM
+   subclass that force-adds every connection as an observer for flagged global identities —
+   not the one-ChatManager-per-zone option.
