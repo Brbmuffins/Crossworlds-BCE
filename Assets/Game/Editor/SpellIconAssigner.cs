@@ -105,17 +105,37 @@ public static class SpellIconAssigner
 
     static Sprite FindSprite(string abilityName)
     {
-        // Exact match (handles "Ice Spikes.png")
-        var s = TryLoad(AdbPath(IconFolder, abilityName + ".png"));
+        var s = TryFindSprite(abilityName);
         if (s != null) return s;
 
-        // Kebab-case: "Arcane Step"→"arcane-step"  "Conjurer's Surge"→"conjurers-surge"
-        string kebab = abilityName.ToLowerInvariant().Replace("'", "").Replace(" ", "-");
+        // Strip known parent ability prefixes for variant payload spells
+        string[] prefixes = { "Ice Spikes", "Ember Beam", "Ice Guardian", "Meteor Shower", "Thorn Volley", "Earth Surge", "Vine Grasp", "Runic Sentinel" };
+        foreach (string prefix in prefixes)
+        {
+            if (abilityName.StartsWith(prefix + " ", System.StringComparison.OrdinalIgnoreCase))
+            {
+                string stripped = abilityName.Substring(prefix.Length + 1);
+                s = TryFindSprite(stripped);
+                if (s != null) return s;
+            }
+        }
+
+        return null;
+    }
+
+    static Sprite TryFindSprite(string name)
+    {
+        // Exact match
+        var s = TryLoad(AdbPath(IconFolder, name + ".png"));
+        if (s != null) return s;
+
+        // Kebab-case: "Arcane Step"→"arcane-step"
+        string kebab = name.ToLowerInvariant().Replace("'", "").Replace(" ", "-");
         s = TryLoad(AdbPath(IconFolder, kebab + ".png"));
         if (s != null) return s;
 
         // Thematic fallback for spells with no dedicated PNG yet
-        string fallback = FallbackName(abilityName);
+        string fallback = FallbackName(name);
         if (fallback != null)
             return TryLoad(AdbPath(IconFolder, fallback + ".png"));
 
