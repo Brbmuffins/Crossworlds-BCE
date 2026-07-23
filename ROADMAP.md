@@ -502,6 +502,19 @@ copies of one scene rather than one shared copy.
   *Deps:* 6.3. **⚠ Also affects 6.2** — saved coordinates are absolute, so this must land before
   players accumulate saved positions, or those positions need migrating.
 
+- **6.9 — One camera, not one per zone. Editor step.** Discovered 2026-07-23 right after 6z ran:
+  every zone scene carries its own Camera and Audio Listener (HUB: 1 camera + 4 lights;
+  Darkwood: 1 camera + 7 lights). That was correct when exactly one zone was ever loaded. With
+  additive zones it breaks in two places: during travel the client briefly holds BOTH the old and
+  new zone, so two cameras and two audio listeners are live at once (expect Unity's "there are 2
+  audio listeners in the scene" warning and possibly the wrong camera rendering); and the server
+  ends up with one camera per resident zone for no reason. Fix: strip the camera and audio
+  listener from each zone scene and move to a single rig — on the player prefab or in the
+  container — leaving zone scenes to carry lighting and geometry only. *Accept:* travel between
+  two zones with the console open and see no duplicate-listener warning; the view never cuts to
+  the wrong camera. *Deps:* 6.3. Touches every zone scene, so bundle it with 6.7's world-space
+  offset pass — both are per-scene editor work.
+
 - **6.8 — Open-world mob spawner.** `Combat/Scripts/WaveSpawner.cs` is an arena construct (waves,
   difficulty ramp, session tracking) and is the wrong shape for a persistent zone. New component:
   spawn points with per-mob respawn timers and a zone population cap, populated when the zone
