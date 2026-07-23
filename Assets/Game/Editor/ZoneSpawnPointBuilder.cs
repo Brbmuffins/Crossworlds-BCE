@@ -35,6 +35,97 @@ public static class ZoneSpawnPointBuilder
     const float RaycastHeight = 1000f;
     const float NavMeshSnapRadius = 50f;
 
+    /// <summary>
+    /// How far above the ground a spawn point should sit. Enough that the player
+    /// drops onto the surface instead of starting inside it, without a long fall.
+    /// </summary>
+    const float GroundClearance = 2f;
+
+    [MenuItem("BCE/Setup/6t - Fix Zone Spawn Heights")]
+    public static void FixHeights()
+    {
+        if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
+        {
+            Debug.Log("[BCE 6t] Cancelled — unsaved scenes were not saved.");
+            return;
+        }
+
+        var report = new List<string>();
+
+        foreach (string zone in SceneNames.Zones)
+        {
+            string path = PathForZone(zone);
+            if (path == null || !File.Exists(path))
+            {
+                report.Add($"— {zone}: no scene file, skipped.");
+                continue;
+            }
+
+            FixHeightsInScene(zone, path, report);
+        }
+
+        string summary = string.Join("\n", report);
+        Debug.Log("[BCE 6t] Spawn heights:\n" + summary);
+        EditorUtility.DisplayDialog("BCE ▶ 6t Fix Zone Spawn Heights", summary, "OK");
+    }
+
+    /// <summary>
+    /// Drops every spawn point in a zone onto the surface beneath it. 6s only
+    /// guarantees a spawn point EXISTS — Ashen Wastelands had one sitting at y=50
+    /// on a terrain whose surface is ~56, so players spawned inside the ground.
+    /// </summary>
+    static void FixHeightsInScene(string zone, string path, List<string> report)
+    {
+        Scene scene = EditorSceneManager.OpenScene(path, OpenSceneMode.Single);
+        Physics.SyncTransforms();
+
+        List<HubReturnSpawnPoint> points = FindInScene<HubReturnSpawnPoint>(scene);
+        if (points.Count == 0)
+        {
+            report.Add($"— {zone}: no spawn points — run 6s first.");
+            return;
+        }
+
+        bool changed = false;
+
+        foreach (HubReturnSpawnPoint point in points)
+        {
+            Vector3 current = point.transform.position;
+
+            // Start well above the point so a spawn currently BURIED in terrain still
+            // finds the surface — casting from the point itself would start underground
+            // and hit nothing.
+            var origin = new Vector3(current.x, current.y + RaycastHeight, current.z);
+
+            if (!Physics.Raycast(origin, Vector3.down, out RaycastHit hit, RaycastHeight * 2f))
+            {
+                report.Add($"⚠ {zone}/{point.name}: nothing beneath it — left at y={current.y:F2}. " +
+                           $"Check by hand.");
+                continue;
+            }
+
+            float targetY = hit.point.y + GroundClearance;
+            if (Mathf.Abs(targetY - current.y) < 0.05f)
+            {
+                report.Add($"✓ {zone}/{point.name}: already on the surface (y={current.y:F2}).");
+                continue;
+            }
+
+            Undo.RecordObject(point.transform, "Fix spawn height");
+            point.transform.position = new Vector3(current.x, targetY, current.z);
+            changed = true;
+
+            report.Add($"✚ {zone}/{point.name}: y {current.y:F2} → {targetY:F2} " +
+                       $"(surface {hit.point.y:F2} + {GroundClearance} clearance, hit '{hit.collider.name}').");
+        }
+
+        if (changed)
+        {
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene);
+        }
+    }
+
     [MenuItem("BCE/Setup/6s - Ensure Zone Spawn Points")]
     public static void Run()
     {
