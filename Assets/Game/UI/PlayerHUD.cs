@@ -75,6 +75,7 @@ public class PlayerHUD : MonoBehaviour
     Image       _hpBg;
     Image       _shieldFill;
     Image       _actionHealthFill;
+    Image       _actionManaFill;
     TextMeshProUGUI _hpLabel;
     float       _displayedHp   = 1f;
     float       _hpFlashTimer  = 0f;
@@ -126,6 +127,7 @@ public class PlayerHUD : MonoBehaviour
 
     // ── Player refs ───────────────────────────────────────────────────────────
     Health          _health;
+    CharacterStats  _stats;
     AbilityCaster   _caster;
     float           _scanTimer;
 
@@ -166,6 +168,7 @@ public class PlayerHUD : MonoBehaviour
         }
 
         TickHpBar();
+        TickManaWell();
         TickAbilityBar();
         TickCastBar();
         TickSpellbook();
@@ -195,8 +198,10 @@ public class PlayerHUD : MonoBehaviour
     {
         // Unsubscribe from old player if we're rebinding (e.g. after respawn)
         if (_health) _health.onHealthChanged.RemoveListener(OnHealthChanged);
+        if (_stats) _stats.onManaChanged.RemoveListener(OnManaChanged);
 
         _health = player.GetComponent<Health>();
+        _stats = player.GetComponent<CharacterStats>();
         _caster = player.GetComponent<AbilityCaster>();
 
         if (_health)
@@ -206,8 +211,24 @@ public class PlayerHUD : MonoBehaviour
             UpdateHpLabel(_health.currentHealth, _health.maxHealth);
         }
 
+        if (_stats)
+        {
+            _stats.onManaChanged.AddListener(OnManaChanged);
+            OnManaChanged(_stats.CurrentMana, _stats.MaxMana);
+        }
+        else
+        {
+            SetManaWellFraction(1f);
+        }
+
         RebuildAbilitySlots();
         RebuildSpellbook();
+    }
+
+    void OnDestroy()
+    {
+        if (_health) _health.onHealthChanged.RemoveListener(OnHealthChanged);
+        if (_stats) _stats.onManaChanged.RemoveListener(OnManaChanged);
     }
 
     void OnHealthChanged(float current, float max)
@@ -217,6 +238,11 @@ public class PlayerHUD : MonoBehaviour
         if (newFrac < _displayedHp) _hpFlashTimer = 0.25f; // damage flash
         _displayedHp = newFrac;
         UpdateHpLabel(current, max);
+    }
+
+    void OnManaChanged(float current, float max)
+    {
+        SetManaWellFraction(max > 0f ? current / max : 0f);
     }
 
     // ── Build ─────────────────────────────────────────────────────────────────
@@ -329,6 +355,21 @@ public class PlayerHUD : MonoBehaviour
         }
     }
 
+    void TickManaWell()
+    {
+        float target = _stats != null ? _stats.ManaFraction : 1f;
+        SetManaWellFraction(target);
+    }
+
+    void SetManaWellFraction(float fraction)
+    {
+        if (_actionManaFill == null)
+            return;
+
+        _actionManaFill.fillAmount = Mathf.Clamp01(fraction);
+        _actionManaFill.color = ManaWellFull;
+    }
+
     void UpdateHpLabel(float current, float max)
     {
         if (_hpLabel != null)
@@ -416,14 +457,14 @@ public class PlayerHUD : MonoBehaviour
         bg.raycastTarget = false;
         Stretch(bg.rectTransform);
 
-        var fill = Img(wellRt, "Fill", ManaWellFull);
-        fill.sprite = HealthWellSprite();
-        fill.type = Image.Type.Filled;
-        fill.fillMethod = Image.FillMethod.Vertical;
-        fill.fillOrigin = (int)Image.OriginVertical.Bottom;
-        fill.fillAmount = 1f;
-        fill.raycastTarget = false;
-        Stretch(fill.rectTransform);
+        _actionManaFill = Img(wellRt, "Fill", ManaWellFull);
+        _actionManaFill.sprite = HealthWellSprite();
+        _actionManaFill.type = Image.Type.Filled;
+        _actionManaFill.fillMethod = Image.FillMethod.Vertical;
+        _actionManaFill.fillOrigin = (int)Image.OriginVertical.Bottom;
+        _actionManaFill.fillAmount = 1f;
+        _actionManaFill.raycastTarget = false;
+        Stretch(_actionManaFill.rectTransform);
 
         var glass = Img(wellRt, "Glass", Color.white);
         glass.sprite = Resources.Load<Sprite>(HealthWellGlassResource);
@@ -886,6 +927,8 @@ public class PlayerHUD : MonoBehaviour
         }
         else
         {
+            if (ab.manaCost > 0f)
+                sb.Append($"<color=#4aa3ff>Mana</color> {ab.manaCost:0}\n");
             if (ab.chargeable && ab.maxChargeDamage > ab.damage)
                 sb.Append($"<color=#ff6b4a>Damage</color> {ab.damage:0}-{ab.maxChargeDamage:0}  <i><color=#94a3b8>hold to charge</color></i>\n");
             else if (ab.damage > 0f)
@@ -974,8 +1017,11 @@ public class PlayerHUD : MonoBehaviour
         bool hasHot = false;
         bool hasShield = false;
         bool hasStatus = false;
+        bool hasMana = false;
         float minDamage = float.MaxValue;
         float maxDamage = 0f;
+        float minMana = float.MaxValue;
+        float maxMana = 0f;
         float maxHeal = 0f;
         float maxHot = 0f;
         float maxShield = 0f;
@@ -993,6 +1039,12 @@ public class PlayerHUD : MonoBehaviour
             int hotTicks = payload.hotTicks;
             float shield = payload.shieldAbsorb;
             float statusDuration = payload.statusDuration;
+            float mana = Mathf.Max(0f, payload.manaCost);
+
+            minMana = Mathf.Min(minMana, mana);
+            maxMana = Mathf.Max(maxMana, mana);
+            if (mana > 0f)
+                hasMana = true;
 
             if (damage > 0f)
             {
@@ -1024,8 +1076,14 @@ public class PlayerHUD : MonoBehaviour
         }
 
         bool wrote = false;
+        if (hasMana)
+        {
+            sb.Append($"<color=#4aa3ff>Mana</color> {FormatRange(minMana, maxMana)}");
+            wrote = true;
+        }
         if (hasDamage)
         {
+            if (wrote) sb.Append("  ");
             sb.Append($"<color=#ff6b4a>Damage</color> {FormatRange(minDamage, maxDamage)}");
             wrote = true;
         }

@@ -5,13 +5,16 @@ using UnityEngine;
 // equipped gear and the attunements socketed into it.
 public enum StatType
 {
-    MaxHealth,          // bonus hit points
-    Damage,             // outgoing damage      (Percent: 0.10 = +10%)
-    DamageReduction,    // incoming damage cut   (Percent: 0.10 = -10% taken)
-    MoveSpeed,          // movement speed        (Percent: 0.10 = +10%)
-    CooldownReduction,  // ability cooldowns     (Percent: 0.10 = -10% cd)
-    HealPower,          // healing dealt         (Percent: 0.10 = +10%)
-    CriticalStrikeChance // crit chance          (Percent: 0.10 = +10%)
+    MaxHealth = 0,          // bonus hit points
+    Damage = 1,             // outgoing damage      (Percent: 0.10 = +10%)
+    DamageReduction = 2,    // incoming damage cut   (Percent: 0.10 = -10% taken)
+    MoveSpeed = 3,          // movement speed        (Percent: 0.10 = +10%)
+    CooldownReduction = 4,  // ability cooldowns     (Percent: 0.10 = -10% cd)
+    HealPower = 5,          // healing dealt         (Percent: 0.10 = +10%)
+    CriticalStrikeChance = 6, // crit chance         (Percent: 0.10 = +10%)
+    MaxMana = 7,            // bonus mana
+    Hp5 = 8,                // health per 5 seconds
+    Mp5 = 9                 // mana per 5 seconds
 }
 
 public enum ModifierKind
@@ -50,12 +53,15 @@ public struct StatModifier
         switch (s)
         {
             case StatType.MaxHealth:         return "Max Health";
+            case StatType.MaxMana:           return "Max Mana";
             case StatType.Damage:            return "Damage";
             case StatType.DamageReduction:   return "Damage Reduction";
             case StatType.MoveSpeed:         return "Move Speed";
             case StatType.CooldownReduction: return "Cooldown Reduction";
             case StatType.HealPower:         return "Heal Power";
             case StatType.CriticalStrikeChance: return "Critical Strike Chance";
+            case StatType.Hp5:               return "HP5";
+            case StatType.Mp5:               return "MP5";
             default:                         return s.ToString();
         }
     }

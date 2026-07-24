@@ -1,4 +1,6 @@
+using Mirror;
 using UnityEngine;
+using UnityEngine.Events;
 
 // Central hub for character power modifiers.
 // The old local Equipment/Inventory path has been retired; live bonuses now come
@@ -24,6 +26,16 @@ public class CharacterStats : MonoBehaviour
 
     [Tooltip("Incoming damage reduction. 0.10 = 10% less damage taken.")]
     [SerializeField, Range(0f, 0.95f)] private float baseDamageReduction = 0f;
+
+    [Header("Base Resource Stats")]
+    [Tooltip("Maximum mana available for casting spells.")]
+    [SerializeField, Min(0f)] private float baseMaxMana = 100f;
+
+    [Tooltip("Health regenerated every 5 seconds.")]
+    [SerializeField, Min(0f)] private float baseHp5 = 0f;
+
+    [Tooltip("Mana regenerated every 5 seconds.")]
+    [SerializeField, Min(0f)] private float baseMp5 = 5f;
 
     [Header("Base Utility Stats")]
     [Tooltip("Movement speed bonus. 0.10 = +10% move speed.")]
@@ -51,6 +63,18 @@ public class CharacterStats : MonoBehaviour
     [Tooltip("Current incoming damage reduction after all bonuses.")]
     [SerializeField] private float effectiveDamageReduction = 0f;
 
+    [Tooltip("Current max mana after base and future item bonuses.")]
+    [SerializeField] private float effectiveMaxMana = 100f;
+
+    [Tooltip("Current mana. Runtime only; initialized to max mana when play starts.")]
+    [SerializeField] private float currentMana = 0f;
+
+    [Tooltip("Current health regenerated every 5 seconds.")]
+    [SerializeField] private float effectiveHp5 = 0f;
+
+    [Tooltip("Current mana regenerated every 5 seconds.")]
+    [SerializeField] private float effectiveMp5 = 5f;
+
     [Tooltip("Current movement speed multiplier after all bonuses.")]
     [SerializeField] private float effectiveMoveSpeedMultiplier = 1f;
 
@@ -67,9 +91,16 @@ public class CharacterStats : MonoBehaviour
     public float CriticalStrikeChance { get; private set; }
     public float CriticalStrikeDamageMultiplier { get; private set; } = 1.5f;
     public float DamageReduction     { get; private set; }
+    public float MaxMana             { get; private set; } = 100f;
+    public float CurrentMana         => currentMana;
+    public float ManaFraction        => MaxMana > 0f ? Mathf.Clamp01(currentMana / MaxMana) : 0f;
+    public float Hp5                 { get; private set; }
+    public float Mp5                 { get; private set; } = 5f;
     public float MoveSpeedMultiplier { get; private set; } = 1f;
     public float CooldownReduction   { get; private set; }
     public float HealMultiplier      { get; private set; } = 1f;
+
+    [HideInInspector] public UnityEvent<float, float> onManaChanged = new UnityEvent<float, float>();
 
     // Mastery overlay, driven by HeroMasteryManager.
     private float _masteryDmgPct;
@@ -80,6 +111,7 @@ public class CharacterStats : MonoBehaviour
     // Temporary channels, driven by active effects.
     private float _temporaryCDR;
     private float _temporaryDmgPct;
+    private bool _manaInitialized;
 
     public float EffectiveCooldownReduction =>
         Mathf.Clamp(CooldownReduction + _temporaryCDR, 0f, MaxCooldownReduction);
@@ -124,12 +156,20 @@ public class CharacterStats : MonoBehaviour
 
     void Awake()
     {
+        if (onManaChanged == null)
+            onManaChanged = new UnityEvent<float, float>();
+
         _health = GetComponent<Health>();
     }
 
     void Start()
     {
         Recalculate();
+    }
+
+    void Update()
+    {
+        TickRegeneration();
     }
 
     public void Recalculate()
@@ -144,9 +184,14 @@ public class CharacterStats : MonoBehaviour
         CriticalStrikeChance = Mathf.Clamp01(baseCriticalStrikeChance);
         CriticalStrikeDamageMultiplier = Mathf.Max(1f, baseCriticalStrikeDamageMultiplier);
         DamageReduction = Mathf.Clamp01(baseDamageReduction);
+        MaxMana = Mathf.Max(0f, baseMaxMana);
+        Hp5 = Mathf.Max(0f, baseHp5);
+        Mp5 = Mathf.Max(0f, baseMp5);
         MoveSpeedMultiplier = Mathf.Max(0f, 1f + baseMoveSpeedBonusPct);
         CooldownReduction = Mathf.Clamp(baseCooldownReduction + _masteryCdrPct, 0f, MaxCooldownReduction);
         HealMultiplier = Mathf.Max(0f, 1f + baseHealBonusPct + _masteryHealPct);
+
+        ClampOrInitializeMana();
 
         UpdateReadouts();
 
@@ -163,6 +208,9 @@ public class CharacterStats : MonoBehaviour
         baseCriticalStrikeChance = Mathf.Clamp01(baseCriticalStrikeChance);
         baseCriticalStrikeDamageMultiplier = Mathf.Max(1f, baseCriticalStrikeDamageMultiplier);
         baseDamageReduction = Mathf.Clamp01(baseDamageReduction);
+        baseMaxMana = Mathf.Max(0f, baseMaxMana);
+        baseHp5 = Mathf.Max(0f, baseHp5);
+        baseMp5 = Mathf.Max(0f, baseMp5);
         baseCooldownReduction = Mathf.Clamp(baseCooldownReduction, 0f, MaxCooldownReduction);
 
         if (Application.isPlaying)
@@ -178,6 +226,10 @@ public class CharacterStats : MonoBehaviour
         effectiveCriticalStrikeChance = Mathf.Clamp01(baseCriticalStrikeChance);
         effectiveCriticalStrikeDamageMultiplier = Mathf.Max(1f, baseCriticalStrikeDamageMultiplier);
         effectiveDamageReduction = Mathf.Clamp01(baseDamageReduction);
+        effectiveMaxMana = Mathf.Max(0f, baseMaxMana);
+        currentMana = Mathf.Clamp(currentMana <= 0f ? effectiveMaxMana : currentMana, 0f, effectiveMaxMana);
+        effectiveHp5 = Mathf.Max(0f, baseHp5);
+        effectiveMp5 = Mathf.Max(0f, baseMp5);
         effectiveMoveSpeedMultiplier = Mathf.Max(0f, 1f + baseMoveSpeedBonusPct);
         effectiveCooldownReduction = Mathf.Clamp(baseCooldownReduction, 0f, MaxCooldownReduction);
         effectiveHealMultiplier = Mathf.Max(0f, 1f + baseHealBonusPct);
@@ -190,8 +242,89 @@ public class CharacterStats : MonoBehaviour
         effectiveCriticalStrikeChance = CriticalStrikeChance;
         effectiveCriticalStrikeDamageMultiplier = CriticalStrikeDamageMultiplier;
         effectiveDamageReduction = DamageReduction;
+        effectiveMaxMana = MaxMana;
+        effectiveHp5 = Hp5;
+        effectiveMp5 = Mp5;
         effectiveMoveSpeedMultiplier = MoveSpeedMultiplier;
         effectiveCooldownReduction = EffectiveCooldownReduction;
         effectiveHealMultiplier = HealMultiplier;
+    }
+
+    void TickRegeneration()
+    {
+        if (!Application.isPlaying)
+            return;
+
+        if (Mp5 > 0f && MaxMana > 0f && currentMana < MaxMana)
+            RestoreMana((Mp5 / 5f) * Time.deltaTime);
+
+        if (Hp5 <= 0f || _health == null || _health.currentHealth <= 0f || _health.currentHealth >= _health.maxHealth)
+            return;
+
+        // Health is server-authoritative in networked play. Mana is predicted locally
+        // for HUD responsiveness, but HP should only mutate on the server/host.
+        if (!NetworkClient.active || NetworkServer.active)
+            _health.Heal((Hp5 / 5f) * Time.deltaTime, false, false);
+    }
+
+    void ClampOrInitializeMana()
+    {
+        float oldMana = currentMana;
+        if (!_manaInitialized)
+        {
+            currentMana = MaxMana;
+            _manaInitialized = true;
+        }
+        else
+        {
+            currentMana = Mathf.Clamp(currentMana, 0f, MaxMana);
+        }
+
+        if (!Mathf.Approximately(oldMana, currentMana))
+            onManaChanged?.Invoke(currentMana, MaxMana);
+    }
+
+    public bool HasMana(float amount)
+    {
+        amount = Mathf.Max(0f, amount);
+        if (amount <= 0f) return true;
+        return currentMana + 0.001f >= amount;
+    }
+
+    public bool TrySpendMana(float amount)
+    {
+        amount = Mathf.Max(0f, amount);
+        if (!HasMana(amount))
+            return false;
+
+        if (amount <= 0f)
+            return true;
+
+        SetCurrentMana(currentMana - amount);
+        return true;
+    }
+
+    public void RestoreMana(float amount)
+    {
+        amount = Mathf.Max(0f, amount);
+        if (amount <= 0f || MaxMana <= 0f)
+            return;
+
+        SetCurrentMana(currentMana + amount);
+    }
+
+    public void RefillMana()
+    {
+        SetCurrentMana(MaxMana);
+    }
+
+    void SetCurrentMana(float value)
+    {
+        float clamped = Mathf.Clamp(value, 0f, MaxMana);
+        if (Mathf.Approximately(currentMana, clamped))
+            return;
+
+        currentMana = clamped;
+        onManaChanged?.Invoke(currentMana, MaxMana);
     }
 }

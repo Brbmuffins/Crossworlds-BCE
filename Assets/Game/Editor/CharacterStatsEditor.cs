@@ -10,6 +10,9 @@ public class CharacterStatsEditor : Editor
     SerializedProperty _baseCriticalStrikeChance;
     SerializedProperty _baseCriticalStrikeDamageMultiplier;
     SerializedProperty _baseDamageReduction;
+    SerializedProperty _baseMaxMana;
+    SerializedProperty _baseHp5;
+    SerializedProperty _baseMp5;
     SerializedProperty _baseMoveSpeedBonusPct;
     SerializedProperty _baseCooldownReduction;
     SerializedProperty _baseHealBonusPct;
@@ -18,6 +21,10 @@ public class CharacterStatsEditor : Editor
     SerializedProperty _effectiveCriticalStrikeChance;
     SerializedProperty _effectiveCriticalStrikeDamageMultiplier;
     SerializedProperty _effectiveDamageReduction;
+    SerializedProperty _effectiveMaxMana;
+    SerializedProperty _currentMana;
+    SerializedProperty _effectiveHp5;
+    SerializedProperty _effectiveMp5;
     SerializedProperty _effectiveMoveSpeedMultiplier;
     SerializedProperty _effectiveCooldownReduction;
     SerializedProperty _effectiveHealMultiplier;
@@ -29,6 +36,9 @@ public class CharacterStatsEditor : Editor
         _baseCriticalStrikeChance = serializedObject.FindProperty("baseCriticalStrikeChance");
         _baseCriticalStrikeDamageMultiplier = serializedObject.FindProperty("baseCriticalStrikeDamageMultiplier");
         _baseDamageReduction = serializedObject.FindProperty("baseDamageReduction");
+        _baseMaxMana = serializedObject.FindProperty("baseMaxMana");
+        _baseHp5 = serializedObject.FindProperty("baseHp5");
+        _baseMp5 = serializedObject.FindProperty("baseMp5");
         _baseMoveSpeedBonusPct = serializedObject.FindProperty("baseMoveSpeedBonusPct");
         _baseCooldownReduction = serializedObject.FindProperty("baseCooldownReduction");
         _baseHealBonusPct = serializedObject.FindProperty("baseHealBonusPct");
@@ -37,6 +47,10 @@ public class CharacterStatsEditor : Editor
         _effectiveCriticalStrikeChance = serializedObject.FindProperty("effectiveCriticalStrikeChance");
         _effectiveCriticalStrikeDamageMultiplier = serializedObject.FindProperty("effectiveCriticalStrikeDamageMultiplier");
         _effectiveDamageReduction = serializedObject.FindProperty("effectiveDamageReduction");
+        _effectiveMaxMana = serializedObject.FindProperty("effectiveMaxMana");
+        _currentMana = serializedObject.FindProperty("currentMana");
+        _effectiveHp5 = serializedObject.FindProperty("effectiveHp5");
+        _effectiveMp5 = serializedObject.FindProperty("effectiveMp5");
         _effectiveMoveSpeedMultiplier = serializedObject.FindProperty("effectiveMoveSpeedMultiplier");
         _effectiveCooldownReduction = serializedObject.FindProperty("effectiveCooldownReduction");
         _effectiveHealMultiplier = serializedObject.FindProperty("effectiveHealMultiplier");
@@ -57,6 +71,12 @@ public class CharacterStatsEditor : Editor
         EditorGUILayout.PropertyField(_baseDamageReduction, new GUIContent("Damage Reduction"));
 
         EditorGUILayout.Space(8f);
+        EditorGUILayout.LabelField("Base Resource Stats", EditorStyles.boldLabel);
+        EditorGUILayout.PropertyField(_baseMaxMana, new GUIContent("Max Mana"));
+        EditorGUILayout.PropertyField(_baseHp5, new GUIContent("HP5"));
+        EditorGUILayout.PropertyField(_baseMp5, new GUIContent("MP5"));
+
+        EditorGUILayout.Space(8f);
         EditorGUILayout.LabelField("Base Utility Stats", EditorStyles.boldLabel);
         EditorGUILayout.PropertyField(_baseMoveSpeedBonusPct, new GUIContent("Move Speed Bonus"));
         EditorGUILayout.PropertyField(_baseCooldownReduction, new GUIContent("Cooldown Reduction"));
@@ -70,6 +90,10 @@ public class CharacterStatsEditor : Editor
         EditorGUILayout.PropertyField(_effectiveCriticalStrikeChance, new GUIContent("Critical Strike Chance"));
         EditorGUILayout.PropertyField(_effectiveCriticalStrikeDamageMultiplier, new GUIContent("Critical Damage Multiplier"));
         EditorGUILayout.PropertyField(_effectiveDamageReduction, new GUIContent("Damage Reduction"));
+        EditorGUILayout.PropertyField(_effectiveMaxMana, new GUIContent("Max Mana"));
+        EditorGUILayout.PropertyField(_currentMana, new GUIContent("Current Mana"));
+        EditorGUILayout.PropertyField(_effectiveHp5, new GUIContent("HP5"));
+        EditorGUILayout.PropertyField(_effectiveMp5, new GUIContent("MP5"));
         EditorGUILayout.PropertyField(_effectiveMoveSpeedMultiplier, new GUIContent("Move Speed Multiplier"));
         EditorGUILayout.PropertyField(_effectiveCooldownReduction, new GUIContent("Cooldown Reduction"));
         EditorGUILayout.PropertyField(_effectiveHealMultiplier, new GUIContent("Heal Multiplier"));
