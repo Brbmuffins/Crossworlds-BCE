@@ -46,6 +46,26 @@ public class EnemyHeavyAttack : NetworkBehaviour
     [Tooltip("Heavy attack damage = EnemyController.damage × this multiplier.")]
     public float damageMultiplier = 2.5f;
 
+    [Header("Ranged Casting")]
+    [Tooltip("Maximum distance from a ranged enemy to its current target before a cast can begin.")]
+    [Min(0.1f)] public float castDistanceToTarget = 10f;
+
+    [Header("Opening Cast")]
+    [Tooltip("Starts an opening cast as soon as this ranged enemy acquires a target.")]
+    public bool castImmediatelyOnAggro = true;
+    [Tooltip("Selects the opening spell from the available spell pool.")]
+    public bool openingCastRandom = true;
+    [Tooltip("Opening spell used when random selection is disabled.")]
+    public HeavyAbilityType openingCastType = HeavyAbilityType.HexBlast;
+    [Tooltip("Additional server-authoritative delay before the opening cast begins.")]
+    [Min(0f)] public float openingCastDelay = 0f;
+    [Tooltip("Allows only one opening cast during each combat engagement.")]
+    public bool openingCastOncePerAggro = true;
+    [Tooltip("Requires an unobstructed path to the target before the opening cast begins.")]
+    public bool openingCastRequiresLineOfSight = true;
+    [Tooltip("Cancels the opening cast when its target dies or leaves the enemy leash before impact.")]
+    public bool cancelOpeningCastIfTargetInvalid = true;
+
     [Header("Available Abilities")]
     [Tooltip("Which heavy types this enemy can roll. Leave empty to allow all 5.")]
     public HeavyAbilityType[] availableTypes;
@@ -54,6 +74,18 @@ public class EnemyHeavyAttack : NetworkBehaviour
 
     EnemyController _enemy;
     Health          _health;
+    Coroutine       _openingCastRoutine;
+    bool            _openingCastUsedThisAggro;
+    bool            _abilityInProgress;
+
+    public bool IsOpeningCastInProgress => _openingCastRoutine != null;
+
+    public bool ShouldHoldCastingPosition(Transform target)
+    {
+        if (target == null || _enemy == null || !_enemy.isRanged) return false;
+        if (Vector3.Distance(transform.position, target.position) > castDistanceToTarget) return false;
+        return !openingCastRequiresLineOfSight || HasLineOfSight(target);
+    }
 
     static readonly HeavyAbilityType[] _allTypes =
         (HeavyAbilityType[])System.Enum.GetValues(typeof(HeavyAbilityType));
@@ -75,27 +107,122 @@ public class EnemyHeavyAttack : NetworkBehaviour
         StartCoroutine(HeavyAttackLoop());
     }
 
+    [Server]
+    public void OnAggroAcquired(Transform target)
+    {
+        if (!castImmediatelyOnAggro || target == null) return;
+        if (_enemy == null) _enemy = GetComponent<EnemyController>();
+        if (_health == null) _health = GetComponent<Health>();
+        if (_enemy == null || _health == null || !_health.IsAlive || !_enemy.isRanged) return;
+        if (openingCastOncePerAggro && _openingCastUsedThisAggro) return;
+        if (_openingCastRoutine != null || _abilityInProgress) return;
+        if (Vector3.Distance(transform.position, target.position) > castDistanceToTarget) return;
+        if (openingCastRequiresLineOfSight && !HasLineOfSight(target)) return;
+
+        _openingCastUsedThisAggro = true;
+        _openingCastRoutine = StartCoroutine(OpeningCastRoutine(target));
+    }
+
+    [Server]
+    public void OnCombatEnded()
+    {
+        if (_openingCastRoutine != null)
+        {
+            StopCoroutine(_openingCastRoutine);
+            _openingCastRoutine = null;
+        }
+        _abilityInProgress = false;
+        _openingCastUsedThisAggro = false;
+    }
+
+    [Server]
+    IEnumerator OpeningCastRoutine(Transform target)
+    {
+        _abilityInProgress = true;
+        float remainingDelay = Mathf.Max(0f, openingCastDelay);
+        while (remainingDelay > 0f)
+        {
+            if (cancelOpeningCastIfTargetInvalid && !IsOpeningTargetValid(target))
+            {
+                FinishOpeningCast();
+                yield break;
+            }
+            float step = Mathf.Min(0.1f, remainingDelay);
+            yield return new WaitForSeconds(step);
+            remainingDelay -= step;
+        }
+
+        if ((cancelOpeningCastIfTargetInvalid && !IsOpeningTargetValid(target)) ||
+            (openingCastRequiresLineOfSight && !HasLineOfSight(target)))
+        {
+            FinishOpeningCast();
+            yield break;
+        }
+
+        HeavyAbilityType chosen = openingCastRandom ? PickAbility() : openingCastType;
+        yield return StartCoroutine(ExecuteAbility(chosen, target, cancelOpeningCastIfTargetInvalid));
+        FinishOpeningCast();
+    }
+
+    void FinishOpeningCast()
+    {
+        _abilityInProgress = false;
+        _openingCastRoutine = null;
+    }
+
     // ── Server loop ───────────────────────────────────────────────────────────────
 
     [Server]
     IEnumerator HeavyAttackLoop()
     {
-        // Stagger start slightly so multiple enemies don't all fire at once
-        yield return new WaitForSeconds(Random.Range(2f, 8f));
+        // Immediate-opening ranged casters synchronize their normal loop to the
+        // opening cast. Other enemies retain the staggered startup.
+        if (!_enemy.isRanged || !castImmediatelyOnAggro)
+            yield return new WaitForSeconds(Random.Range(2f, 8f));
 
         while (_health.IsAlive)
         {
-            yield return new WaitForSeconds(Random.Range(minCooldown, maxCooldown));
-
-            if (!_health.IsAlive) yield break;
-
             // Only fire during active combat states
+            if (_enemy.state != EnemyController.EnemyState.Attack &&
+                _enemy.state != EnemyController.EnemyState.Chase)
+            {
+                yield return new WaitForSeconds(0.2f);
+                continue;
+            }
+            if (_abilityInProgress)
+            {
+                yield return null;
+                continue;
+            }
+
+            if (_enemy.isRanged)
+            {
+                Transform target = _enemy.CurrentTarget;
+                if (target == null ||
+                    Vector3.Distance(transform.position, target.position) > castDistanceToTarget ||
+                    (openingCastRequiresLineOfSight && !HasLineOfSight(target)))
+                {
+                    yield return new WaitForSeconds(0.1f);
+                    continue;
+                }
+            }
+
+            float cooldown = Random.Range(
+                Mathf.Max(0f, minCooldown),
+                Mathf.Max(Mathf.Max(0f, minCooldown), maxCooldown));
+            if (cooldown > 0f)
+                yield return new WaitForSeconds(cooldown);
+            if (!_health.IsAlive) yield break;
+            if (_abilityInProgress) continue;
             if (_enemy.state != EnemyController.EnemyState.Attack &&
                 _enemy.state != EnemyController.EnemyState.Chase)
                 continue;
 
             HeavyAbilityType chosen = PickAbility();
-            yield return StartCoroutine(ExecuteAbility(chosen));
+            _abilityInProgress = true;
+            Transform castTarget = _enemy.isRanged ? _enemy.CurrentTarget : null;
+            yield return StartCoroutine(ExecuteAbility(chosen, castTarget, _enemy.isRanged));
+            _abilityInProgress = false;
         }
     }
 
@@ -109,13 +236,43 @@ public class EnemyHeavyAttack : NetworkBehaviour
     }
 
     [Server]
-    IEnumerator ExecuteAbility(HeavyAbilityType type)
+    IEnumerator ExecuteAbility(HeavyAbilityType type, Transform requiredTarget = null, bool cancelIfInvalid = false)
     {
-        // Telegraph (wind-up visible to clients before damage lands)
+        if (cancelIfInvalid && !IsOpeningTargetValid(requiredTarget))
+        {
+            _enemy.CancelCastAnimation();
+            yield break;
+        }
+        // Trigger the prefab-selected cast/attack clip on every client before
+        // the telegraph and resolve damage at its configured impact point.
+        _enemy.PlayCastAnimation();
         RpcTelegraph(type, transform.position);
-        yield return new WaitForSeconds(0.65f);
+        float windup = Mathf.Max(0.05f, _enemy.attackImpactDelay);
+        float remainingWindup = windup;
+        while (remainingWindup > 0f)
+        {
+            if (cancelIfInvalid && (!IsOpeningTargetValid(requiredTarget) ||
+                (openingCastRequiresLineOfSight && !HasLineOfSight(requiredTarget))))
+            {
+                _enemy.CancelCastAnimation();
+                yield break;
+            }
+            float step = Mathf.Min(0.05f, remainingWindup);
+            yield return new WaitForSeconds(step);
+            remainingWindup -= step;
+        }
 
         if (!_health.IsAlive) yield break;
+        if (cancelIfInvalid && !IsOpeningTargetValid(requiredTarget))
+        {
+            _enemy.CancelCastAnimation();
+            yield break;
+        }
+        if (requiredTarget != null && openingCastRequiresLineOfSight && !HasLineOfSight(requiredTarget))
+        {
+            _enemy.CancelCastAnimation();
+            yield break;
+        }
 
         float dmg = _enemy.damage * damageMultiplier;
 
@@ -158,6 +315,54 @@ public class EnemyHeavyAttack : NetworkBehaviour
         }
 
         RpcAbilityFired(type, transform.position);
+
+        // Zero cooldown means the next cast starts when this animation cycle
+        // finishes, not on top of the current spell's impact frame.
+        float animationRecovery = Mathf.Max(0f, _enemy.attackInterval - windup);
+        while (animationRecovery > 0f)
+        {
+            if (cancelIfInvalid && (!IsOpeningTargetValid(requiredTarget) ||
+                (openingCastRequiresLineOfSight && !HasLineOfSight(requiredTarget))))
+            {
+                _enemy.CancelCastAnimation();
+                yield break;
+            }
+            float step = Mathf.Min(0.05f, animationRecovery);
+            yield return new WaitForSeconds(step);
+            animationRecovery -= step;
+        }
+    }
+
+    bool IsOpeningTargetValid(Transform target)
+    {
+        if (target == null || _enemy == null || _health == null || !_health.IsAlive) return false;
+        Health targetHealth = target.GetComponent<Health>();
+        if (targetHealth == null || !targetHealth.IsAlive) return false;
+        if (_enemy.CurrentTarget != target) return false;
+        if (!_enemy.IsTargetWithinLeash(target)) return false;
+        return Vector3.Distance(transform.position, target.position) <= castDistanceToTarget;
+    }
+
+    bool HasLineOfSight(Transform target)
+    {
+        if (target == null) return false;
+        Vector3 origin = transform.position + Vector3.up * 1.25f;
+        Vector3 destination = target.position + Vector3.up;
+        Vector3 direction = destination - origin;
+        float distance = direction.magnitude;
+        if (distance <= 0.01f) return true;
+
+        RaycastHit[] hits = Physics.RaycastAll(
+            origin, direction / distance, distance, ~0, QueryTriggerInteraction.Ignore);
+        System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+        foreach (RaycastHit hit in hits)
+        {
+            Transform hitTransform = hit.transform;
+            if (hitTransform == null || hitTransform == transform || hitTransform.IsChildOf(transform))
+                continue;
+            return hitTransform == target || hitTransform.IsChildOf(target) || target.IsChildOf(hitTransform);
+        }
+        return true;
     }
 
     // ── Damage helpers (all [Server]) ────────────────────────────────────────────
@@ -220,6 +425,7 @@ public class EnemyHeavyAttack : NetworkBehaviour
         foreach (var p in players)
         {
             if (p == null) continue;
+            if (p.scene != gameObject.scene) continue;
             var h = p.GetComponent<Health>();
             if (h == null || !h.IsAlive) continue;
             float sqr = (p.transform.position - transform.position).sqrMagnitude;
@@ -249,6 +455,13 @@ public class EnemyHeavyAttack : NetworkBehaviour
 
     Vector3 GetTargetOrSelf()
     {
+        Transform currentTarget = _enemy != null ? _enemy.CurrentTarget : null;
+        if (currentTarget != null)
+        {
+            var currentHealth = currentTarget.GetComponent<Health>();
+            if (currentHealth != null && currentHealth.IsAlive)
+                return currentTarget.position;
+        }
         // Try to read the enemy's current target via reflection — it's private,
         // so we fall back to the nearest player if none found.
         GameObject[] players = GameObject.FindGameObjectsWithTag("Player");
@@ -258,6 +471,7 @@ public class EnemyHeavyAttack : NetworkBehaviour
         foreach (var p in players)
         {
             if (p == null) continue;
+            if (p.scene != gameObject.scene) continue;
             var h = p.GetComponent<Health>();
             if (h == null || !h.IsAlive) continue;
             float sqr = (p.transform.position - transform.position).sqrMagnitude;

@@ -470,6 +470,12 @@ MonoBehaviour:
   - {fileID: 8857853131041869042, guid: 7b3e4f3eaf73c0b48be4b3030db5b465, type: 3}
   - {fileID: 7806446736298007974, guid: ccdcc8d6f3c2d8941bffa495c7adb6c0, type: 3}
   - {fileID: 2002894649613888028, guid: a9e9ba9c1d1313d498f96351399c5ee5, type: 3}
+  - {fileID: 3836090787434846757, guid: d6e5c0e2d0194d64a973ced27b988cfe, type: 3}
+  - {fileID: 1520745592202967756, guid: dcb276aaea8b63c459b7e241a7192191, type: 3}
+  - {fileID: 3836090787434846757, guid: 60541b663fcef504dbb0f30f46fc9b8c, type: 3}
+  - {fileID: 1992404946465120677, guid: b2e7da1b69f13a54fbf43b728601e3fe, type: 3}
+  - {fileID: 8769021370932664738, guid: d6e5c0e2d0194d64a973ced27b988cfe, type: 3}
+  - {fileID: 5052242896113695516, guid: d786a7ed13322134692e23d8e3cafe8f, type: 3}
   exceptionsDisconnect: 1
   snapshotSettings:
     bufferTimeMultiplier: 2
@@ -499,6 +505,12 @@ MonoBehaviour:
   - {fileID: 8857853131041869042, guid: 7b3e4f3eaf73c0b48be4b3030db5b465, type: 3}
   - {fileID: 7806446736298007974, guid: ccdcc8d6f3c2d8941bffa495c7adb6c0, type: 3}
   - {fileID: 2002894649613888028, guid: a9e9ba9c1d1313d498f96351399c5ee5, type: 3}
+  - {fileID: 3836090787434846757, guid: d6e5c0e2d0194d64a973ced27b988cfe, type: 3}
+  - {fileID: 1520745592202967756, guid: dcb276aaea8b63c459b7e241a7192191, type: 3}
+  - {fileID: 3836090787434846757, guid: 60541b663fcef504dbb0f30f46fc9b8c, type: 3}
+  - {fileID: 1992404946465120677, guid: b2e7da1b69f13a54fbf43b728601e3fe, type: 3}
+  - {fileID: 8769021370932664738, guid: d6e5c0e2d0194d64a973ced27b988cfe, type: 3}
+  - {fileID: 5052242896113695516, guid: d786a7ed13322134692e23d8e3cafe8f, type: 3}
   chatManagerPrefab: {fileID: 1000000000000000001, guid: 0b8a9bdc07f1a3146a8481bbae0fb2fe, type: 3}
   authServerURL: http://15.204.243.36:3000
 --- !u!114 &286295840
