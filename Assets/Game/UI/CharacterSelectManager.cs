@@ -348,8 +348,13 @@ public class CharacterSelectManager : MonoBehaviour
     IEnumerator PostCharacterThenConnect(int classIndex)
     {
         string jwt      = PlayerPrefs.GetString("jwt_token", "");
-        string serverIP = PlayerPrefs.GetString("game_server_ip", "15.204.243.36").Trim();
-        string url      = $"http://{serverIP}:3000/character";
+
+        // Auth API and game server are two different services. They normally live on
+        // the same box, but a second client testing against a local editor host must
+        // still authenticate against the real auth server — there is no local copy.
+        string authIP   = PlayerPrefs.GetString("game_server_ip", ServerConfig.DefaultServerIP).Trim();
+        string gameIP   = PlayerPrefs.GetString(ServerConfig.GameServerOverrideKey, authIP).Trim();
+        string url      = $"http://{authIP}:3000/character";
         string json = $"{{\"class_index\":{classIndex}}}";
 
         using var req = new UnityWebRequest();
@@ -372,8 +377,10 @@ public class CharacterSelectManager : MonoBehaviour
         }
 
         // Apply whichever server IP the player entered on the login screen
-        NetworkManager.singleton.networkAddress = serverIP;
-        Debug.Log($"[CharSel] Connecting to game server at {serverIP}...");
+        NetworkManager.singleton.networkAddress = gameIP;
+        Debug.Log(gameIP == authIP
+            ? $"[CharSel] Connecting to game server at {gameIP}..."
+            : $"[CharSel] Connecting to game server at {gameIP} (auth was {authIP}) — override active.");
         NetworkManager.singleton.StartClient();
     }
 

@@ -67,7 +67,7 @@ public class PassiveThreatProtocol : ClassPassive
     void ActivateThreatBurst()
     {
         // Redirect all nearby enemy aggro to this player
-        Collider[] hits = Physics.OverlapSphere(transform.position, aggroRadius);
+        Collider[] hits = ZonePhysics.OverlapSphere(gameObject, transform.position, aggroRadius);
         foreach (var col in hits)
         {
             if (!col.CompareTag(enemyTag)) continue;

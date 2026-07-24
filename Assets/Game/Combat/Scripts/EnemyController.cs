@@ -98,6 +98,7 @@ public class EnemyController : NetworkBehaviour
     private NetworkTransformBase _networkTransform;
     private StatusEffectManager  _status;   // may be null on basic enemies
     private float                _baseSpeed;
+    private float                _configuredStoppingDistance;
     private Transform            _target;
     private Vector3              _spawnPos;
     private Quaternion           _spawnRot;
@@ -144,6 +145,7 @@ public class EnemyController : NetworkBehaviour
         _networkTransform = GetComponent<NetworkTransformBase>();
         _status    = GetComponent<StatusEffectManager>();
         _baseSpeed = _agent != null ? _agent.speed : 0f;
+        _configuredStoppingDistance = _agent != null ? Mathf.Max(0f, _agent.stoppingDistance) : 0f;
         _animator  = GetComponentInChildren<Animator>();
         CacheAnimatorParameters();
     }
@@ -206,7 +208,14 @@ public class EnemyController : NetworkBehaviour
         // On remote clients NetworkAnimator owns synchronized parameters. Writing
         // Speed here would overwrite the value received from the server.
         if (HasSimulationAuthority && _animator != null && _hasSpeedParam)
-            _animator.SetFloat(SpeedHash, _targetAnimatorSpeed, 0.12f, Time.deltaTime);
+        {
+            // Stop locomotion immediately when navigation stops. Damping a zero
+            // value kept the walk cycle running after the body was stationary.
+            if (_targetAnimatorSpeed <= 0f)
+                _animator.SetFloat(SpeedHash, 0f);
+            else
+                _animator.SetFloat(SpeedHash, _targetAnimatorSpeed, 0.08f, Time.deltaTime);
+        }
 
         // The behaviour state machine runs at 5 Hz, but combat facing needs to be
         // updated every frame or quick-moving targets visibly outrun the turn.
@@ -362,7 +371,7 @@ public class EnemyController : NetworkBehaviour
         float nearestSurfaceY = 0f;
         bool foundTaggedGround = false;
         bool foundSurface = false;
-        foreach (var hit in Physics.RaycastAll(origin, Vector3.down, sampleRadius * 3f,
+        foreach (var hit in ZonePhysics.RaycastAll(gameObject, origin, Vector3.down, sampleRadius * 3f,
                      Physics.AllLayers, QueryTriggerInteraction.Ignore))
         {
             if (hit.collider == null || hit.collider.transform.IsChildOf(transform)) continue;
@@ -495,7 +504,7 @@ public class EnemyController : NetworkBehaviour
         TickReturnHomeFacing();
         if (_returningHome) return;
 
-        var hits = Physics.OverlapSphere(transform.position, aggroRadius);
+        var hits = ZonePhysics.OverlapSphere(gameObject, transform.position, aggroRadius);
         float     nearest = float.MaxValue;
         Transform found   = null;
 
@@ -736,8 +745,14 @@ public class EnemyController : NetworkBehaviour
         }
         else
         {
-            Vector3 slot = EnemyCrowdUtility.ChaseSlot(transform, _target, EnemyCrowdUtility.MeleeSlotRadius(attackRange));
-            if (_agent != null) _agent.stoppingDistance = 0.25f;
+            // Enemy Forge's stopping distance is the minimum ring around the
+            // player. The small agent stopping distance below is only tolerance
+            // around this per-enemy crowd slot, not player spacing.
+            float slotRadius = Mathf.Max(
+                EnemyCrowdUtility.MeleeSlotRadius(attackRange),
+                _configuredStoppingDistance);
+            Vector3 slot = EnemyCrowdUtility.ChaseSlot(transform, _target, slotRadius);
+            if (_agent != null) _agent.stoppingDistance = 0.1f;
             _agent?.SetDestination(slot);
 
             if (EnemyCrowdUtility.CanMeleeAttack(transform, _target, slot, attackRange))
@@ -764,7 +779,10 @@ public class EnemyController : NetworkBehaviour
         // Stand still for melee; keep pathing for ranged backpedal
         if (!isRanged)
         {
-            Vector3 slot = EnemyCrowdUtility.ChaseSlot(transform, _target, EnemyCrowdUtility.MeleeSlotRadius(attackRange));
+            float slotRadius = Mathf.Max(
+                EnemyCrowdUtility.MeleeSlotRadius(attackRange),
+                _configuredStoppingDistance);
+            Vector3 slot = EnemyCrowdUtility.ChaseSlot(transform, _target, slotRadius);
             if (EnemyCrowdUtility.ShouldMoveToMeleeSlot(transform, _target, slot, attackRange))
             {
                 state = EnemyState.Chase;
@@ -845,6 +863,7 @@ public class EnemyController : NetworkBehaviour
         var proj = Instantiate(projectilePrefab, spawnPos, spawnRot);
         var ep = proj.GetComponent<EnemyProjectile>();
         if (ep != null) ep.Init(damage);
+        ZoneScene.PlaceWith(proj, gameObject);   // keep the projectile in this enemy's zone
         if (NetworkServer.active) NetworkServer.Spawn(proj);
     }
 
@@ -989,6 +1008,7 @@ public class EnemyController : NetworkBehaviour
         var wi   = Instantiate(worldItemPrefab, transform.position + offset, Quaternion.identity);
         var comp = wi.GetComponent<WorldItem>();
         if (comp != null) { comp.itemId = itemId; comp.quantity = qty; }
+        ZoneScene.PlaceWith(wi, gameObject);   // drop belongs to the zone the enemy died in
         if (NetworkServer.active) NetworkServer.Spawn(wi);
     }
 

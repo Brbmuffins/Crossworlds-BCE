@@ -76,7 +76,7 @@ public class EnemyHoverController : MonoBehaviour
             return null;
 
         Ray ray = cam.ScreenPointToRay(screenPos);
-        RaycastHit[] hits = Physics.RaycastAll(ray, maxHoverDistance, hoverMask, QueryTriggerInteraction.Collide);
+        RaycastHit[] hits = ZonePhysics.RaycastAll(gameObject, ray, maxHoverDistance, hoverMask, QueryTriggerInteraction.Collide);
         if (hits == null || hits.Length == 0)
             return null;
 

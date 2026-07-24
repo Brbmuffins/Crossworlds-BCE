@@ -84,7 +84,7 @@ public class MotorcycleController : MonoBehaviour
         RaycastHit hit;
         Vector3 rayStart = transform.position + Vector3.up * 1f;
 
-        if (Physics.Raycast(rayStart, Vector3.down, out hit, groundCheckDistance))
+        if (ZonePhysics.Raycast(gameObject, rayStart, Vector3.down, out hit, groundCheckDistance))
         {
             groundNormal = Vector3.Lerp(
                 groundNormal,

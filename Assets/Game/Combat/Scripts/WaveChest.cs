@@ -163,7 +163,7 @@ public class WaveChest : MonoBehaviour
     int CountNearbyPlayers(float radius)
     {
         int count = 0;
-        foreach (var col in Physics.OverlapSphere(transform.position, radius))
+        foreach (var col in ZonePhysics.OverlapSphere(gameObject, transform.position, radius))
             if (col.CompareTag("Player")) count++;
         return Mathf.Max(1, count);
     }

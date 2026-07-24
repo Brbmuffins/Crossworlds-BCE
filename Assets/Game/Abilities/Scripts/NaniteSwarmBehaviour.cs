@@ -62,7 +62,7 @@ public class NaniteSwarmBehaviour : MonoBehaviour
         if (_chipTimer >= chipInterval)
         {
             _chipTimer = 0f;
-            Collider[] hits = Physics.OverlapSphere(transform.position, chipRadius);
+            Collider[] hits = ZonePhysics.OverlapSphere(gameObject, transform.position, chipRadius);
             foreach (var col in hits)
             {
                 if (!col.CompareTag(enemyTag)) continue;

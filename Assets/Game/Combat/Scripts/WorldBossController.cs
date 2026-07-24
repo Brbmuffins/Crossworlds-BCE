@@ -154,7 +154,7 @@ public class WorldBossController : NetworkBehaviour
         float reflected = damage * reflectDamageFraction;
         int   hitCount  = 0;
 
-        foreach (var col in Physics.OverlapSphere(transform.position, reflectAoeRadius))
+        foreach (var col in ZonePhysics.OverlapSphere(gameObject, transform.position, reflectAoeRadius))
         {
             if (!col.CompareTag("Player")) continue;
             col.GetComponent<Health>()?.TakeDamage(reflected, gameObject);
@@ -284,6 +284,7 @@ public class WorldBossController : NetworkBehaviour
         {
             Vector3 pos   = transform.position + offset * shardSpreadRadius;
             var shard     = Instantiate(nullShardPrefab, pos, Quaternion.identity);
+            ZoneScene.PlaceWith(shard, gameObject);   // keep shards in the boss's zone
             NetworkServer.Spawn(shard);
             _activeShards.Add(shard);
 
@@ -541,6 +542,7 @@ public class WorldBossController : NetworkBehaviour
         var wi   = Instantiate(worldItemPrefab, pos, Quaternion.identity);
         var comp = wi.GetComponent<WorldItem>();
         if (comp != null) { comp.itemId = itemId; comp.quantity = 1; }
+        ZoneScene.PlaceWith(wi, gameObject);   // drop belongs to the boss's zone
         NetworkServer.Spawn(wi);
         Debug.Log($"[BOSS] Dropped: {itemId}");
     }

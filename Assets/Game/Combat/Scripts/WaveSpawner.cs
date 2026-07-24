@@ -237,6 +237,7 @@ public class WaveSpawner : NetworkBehaviour
 
         var health    = enemy.GetComponent<Health>();
         if (health != null) health.onDeath.AddListener(OnEnemyDied);
+        ZoneScene.PlaceWith(enemy, gameObject);   // keep the enemy in this spawner's zone
         NetworkServer.Spawn(enemy);
         enemiesAlive++;
 

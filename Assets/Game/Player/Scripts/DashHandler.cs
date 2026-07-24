@@ -76,7 +76,7 @@ public class DashHandler : MonoBehaviour
         // Impact: box check along path
         Vector3 boxCenter = start + dir * (slamDistance / 2f) + Vector3.up * 0.5f;
         Vector3 halfExtents = new Vector3(slamWidth, 1f, slamDistance / 2f);
-        Collider[] hits = Physics.OverlapBox(boxCenter, halfExtents, Quaternion.LookRotation(dir));
+        Collider[] hits = ZonePhysics.OverlapBox(gameObject, boxCenter, halfExtents, Quaternion.LookRotation(dir));
         foreach (var col in hits)
         {
             if (!col.CompareTag(enemyTag)) continue;

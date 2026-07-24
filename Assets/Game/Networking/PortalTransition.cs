@@ -8,8 +8,13 @@ using UnityEngine.UI;
 
 /// <summary>
 /// PortalTransition — attach to each portal in Hub scene.
-/// Each player enters independently; only the triggering client loads the scene.
-/// ServerChangeScene is intentionally NOT used here — that would move all players.
+/// Each player enters independently.
+///
+/// ROADMAP 6.4: this used to fake per-player travel with a client-local
+/// SceneManager.LoadScene that never told the server — so the client stood in the
+/// arena while the server still had their identity in Hub, observing Hub objects.
+/// Travel now goes through ZoneManager, which moves the player server-side and
+/// sends that one client an additive SceneMessage.
 /// </summary>
 public class PortalTransition : NetworkBehaviour
 {
@@ -52,6 +57,7 @@ public class PortalTransition : NetworkBehaviour
         _entered.Add(connId);
 
         TargetBeginTransition(conn, portalDisplayName, arenaSceneName, transitionDelay);
+        StartCoroutine(BeginTransition(conn, arenaSceneName, transitionDelay));
     }
 
     [Command(requiresAuthority = false)]
@@ -64,9 +70,41 @@ public class PortalTransition : NetworkBehaviour
         _entered.Add(connId);
 
         TargetBeginTransition(sender, portalDisplayName, arenaSceneName, transitionDelay);
+        StartCoroutine(BeginTransition(sender, arenaSceneName, transitionDelay));
     }
 
-    /// <summary>Tells only the triggering client to load the scene.</summary>
+    /// <summary>
+    /// Server-side: waits out the transition delay so the client can show its
+    /// prompt, then hands the player to ZoneManager.
+    /// </summary>
+    [Server]
+    IEnumerator BeginTransition(NetworkConnectionToClient conn, string sceneName, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+
+        // They may have disconnected during the delay.
+        if (conn == null || !NetworkServer.connections.ContainsKey(conn.connectionId))
+        {
+            _entered.Remove(conn?.connectionId ?? -1);
+            yield break;
+        }
+
+        if (ZoneManager.Instance == null)
+        {
+            Debug.LogError("[Portal] ZoneManager missing — cannot enter. Run BCE ▶ Setup ▶ 6z.");
+            _entered.Remove(conn.connectionId);
+            yield break;
+        }
+
+        ZoneManager.Instance.MovePlayerToZone(conn, sceneName);
+
+        // Release the re-entry guard. Before 6.4 travel never actually worked, so a
+        // permanent entry meant nothing; now a player who comes back to Hub must be
+        // able to use the same portal again.
+        _entered.Remove(conn.connectionId);
+    }
+
+    /// <summary>Client-side cosmetics only — the actual move is server-authoritative.</summary>
     [TargetRpc]
     void TargetBeginTransition(NetworkConnectionToClient target, string displayName, string sceneName, float delay)
     {
@@ -76,16 +114,21 @@ public class PortalTransition : NetworkBehaviour
         RodChatManager.Instance?.AddSystemMessage($"Entering {displayName}...");
         if (_promptObj != null) _promptObj.SetActive(false);
 
-        StartCoroutine(LocalLoad(sceneName, delay));
-    }
-
-    IEnumerator LocalLoad(string sceneName, float delay)
-    {
-        yield return new WaitForSeconds(delay);
 #if UNITY_EDITOR || !UNITY_SERVER
         LoadingScreen.Show(sceneName);
 #endif
-        SceneManager.LoadScene(sceneName);
+        StartCoroutine(ClearLocalEntryGuard(delay + 2f));
+    }
+
+    /// <summary>
+    /// Re-arms the local prompt after travel so returning to Hub and taking the same
+    /// portal again works. The client has no completion signal from the additive load,
+    /// so this is time-based on purpose.
+    /// </summary>
+    IEnumerator ClearLocalEntryGuard(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        _enteringLocally = false;
     }
 
     // ── Client ────────────────────────────────────────────────────────────────

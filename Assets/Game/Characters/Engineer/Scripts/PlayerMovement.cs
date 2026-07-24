@@ -97,14 +97,22 @@ public class PlayerMovement : NetworkBehaviour
             foreach (var p in anim.parameters)
                 _animParams.Add(p.name);
 
+        // ROADMAP 6.9: with zones loaded additively there can be several cameras alive
+        // at once. Let the director enable only the one for this player's zone BEFORE
+        // resolving — Camera.allCameras returns enabled cameras only, so after this
+        // there is exactly one to find.
+#if UNITY_EDITOR || !UNITY_SERVER
+        ZoneCameraDirector.EnsureExists(transform);
+#endif
+
         // Auto-find camera and wire CameraFollow to this transform.
-        if (cam == null) cam = Camera.main;
-        if (cam == null && Camera.allCamerasCount > 0) cam = Camera.allCameras[0];
+        if (cam == null) cam = ResolveCamera();
         if (cam != null)
         {
-            // Prefer scene-placed CameraFollow anywhere in the scene to avoid creating a
-            // second component with default settings that fights the scene-placed one.
-            var follow = FindFirstObjectByType<CameraFollow>();
+            // Prefer a CameraFollow already on the camera we chose. FindFirstObjectByType
+            // is global, so with several zones loaded it can return another zone's rig and
+            // then drive a camera nobody is looking through (ROADMAP 6.5 / 6.9).
+            var follow = cam.GetComponent<CameraFollow>();
             if (follow == null)
                 follow = cam.gameObject.AddComponent<CameraFollow>();
             follow.cameraCollision = true;
@@ -310,6 +318,40 @@ public class PlayerMovement : NetworkBehaviour
             Quaternion currentRotation = keepUpright ? UprightRotation(rb.rotation) : rb.rotation;
             rb.MoveRotation(Quaternion.Slerp(currentRotation, targetRotation, rotationSpeed * Time.fixedDeltaTime));
         }
+    }
+
+    /// <summary>
+    /// Picks the camera this player should move relative to.
+    ///
+    /// Camera.main is not safe here any more. Every zone scene carries its own
+    /// MainCamera, and with zones loaded additively there can be several at once —
+    /// Camera.main then returns an arbitrary one. Because movement is camera-relative
+    /// (see the camForward/camRight block below), binding to another zone's camera
+    /// rotates WASD by however that camera happens to be facing. That is the
+    /// "movement is a mix of WASD" symptom.
+    ///
+    /// Preference order:
+    ///   1. A camera in this player's own scene. Correct in host mode, where the
+    ///      player object lives in its zone scene alongside that zone's camera.
+    ///   2. The only camera, if there is exactly one. Correct on a real client: the
+    ///      player sits in the container scene while the single camera is in the one
+    ///      additively-loaded zone.
+    ///   3. Camera.main, then anything at all.
+    ///
+    /// ROADMAP 6.9 removes the per-zone cameras outright, which makes this moot —
+    /// until then this keeps host-mode testing usable.
+    /// </summary>
+    Camera ResolveCamera()
+    {
+        Camera[] all = Camera.allCameras;
+
+        foreach (Camera c in all)
+            if (c != null && c.gameObject.scene == gameObject.scene)
+                return c;
+
+        if (all.Length == 1) return all[0];
+
+        return Camera.main != null ? Camera.main : (all.Length > 0 ? all[0] : null);
     }
 
     void ConfigureRigidbody()

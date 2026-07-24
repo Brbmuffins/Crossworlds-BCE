@@ -1,6 +1,8 @@
+using System.Collections;
 using System.Collections.Generic;
 using Mirror;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 // ═══════════════════════════════════════════════════════════════════════════
 //  RodNetworkManager
@@ -59,8 +61,13 @@ public class RodNetworkManager : NetworkManager
         // Wire scenes in code so they're never mis-set in the Inspector.
         // Mirror uses offlineScene to auto-navigate back to login on disconnect —
         // this is what makes Logout and chat teardown work correctly.
+        //
+        // onlineScene is the empty CONTAINER, not Hub (ROADMAP 6.3). Every zone —
+        // Hub included — is loaded additively on top of it by ZoneManager, so
+        // players can be in different zones at once. Pointing this back at Hub
+        // re-breaks that: Mirror would ServerChangeScene everyone into Hub.
         offlineScene = SceneNames.LoginPath;
-        onlineScene  = SceneNames.HubPath;
+        onlineScene  = SceneNames.ContainerPath;
 
         if (transport == null)
             transport = GetComponent<Mirror.Transport>();
@@ -167,6 +174,10 @@ public class RodNetworkManager : NetworkManager
         {
             var chatGO = Instantiate(chatManagerPrefab);
             DontDestroyOnLoad(chatGO);
+            // ZoneScene placement is deliberately NOT applied here: the ChatManager is
+            // world-global, not zone-scoped, so it stays in the DontDestroyOnLoad scene.
+            // ⚠ That makes it invisible to SceneInterestManagement (strict scene equality),
+            // which would silence chat for everyone once IM is enabled — see ROADMAP 6.5.
             NetworkServer.Spawn(chatGO);
             Debug.Log("[RodNM] ChatManager spawned and marked DontDestroyOnLoad.");
         }
@@ -175,6 +186,17 @@ public class RodNetworkManager : NetworkManager
             Debug.LogWarning("[RodNM] chatManagerPrefab not assigned — chat will not work. " +
                              "Run BCE/Setup/4p with LoginScene open to fix.");
         }
+    }
+
+    public override void OnStopServer()
+    {
+        // Zones are additively loaded and outlive the server otherwise. Their scene
+        // objects keep NetworkIdentity.isServer set — it is a stored flag, not a live
+        // read of NetworkServer.active — so NetworkAnimator carries on trying to send
+        // Rpcs and logs "called without an active server" every FixedUpdate.
+        ZoneManager.Instance?.UnloadAllZones();
+
+        base.OnStopServer();
     }
 
     public override void OnServerConnect(NetworkConnectionToClient conn)
@@ -231,25 +253,62 @@ public class RodNetworkManager : NetworkManager
         }
         else
         {
-            Transform startPos = GetStartPosition();
-            if (startPos != null)
-            {
-                spawnPos = startPos.position;
-            }
-            else
-            {
-                // Scatter players in a ring so they don't spawn inside each other
-                float angle = UnityEngine.Random.Range(0f, Mathf.PI * 2f);
-                spawnPos = new Vector3(Mathf.Sin(angle) * 3f, 1f, Mathf.Cos(angle) * 3f);
-            }
+            // ROADMAP 6.5: GetStartPosition() searches every loaded scene, so with zones
+            // resident additively it could hand back another zone's start point. Without a
+            // saved position, SpawnPlayerIntoZone calls ZoneManager.PlaceAtSpawnPoint once
+            // the destination scene exists, which resolves the spawn INSIDE that zone.
+            // This value is only the pre-placement seed.
+            float angle = UnityEngine.Random.Range(0f, Mathf.PI * 2f);
+            spawnPos = new Vector3(Mathf.Sin(angle) * 3f, 1f, Mathf.Cos(angle) * 3f);
         }
 
         // Prefer server-verified username from auth data; fall back to client-sent value
         string username = (auth != null && !string.IsNullOrEmpty(auth.username))
             ? auth.username : msg.username;
 
+        // ROADMAP 6.3: the player must be filed into their saved zone, which may not
+        // be loaded yet. Hand off to a coroutine — AddPlayerForConnection cannot run
+        // until the zone scene exists and the client has been told to load it.
+        StartCoroutine(SpawnPlayerIntoZone(conn, prefab, classIndex, username, spawnPos, auth, hasSavedPos));
+    }
+
+    IEnumerator SpawnPlayerIntoZone(NetworkConnectionToClient conn, GameObject prefab,
+                                    int classIndex, string username, Vector3 spawnPos,
+                                    RodPlayerAuth auth, bool hasSavedPos)
+    {
+        string zoneName = SceneNames.NormalizeZone(auth != null ? auth.zone : null);
+
+        if (ZoneManager.Instance == null)
+        {
+            Debug.LogError("[RodNM] ZoneManager missing — add it to the NetworkManager GameObject " +
+                           "(BCE ▶ Setup ▶ 6z). Cannot spawn players.");
+            yield break;
+        }
+
+        Scene zone = default;
+        yield return ZoneManager.Instance.PrepareZone(conn, zoneName, null, s => zone = s);
+
+        if (!zone.IsValid())
+        {
+            Debug.LogError($"[RodNM] Could not prepare zone '{zoneName}' for {username} — no spawn.");
+            yield break;
+        }
+
+        // Connection may have dropped during the async scene load.
+        if (!NetworkServer.connections.ContainsKey(conn.connectionId) || conn.identity != null)
+            yield break;
+
         GameObject player = Instantiate(prefab, spawnPos, Quaternion.identity);
         player.name = username;
+
+        // File into the zone BEFORE AddPlayerForConnection: interest management reads
+        // gameObject.scene when it builds the initial observer set.
+        ZoneScene.PlaceIn(player, zone);
+
+        // A saved position is only meaningful inside the zone it was saved in. Without
+        // one, fall back to that zone's spawn point rather than to a global search.
+        if (!hasSavedPos)
+            ZoneManager.Instance.PlaceAtSpawnPoint(player, zone, null);
 
         var identity = player.GetComponent<PlayerIdentity>();
         if (identity != null)
@@ -270,167 +329,12 @@ public class RodNetworkManager : NetworkManager
 
         EnsureHostClientReadyForAddPlayer(conn);
         NetworkServer.AddPlayerForConnection(conn, player);
-        Debug.Log($"[RodNM] Spawned {username} as class {classIndex} at {spawnPos} " +
-                  $"(fromDB={auth?.fromDB}, hasSavedPos={hasSavedPos})");
+        ZoneManager.Instance.RegisterInitialPlacement(conn, zone);
+
+        Debug.Log($"[RodNM] Spawned {username} as class {classIndex} in zone {zone.name} at " +
+                  $"{player.transform.position} (fromDB={auth?.fromDB}, hasSavedPos={hasSavedPos})");
     }
 
-    public override void OnServerSceneChanged(string sceneName)
-    {
-        base.OnServerSceneChanged(sceneName);
-
-        if (PlaceHubReturnPlayers(sceneName))
-            return;
-
-        RespawnMissingPlayersAfterSceneChange(sceneName);
-    }
-
-    bool PlaceHubReturnPlayers(string sceneName)
-    {
-        if (!HubReturnArrival.TryGetRequestForScene(sceneName, out string spawnId, out bool applySpawnRotation))
-            return false;
-
-        Transform spawnPoint = HubReturnSpawnPoint.Find(spawnId);
-        if (spawnPoint == null)
-        {
-            Debug.LogWarning($"[RodNM] Hub return spawn '{spawnId}' was not found in {sceneName}. Falling back to normal scene spawns.");
-            HubReturnArrival.Clear();
-            RespawnMissingPlayersAfterSceneChange(sceneName);
-            return true;
-        }
-
-        int total = CountAuthenticatedConnections();
-        int index = 0;
-        int moved = 0;
-        int respawned = 0;
-
-        foreach (NetworkConnectionToClient conn in NetworkServer.connections.Values)
-        {
-            if (conn == null || !conn.isAuthenticated)
-                continue;
-
-            Vector3 offset = HubReturnArrival.OffsetForPlayer(spawnPoint, index, total);
-            index++;
-
-            if (conn.identity != null)
-            {
-                HubReturnArrival.PlacePlayer(conn.identity.gameObject, spawnPoint, offset, applySpawnRotation);
-                moved++;
-                continue;
-            }
-
-            Quaternion rotation = applySpawnRotation ? spawnPoint.rotation : Quaternion.identity;
-            if (SpawnPlayerForSceneChange(
-                    conn,
-                    spawnPoint.position + offset,
-                    rotation,
-                    "hub return"))
-            {
-                respawned++;
-            }
-        }
-
-        HubReturnArrival.Clear();
-        Debug.Log($"[RodNM] Hub return landed {moved} existing player(s) and respawned {respawned} player(s) at {spawnPoint.name}.");
-        return true;
-    }
-
-    void RespawnMissingPlayersAfterSceneChange(string sceneName)
-    {
-        int respawned = 0;
-
-        foreach (NetworkConnectionToClient conn in NetworkServer.connections.Values)
-        {
-            if (conn == null || !conn.isAuthenticated || conn.identity != null)
-                continue;
-
-            if (SpawnPlayerForSceneChange(conn, null, null, $"scene change to {sceneName}"))
-                respawned++;
-        }
-
-        if (respawned > 0)
-            Debug.Log($"[RodNM] Respawned {respawned} player(s) after scene change to {sceneName}.");
-    }
-
-    bool SpawnPlayerForSceneChange(
-        NetworkConnectionToClient conn,
-        Vector3? forcedSpawnPos,
-        Quaternion? forcedSpawnRotation,
-        string context)
-    {
-        if (classPrefabs == null || classPrefabs.Length == 0)
-        {
-            Debug.LogError("[RodNM] classPrefabs is empty; cannot respawn player after scene change.");
-            return false;
-        }
-
-        if (conn.identity != null)
-            return false;
-
-        var auth = conn.authenticationData as RodPlayerAuth;
-        CreatePlayerMessage msg = GetRememberedCreatePlayerMessage(conn);
-
-        int classIndex = (auth != null && auth.fromDB)
-            ? Mathf.Clamp(auth.classIndex, 0, classPrefabs.Length - 1)
-            : Mathf.Clamp(msg.selectedClass, 0, classPrefabs.Length - 1);
-
-        GameObject prefab = classPrefabs[classIndex];
-        if (prefab == null)
-        {
-            Debug.LogError($"[RodNM] No prefab for class {classIndex}; falling back to 0.");
-            prefab = classPrefabs[0];
-        }
-
-        Vector3 spawnPos;
-        Quaternion spawnRot = forcedSpawnRotation ?? Quaternion.identity;
-        if (forcedSpawnPos.HasValue)
-        {
-            spawnPos = forcedSpawnPos.Value;
-        }
-        else
-        {
-            Transform startPos = GetStartPosition();
-            if (startPos != null)
-            {
-                spawnPos = startPos.position;
-                if (!forcedSpawnRotation.HasValue)
-                    spawnRot = startPos.rotation;
-            }
-            else
-            {
-                float angle = UnityEngine.Random.Range(0f, Mathf.PI * 2f);
-                spawnPos = new Vector3(Mathf.Sin(angle) * 3f, 1f, Mathf.Cos(angle) * 3f);
-            }
-        }
-
-        string username = (auth != null && !string.IsNullOrEmpty(auth.username))
-            ? auth.username : msg.username;
-        if (string.IsNullOrWhiteSpace(username))
-            username = "Player";
-
-        GameObject player = Instantiate(prefab, spawnPos, spawnRot);
-        player.name = username;
-
-        var identity = player.GetComponent<PlayerIdentity>();
-        if (identity != null)
-        {
-            identity.playerName = username;
-            identity.classIndex = classIndex;
-            identity.characterId = auth != null ? auth.characterId : -1;
-        }
-
-        if (auth != null && auth.characterId > 0)
-        {
-            var saver = player.AddComponent<RodPositionSaver>();
-            saver.characterId = auth.characterId;
-            saver.authServerURL = authServerURL;
-            saver.jwt = auth.jwt;
-        }
-
-        EnsureHostClientReadyForAddPlayer(conn);
-        NetworkServer.AddPlayerForConnection(conn, player);
-        Debug.Log($"[RodNM] Spawned {username} as class {classIndex} for {context} at {spawnPos}.");
-        return true;
-    }
 
     static void EnsureHostClientReadyForAddPlayer(NetworkConnectionToClient conn)
     {
@@ -441,33 +345,12 @@ public class RodNetworkManager : NetworkManager
         NetworkClient.Ready();
     }
 
-    int CountAuthenticatedConnections()
-    {
-        int count = 0;
-        foreach (NetworkConnectionToClient conn in NetworkServer.connections.Values)
-        {
-            if (conn != null && conn.isAuthenticated)
-                count++;
-        }
-
-        return count;
-    }
-
-    CreatePlayerMessage GetRememberedCreatePlayerMessage(NetworkConnectionToClient conn)
-    {
-        if (_lastCreatePlayerMessages.TryGetValue(conn.connectionId, out CreatePlayerMessage msg))
-            return msg;
-
-        var auth = conn.authenticationData as RodPlayerAuth;
-        return new CreatePlayerMessage
-        {
-            username = auth != null && !string.IsNullOrEmpty(auth.username) ? auth.username : "Player",
-            selectedClass = auth != null ? auth.classIndex : 0,
-        };
-    }
-
     public override void OnServerDisconnect(NetworkConnectionToClient conn)
     {
+        // Free the player's zone slot first — this is what lets an emptied zone
+        // unload (ROADMAP 6.3). base.OnServerDisconnect destroys conn.identity.
+        ZoneManager.Instance?.OnPlayerDisconnected(conn);
+
         base.OnServerDisconnect(conn);
         _lastCreatePlayerMessages.Remove(conn.connectionId);
     }

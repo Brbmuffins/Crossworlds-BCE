@@ -153,7 +153,8 @@ public class PetFollower : MonoBehaviour
     Vector3 ProjectToGround(Vector3 point)
     {
         Vector3 origin = point + Vector3.up * groundRayHeight;
-        RaycastHit[] hits = Physics.RaycastAll(
+        RaycastHit[] hits = ZonePhysics.RaycastAll(
+            gameObject,
             origin,
             Vector3.down,
             groundRayHeight + groundRayDistance,

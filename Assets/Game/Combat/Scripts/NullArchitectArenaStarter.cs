@@ -48,6 +48,7 @@ public class NullArchitectArenaStarter : NetworkBehaviour
         }
 
         var boss = Instantiate(bossPrefab, Vector3.zero, Quaternion.identity);
+        ZoneScene.PlaceWith(boss, gameObject);   // keep the boss in this starter's zone
         NetworkServer.Spawn(boss);
 
         Debug.Log("[NullArchitect] Boss spawned via NullArchitectArenaStarter.");

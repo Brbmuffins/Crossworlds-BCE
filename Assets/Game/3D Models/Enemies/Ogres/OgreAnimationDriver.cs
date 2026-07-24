@@ -237,7 +237,12 @@ public class OgreAnimationDriver : MonoBehaviour
     void SetSpeed(float speed)
     {
         if (_hasSpeed)
-            _animator.SetFloat(speedParameter, speed, 0.12f, Time.deltaTime);
+        {
+            if (speed <= 0f)
+                _animator.SetFloat(speedParameter, 0f);
+            else
+                _animator.SetFloat(speedParameter, speed, 0.08f, Time.deltaTime);
+        }
     }
 
     float ToAnimatorSpeed(float worldSpeed)
@@ -299,7 +304,8 @@ public class OgreAnimationDriver : MonoBehaviour
 
         Vector3 origin = _deathPosition + Vector3.up * groundProbeHeight;
         float distance = groundProbeHeight + groundProbeDistance;
-        RaycastHit[] hits = Physics.RaycastAll(
+        RaycastHit[] hits = ZonePhysics.RaycastAll(
+            gameObject,
             origin,
             Vector3.down,
             distance,

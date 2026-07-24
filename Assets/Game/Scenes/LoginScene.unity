@@ -395,6 +395,8 @@ GameObject:
   - component: {fileID: 286295840}
   - component: {fileID: 286295839}
   - component: {fileID: 286295838}
+  - component: {fileID: 286295842}
+  - component: {fileID: 286295843}
   m_Layer: 0
   m_Name: NetworkManager
   m_TagString: Untagged
@@ -467,6 +469,7 @@ MonoBehaviour:
   - {fileID: 832449836960929029, guid: aeeec77a192ced14c801c8c8521f793e, type: 3}
   - {fileID: 8857853131041869042, guid: 7b3e4f3eaf73c0b48be4b3030db5b465, type: 3}
   - {fileID: 7806446736298007974, guid: ccdcc8d6f3c2d8941bffa495c7adb6c0, type: 3}
+  - {fileID: 2002894649613888028, guid: a9e9ba9c1d1313d498f96351399c5ee5, type: 3}
   exceptionsDisconnect: 1
   snapshotSettings:
     bufferTimeMultiplier: 2
@@ -495,6 +498,7 @@ MonoBehaviour:
   - {fileID: 832449836960929029, guid: aeeec77a192ced14c801c8c8521f793e, type: 3}
   - {fileID: 8857853131041869042, guid: 7b3e4f3eaf73c0b48be4b3030db5b465, type: 3}
   - {fileID: 7806446736298007974, guid: ccdcc8d6f3c2d8941bffa495c7adb6c0, type: 3}
+  - {fileID: 2002894649613888028, guid: a9e9ba9c1d1313d498f96351399c5ee5, type: 3}
   chatManagerPrefab: {fileID: 1000000000000000001, guid: 0b8a9bdc07f1a3146a8481bbae0fb2fe, type: 3}
   authServerURL: http://15.204.243.36:3000
 --- !u!114 &286295840
@@ -541,6 +545,36 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &286295842
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 286295837}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c6894f0995b32694bbc67afb8e8fc0d9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ZoneManager
+  instancedZones:
+  - VoidDungeon
+  - Arena_Copper
+  unloadDelaySeconds: 30
+--- !u!114 &286295843
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 286295837}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f2b32f13d16bb2b48a40710747489963, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CrossworldsInterestManagement
+  visRange: 500
+  rebuildInterval: 1
 --- !u!1001 &383995175
 PrefabInstance:
   m_ObjectHideFlags: 0

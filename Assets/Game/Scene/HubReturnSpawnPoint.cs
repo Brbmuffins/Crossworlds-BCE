@@ -1,6 +1,7 @@
 using System;
 using Mirror;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 [DisallowMultipleComponent]
 [AddComponentMenu("BCE/Scene/Hub Return Spawn Point")]
@@ -34,6 +35,49 @@ public class HubReturnSpawnPoint : MonoBehaviour
 
         NetworkStartPosition startPosition = FindAnyObjectByType<NetworkStartPosition>();
         return startPosition != null ? startPosition.transform : null;
+    }
+
+    /// <summary>
+    /// Scene-scoped lookup (ROADMAP 6.3/6.5). Find() above searches globally, which is
+    /// correct while exactly one zone is loaded and WRONG once zones load additively —
+    /// it would happily return Darkwood's spawn point to someone entering Hub.
+    ///
+    /// Deliberately does NOT fall back to FindNamedFallback: GameObject.Find is global
+    /// and would reintroduce the very cross-zone bug this exists to avoid. Returning
+    /// null lets the caller log which zone is missing a spawn point.
+    /// </summary>
+    public static Transform FindInScene(Scene scene, string requestedSpawnId)
+    {
+        if (!scene.IsValid() || !scene.isLoaded) return null;
+
+        string id = NormalizeId(requestedSpawnId);
+        HubReturnSpawnPoint[] points = FindObjectsByType<HubReturnSpawnPoint>(
+            FindObjectsInactive.Exclude,
+            FindObjectsSortMode.None);
+
+        HubReturnSpawnPoint firstInScene = null;
+
+        foreach (HubReturnSpawnPoint point in points)
+        {
+            if (point == null) continue;
+            if (point.gameObject.scene != scene) continue;
+
+            if (string.Equals(NormalizeId(point.spawnId), id, StringComparison.OrdinalIgnoreCase))
+                return point.transform;
+
+            if (firstInScene == null) firstInScene = point;
+        }
+
+        if (firstInScene != null) return firstInScene.transform;
+
+        foreach (NetworkStartPosition start in FindObjectsByType<NetworkStartPosition>(
+                     FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+        {
+            if (start != null && start.gameObject.scene == scene)
+                return start.transform;
+        }
+
+        return null;
     }
 
     static string NormalizeId(string value)

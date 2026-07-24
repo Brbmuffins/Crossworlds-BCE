@@ -43,7 +43,7 @@ public class SiegeTurretBehaviour : NetworkBehaviour
         while (true)
         {
             yield return new WaitForSeconds(fireRate);
-            var targets = Physics.OverlapSphere(transform.position, fireRange);
+            var targets = ZonePhysics.OverlapSphere(gameObject, transform.position, fireRange);
             foreach (var t in targets)
             {
                 if (!t.CompareTag("Player")) continue;

@@ -125,23 +125,18 @@ public static class GmCommandRouter
             return;
         }
 
-        if (SceneMatchesCurrent(destination.SceneName))
+        if (ZoneManager.Instance == null)
         {
-            if (TryPlaceSenderAtCurrentSceneSpawn(sender, destination, chat))
-                Debug.Log($"[GM] {auth.username} arrived at {destination.DisplayName} in current scene.");
+            chat.SendGmFeedback(sender, "Zone system is not running — cannot travel.");
             return;
         }
 
-        if (NetworkManager.singleton == null)
-        {
-            chat.SendGmFeedback(sender, "No NetworkManager is available for scene travel.");
-            return;
-        }
-
-        HubReturnArrival.Request(destination.SceneName, destination.SpawnId, true);
+        // ROADMAP 6.4: moves only this GM. ServerChangeScene used to drag every
+        // connected player along. Same-zone /arrive works too — ZoneManager
+        // repositions to the spawn point rather than reloading the scene.
         chat.SendGmFeedback(sender, $"Arriving at {destination.DisplayName}...");
         Debug.Log($"[GM] {auth.username} requested arrive: {destination.SceneName}/{destination.SpawnId}");
-        NetworkManager.singleton.ServerChangeScene(destination.SceneName);
+        ZoneManager.Instance.MovePlayerToZone(sender, destination.SceneName, destination.SpawnId);
     }
 
     static void HandleFly(string[] parts, NetworkConnectionToClient sender, RodChatManager chat)
@@ -176,38 +171,6 @@ public static class GmCommandRouter
         chat.TargetSetGmSpeed(sender, multiplier);
         chat.SendGmFeedback(sender, $"Speed set to x{multiplier:0.##}.");
         Debug.Log($"[GM] {auth.username} set speed x{multiplier:0.##}.");
-    }
-
-    static bool TryPlaceSenderAtCurrentSceneSpawn(
-        NetworkConnectionToClient sender,
-        ArriveDestination destination,
-        RodChatManager chat)
-    {
-        if (sender?.identity == null)
-        {
-            chat.SendGmFeedback(sender, "No player object found to move.");
-            return false;
-        }
-
-        Transform spawnPoint = HubReturnSpawnPoint.Find(destination.SpawnId);
-        if (spawnPoint == null)
-        {
-            chat.SendGmFeedback(sender, $"Arrival point '{destination.SpawnId}' was not found here.");
-            return false;
-        }
-
-        GameObject player = sender.identity.gameObject;
-        Vector3 position = spawnPoint.position;
-        Quaternion rotation = spawnPoint.rotation;
-
-        HubReturnArrival.PlacePlayer(player, spawnPoint, Vector3.zero, true);
-
-        var networkTransform = player.GetComponent<NetworkTransformBase>();
-        if (networkTransform != null)
-            networkTransform.ServerTeleport(position, rotation);
-
-        chat.SendGmFeedback(sender, $"Arrived at {destination.DisplayName}.");
-        return true;
     }
 
     static void SendHelp(NetworkConnectionToClient sender, RodChatManager chat)
@@ -292,13 +255,11 @@ public static class GmCommandRouter
 
     static bool CanLoadScene(string sceneName)
     {
+        // The old "…or it's the active scene" clause is gone with ROADMAP 6.4: the
+        // active scene is now the empty container, never a zone, so it could only
+        // ever have returned false. Build Settings membership is the real check.
         return !string.IsNullOrWhiteSpace(sceneName) &&
-               (Application.CanStreamedLevelBeLoaded(sceneName) || SceneMatchesCurrent(sceneName));
-    }
-
-    static bool SceneMatchesCurrent(string sceneName)
-    {
-        return string.Equals(SceneManager.GetActiveScene().name, sceneName, StringComparison.OrdinalIgnoreCase);
+               Application.CanStreamedLevelBeLoaded(sceneName);
     }
 
     readonly struct ArriveDestination

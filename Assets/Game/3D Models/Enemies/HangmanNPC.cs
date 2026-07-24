@@ -143,11 +143,18 @@ public class HangmanNPC : NetworkBehaviour, INPCInteractable
             Debug.Log("[NPC] Player challenged The Hangman (no sender identity)");
         }
 
-        // Scene change — all clients follow
-        if (NetworkServer.active && NetworkManager.singleton != null)
-            NetworkManager.singleton.ServerChangeScene(arenaSceneName);
-        else
-            Debug.LogWarning("[NPC] ServerChangeScene failed — NetworkManager not active");
+        // ROADMAP 6.4: only the challenger enters. This was ServerChangeScene, which
+        // dragged every connected player into the arena when one person talked to an NPC.
+        // The arena is an instanced zone, so this player gets their own copy.
+        if (sender == null) return;
+
+        if (ZoneManager.Instance == null)
+        {
+            Debug.LogError("[NPC] ZoneManager missing — cannot enter arena. Run BCE ▶ Setup ▶ 6z.");
+            return;
+        }
+
+        ZoneManager.Instance.MovePlayerToZone(sender, arenaSceneName);
     }
 
     // ── Gizmo ─────────────────────────────────────────────────────────────────

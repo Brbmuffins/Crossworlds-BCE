@@ -733,9 +733,12 @@ public class Health : NetworkBehaviour
         Vector3 position = _hasServerSpawnPoint ? _serverSpawnPosition : transform.position;
         Quaternion rotation = _hasServerSpawnPoint ? _serverSpawnRotation : transform.rotation;
 
-        Transform startPosition = NetworkManager.singleton != null
-            ? NetworkManager.singleton.GetStartPosition()
-            : null;
+        // ROADMAP 6.5: NetworkManager.GetStartPosition() picks from ALL registered start
+        // positions across every loaded scene, so with zones loaded additively it could
+        // respawn a player who died in Darkwood at Hub's start point. Scope the lookup
+        // to this object's own zone; fall back to its recorded spawn point if that zone
+        // has none, rather than teleporting it out of the world it died in.
+        Transform startPosition = HubReturnSpawnPoint.FindInScene(gameObject.scene, null);
 
         if (startPosition != null)
         {

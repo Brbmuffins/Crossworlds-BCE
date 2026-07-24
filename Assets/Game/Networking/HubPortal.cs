@@ -1,3 +1,4 @@
+using Mirror;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.InputSystem;
@@ -94,6 +95,19 @@ public class HubPortal : MonoBehaviour
 #if UNITY_EDITOR || !UNITY_SERVER
         LoadingScreen.Show(portalLabel);
 #endif
+
+        // ROADMAP 6.4: ask the server to move THIS player. This used to be a raw
+        // SceneManager.LoadScene, which is single-mode and client-local: on a client
+        // it moved the view without telling the server, and on a host it replaced the
+        // active scene and tore down every additively-loaded zone — dragging every
+        // connected player along with it.
+        if (NetworkClient.active || NetworkServer.active)
+        {
+            PlayerIdentity.RequestZoneTravel(targetScene);
+            return;
+        }
+
+        // Fully offline (no Mirror at all) — plain local load, unchanged.
         SceneManager.LoadScene(targetScene);
     }
 

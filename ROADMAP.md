@@ -325,6 +325,335 @@ Highest-value phase: every piece exists, only glue is missing.
 
 ---
 
+## Phase 6 — Multi-Zone Persistent World (added 2026-07-23)
+
+*Entry:* Phase 1 exit. *Exit:* several zones resident on one server simultaneously; each player
+moves between them independently; players in Darkwood cost nothing to a player in Hub; an empty
+zone is unloaded entirely.
+
+**The problem.** The server is single-scene-at-a-time. `ServerChangeScene`
+(`WaypointMapTrigger.cs:298`, `HubReturnTrigger.cs:201`, `GmCommandRouter.cs:144`,
+`3D Models/Enemies/HangmanNPC.cs:148`) yanks *every* connected player into the destination when
+one person travels. `PortalTransition.cs:88` works around this with a client-local
+`SceneManager.LoadScene` that never tells the server — so the client is in the arena while the
+server still has that player's identity in Hub, observing Hub objects. There is also **no interest
+management configured at all**: Mirror ships five IM components under
+`Assets/Mirror/Components/InterestManagement/`, none is referenced by `Assets/Game` and none
+appears in any scene YAML, so every client observes every spawned object on the server.
+
+**The design.** The active scene becomes an empty *container* holding only the NetworkManager.
+Every zone — Hub included — is loaded additively on top of it, server-side, on demand. Players are
+filed into their zone with `SceneManager.MoveGameObjectToScene` (server only) and told to load it
+with a per-connection `SceneMessage { sceneOperation = SceneOperation.LoadAdditive }`.
+`SceneDistanceInterestManagement` then scopes observers by scene, then by distance within a zone.
+Reference implementation already in-tree:
+`Assets/Mirror/Examples/MultipleAdditiveScenes/Scripts/MultiSceneNetManager.cs`.
+
+**Scale ceiling — read before planning around this.** One Mirror process = one world. This design
+lets that process host many zones with independent players; it does **not** spread load across
+machines. The binding constraint is server-side mob simulation (a `NavMeshAgent` per mob ticks
+whether or not anyone is nearby), so the realistic ceiling is tens of concurrent players. True
+sharding (zone servers + gateway + cross-process handoff) is a separate, much larger project and
+should not be built until players actually hit the limit — per-zone scenes are the seam to cut
+along later. The same mechanism also yields instanced content free: VoidDungeon becomes N additive
+copies of one scene rather than one shared copy.
+
+- **6.1 — Scene-aware spawning audit.** `Object.Instantiate` places objects in the *active* scene,
+  which becomes the empty container in 6.3 — so every server spawn would land outside its zone and
+  interest management would file the entire world under "container". Add
+  `SceneManager.MoveGameObjectToScene(obj, <owner>.gameObject.scene)` immediately before each
+  `NetworkServer.Spawn`. Call sites: `Combat/Scripts/WaveSpawner.cs:240`,
+  `Combat/Scripts/EnemyController.cs:678` (projectile) and `:817` (drop),
+  `Combat/Scripts/WorldBossController.cs:287` (shard) and `:544` (drop),
+  `Combat/Scripts/IronWardenController.cs:273` (turret) and `:407` (drop),
+  `Combat/Scripts/NullArchitectArenaStarter.cs:51`, `UI/AbilityCaster.cs:3717` (deployable) and
+  `:4050` (turret). `RodNetworkManager.cs:170` (ChatManager) is deliberately excluded — see 6.5.
+  Player spawns at `RodNetworkManager.cs:251` and `:410` are handled by 6.3.
+  *Accept:* every `NetworkServer.Spawn` in `Assets/Game` is preceded by an explicit scene
+  placement or a comment naming why it is exempt; behavior unchanged under the current
+  single-scene setup (this task is a deliberate no-op today). *Deps:* none.
+  **✅ code-side 2026-07-23.** New `Networking/ZoneScene.cs` (`PlaceWith(obj, owner)` /
+  `PlaceIn(obj, scene)`) centralizes the rule — root-object check, scene validity, DDOL skip,
+  and an early-out when the object is already in the right scene, which is what makes it a
+  no-op today. All 10 real call sites now call it immediately before their `Spawn`;
+  `RodNetworkManager.cs:174` (ChatManager) carries an inline comment naming why it is exempt
+  and cross-referencing 6.5. **Not compile-verified** — open the editor once to confirm.
+
+- **6.2 — Zone persistence is currently fake.** `Networking/RodPositionSaver.cs:67` hardcodes
+  `"map":"GameWorld"` into the `PATCH /character/position` body. The DB column exists but every
+  character claims to be in the same nonexistent map, so "which zone was I in?" is not persisted —
+  log out in Darkwood and the server has no idea where to put you back. Second defect in the same
+  file: saves fire only from `OnDestroy` and `OnApplicationQuit` (`:24-25`), so a crash or OOM kill
+  loses every online player's position. Fix: send the player's real zone scene name, and add a
+  periodic save tick (30–60s) plus save-on-zone-change. Companion VPS-side work is written up in
+  `_CONTEXT/HANDOFF_zone_persistence.md` — run that as a server session per CLAUDE.md.
+  *Accept:* log out in zone A, log back in, spawn in zone A at the saved coordinates; `kill -9` the
+  server and lose at most one save interval. *Deps:* VPS handoff for the API half.
+  **✅ client half 2026-07-23.** `RodPositionSaver` rewritten: reports the player object's real
+  scene instead of the `"GameWorld"` literal, periodic save every 45s (staggered per player so
+  simultaneous joins don't burst the auth server), and a public `SaveNow()` for 6.4 to call before
+  a zone change. `SceneNames` gained `Zones` / `IsZone` / `NormalizeZone` — unknown and legacy
+  values collapse to Hub so a bad row can never strand a player in a nonexistent scene.
+  `CharacterResponse.map` is parsed and lands on `RodPlayerAuth.zone`; a non-zone stored value
+  logs a warning naming the VPS backfill as the fix. Deliberately still PATCHes the existing
+  `/character/position` body field `map` (Unity has always sent it) rather than depending on the
+  new `/api/character/:id/zone` endpoint — so the client half is useful before the VPS half lands
+  and breaks nothing if it never does. **Still open:** nothing consumes `RodPlayerAuth.zone` at
+  spawn time — the server is single-scene until 6.3, so a saved zone cannot be honored yet.
+  **Not compile-verified.**
+
+- **6.3 — Container scene + ZoneManager.** The core task. New empty
+  `Assets/Game/Scenes/_Container.unity`; `RodNetworkManager.cs:63` `onlineScene` points at it
+  instead of `SceneNames.HubPath` (`offlineScene` stays — Mirror's disconnect navigation depends on
+  it). New `Assets/Game/Networking/ZoneManager.cs` owning: additive load with
+  `LoadSceneParameters { loadSceneMode = Additive, localPhysicsMode = LocalPhysicsMode.Physics3D }`,
+  a player ref-count **keyed on scene handle, not scene name** (open question 8 — instanced
+  dungeons mean several live scenes share a name), `SceneMessage` LoadAdditive/UnloadAdditive per connection,
+  `MoveGameObjectToScene` for the player object, and `UnloadSceneAsync` when a zone's count hits
+  zero. `RodNetworkManager.OnServerSceneChanged` / `PlaceHubReturnPlayers` /
+  `RespawnMissingPlayersAfterSceneChange` (`:277-352`) exist only to repair the mass-teleport and
+  are deleted. *Accept:* two clients in two different zones simultaneously, each seeing only their
+  own zone's objects; the last player leaving a zone unloads it (confirm via server log).
+  *Deps:* 6.1, 6.2.
+  **✅ code-side 2026-07-23. ⚠ NOT RUNNABLE UNTIL 6.4 — see warning below.**
+  New `Networking/ZoneManager.cs`: additive load with `LocalPhysicsMode.Physics3D`,
+  occupancy keyed on **scene handle** (instanced dungeons share a name), per-connection
+  `SceneMessage` Load/UnloadAdditive, `MoveGameObjectToScene`, and a delayed unload
+  (`unloadDelaySeconds`, default 30) so portalling out and straight back doesn't thrash a
+  scene load. `PrepareZone` is public so the initial spawn and later zone changes share one
+  path. `RodNetworkManager.onlineScene` → `SceneNames.ContainerPath`; `OnCreatePlayer` is now
+  the `SpawnPlayerIntoZone` coroutine that spawns into the player's saved zone (6.2's
+  `RodPlayerAuth.zone` is finally consumed); `OnServerDisconnect` frees the zone slot.
+  `OnServerSceneChanged` + `PlaceHubReturnPlayers` + `RespawnMissingPlayersAfterSceneChange`
+  + `SpawnPlayerForSceneChange` deleted (157 lines) along with two helpers they orphaned.
+  `HubReturnSpawnPoint.FindInScene` added — scene-scoped, and deliberately without the
+  `GameObject.Find` fallbacks, which are global and would reintroduce the cross-zone bug
+  (part of 6.5 pulled forward because ZoneManager needs it).
+  Three Mirror behaviours this depends on, verified against `Mirror/Core/NetworkManager.cs`
+  rather than assumed: clients instantiate spawned objects into their ACTIVE scene, so an
+  additive zone scene on a client holds only geometry and unloading it cannot destroy
+  networked objects; `ClientChangeScene` returns early when `NetworkServer.active`, so a host
+  client never processes its own `SceneMessage`; and `NetworkClient.isLoadingScene` pauses
+  message processing during the load, so spawn traffic queues rather than being lost.
+  Used `yield return null` rather than the Mirror example's `WaitForEndOfFrame`, which can
+  fail to resume in headless batchmode — the production path.
+  **Editor step: BCE ▶ Setup ▶ 6z** (new `Editor/MultiZoneSetupBuilder.cs`) creates
+  `_Container.unity`, registers every zone in Build Settings, and adds ZoneManager to the
+  RodNetworkManager GameObject. **Nothing works until 6z is run.** **Not compile-verified.**
+
+> **✅ RESOLVED 2026-07-23 by 6.4.** No live `ServerChangeScene` calls remain in `Assets/Game`
+> (`grep -rn "ServerChangeScene(" --include=*.cs Assets/Game | grep -v "//"` → empty). 6.3 and
+> 6.4 landed together as intended.
+
+- **6.4 — Route all travel through ZoneManager.** Replace the four `ServerChangeScene` call sites
+  (`Scene/WaypointMapTrigger.cs:298`, `Scene/HubReturnTrigger.cs:201`,
+  `Networking/GmCommandRouter.cs:144`, `3D Models/Enemies/HangmanNPC.cs:148`) with
+  `ZoneManager.MovePlayerToZone(conn, zoneName, spawnId)`. Delete the client-local `LoadScene` hack
+  in `Networking/PortalTransition.cs:82-89` — `TargetBeginTransition` becomes a request into the
+  same path. *Accept:* one player takes a portal or waypoint and nobody else's view changes;
+  the traveller keeps their identity, inventory, and HP across the move. *Deps:* 6.3.
+  **✅ code-side 2026-07-23.** **Six** call sites, not four — the original audit missed
+  `Scene/ArenaPortalTrigger.cs:106`, which also called `ServerChangeScene`. All now route through
+  `ZoneManager.MovePlayerToZone`: WaypointMapTrigger, HubReturnTrigger, GmCommandRouter,
+  HangmanNPC, ArenaPortalTrigger, PortalTransition. The client-local `LoadScene` hack in
+  PortalTransition is gone — `TargetBeginTransition` is now cosmetics only (chat line + loading
+  screen) and the move is server-authoritative.
+  Three bugs fixed that only became reachable once travel actually worked:
+  (a) `ZoneManager.PlaceAtSpawnPoint` was missing `NetworkTransformBase.ServerTeleport`, so a
+  cross-zone jump would interpolate the player across the whole map on every client — found by
+  reading the GM `/arrive` helper this task deleted, which had it right;
+  (b) `PortalTransition._entered` / `_enteringLocally` were never cleared, so a portal worked
+  exactly once per server lifetime — harmless when travel was broken, fatal now;
+  (c) `HubReturnTrigger.EndArenaSessionIfNeeded` killed the arena session and stopped waves
+  unconditionally, which with co-op instances would end a team's run when one member left. Now
+  guarded on `ZoneManager.OccupantCount(sender) > 1` and the `WaveSpawner` lookup is scoped to
+  the leaver's zone instead of `FindAnyObjectByType`.
+  Dead code removed: `ChangeToHubScene`, `ChangeScene`, `PrepareHubArrival`,
+  `TryPlaceSenderAtCurrentSceneSpawn`, `SceneMatchesCurrent`. `HubReturnArrival` survives only
+  on WaypointMapTrigger's fully-offline path. **Not compile-verified.**
+
+- **6.5 — The two traps that break silently.** (a) `Scene/HubReturnSpawnPoint.cs:17` uses a global
+  `FindObjectsByType`, and `GetStartPosition()` searches all Mirror start positions — with every
+  zone resident at once both return spawn points from the wrong map. Both need a `Scene` filter.
+  (b) `RodNetworkManager.cs:169` marks the ChatManager `DontDestroyOnLoad`, which moves it to
+  Unity's DDOL pseudo-scene. `SceneInterestManagement.OnCheckObserver` is strict scene equality
+  (`identity.gameObject.scene == newObserver.identity.gameObject.scene`), so the DDOL scene matches
+  no player, the ChatManager gets zero observers, and **chat goes silent for everyone**. Chat is
+  global (open question 9), so the fix is a custom `SceneDistanceInterestManagement` subclass that
+  force-adds every connection as an observer for identities flagged world-global — keep the single
+  DDOL ChatManager. *Accept:* travel to a zone and land on that zone's spawn point; two players in
+  different zones see each other's chat messages. *Deps:* 6.3.
+
+- **6.6 — Enable interest management.** Add `SceneDistanceInterestManagement` to the
+  RodNetworkManager GameObject and tune `visRange`; add `DistanceInterestManagementCustomRange` to
+  bosses so they stay visible further out than a grunt. Only one IM component may exist per
+  NetworkManager, so pick SceneDistance up front rather than starting with Scene and migrating.
+  *Accept:* profiler/log shows a client in Hub receiving no Darkwood object spawns; mobs across a
+  large zone stop arriving until approached. *Deps:* 6.3, 6.5. **Editor step** (component add +
+  Inspector tuning).
+
+- **6.7 — Zone spatial overlap. ⚠ RE-SCOPED 2026-07-23 — do not execute the original plan.**
+  The original spec said: offset every zone in world space (Hub x=0, Darkwood x=10000, …), move
+  each map's root, rebake. Measuring the actual scenes before doing that changed the answer.
+
+  **What was measured.** The zones do overlap, heavily — footprints from scene YAML:
+  HUB `x[-148..744] z[-8..498]`, Darkwood `x[-571..71] z[-457..292]`,
+  Ashen Wastelands `x[-500..1000] z[-1500..586]`, VoidDungeon `x[-12..34] z[-12..87]`.
+  All stacked around the origin. (Toujam Basin and GM Island report nothing under a plain
+  `m_LocalPosition` scan — their roots are prefab instances, whose overrides serialize
+  differently. That alone makes a scripted root-mover unreliable.)
+
+  **But two of the three problems turned out not to exist:**
+  - *Rendering overlap is not a client problem.* A client holds exactly ONE zone: ZoneManager
+    sends `UnloadAdditive` for the old zone on every travel. Only the brief transition window
+    has two, which is task 6.9's territory, not this one. The server is headless and renders
+    nothing.
+  - *Physics overlap is already solved.* ZoneManager loads every zone with
+    `LocalPhysicsMode.Physics3D`, so each zone gets its own physics scene.
+
+  **The one real remaining issue is NavMesh.** These zones use **NavMeshSurface**, not legacy
+  scene bakes (`Assets/Game/Scenes/<Zone>/NavMesh-*.asset` — Darkwood 3.8 MB, Ashen 8.9 MB).
+  Every loaded surface registers into one global navmesh via `NavMesh.AddNavMeshData`, so
+  overlapping surfaces sharing an agent type let an agent path from one zone into another.
+
+  **Cost of the original plan is much higher than specced:** moving roots invalidates every one
+  of those multi-megabyte bakes (full rebake per zone, an editor operation a CLI session cannot
+  run or verify), prefab-instance roots resist scripted moving, and float precision degrades
+  meaningfully past ~10k units from the origin.
+
+  **Options, cheapest first — needs an owner decision:**
+  1. **Measure, then probably do nothing.** Mobs already leash: `EnemyController.leashRadius`
+     and `EnemyWanderAI.leashRadius` default to 20 units, and `EnemyWanderAI` returns to origin
+     past that. A mob would have to path 20+ units off its spawn to cross into another zone's
+     surface, and leashing pulls it back first. Verify in play before spending anything.
+  2. **Per-zone NavMesh agent type.** Give each zone's NavMeshSurface its own agent type ID so
+     agents physically cannot traverse another zone's surface. No geometry moves, but still a
+     rebake per surface plus setting `agent.agentTypeID` per zone at spawn.
+  3. **The original world-space offset.** Correct and permanent, but the most expensive and the
+     only one that invalidates saved player coordinates.
+
+  *Recommendation:* option 1 — verify against a running server first. This is the one Phase 6
+  task whose cost/benefit does not currently justify doing it. *Deps:* 6.3, and a playtest.
+  **⚠ If option 3 is ever chosen** it must land before players accumulate saved positions, or
+  those absolute coordinates need migrating (keep Hub at offset 0 to spare existing rows).
+
+- **6.9 — One camera, not one per zone. Editor step.** Discovered 2026-07-23 right after 6z ran:
+  every zone scene carries its own Camera and Audio Listener (HUB: 1 camera + 4 lights;
+  Darkwood: 1 camera + 7 lights). That was correct when exactly one zone was ever loaded. With
+  additive zones it breaks in two places: during travel the client briefly holds BOTH the old and
+  new zone, so two cameras and two audio listeners are live at once (expect Unity's "there are 2
+  audio listeners in the scene" warning and possibly the wrong camera rendering); and the server
+  ends up with one camera per resident zone for no reason. Fix: strip the camera and audio
+  listener from each zone scene and move to a single rig — on the player prefab or in the
+  container — leaving zone scenes to carry lighting and geometry only. *Accept:* travel between
+  two zones with the console open and see no duplicate-listener warning; the view never cuts to
+  the wrong camera. *Deps:* 6.3.
+  **✅ 2026-07-23 — but NOT the way this task originally specced it.** Stripping the zone cameras
+  for one shared container camera would discard each zone's camera settings (culling mask, clear
+  flags, projection, post-processing setup), leaving one camera configured correctly for no zone
+  at all. New `Networking/ZoneCameraDirector.cs` instead **enables the camera belonging to the
+  player's current zone and disables the rest** — per-zone look preserved, ambiguity removed, and
+  no destructive edits to six scenes. `Camera.allCameras` returns only enabled cameras, so
+  `PlayerMovement.ResolveCamera` then sees exactly one.
+  Severity was understated when this was filed: it is not just a duplicate-AudioListener nuisance.
+  `PlayerMovement` is camera-relative, so `Camera.main` returning another zone's camera rotates
+  WASD by however that camera faces — the "movement is a mix of WASD" bug found in testing.
+  Also rebinds on zone change, since `PlayerMovement` caches its camera in `Start` and would
+  otherwise keep using the previous zone's camera after travelling.
+  Client-only. **Not yet play-tested.**
+
+- **6.8 — Open-world mob spawner.** `Combat/Scripts/WaveSpawner.cs` is an arena construct (waves,
+  difficulty ramp, session tracking) and is the wrong shape for a persistent zone. New component:
+  spawn points with per-mob respawn timers and a zone population cap, populated when the zone
+  loads and torn down when it unloads. Do not modify WaveSpawner — arenas keep using it.
+  *Accept:* enter Darkwood, kill a mob, it respawns on its timer; leave and return and the zone
+  repopulates from scratch. *Deps:* 6.3. Needs combat-design input on density and respawn timing.
+
+**Ordering.** 6.1 and 6.2 are independently safe and land first (6.1 is a no-op today). 6.3 is the
+core and everything else waits on it. 6.7 should land before real players accumulate saved
+positions.
+
+> **⚠ Two zones in `SceneNames.Zones` have no scene file:** `Arena_Copper` (task 1.1, never
+> built) and `Gathering Zone`. `NormalizeZone` accepts both as valid, and `PortalTransition`
+> defaults `arenaSceneName` to `SceneNames.ArenaCopper` — so a portal left on defaults sends
+> players somewhere that does not exist. ZoneManager now pre-checks
+> `Application.CanStreamedLevelBeLoaded` and falls back to Hub rather than stranding the player
+> with no scene at all (which at login means they never spawn). **Remove them from `Zones[]` or
+> build the scenes** — the fallback is a safety net, not a fix. The VPS allowlist in
+> `_CONTEXT/HANDOFF_zone_persistence.md` must not include them either.
+
+**Bandwidth note.** Two known bugs go from "multiplayer is janky" to "the world does not function"
+at this scale: hero and base-enemy prefabs are missing `NetworkTransform` (fix: BCE ▶ Setup ▶ 4n,
+`Editor/NetworkSyncFixer.cs`), and ability deployables still lack prefabs entirely (task 2.7).
+Neither is a Phase 6 task, but Phase 6 is not shippable with either outstanding.
+
+---
+
+## Phase 7 — Party System (added 2026-07-23)
+
+*Entry:* Phase 6 through 6.6. *Exit:* two players can group up and enter the same copy of an
+instanced zone, and see each other's health in the HUD.
+
+**Why this exists.** Phase 6 delivered shared-world co-op: two people in Darkwood see each other
+and fight the same mobs. Instanced content did **not** come with it. `ZoneManager` keys instances
+on `instanceKey`, which defaults to the connection id, so two friends both entering VoidDungeon
+get two separate private copies and never meet. Dungeons and arenas are solo until this phase
+lands. That is the gap between "shared world" and "play together" for the content that matters.
+
+**Deliberate design constraint.** `instanceKey` is already threaded through
+`ZoneManager.MovePlayerToZone(conn, zone, spawnId, instanceKey)` and ignored by shared zones.
+Wiring parties is a one-line change at each of the six travel call sites — passing the party id
+instead of null. Do not redesign ZoneManager for this.
+
+**Recommended scope: parties are ephemeral.** A party lives in server memory and dies when the
+last member disconnects. No DB tables, no VPS work, no cross-relog persistence. That is how most
+ARPGs behave, it removes the entire persistence surface from v1, and it can be upgraded later
+without changing the client contract. Only revisit if guilds or persistent groups get designed —
+see the note in `_CONTEXT/HANDOFF_zone_persistence.md`.
+
+- **7.1 — Server-side party state.** New `Assets/Game/Networking/PartyManager.cs`, server-only,
+  same shape as ZoneManager (plain MonoBehaviour on the NetworkManager GameObject, `Instance`
+  singleton, no `[Server]` attributes — Mirror's weaver rejects those outside a NetworkBehaviour).
+  Owns: party id generation, `Dictionary<int partyId, List<int connId>>`, leader, a
+  `maxPartySize` cap (recommend 4, matching `DynamicDifficultyScaler`'s co-op assumptions), and
+  invite/accept/decline/leave/kick with a pending-invite table that expires. Disconnect must
+  remove the member and promote a new leader — reuse the `OnServerDisconnect` hook that already
+  calls `ZoneManager.OnPlayerDisconnected`. *Accept:* two connections can form a party and the
+  server log shows correct membership through invite, leave, kick, and disconnect.
+  *Deps:* 6.6. **READY**
+
+- **7.2 — Party network messages + client mirror.** Mirror messages for the invite handshake
+  (server-authoritative — the client asks, never asserts) and a `SyncList`/message push of the
+  member roster to each member. Follow the existing `RodChatManager` pattern rather than inventing
+  a new one. Client-side singleton behind `#if UNITY_EDITOR || !UNITY_SERVER`, notified from
+  `OnStartClient` and NOT from server spawn paths — the host-mode-only bug in CLAUDE.md.
+  *Accept:* both clients see identical roster state after every operation. *Deps:* 7.1.
+
+- **7.3 — Party UI.** Invite prompt, party frames (name / class / HP), leave and kick controls.
+  Client-only, guarded. `/invite <name>` and `/leave` chat commands via `GmCommandRouter`'s
+  existing parser are the cheap first cut and worth doing before the panel.
+  *Accept:* invite by name from chat, accept from a prompt, see teammate HP update live.
+  *Deps:* 7.2.
+
+- **7.4 — Wire parties into instancing.** Pass the party id as `instanceKey` at the six travel
+  call sites (`WaypointMapTrigger`, `HubReturnTrigger`, `GmCommandRouter`, `HangmanNPC`,
+  `ArenaPortalTrigger`, `PortalTransition`). Decide and record the entry rule: does the whole
+  party get pulled in when the leader enters, or does each member walk in themselves and land in
+  the leader's existing instance? Recommend the latter — it needs no extra machinery, since
+  `AcquireZone` already reuses an existing instance for a matching key.
+  *Accept:* two partied players entering VoidDungeon separately end up in ONE copy and can see
+  each other; two unpartied players get two copies. *Deps:* 7.1, 6.3. **This is the task that
+  makes dungeons co-op.**
+
+- **7.5 — Party-aware combat plumbing.** `DynamicDifficultyScaler.GetScaling(wave, playerCount)`
+  currently counts players by proximity or connection; it should scale on party size in an
+  instance. Also confirm XP/loot attribution across a party — `EnemyController.PostCombatKill`
+  posts to `/api/combat/kill` per killer, so a party wipes out shared-credit rules unless the
+  server is told. **⚠ Needs a design decision** (shared XP? contribution-weighted? loot rolls?)
+  and, unlike the rest of Phase 7, likely VPS work. *Deps:* 7.4, owner decision.
+
+---
+
 ## Standards note (from the audit brief)
 
 UniTask, DOTween, and A* Pro are **not in the project** (see SNAPSHOT.md §0). Adopting UniTask
@@ -350,3 +679,13 @@ minimum-change ethos applied to the standards themselves.
    (Tasks 0.3 / 2.4)
 7. **Credential rotation:** the MySQL and dashboard passwords printed in `_CONTEXT/CLAUDE.md`
    are in git history — rotate them on the VPS after task 0.2?
+8. ~~**Which zones are shared vs instanced?**~~ **ANSWERED 2026-07-23: open zones shared,
+   dungeons instanced.** Hub / Darkwood / Ashen Wastelands / Toujam Basin / GM Island /
+   Gathering Zone are single shared copies; VoidDungeon and arenas get one additive copy per
+   party. Consequence for 6.3: **ZoneManager must key on scene `handle`, not scene name** —
+   instanced copies share a name, so a name-keyed ref-count would merge two parties' dungeons
+   into one entry and unload a scene somebody is still standing in.
+9. ~~**Chat scope?**~~ **ANSWERED 2026-07-23: global.** Chat spans all zones. The DDOL
+   ChatManager therefore stays a single world-global instance, and 6.5's fix is the custom IM
+   subclass that force-adds every connection as an observer for flagged global identities —
+   not the one-ChatManager-per-zone option.

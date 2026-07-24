@@ -152,7 +152,7 @@ public class WispCombat : NetworkBehaviour
             }
 
             // Scan for nearest player
-            var hits    = Physics.OverlapSphere(transform.position, aggroRadius);
+            var hits    = ZonePhysics.OverlapSphere(gameObject, transform.position, aggroRadius);
             float best  = float.MaxValue;
             Transform found = null;
 
@@ -197,7 +197,7 @@ public class WispCombat : NetworkBehaviour
     [Server]
     void Pulse()
     {
-        var hits = Physics.OverlapSphere(transform.position, pulseRadius);
+        var hits = ZonePhysics.OverlapSphere(gameObject, transform.position, pulseRadius);
         foreach (var col in hits)
         {
             if (!col.CompareTag("Player")) continue;
