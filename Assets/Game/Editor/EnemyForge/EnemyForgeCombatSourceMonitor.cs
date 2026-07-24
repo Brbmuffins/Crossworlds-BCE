@@ -25,6 +25,9 @@ namespace Crossworlds.EditorTools.EnemyForge
         public readonly string[] blockingChanges;
         public readonly bool requiresAcknowledgement;
         public bool AuditPassed => blockingChanges == null || blockingChanges.Length == 0;
+        public bool HasMissingSources => blockingChanges != null && blockingChanges.Any(change =>
+            change.StartsWith("Required source is missing:", StringComparison.Ordinal));
+        public bool CanAcknowledge => !HasMissingSources;
 
         public EnemyForgeSourceState(string fingerprint, string summary, string[] safeChanges,
             string[] blockingChanges, bool requiresAcknowledgement)

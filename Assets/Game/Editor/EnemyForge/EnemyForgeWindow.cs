@@ -13,6 +13,7 @@ namespace Crossworlds.EditorTools.EnemyForge
         Vector2 scroll;
         List<EnemyForgeIssue> issues = new List<EnemyForgeIssue>();
         bool acknowledgeCombatSourceChanges;
+        bool showCombatSourceChanges;
         GameObject lastAnimationSource;
         GameObject lastBuiltPrefab;
         bool showSource = true;
@@ -382,32 +383,65 @@ namespace Crossworlds.EditorTools.EnemyForge
             }
 
             EditorGUILayout.HelpBox(state.summary, MessageType.Warning);
-            if (state.safeChanges != null)
-                foreach (string change in state.safeChanges)
-                    EditorGUILayout.HelpBox("Safe: " + change, MessageType.Info);
-            if (state.blockingChanges != null)
-                foreach (string change in state.blockingChanges)
-                    EditorGUILayout.HelpBox("Blocked: " + change, MessageType.Error);
+            int safeCount = state.safeChanges != null ? state.safeChanges.Length : 0;
+            int warningCount = state.blockingChanges != null ? state.blockingChanges.Length : 0;
+            showCombatSourceChanges = EditorGUILayout.Foldout(
+                showCombatSourceChanges,
+                $"Review combat changes ({safeCount} safe, {warningCount} requiring confirmation)",
+                true);
+            if (showCombatSourceChanges)
+            {
+                if (state.safeChanges != null)
+                    foreach (string change in state.safeChanges)
+                        EditorGUILayout.HelpBox("Safe: " + change, MessageType.Info);
+                if (state.blockingChanges != null)
+                    foreach (string change in state.blockingChanges)
+                        EditorGUILayout.HelpBox("Review: " + change, MessageType.Error);
+            }
 
-            using (new EditorGUI.DisabledScope(!state.AuditPassed))
+            using (new EditorGUI.DisabledScope(!state.CanAcknowledge))
             {
-            bool next = EditorGUILayout.ToggleLeft(
-                "I acknowledge the audited combat changes and accept safe defaults",
-                acknowledgeCombatSourceChanges);
-            if (next && !acknowledgeCombatSourceChanges)
-            {
-                EnemyForgeCombatSourceMonitor.Acknowledge(state.fingerprint);
-                acknowledgeCombatSourceChanges = false;
-                issues = definition != null
-                    ? EnemyForgeValidator.ValidateDefinition(definition)
-                    : new List<EnemyForgeIssue>();
-                Repaint();
-                return false;
+                bool next = EditorGUILayout.ToggleLeft(
+                    "I acknowledge the audited combat changes and accept the updated contract",
+                    acknowledgeCombatSourceChanges);
+                if (next && !acknowledgeCombatSourceChanges)
+                {
+                    if (!state.AuditPassed && !EditorUtility.DisplayDialog(
+                            "Accept Updated Combat Contract?",
+                            "Serialized combat fields were removed, renamed, or changed. " +
+                            "Accept only after the Enemy Forge adapter has been updated for these changes. " +
+                            "This records the current combat contract as the new local baseline.",
+                            "Accept and Continue",
+                            "Cancel"))
+                    {
+                        acknowledgeCombatSourceChanges = false;
+                        return true;
+                    }
+
+                    EnemyForgeCombatSourceMonitor.Acknowledge(state.fingerprint);
+                    acknowledgeCombatSourceChanges = false;
+                    EnemyForgeSourceState verifiedState = EnemyForgeCombatSourceMonitor.Check();
+                    if (verifiedState.requiresAcknowledgement)
+                    {
+                        EditorUtility.DisplayDialog(
+                            "Acknowledgement Not Saved",
+                            "Enemy Forge could not save the updated combat contract. The authoring controls remain locked.",
+                            "OK");
+                        return true;
+                    }
+
+                    issues = definition != null
+                        ? EnemyForgeValidator.ValidateDefinition(definition)
+                        : new List<EnemyForgeIssue>();
+                    Repaint();
+                    return false;
+                }
+                acknowledgeCombatSourceChanges = next;
             }
-            acknowledgeCombatSourceChanges = next;
-            }
-            if (!state.AuditPassed)
-                EditorGUILayout.LabelField("Update the Enemy Forge adapter before acknowledgement can be accepted.", EditorStyles.wordWrappedLabel);
+            if (!state.CanAcknowledge)
+                EditorGUILayout.LabelField(
+                    "Restore the missing required combat source before acknowledgement can be accepted.",
+                    EditorStyles.wordWrappedLabel);
             return true;
         }
 
