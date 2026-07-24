@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using Mirror;
 
@@ -295,9 +296,12 @@ public class EnemyHeavyAttack : NetworkBehaviour
 
             case HeavyAbilityType.ChainLightning:
                 // Jumps across up to 3 players in a 14 m radius, weakening each
-                HitChain(14f, maxJumps: 3, dmgPerJump: dmg * 0.85f,
+                Vector3[] chainHits = HitChain(14f, maxJumps: 3, dmgPerJump: dmg * 0.85f,
                     falloff: 0.25f,
-                    statusType: StatusEffectType.Weakened, statusDur: 4f, statusVal: 0f);
+                    statusType: StatusEffectType.Weakened, statusDur: 4f, statusVal: 0f,
+                    preferredFirstTarget: requiredTarget);
+                if (chainHits.Length > 0)
+                    RpcPresentChainLightning(chainHits);
                 break;
 
             case HeavyAbilityType.GroundSpikes:
@@ -379,20 +383,65 @@ public class EnemyHeavyAttack : NetworkBehaviour
     }
 
     [Server]
-    void HitChain(float searchRadius, int maxJumps, float dmgPerJump,
-        float falloff, StatusEffectType statusType, float statusDur, float statusVal)
+    Vector3[] HitChain(float searchRadius, int maxJumps, float dmgPerJump,
+        float falloff, StatusEffectType statusType, float statusDur, float statusVal,
+        Transform preferredFirstTarget)
     {
-        var hits  = ZonePhysics.OverlapSphere(gameObject, transform.position, searchRadius);
-        int jumps = 0;
-
-        foreach (var col in hits)
+        var candidates = new List<GameObject>();
+        foreach (var col in ZonePhysics.OverlapSphere(gameObject, transform.position, searchRadius))
         {
-            if (jumps >= maxJumps) break;
-            if (!col.CompareTag("Player")) continue;
-            float scaled = dmgPerJump * Mathf.Pow(1f - falloff, jumps);
-            ApplyHit(col.gameObject, scaled, statusType, statusDur, statusVal);
-            jumps++;
+            Health playerHealth = col.GetComponentInParent<Health>();
+            if (playerHealth == null || !playerHealth.isPlayer || !playerHealth.IsAlive) continue;
+            GameObject player = playerHealth.gameObject;
+            if (!candidates.Contains(player))
+                candidates.Add(player);
         }
+
+        var ordered = new List<GameObject>(maxJumps);
+        Health preferredHealth = preferredFirstTarget != null
+            ? preferredFirstTarget.GetComponentInParent<Health>()
+            : null;
+        GameObject preferred = preferredHealth != null && preferredHealth.isPlayer && preferredHealth.IsAlive
+            ? preferredHealth.gameObject
+            : null;
+
+        // The cast target was already validated before this method. Always make
+        // it the first jump; searchRadius controls acquisition of extra bounces,
+        // not whether the spell can hit its intended primary target.
+        if (preferred != null)
+        {
+            candidates.Remove(preferred);
+            ordered.Add(preferred);
+        }
+
+        Vector3 searchFrom = ordered.Count > 0 ? ordered[0].transform.position : transform.position;
+        while (ordered.Count < maxJumps && candidates.Count > 0)
+        {
+            int nearestIndex = 0;
+            float nearestSqr = float.PositiveInfinity;
+            for (int i = 0; i < candidates.Count; i++)
+            {
+                float sqr = (candidates[i].transform.position - searchFrom).sqrMagnitude;
+                if (sqr >= nearestSqr) continue;
+                nearestSqr = sqr;
+                nearestIndex = i;
+            }
+
+            GameObject next = candidates[nearestIndex];
+            candidates.RemoveAt(nearestIndex);
+            ordered.Add(next);
+            searchFrom = next.transform.position;
+        }
+
+        var hitPositions = new Vector3[ordered.Count];
+        for (int jump = 0; jump < ordered.Count; jump++)
+        {
+            GameObject target = ordered[jump];
+            float scaled = dmgPerJump * Mathf.Pow(1f - falloff, jump);
+            ApplyHit(target, scaled, statusType, statusDur, statusVal);
+            hitPositions[jump] = target.transform.position + Vector3.up;
+        }
+        return hitPositions;
     }
 
     [Server]
@@ -514,6 +563,16 @@ public class EnemyHeavyAttack : NetworkBehaviour
         bool isBig = type == HeavyAbilityType.GroundSlam || type == HeavyAbilityType.HexBlast;
         ScreenShake.AddTrauma(isBig ? 0.35f : 0.22f);
         CombatAudio.Instance?.PlayMeleeHit();
+#endif
+    }
+
+    [ClientRpc]
+    void RpcPresentChainLightning(Vector3[] hitPositions)
+    {
+#if UNITY_EDITOR || !UNITY_SERVER
+        ChainLightningVFXProfile profile = ChainLightningVFXProfile.LoadArcane();
+        if (profile != null)
+            profile.Present(gameObject, hitPositions);
 #endif
     }
 }
