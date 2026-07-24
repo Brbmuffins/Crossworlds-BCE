@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!221 &22100000
+AnimatorOverrideController:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: forged_aw_chaos_weaver_Enemy_Animations
+  m_Controller: {fileID: 9100000, guid: 2d55088586664f24893e070f14f968cd, type: 2}
+  m_Clips:
+  - m_OriginalClip: {fileID: 7400000, guid: f283c8a9dbece50468d61480f9326a94, type: 2}
+    m_OverrideClip: {fileID: 7400000, guid: b3f652889902fbe439d19fdb816f9095, type: 2}
+  - m_OriginalClip: {fileID: 7400000, guid: 476acfc86aca82d488dc5d97d74daf3d, type: 2}
+    m_OverrideClip: {fileID: 7400000, guid: b96c96b20aeb2684ba18594f42550081, type: 2}
+  - m_OriginalClip: {fileID: 7400000, guid: 9b815b00ae7adb34c8fe5d5ea5c80b04, type: 2}
+    m_OverrideClip: {fileID: 7400000, guid: 22f264cded149604a8713b4cf511b4fb, type: 2}
+  - m_OriginalClip: {fileID: 7400000, guid: a5770a5f078ab694eb2e86223bdb9de3, type: 2}
+    m_OverrideClip: {fileID: 0}
+  - m_OriginalClip: {fileID: 7400000, guid: cd4165dc47b728e45ae0fe232a6a63ce, type: 2}
+    m_OverrideClip: {fileID: 7400000, guid: 42f7b8862f2512240ac885927007f55c, type: 2}

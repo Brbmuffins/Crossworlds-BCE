@@ -54,8 +54,6 @@ public class EnemyController : NetworkBehaviour
     [Min(0f)] public float combatTurnSpeed = 1080f;
     [Tooltip("Seconds between starting the attack animation and applying its hit. Enemy Forge derives this from the selected attack clip.")]
     [Min(0f)] public float attackImpactDelay = 0.35f;
-    [Tooltip("Immediately faces the aggro target and keeps facing it during chase and attack.")]
-    public bool lockFacingOnAggro = false;
 
     // ── Ranged ───────────────────────────────────────────────────────────────────
     [Header("Ranged")]
@@ -100,6 +98,7 @@ public class EnemyController : NetworkBehaviour
     private float                _baseSpeed;
     private float                _configuredStoppingDistance;
     private Transform            _target;
+    public Transform CurrentTarget => _target;
     private Vector3              _spawnPos;
     private Quaternion           _spawnRot;
     private float                _attackTimer;
@@ -219,7 +218,8 @@ public class EnemyController : NetworkBehaviour
 
         // The behaviour state machine runs at 5 Hz, but combat facing needs to be
         // updated every frame or quick-moving targets visibly outrun the turn.
-        if (HasSimulationAuthority && state == EnemyState.Attack && _target != null && !lockFacingOnAggro)
+        if (HasSimulationAuthority && _target != null &&
+            (state == EnemyState.Chase || state == EnemyState.Attack))
             FaceAttackTarget();
     }
 
@@ -248,9 +248,6 @@ public class EnemyController : NetworkBehaviour
         if (keepCorpseGrounded && state == EnemyState.Dead && HasSimulationAuthority)
             StabilizeCorpseGrounding();
 
-        if (lockFacingOnAggro && HasSimulationAuthority && _target != null &&
-            (state == EnemyState.Chase || state == EnemyState.Attack))
-            FaceTargetImmediately();
     }
 
     void StabilizeCorpseGrounding()
@@ -466,7 +463,7 @@ public class EnemyController : NetworkBehaviour
         if (_agent != null && _agent.isActiveAndEnabled && _agent.isOnNavMesh)
             _agent.ResetPath();
         state = _target != null ? EnemyState.Chase : EnemyState.Idle;
-        if (lockFacingOnAggro && _target != null)
+        if (_target != null)
             FaceTargetImmediately();
         _attackTimer = _target != null ? EnemyCrowdUtility.FirstAttackDelay(this, attackInterval) : 0f;
     }
@@ -1293,6 +1290,21 @@ public class EnemyController : NetworkBehaviour
             CombatAudio.Instance?.PlayRangedHit();
 #endif
         }
+    }
+
+    [Server]
+    public void PlayCastAnimation()
+    {
+        RpcCastAnimation();
+    }
+
+    [ClientRpc]
+    void RpcCastAnimation()
+    {
+#if UNITY_EDITOR || !UNITY_SERVER
+        TriggerAnimator(AttackHash, _hasAttackParam);
+        CombatAudio.Instance?.PlayAbilityCast();
+#endif
     }
 
     [ClientRpc]

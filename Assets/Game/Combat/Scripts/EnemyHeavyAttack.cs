@@ -46,6 +46,10 @@ public class EnemyHeavyAttack : NetworkBehaviour
     [Tooltip("Heavy attack damage = EnemyController.damage × this multiplier.")]
     public float damageMultiplier = 2.5f;
 
+    [Header("Ranged Casting")]
+    [Tooltip("Maximum distance from a ranged enemy to its current target before a cast can begin.")]
+    [Min(0.1f)] public float castDistanceToTarget = 10f;
+
     [Header("Available Abilities")]
     [Tooltip("Which heavy types this enemy can roll. Leave empty to allow all 5.")]
     public HeavyAbilityType[] availableTypes;
@@ -94,6 +98,14 @@ public class EnemyHeavyAttack : NetworkBehaviour
                 _enemy.state != EnemyController.EnemyState.Chase)
                 continue;
 
+            if (_enemy.isRanged)
+            {
+                Transform target = _enemy.CurrentTarget;
+                if (target == null ||
+                    Vector3.Distance(transform.position, target.position) > castDistanceToTarget)
+                    continue;
+            }
+
             HeavyAbilityType chosen = PickAbility();
             yield return StartCoroutine(ExecuteAbility(chosen));
         }
@@ -111,9 +123,12 @@ public class EnemyHeavyAttack : NetworkBehaviour
     [Server]
     IEnumerator ExecuteAbility(HeavyAbilityType type)
     {
-        // Telegraph (wind-up visible to clients before damage lands)
+        // Trigger the prefab-selected cast/attack clip on every client before
+        // the telegraph and resolve damage at its configured impact point.
+        _enemy.PlayCastAnimation();
         RpcTelegraph(type, transform.position);
-        yield return new WaitForSeconds(0.65f);
+        float windup = Mathf.Max(0.05f, _enemy.attackImpactDelay);
+        yield return new WaitForSeconds(windup);
 
         if (!_health.IsAlive) yield break;
 
@@ -220,6 +235,7 @@ public class EnemyHeavyAttack : NetworkBehaviour
         foreach (var p in players)
         {
             if (p == null) continue;
+            if (p.scene != gameObject.scene) continue;
             var h = p.GetComponent<Health>();
             if (h == null || !h.IsAlive) continue;
             float sqr = (p.transform.position - transform.position).sqrMagnitude;
@@ -249,6 +265,13 @@ public class EnemyHeavyAttack : NetworkBehaviour
 
     Vector3 GetTargetOrSelf()
     {
+        Transform currentTarget = _enemy != null ? _enemy.CurrentTarget : null;
+        if (currentTarget != null)
+        {
+            var currentHealth = currentTarget.GetComponent<Health>();
+            if (currentHealth != null && currentHealth.IsAlive)
+                return currentTarget.position;
+        }
         // Try to read the enemy's current target via reflection — it's private,
         // so we fall back to the nearest player if none found.
         GameObject[] players = GameObject.FindGameObjectsWithTag("Player");
@@ -258,6 +281,7 @@ public class EnemyHeavyAttack : NetworkBehaviour
         foreach (var p in players)
         {
             if (p == null) continue;
+            if (p.scene != gameObject.scene) continue;
             var h = p.GetComponent<Health>();
             if (h == null || !h.IsAlive) continue;
             float sqr = (p.transform.position - transform.position).sqrMagnitude;
