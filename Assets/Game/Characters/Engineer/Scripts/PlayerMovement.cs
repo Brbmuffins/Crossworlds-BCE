@@ -97,6 +97,14 @@ public class PlayerMovement : NetworkBehaviour
             foreach (var p in anim.parameters)
                 _animParams.Add(p.name);
 
+        // ROADMAP 6.9: with zones loaded additively there can be several cameras alive
+        // at once. Let the director enable only the one for this player's zone BEFORE
+        // resolving — Camera.allCameras returns enabled cameras only, so after this
+        // there is exactly one to find.
+#if UNITY_EDITOR || !UNITY_SERVER
+        ZoneCameraDirector.EnsureExists(transform);
+#endif
+
         // Auto-find camera and wire CameraFollow to this transform.
         if (cam == null) cam = ResolveCamera();
         if (cam != null)
