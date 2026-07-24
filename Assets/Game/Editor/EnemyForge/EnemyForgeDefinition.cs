@@ -92,11 +92,23 @@ namespace Crossworlds.EditorTools.EnemyForge
         [InspectorName("Cast Attack Spell")]
         [Tooltip("Choose one spell for this enemy, or Random All to rotate among every available enemy spell.")]
         public EnemyForgeCastAttack castAttack = EnemyForgeCastAttack.RandomAll;
-        [Min(0.1f)] public float heavyMinCooldown = 12f;
-        [Min(0.1f)] public float heavyMaxCooldown = 20f;
+        [Min(0f)] public float heavyMinCooldown = 12f;
+        [Min(0f)] public float heavyMaxCooldown = 20f;
         [Min(0f)] public float heavyDamageMultiplier = 2f;
         [Tooltip("Maximum target distance at which a Ranged enemy may begin its selected cast attack.")]
-        [Min(0.1f)] public float rangedCastDistance = 10f;
+        [Min(0.1f)] public float rangedCastDistance = 15f;
+        [Tooltip("Begin the configured opening cast as soon as a Ranged enemy acquires a target.")]
+        public bool castImmediatelyOnAggro = true;
+        [Tooltip("Spell used when combat begins, or Random All to select from the configured spell pool.")]
+        public EnemyForgeCastAttack openingCast = EnemyForgeCastAttack.RandomAll;
+        [Tooltip("Additional delay before the opening cast animation begins.")]
+        [Min(0f)] public float openingCastDelay = 0f;
+        [Tooltip("Prevents repeated damage or target notifications from restarting the opening cast during the same combat engagement.")]
+        public bool openingCastOncePerAggro = true;
+        [Tooltip("Requires an unobstructed path to the target before beginning the opening cast.")]
+        public bool openingCastRequiresLineOfSight = true;
+        [Tooltip("Cancels the opening cast if its target dies or leaves the enemy's leash before impact.")]
+        public bool cancelOpeningCastIfTargetInvalid = true;
 
         [Header("Rewards")]
         public DropTable dropTable;
@@ -118,11 +130,17 @@ namespace Crossworlds.EditorTools.EnemyForge
             {
                 case EnemyForgeArchetype.Ranged:
                     maxHealth = 40f; moveSpeed = 3.5f; stoppingDistance = 4f;
-                    aggroRadius = 14f;
-                    attackRange = 8f; attackInterval = 2f; damage = 10f;
-                    preferredRange = 6f; tooCloseDistance = 3f;
-                    rangedCastDistance = 10f;
-                    heavyMinCooldown = 10f; heavyMaxCooldown = 16f; heavyDamageMultiplier = 2.2f;
+                    aggroRadius = 15f; leashRadius = 30f;
+                    attackRange = 15f; attackInterval = 2f; damage = 10f;
+                    preferredRange = 10f; tooCloseDistance = 4f;
+                    rangedCastDistance = 15f;
+                    castImmediatelyOnAggro = true;
+                    openingCast = EnemyForgeCastAttack.RandomAll;
+                    openingCastDelay = 0f;
+                    openingCastOncePerAggro = true;
+                    openingCastRequiresLineOfSight = true;
+                    cancelOpeningCastIfTargetInvalid = true;
+                    heavyMinCooldown = 0f; heavyMaxCooldown = 0f; heavyDamageMultiplier = 2.2f;
                     break;
                 case EnemyForgeArchetype.Elite:
                     maxHealth = 300f; moveSpeed = 3.8f; stoppingDistance = 1.8f;
@@ -210,6 +228,14 @@ namespace Crossworlds.EditorTools.EnemyForge
                 heavyMaxCooldown = heavy.maxCooldown;
                 heavyDamageMultiplier = heavy.damageMultiplier;
                 rangedCastDistance = heavy.castDistanceToTarget;
+                castImmediatelyOnAggro = heavy.castImmediatelyOnAggro;
+                openingCast = heavy.openingCastRandom
+                    ? EnemyForgeCastAttack.RandomAll
+                    : (EnemyForgeCastAttack)((int)heavy.openingCastType + 1);
+                openingCastDelay = heavy.openingCastDelay;
+                openingCastOncePerAggro = heavy.openingCastOncePerAggro;
+                openingCastRequiresLineOfSight = heavy.openingCastRequiresLineOfSight;
+                cancelOpeningCastIfTargetInvalid = heavy.cancelOpeningCastIfTargetInvalid;
                 castAttack = heavy.availableTypes != null && heavy.availableTypes.Length > 0
                     ? (EnemyForgeCastAttack)((int)heavy.availableTypes[0] + 1)
                     : EnemyForgeCastAttack.RandomAll;

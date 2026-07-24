@@ -42,6 +42,10 @@ namespace Crossworlds.EditorTools.EnemyForge
                 issues.Add(new EnemyForgeIssue(
                     EnemyForgeSeverity.Info,
                     "No custom projectile is selected. Enemy Forge will assign its network-ready ranged test projectile."));
+            if (d.IsRanged && d.attackRange < d.preferredRange + Mathf.Max(0.5f, d.agentRadius))
+                issues.Add(new EnemyForgeIssue(
+                    EnemyForgeSeverity.Warning,
+                    "Basic Attack Range does not reach the preferred ranged position. Enemy Forge will expand the generated prefab's attack envelope so it cannot stall after acquiring a target."));
             if (d.heavyMaxCooldown < d.heavyMinCooldown) issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Error, "Heavy maximum cooldown must be at least its minimum."));
             if (d.IsRanged && d.rangedCastDistance > d.aggroRadius)
                 issues.Add(new EnemyForgeIssue(
@@ -51,6 +55,18 @@ namespace Crossworlds.EditorTools.EnemyForge
                 issues.Add(new EnemyForgeIssue(
                     EnemyForgeSeverity.Warning,
                     "Cast Distance to Target is smaller than Preferred Range, so cast attacks may not begin from the enemy's preferred position."));
+            if (d.IsRanged && d.attackAnimation != null && d.attackInterval < d.attackAnimation.length)
+                issues.Add(new EnemyForgeIssue(
+                    EnemyForgeSeverity.Info,
+                    $"The configured attack interval is shorter than the {d.attackAnimation.length:0.00}-second cast animation. Enemy Forge will use the full clip duration as this prefab's minimum cast cycle."));
+            if (d.IsRanged && d.castImmediatelyOnAggro && !d.addHeavyAttack)
+                issues.Add(new EnemyForgeIssue(
+                    EnemyForgeSeverity.Error,
+                    "Cast Immediately on Aggro requires Enable Ranged Attack."));
+            if (d.IsRanged && d.castImmediatelyOnAggro && d.rangedCastDistance < d.aggroRadius)
+                issues.Add(new EnemyForgeIssue(
+                    EnemyForgeSeverity.Info,
+                    "Opening Cast range is smaller than Aggro Radius. Enemy Forge will expand the generated cast range to the Aggro Radius so the opening cast can begin immediately."));
             if (d.source != null && d.source.GetComponentInChildren<Renderer>(true) == null) issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Warning, "The source has no renderer in its hierarchy."));
             if (d.generateAnimatorController && d.idleAnimation == null) issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Warning, "Animator generation is enabled but no Idle animation is assigned."));
             if (d.generateAnimatorController && d.attackAnimation == null) issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Warning, "No combat Attack animation is assigned."));

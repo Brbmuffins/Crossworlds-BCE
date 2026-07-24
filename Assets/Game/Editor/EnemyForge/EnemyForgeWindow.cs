@@ -143,7 +143,15 @@ namespace Crossworlds.EditorTools.EnemyForge
             DrawLabeledProperty(serialized, "heavyMaxCooldown", "Maximum Cooldown");
             DrawLabeledProperty(serialized, "heavyDamageMultiplier", "Damage Multiplier");
             if (ranged)
+            {
                 DrawLabeledProperty(serialized, "rangedCastDistance", "Cast Distance to Target");
+                DrawLabeledProperty(serialized, "castImmediatelyOnAggro", "Cast Immediately on Aggro");
+                DrawLabeledProperty(serialized, "openingCast", "Opening Cast");
+                DrawLabeledProperty(serialized, "openingCastDelay", "Opening Cast Delay");
+                DrawLabeledProperty(serialized, "openingCastOncePerAggro", "Opening Cast Once Per Aggro");
+                DrawLabeledProperty(serialized, "openingCastRequiresLineOfSight", "Require Line of Sight");
+                DrawLabeledProperty(serialized, "cancelOpeningCastIfTargetInvalid", "Cancel If Target Dies / Leaves Leash");
+            }
             EditorGUI.indentLevel--;
             EditorGUILayout.Space(3);
         }

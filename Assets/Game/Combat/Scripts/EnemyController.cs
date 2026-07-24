@@ -18,7 +18,7 @@ using Mirror;
 [RequireComponent(typeof(NavMeshAgent))]
 public class EnemyController : NetworkBehaviour
 {
-    public const int EnemyForgeRuntimeProfileVersion = 19;
+    public const int EnemyForgeRuntimeProfileVersion = 25;
 
     public enum EnemyState { Idle, Chase, Attack, Dead }
 
@@ -95,6 +95,7 @@ public class EnemyController : NetworkBehaviour
     private NavMeshAgent         _agent;
     private NetworkTransformBase _networkTransform;
     private StatusEffectManager  _status;   // may be null on basic enemies
+    private EnemyHeavyAttack     _heavyAttack;
     private float                _baseSpeed;
     private float                _configuredStoppingDistance;
     private Transform            _target;
@@ -143,6 +144,7 @@ public class EnemyController : NetworkBehaviour
         _agent     = GetComponent<NavMeshAgent>();
         _networkTransform = GetComponent<NetworkTransformBase>();
         _status    = GetComponent<StatusEffectManager>();
+        _heavyAttack = GetComponent<EnemyHeavyAttack>();
         _baseSpeed = _agent != null ? _agent.speed : 0f;
         _configuredStoppingDistance = _agent != null ? Mathf.Max(0f, _agent.stoppingDistance) : 0f;
         _animator  = GetComponentInChildren<Animator>();
@@ -457,6 +459,7 @@ public class EnemyController : NetworkBehaviour
         if (state == EnemyState.Dead) return;
         if (_returningHome && target != null) return;
 
+        bool enteringAggro = _target == null && target != null;
         _target = target;
         _returningHome = false;
         _hasRoamDestination = false;
@@ -466,6 +469,8 @@ public class EnemyController : NetworkBehaviour
         if (_target != null)
             FaceTargetImmediately();
         _attackTimer = _target != null ? EnemyCrowdUtility.FirstAttackDelay(this, attackInterval) : 0f;
+        if (enteringAggro)
+            _heavyAttack?.OnAggroAcquired(_target);
     }
 
     // ─────────────────────────────────────────────────────────────────────────────
@@ -706,6 +711,32 @@ public class EnemyController : NetworkBehaviour
             return;
         }
 
+        // Opening casts are server-authoritative and hold the caster in place
+        // until the configured animation windup resolves or is cancelled.
+        if (isRanged && _heavyAttack != null && _heavyAttack.IsOpeningCastInProgress)
+        {
+            if (_agent != null && _agent.isActiveAndEnabled && _agent.isOnNavMesh)
+            {
+                _agent.ResetPath();
+                _agent.velocity = Vector3.zero;
+            }
+            FaceAttackTarget();
+            return;
+        }
+
+        // Dedicated casters hold their ground anywhere inside their maximum
+        // cast range. Leaving that range resumes normal NavMesh pursuit.
+        if (isRanged && _heavyAttack != null && _heavyAttack.ShouldHoldCastingPosition(_target))
+        {
+            if (_agent != null && _agent.isActiveAndEnabled && _agent.isOnNavMesh)
+            {
+                _agent.ResetPath();
+                _agent.velocity = Vector3.zero;
+            }
+            FaceAttackTarget();
+            return;
+        }
+
         // Bound — cannot move
         if (_status != null && _status.IsBound)
         {
@@ -870,6 +901,7 @@ public class EnemyController : NetworkBehaviour
 
     void OnDeath()
     {
+        _heavyAttack?.OnCombatEnded();
         PrepareCorpseRendering();
         _corpseBodyRenderer = corpseGroundingRenderer;
         _deathRootY = transform.position.y;
@@ -1197,6 +1229,7 @@ public class EnemyController : NetworkBehaviour
 
     void ResetToIdle()
     {
+        _heavyAttack?.OnCombatEnded();
         _target      = null;
         state        = EnemyState.Idle;
         _attackTimer = 0f;
@@ -1292,10 +1325,24 @@ public class EnemyController : NetworkBehaviour
         }
     }
 
+    public bool IsTargetWithinLeash(Transform target)
+    {
+        if (target == null) return false;
+        Vector3 fromSpawn = target.position - _spawnPos;
+        fromSpawn.y = 0f;
+        return fromSpawn.sqrMagnitude <= leashRadius * leashRadius;
+    }
+
     [Server]
     public void PlayCastAnimation()
     {
         RpcCastAnimation();
+    }
+
+    [Server]
+    public void CancelCastAnimation()
+    {
+        RpcCancelCastAnimation();
     }
 
     [ClientRpc]
@@ -1304,6 +1351,16 @@ public class EnemyController : NetworkBehaviour
 #if UNITY_EDITOR || !UNITY_SERVER
         TriggerAnimator(AttackHash, _hasAttackParam);
         CombatAudio.Instance?.PlayAbilityCast();
+#endif
+    }
+
+    [ClientRpc]
+    void RpcCancelCastAnimation()
+    {
+#if UNITY_EDITOR || !UNITY_SERVER
+        if (_animator == null) return;
+        if (_hasAttackParam) _animator.ResetTrigger(AttackHash);
+        _animator.CrossFade("Chase", 0.08f);
 #endif
     }
 

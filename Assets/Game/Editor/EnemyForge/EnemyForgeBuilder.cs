@@ -118,8 +118,19 @@ namespace Crossworlds.EditorTools.EnemyForge
             controller.roamingMinWait = d.roamingMinWait;
             controller.roamingMaxWait = d.roamingMaxWait;
             controller.aggroWhenDamaged = d.aggroWhenDamaged;
-            controller.attackRange = d.attackRange;
-            controller.attackInterval = d.attackInterval;
+            // A ranged enemy navigates toward preferredRange. Its attack envelope
+            // must reach that ring or it will arrive, stop, and remain in Chase
+            // without ever firing.
+            float rangedEngagementRange = d.preferredRange + Mathf.Max(0.5f, d.agentRadius);
+            controller.attackRange = d.IsRanged
+                ? Mathf.Max(d.attackRange, rangedEngagementRange)
+                : d.attackRange;
+            // A zero spell cooldown must still allow the selected cast animation
+            // to complete before the next trigger. Each forged ranged prefab gets
+            // its own clip-derived cycle without changing the shared controller.
+            controller.attackInterval = d.IsRanged && d.attackAnimation != null
+                ? Mathf.Max(d.attackInterval, d.attackAnimation.length)
+                : d.attackInterval;
             controller.damage = d.damage;
             controller.combatTurnSpeed = d.combatTurnSpeed;
             controller.attackImpactDelay = d.attackAnimation != null
@@ -148,7 +159,18 @@ namespace Crossworlds.EditorTools.EnemyForge
                 heavy.minCooldown = d.heavyMinCooldown;
                 heavy.maxCooldown = d.heavyMaxCooldown;
                 heavy.damageMultiplier = d.heavyDamageMultiplier;
-                heavy.castDistanceToTarget = d.rangedCastDistance;
+                heavy.castDistanceToTarget = d.IsRanged && d.castImmediatelyOnAggro
+                    ? Mathf.Max(d.rangedCastDistance, d.aggroRadius)
+                    : d.rangedCastDistance;
+                heavy.castImmediatelyOnAggro = d.IsRanged && d.castImmediatelyOnAggro;
+                heavy.openingCastRandom = d.openingCast == EnemyForgeCastAttack.RandomAll;
+                heavy.openingCastType = heavy.openingCastRandom
+                    ? EnemyHeavyAttack.HeavyAbilityType.HexBlast
+                    : (EnemyHeavyAttack.HeavyAbilityType)((int)d.openingCast - 1);
+                heavy.openingCastDelay = d.openingCastDelay;
+                heavy.openingCastOncePerAggro = d.openingCastOncePerAggro;
+                heavy.openingCastRequiresLineOfSight = d.openingCastRequiresLineOfSight;
+                heavy.cancelOpeningCastIfTargetInvalid = d.cancelOpeningCastIfTargetInvalid;
                 heavy.availableTypes = d.castAttack == EnemyForgeCastAttack.RandomAll
                     ? System.Array.Empty<EnemyHeavyAttack.HeavyAbilityType>()
                     : new[]
