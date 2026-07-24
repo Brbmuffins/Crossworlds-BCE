@@ -547,8 +547,20 @@ copies of one scene rather than one shared copy.
   listener from each zone scene and move to a single rig — on the player prefab or in the
   container — leaving zone scenes to carry lighting and geometry only. *Accept:* travel between
   two zones with the console open and see no duplicate-listener warning; the view never cuts to
-  the wrong camera. *Deps:* 6.3. Touches every zone scene, so bundle it with 6.7's world-space
-  offset pass — both are per-scene editor work.
+  the wrong camera. *Deps:* 6.3.
+  **✅ 2026-07-23 — but NOT the way this task originally specced it.** Stripping the zone cameras
+  for one shared container camera would discard each zone's camera settings (culling mask, clear
+  flags, projection, post-processing setup), leaving one camera configured correctly for no zone
+  at all. New `Networking/ZoneCameraDirector.cs` instead **enables the camera belonging to the
+  player's current zone and disables the rest** — per-zone look preserved, ambiguity removed, and
+  no destructive edits to six scenes. `Camera.allCameras` returns only enabled cameras, so
+  `PlayerMovement.ResolveCamera` then sees exactly one.
+  Severity was understated when this was filed: it is not just a duplicate-AudioListener nuisance.
+  `PlayerMovement` is camera-relative, so `Camera.main` returning another zone's camera rotates
+  WASD by however that camera faces — the "movement is a mix of WASD" bug found in testing.
+  Also rebinds on zone change, since `PlayerMovement` caches its camera in `Start` and would
+  otherwise keep using the previous zone's camera after travelling.
+  Client-only. **Not yet play-tested.**
 
 - **6.8 — Open-world mob spawner.** `Combat/Scripts/WaveSpawner.cs` is an arena construct (waves,
   difficulty ramp, session tracking) and is the wrong shape for a persistent zone. New component:
