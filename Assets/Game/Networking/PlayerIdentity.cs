@@ -21,8 +21,68 @@ public class PlayerIdentity : NetworkBehaviour
         ? ClassNames[classIndex]
         : "Unknown";
 
+    /// <summary>The local player's identity, or null before spawn.</summary>
+    public static PlayerIdentity Local { get; private set; }
+
+    // ── Zone travel (ROADMAP 6.4) ─────────────────────────────────────────────
+
+    /// <summary>
+    /// Asks the server to move THIS player to another zone. Entry point for
+    /// interactables that are plain MonoBehaviours and so cannot send a Command of
+    /// their own — HubPortal, for one. Anything that used to call
+    /// SceneManager.LoadScene directly must come through here instead: a local scene
+    /// load moves the client without telling the server, and on a host it replaces
+    /// the active scene and tears down every additively-loaded zone for everyone.
+    /// </summary>
+    public static void RequestZoneTravel(string zoneName, string spawnId = null)
+    {
+        if (Local == null)
+        {
+            Debug.LogWarning("[PlayerIdentity] No local player yet — travel request ignored.");
+            return;
+        }
+
+        Local.CmdRequestZoneTravel(zoneName, spawnId);
+    }
+
+    [Command]
+    void CmdRequestZoneTravel(string zoneName, string spawnId)
+    {
+        if (!SceneNames.IsZone(zoneName))
+        {
+            Debug.LogWarning($"[PlayerIdentity] {playerName} requested unknown zone '{zoneName}' — denied.");
+            return;
+        }
+
+        // GM Island is a privilege, not a place. Everything else is open.
+        if (string.Equals(zoneName, SceneNames.GMIsland, System.StringComparison.OrdinalIgnoreCase))
+        {
+            var auth = connectionToClient?.authenticationData as RodPlayerAuth;
+            if (auth == null || !auth.gmAllowed)
+            {
+                Debug.LogWarning($"[PlayerIdentity] {playerName} requested GM Island without GM — denied.");
+                return;
+            }
+        }
+
+        if (ZoneManager.Instance == null)
+        {
+            Debug.LogError("[PlayerIdentity] ZoneManager missing — run BCE ▶ Setup ▶ 6z.");
+            return;
+        }
+
+        ZoneManager.Instance.MovePlayerToZone(connectionToClient, zoneName, spawnId);
+    }
+
+    public override void OnStopLocalPlayer()
+    {
+        if (Local == this) Local = null;
+    }
+
     public override void OnStartLocalPlayer()
     {
+        Local = this;
+
         // Tag this as the local player object so other scripts can find it
         gameObject.name = playerName + " (Local)";
 
