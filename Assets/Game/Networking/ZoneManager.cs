@@ -467,6 +467,44 @@ public class ZoneManager : MonoBehaviour
 
     // ── Connection lifecycle ──────────────────────────────────────────────────
 
+    /// <summary>
+    /// Tears down every loaded zone. Call when the server stops.
+    ///
+    /// Without this, additively-loaded zones stay loaded after shutdown with their
+    /// networked scene objects still in them. NetworkIdentity.isServer is a stored
+    /// flag rather than a live read of NetworkServer.active, so those objects still
+    /// believe they are server-side: NetworkAnimator keeps ticking and throws
+    /// "RPC ... called without an active server" every FixedUpdate. On a dedicated
+    /// server a stop/start cycle would also leak the old scenes.
+    /// </summary>
+    public void UnloadAllZones()
+    {
+        StopAllCoroutines();
+        _pendingUnloads.Clear();
+
+        // Snapshot: unloading mutates the dictionary.
+        var scenes = new List<Scene>(_scenesByHandle.Values);
+
+        _occupants.Clear();
+        _scenesByHandle.Clear();
+        _connZone.Clear();
+        _sharedZones.Clear();
+        _instances.Clear();
+        _simulated.Clear();
+
+        // Unload synchronously-requested but async-completed; during application quit
+        // Unity refuses scene unloads, so don't fight it — the process is going away.
+        if (!Application.isPlaying) return;
+
+        foreach (Scene scene in scenes)
+        {
+            if (!scene.IsValid() || !scene.isLoaded) continue;
+
+            Debug.Log($"[Zone] Server stopping — unloading '{scene.name}'.");
+            SceneManager.UnloadSceneAsync(scene);
+        }
+    }
+
     public void OnPlayerDisconnected(NetworkConnectionToClient conn)
     {
         if (conn == null) return;

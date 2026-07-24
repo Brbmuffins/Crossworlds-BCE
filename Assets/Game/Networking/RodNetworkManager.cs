@@ -188,6 +188,17 @@ public class RodNetworkManager : NetworkManager
         }
     }
 
+    public override void OnStopServer()
+    {
+        // Zones are additively loaded and outlive the server otherwise. Their scene
+        // objects keep NetworkIdentity.isServer set — it is a stored flag, not a live
+        // read of NetworkServer.active — so NetworkAnimator carries on trying to send
+        // Rpcs and logs "called without an active server" every FixedUpdate.
+        ZoneManager.Instance?.UnloadAllZones();
+
+        base.OnStopServer();
+    }
+
     public override void OnServerConnect(NetworkConnectionToClient conn)
     {
         base.OnServerConnect(conn);
