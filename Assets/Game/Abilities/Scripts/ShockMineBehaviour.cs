@@ -58,7 +58,7 @@ public class ShockMineBehaviour : MonoBehaviour
     void Detonate()
     {
         // AoE damage to all enemies in blast radius
-        Collider[] hits = Physics.OverlapSphere(transform.position, blastRadius);
+        Collider[] hits = ZonePhysics.OverlapSphere(gameObject, transform.position, blastRadius);
         foreach (var col in hits)
         {
             if (!col.CompareTag(targetTag)) continue;

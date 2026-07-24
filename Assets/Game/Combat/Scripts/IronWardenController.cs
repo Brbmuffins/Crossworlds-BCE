@@ -415,7 +415,7 @@ public class IronWardenController : NetworkBehaviour
     [Server]
     void DealAoeDamage(Vector3 centre, float radius, int damage)
     {
-        var hits = Physics.OverlapSphere(centre, radius);
+        var hits = ZonePhysics.OverlapSphere(gameObject, centre, radius);
         foreach (var hit in hits)
         {
             if (!hit.CompareTag("Player")) continue;

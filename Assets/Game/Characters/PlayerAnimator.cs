@@ -113,7 +113,7 @@ public class PlayerAnimator : MonoBehaviour
             _combatTimer = combatCheckInterval;
 
             bool nearEnemy = false;
-            var cols = Physics.OverlapSphere(transform.position, combatCheckRadius);
+            var cols = ZonePhysics.OverlapSphere(gameObject, transform.position, combatCheckRadius);
             foreach (var c in cols)
             {
                 if (c.CompareTag("Enemy"))

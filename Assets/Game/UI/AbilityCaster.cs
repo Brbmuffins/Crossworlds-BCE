@@ -1476,7 +1476,7 @@ public class AbilityCaster : NetworkBehaviour
         Vector2 mp  = Mouse.current.position.ReadValue();
         Ray     ray = cam.ScreenPointToRay(new Vector3(mp.x, mp.y, 0f));
 
-        RaycastHit[] hits = Physics.RaycastAll(ray, 100f, ~0, QueryTriggerInteraction.Ignore);
+        RaycastHit[] hits = ZonePhysics.RaycastAll(gameObject, ray, 100f, ~0, QueryTriggerInteraction.Ignore);
         System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
 
         foreach (RaycastHit hit in hits)
@@ -2617,7 +2617,7 @@ public class AbilityCaster : NetworkBehaviour
             return terrainPoint;
 
         Vector3 origin = point + Vector3.up * indicatorRaycastHeight;
-        RaycastHit[] hits = Physics.RaycastAll(
+        RaycastHit[] hits = ZonePhysics.RaycastAll(gameObject,
             origin,
             Vector3.down,
             indicatorRaycastDistance,
@@ -3343,7 +3343,7 @@ public class AbilityCaster : NetworkBehaviour
 
     void ApplyPulseDamage(Vector3 centre, float radius, float damage, string targetTag, GameObject hitVFX, float hitVFXLifetime = 4f)
     {
-        Collider[] hits = Physics.OverlapSphere(centre, radius);
+        Collider[] hits = ZonePhysics.OverlapSphere(gameObject, centre, radius);
         var damaged = new System.Collections.Generic.HashSet<Health>();
 
         foreach (Collider hit in hits)
@@ -3410,7 +3410,7 @@ public class AbilityCaster : NetworkBehaviour
 
         // Apply a temporary +30% CDR buff to all allies in range (including self).
         // CDR is tracked in CharacterStats — AddTemporaryCDR clamps total CDR to 0.6 (60% max).
-        Collider[] hits = Physics.OverlapSphere(transform.position, auraRange);
+        Collider[] hits = ZonePhysics.OverlapSphere(gameObject, transform.position, auraRange);
         foreach (var col in hits)
         {
             if (!col.CompareTag("Player")) continue;
@@ -3440,7 +3440,7 @@ public class AbilityCaster : NetworkBehaviour
     void CastDroneCommand(Vector3 castPoint)
     {
         // Find the nearest enemy to the cast point and redirect all active turrets to it.
-        Collider[] hits = Physics.OverlapSphere(castPoint, 2f);
+        Collider[] hits = ZonePhysics.OverlapSphere(gameObject, castPoint, 2f);
         Transform focusTarget = null;
         float best = Mathf.Infinity;
         foreach (var col in hits)
@@ -3468,7 +3468,7 @@ public class AbilityCaster : NetworkBehaviour
     {
         float healAmt = ability.healAmount > 0f ? ability.healAmount : 40f;
         // Find nearest ally at cast point
-        Collider[] hits = Physics.OverlapSphere(castPoint, 1.5f);
+        Collider[] hits = ZonePhysics.OverlapSphere(gameObject, castPoint, 1.5f);
         foreach (var col in hits)
         {
             if (!col.CompareTag("Player")) continue;
@@ -3500,7 +3500,7 @@ public class AbilityCaster : NetworkBehaviour
         float radius   = ability.pullRadius > 0f ? ability.pullRadius : 4f;
         float duration = ability.pullDuration > 0f ? ability.pullDuration : 2f;
 
-        Collider[] hits = Physics.OverlapSphere(castPoint, radius);
+        Collider[] hits = ZonePhysics.OverlapSphere(gameObject, castPoint, radius);
         foreach (var col in hits)
         {
             if (!col.CompareTag(ability.targetTag)) continue;
@@ -3529,7 +3529,7 @@ public class AbilityCaster : NetworkBehaviour
     {
         if (ironTetherHandler == null) return;
         // Find nearest enemy near the cast point
-        Collider[] hits = Physics.OverlapSphere(castPoint, 2f);
+        Collider[] hits = ZonePhysics.OverlapSphere(gameObject, castPoint, 2f);
         foreach (var col in hits)
         {
             if (!col.CompareTag("Enemy")) continue;
@@ -3592,7 +3592,7 @@ public class AbilityCaster : NetworkBehaviour
 
     Collider FindNearestInRadius(Vector3 center, float radius, string tag, Transform exclude)
     {
-        Collider[] hits = Physics.OverlapSphere(center, radius);
+        Collider[] hits = ZonePhysics.OverlapSphere(gameObject, center, radius);
         float best = Mathf.Infinity;
         Collider found = null;
         foreach (var col in hits)
@@ -3635,7 +3635,7 @@ public class AbilityCaster : NetworkBehaviour
     void CastTransferProtocol(Vector3 castPoint)
     {
         if (transferProtocolHandler == null) return;
-        Collider[] hits = Physics.OverlapSphere(castPoint, 1.5f);
+        Collider[] hits = ZonePhysics.OverlapSphere(gameObject, castPoint, 1.5f);
         foreach (var col in hits)
         {
             if (!col.CompareTag("Player")) continue;
@@ -3651,7 +3651,7 @@ public class AbilityCaster : NetworkBehaviour
         if (prefab == null) return;
 
         // Find nearest ally to target
-        Collider[] hits = Physics.OverlapSphere(castPoint, 3f);
+        Collider[] hits = ZonePhysics.OverlapSphere(gameObject, castPoint, 3f);
         Health targetH = null; Transform targetT = null;
         foreach (var col in hits)
         {
@@ -3676,7 +3676,7 @@ public class AbilityCaster : NetworkBehaviour
     void CastDefibrillator(AbilityDef ability, Vector3 castPoint, float dmgMult)
     {
         // Priority 1: revive a downed ally nearby
-        Collider[] allies = Physics.OverlapSphere(castPoint, 2f);
+        Collider[] allies = ZonePhysics.OverlapSphere(gameObject, castPoint, 2f);
         foreach (var col in allies)
         {
             if (!col.CompareTag("Player")) continue;
@@ -3690,7 +3690,7 @@ public class AbilityCaster : NetworkBehaviour
         }
 
         // Priority 2: deal burst damage to robotic enemies in range
-        Collider[] enemies = Physics.OverlapSphere(castPoint, 2f);
+        Collider[] enemies = ZonePhysics.OverlapSphere(gameObject, castPoint, 2f);
         foreach (var col in enemies)
         {
             if (!TryGetMatchingHealth(col, "Enemy", out Health h)) continue;
@@ -3704,7 +3704,7 @@ public class AbilityCaster : NetworkBehaviour
     void CastAdaptiveShield(Vector3 castPoint)
     {
         // Apply a 20-absorb shield to nearest ally that grows as they take hits.
-        Collider[] hits = Physics.OverlapSphere(castPoint, 2f);
+        Collider[] hits = ZonePhysics.OverlapSphere(gameObject, castPoint, 2f);
         foreach (var col in hits)
         {
             if (!col.CompareTag("Player")) continue;
@@ -3728,7 +3728,7 @@ public class AbilityCaster : NetworkBehaviour
 
     void CastPurgeProtocol(Vector3 castPoint)
     {
-        Collider[] hits = Physics.OverlapSphere(castPoint, 1.5f);
+        Collider[] hits = ZonePhysics.OverlapSphere(gameObject, castPoint, 1.5f);
         foreach (var col in hits)
         {
             if (!col.CompareTag("Player")) continue;
@@ -3742,7 +3742,7 @@ public class AbilityCaster : NetworkBehaviour
         float baseDmg = ability.damage > 0f ? ability.damage : 20f;
         float radius  = ability.indicatorSize > 0f ? ability.indicatorSize / 2f : 4f;
 
-        Collider[] hits = Physics.OverlapSphere(castPoint, radius);
+        Collider[] hits = ZonePhysics.OverlapSphere(gameObject, castPoint, radius);
         var damaged = new System.Collections.Generic.HashSet<Health>();
         foreach (var col in hits)
         {
@@ -3793,7 +3793,7 @@ public class AbilityCaster : NetworkBehaviour
     void ApplyCircleDamage(AbilityDef ability, GameObject indicator, float damageMultiplier = 1f)
     {
         Vector3 center = indicator != null ? indicator.transform.position : transform.position;
-        Collider[] hits = Physics.OverlapSphere(center, ability.indicatorSize / 2f);
+        Collider[] hits = ZonePhysics.OverlapSphere(gameObject, center, ability.indicatorSize / 2f);
         var damaged = new System.Collections.Generic.HashSet<Health>();
 
         foreach (Collider hit in hits)
@@ -3831,7 +3831,7 @@ public class AbilityCaster : NetworkBehaviour
             rotation = indicator.transform.rotation;
         }
 
-        Collider[] hits = Physics.OverlapBox(
+        Collider[] hits = ZonePhysics.OverlapBox(gameObject,
             center,
             halfExtents,
             rotation
@@ -3850,7 +3850,7 @@ public class AbilityCaster : NetworkBehaviour
 
     void ApplyConeDamage(AbilityDef ability, GameObject indicator, float damage, float coneRange, Vector3 castOrigin)
     {
-        Collider[] hits = Physics.OverlapSphere(castOrigin, coneRange);
+        Collider[] hits = ZonePhysics.OverlapSphere(gameObject, castOrigin, coneRange);
         var damaged = new System.Collections.Generic.HashSet<Health>();
 
         foreach (Collider hit in hits)
@@ -3883,7 +3883,7 @@ public class AbilityCaster : NetworkBehaviour
         if (ability.shape == AbilityShape.Cone)
         {
             maxRange = ability.range * indicator.transform.localScale.x;
-            Collider[] sphereHits = Physics.OverlapSphere(castOrigin, maxRange);
+            Collider[] sphereHits = ZonePhysics.OverlapSphere(gameObject, castOrigin, maxRange);
             foreach (var hit in sphereHits)
             {
                 if (!TryGetMatchingHealth(hit, ability.targetTag, out Health health) || matched.Contains(health))
@@ -3927,7 +3927,7 @@ public class AbilityCaster : NetworkBehaviour
                 maxRange = rectangleLength;
             }
 
-            Collider[] boxHits = Physics.OverlapBox(center, halfExtents, rotation);
+            Collider[] boxHits = ZonePhysics.OverlapBox(gameObject, center, halfExtents, rotation);
             foreach (var hit in boxHits)
             {
                 AddMatchingHit(hit, ability.targetTag, hitColliders, matched);
@@ -6007,7 +6007,7 @@ public class AbilityCaster : NetworkBehaviour
         if (shapeAbility.shape == AbilityShape.Cone)
         {
             float maxRange = shapeAbility.range * indicator.transform.localScale.x;
-            foreach (Collider c in Physics.OverlapSphere(castOrigin, maxRange))
+            foreach (Collider c in ZonePhysics.OverlapSphere(gameObject, castOrigin, maxRange))
             {
                 if (!TryGetMatchingHealth(c, targetTag, out Health health) || matched.Contains(health))
                     continue;
@@ -6027,7 +6027,7 @@ public class AbilityCaster : NetworkBehaviour
             RectangleAimData rectData = indicator.GetComponent<RectangleAimData>();
             if (rectData != null && rectData.valid)
             {
-                foreach (Collider c in Physics.OverlapBox(rectData.damageCenter, rectData.damageHalfExtents, rectData.damageRotation))
+                foreach (Collider c in ZonePhysics.OverlapBox(gameObject, rectData.damageCenter, rectData.damageHalfExtents, rectData.damageRotation))
                     AddMatchingHit(c, targetTag, hits, matched);
             }
             else
@@ -6038,14 +6038,14 @@ public class AbilityCaster : NetworkBehaviour
                     1f,
                     rectangleLength * 0.5f);
 
-                foreach (Collider c in Physics.OverlapBox(indicator.transform.position, halfExtents, indicator.transform.rotation))
+                foreach (Collider c in ZonePhysics.OverlapBox(gameObject, indicator.transform.position, halfExtents, indicator.transform.rotation))
                     AddMatchingHit(c, targetTag, hits, matched);
             }
         }
         else
         {
             float radius = Mathf.Max(0f, shapeAbility.indicatorSize * 0.5f);
-            foreach (Collider c in Physics.OverlapSphere(indicator.transform.position, radius))
+            foreach (Collider c in ZonePhysics.OverlapSphere(gameObject, indicator.transform.position, radius))
                 AddMatchingHit(c, targetTag, hits, matched);
         }
     }

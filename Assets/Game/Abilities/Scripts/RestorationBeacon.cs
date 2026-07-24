@@ -57,7 +57,7 @@ public class RestorationBeacon : NetworkBehaviour
             ? DeployableManager.Instance.GetMultiplier(gameObject)
             : 1f;
 
-        Collider[] hits = Physics.OverlapSphere(transform.position, radius);
+        Collider[] hits = ZonePhysics.OverlapSphere(gameObject, transform.position, radius);
         foreach (var col in hits)
         {
             if (!col.CompareTag(playerTag)) continue;

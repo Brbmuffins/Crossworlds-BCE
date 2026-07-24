@@ -108,7 +108,7 @@ public class StealthHandler : MonoBehaviour
 
     void SuppressEnemyTargeting()
     {
-        Collider[] hits = Physics.OverlapSphere(transform.position, 50f);
+        Collider[] hits = ZonePhysics.OverlapSphere(gameObject, transform.position, 50f);
         foreach (var col in hits)
         {
             if (!col.CompareTag(enemyTag)) continue;

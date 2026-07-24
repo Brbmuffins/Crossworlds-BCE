@@ -166,7 +166,7 @@ public class EnemyHeavyAttack : NetworkBehaviour
     void HitPlayersInRadius(Vector3 center, float radius, float dmg,
         StatusEffectType status, float statusDur, float statusVal)
     {
-        foreach (var col in Physics.OverlapSphere(center, radius))
+        foreach (var col in ZonePhysics.OverlapSphere(gameObject, center, radius))
         {
             if (!col.CompareTag("Player")) continue;
             ApplyHit(col.gameObject, dmg, status, statusDur, statusVal);
@@ -177,7 +177,7 @@ public class EnemyHeavyAttack : NetworkBehaviour
     void HitChain(float searchRadius, int maxJumps, float dmgPerJump,
         float falloff, StatusEffectType statusType, float statusDur, float statusVal)
     {
-        var hits  = Physics.OverlapSphere(transform.position, searchRadius);
+        var hits  = ZonePhysics.OverlapSphere(gameObject, transform.position, searchRadius);
         int jumps = 0;
 
         foreach (var col in hits)
@@ -198,7 +198,7 @@ public class EnemyHeavyAttack : NetworkBehaviour
         forward.y = 0f;
         if (forward == Vector3.zero) forward = transform.forward;
 
-        foreach (var col in Physics.OverlapSphere(origin, range))
+        foreach (var col in ZonePhysics.OverlapSphere(gameObject, origin, range))
         {
             if (!col.CompareTag("Player")) continue;
             Vector3 dir = (col.transform.position - origin).normalized;

@@ -63,7 +63,7 @@ public class KineticReversalHandler : MonoBehaviour
         float damage = Mathf.Lerp(minDamage, maxDamage, t);
 
         // Cone damage
-        Collider[] hits = Physics.OverlapSphere(transform.position, coneRange);
+        Collider[] hits = ZonePhysics.OverlapSphere(gameObject, transform.position, coneRange);
         foreach (var col in hits)
         {
             if (!col.CompareTag(enemyTag)) continue;

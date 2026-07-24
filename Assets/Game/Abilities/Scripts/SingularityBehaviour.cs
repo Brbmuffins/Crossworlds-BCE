@@ -59,7 +59,7 @@ public class SingularityBehaviour : MonoBehaviour
         {
             elapsed += Time.fixedDeltaTime;
 
-            Collider[] hits = Physics.OverlapSphere(transform.position, pullRadius);
+            Collider[] hits = ZonePhysics.OverlapSphere(gameObject, transform.position, pullRadius);
             foreach (var col in hits)
             {
                 if (!col.CompareTag(enemyTag)) continue;
@@ -81,7 +81,7 @@ public class SingularityBehaviour : MonoBehaviour
         }
 
         // Burst
-        Collider[] finalHits = Physics.OverlapSphere(transform.position, burstRadius);
+        Collider[] finalHits = ZonePhysics.OverlapSphere(gameObject, transform.position, burstRadius);
         foreach (var col in finalHits)
         {
             if (!col.CompareTag(enemyTag)) continue;

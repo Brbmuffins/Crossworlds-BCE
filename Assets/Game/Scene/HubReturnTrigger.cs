@@ -231,7 +231,7 @@ public class HubReturnTrigger : NetworkBehaviour
         if (camera == null) return false;
 
         Ray ray = camera.ScreenPointToRay(mouse.position.ReadValue());
-        return Physics.Raycast(ray, out RaycastHit hit, clickRaycastDistance, clickableLayers, QueryTriggerInteraction.Collide)
+        return ZonePhysics.Raycast(gameObject, ray, out RaycastHit hit, clickRaycastDistance, clickableLayers, QueryTriggerInteraction.Collide)
                && HitBelongsToThisWaypoint(hit.transform);
     }
 

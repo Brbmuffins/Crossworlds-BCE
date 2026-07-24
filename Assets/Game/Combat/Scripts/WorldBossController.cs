@@ -154,7 +154,7 @@ public class WorldBossController : NetworkBehaviour
         float reflected = damage * reflectDamageFraction;
         int   hitCount  = 0;
 
-        foreach (var col in Physics.OverlapSphere(transform.position, reflectAoeRadius))
+        foreach (var col in ZonePhysics.OverlapSphere(gameObject, transform.position, reflectAoeRadius))
         {
             if (!col.CompareTag("Player")) continue;
             col.GetComponent<Health>()?.TakeDamage(reflected, gameObject);
