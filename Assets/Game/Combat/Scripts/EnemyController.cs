@@ -506,6 +506,15 @@ public class EnemyController : NetworkBehaviour
         TickReturnHomeFacing();
         if (_returningHome) return;
 
+        // A destination can be inside the roaming circle while the NavMesh path
+        // curves outside it. Enforce the enemy's actual idle position as well.
+        if (enableRoaming && roamingRadius > 0f &&
+            IsOutsideHomeRadius(transform.position, roamingRadius, 0.25f))
+        {
+            ReturnToSpawnPoint();
+            return;
+        }
+
         var hits = ZonePhysics.OverlapSphere(gameObject, transform.position, aggroRadius);
         float     nearest = float.MaxValue;
         Transform found   = null;
@@ -704,7 +713,7 @@ public class EnemyController : NetworkBehaviour
         }
 
         // Leash check
-        if (Vector3.Distance(transform.position, _spawnPos) > leashRadius)
+        if (IsOutsideCombatLeash(transform.position) || !IsTargetWithinLeash(_target))
         {
             ResetToIdle();
             ReturnToSpawnPoint();
@@ -795,6 +804,14 @@ public class EnemyController : NetworkBehaviour
         if (_target == null || !(_target.GetComponent<Health>()?.IsAlive ?? false))
         {
             ResetToIdle();
+            ReturnToSpawnPoint();
+            return;
+        }
+
+        if (IsOutsideCombatLeash(transform.position) || !IsTargetWithinLeash(_target))
+        {
+            ResetToIdle();
+            ReturnToSpawnPoint();
             return;
         }
 
@@ -1328,9 +1345,20 @@ public class EnemyController : NetworkBehaviour
     public bool IsTargetWithinLeash(Transform target)
     {
         if (target == null) return false;
-        Vector3 fromSpawn = target.position - _spawnPos;
+        return !IsOutsideHomeRadius(target.position, leashRadius);
+    }
+
+    bool IsOutsideCombatLeash(Vector3 position)
+    {
+        return IsOutsideHomeRadius(position, leashRadius);
+    }
+
+    bool IsOutsideHomeRadius(Vector3 position, float radius, float tolerance = 0f)
+    {
+        float allowedRadius = Mathf.Max(0f, radius + tolerance);
+        Vector3 fromSpawn = position - _spawnPos;
         fromSpawn.y = 0f;
-        return fromSpawn.sqrMagnitude <= leashRadius * leashRadius;
+        return fromSpawn.sqrMagnitude > allowedRadius * allowedRadius;
     }
 
     [Server]
