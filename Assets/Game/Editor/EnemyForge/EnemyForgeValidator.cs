@@ -55,10 +55,13 @@ namespace Crossworlds.EditorTools.EnemyForge
                 issues.Add(new EnemyForgeIssue(
                     EnemyForgeSeverity.Warning,
                     "Cast Distance to Target is smaller than Preferred Range, so cast attacks may not begin from the enemy's preferred position."));
-            if (d.IsRanged && d.attackAnimation != null && d.attackInterval < d.attackAnimation.length)
+            float longestAttack = LongestAttackLength(d);
+            bool requiresFullAttackCycle = d.IsRanged || d.attackAnimation2 != null ||
+                d.attackAnimation3 != null || d.attackAnimation4 != null;
+            if (requiresFullAttackCycle && longestAttack > 0f && d.attackInterval < longestAttack)
                 issues.Add(new EnemyForgeIssue(
                     EnemyForgeSeverity.Info,
-                    $"The configured attack interval is shorter than the {d.attackAnimation.length:0.00}-second cast animation. Enemy Forge will use the full clip duration as this prefab's minimum cast cycle."));
+                    $"The configured attack interval is shorter than the longest selected attack animation ({longestAttack:0.00} seconds). Enemy Forge will use the full clip duration as this prefab's minimum attack cycle."));
             if (d.IsRanged && d.castImmediatelyOnAggro && !d.addHeavyAttack)
                 issues.Add(new EnemyForgeIssue(
                     EnemyForgeSeverity.Error,
@@ -70,12 +73,19 @@ namespace Crossworlds.EditorTools.EnemyForge
             if (d.source != null && d.source.GetComponentInChildren<Renderer>(true) == null) issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Warning, "The source has no renderer in its hierarchy."));
             if (d.generateAnimatorController && d.idleAnimation == null) issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Warning, "Animator generation is enabled but no Idle animation is assigned."));
             if (d.generateAnimatorController && d.attackAnimation == null) issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Warning, "No combat Attack animation is assigned."));
+            if (d.attackAnimation == null &&
+                (d.attackAnimation2 != null || d.attackAnimation3 != null || d.attackAnimation4 != null))
+                issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Error,
+                    "Combat Attack 1 is required before additional randomized attacks can be used."));
             if (d.generateAnimatorController && d.deathAnimation == null) issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Warning, "No Death animation is assigned."));
             if (d.generateAnimatorController)
             {
                 ValidateClip(d.idleAnimation, "Idle", true, issues);
                 ValidateClip(d.chaseAnimation, "Chase / Movement", true, issues);
                 ValidateClip(d.attackAnimation, "Combat Attack", false, issues);
+                ValidateClip(d.attackAnimation2, "Combat Attack 2", false, issues);
+                ValidateClip(d.attackAnimation3, "Combat Attack 3", false, issues);
+                ValidateClip(d.attackAnimation4, "Combat Attack 4", false, issues);
                 ValidateClip(d.getHitAnimation, "Get Hit", false, issues);
                 ValidateClip(d.deathAnimation, "Death", false, issues);
             }
@@ -83,6 +93,15 @@ namespace Crossworlds.EditorTools.EnemyForge
             if (d.animationDriverMode == EnemyForgeAnimationDriverMode.ExistingModelDriver && d.source != null && !HasAnimationDriver(d.source)) issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Warning, "Existing Model Driver mode is selected, but no recognized model animation driver was found."));
             if (d.source != null && CountActiveAiControllers(d.source) > 1) issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Warning, "The source contains multiple AI controllers. Enemy Forge will disable legacy AI controllers on the generated copy."));
             return issues;
+        }
+
+        static float LongestAttackLength(EnemyForgeDefinition d)
+        {
+            float longest = d.attackAnimation != null ? d.attackAnimation.length : 0f;
+            if (d.attackAnimation2 != null) longest = Mathf.Max(longest, d.attackAnimation2.length);
+            if (d.attackAnimation3 != null) longest = Mathf.Max(longest, d.attackAnimation3.length);
+            if (d.attackAnimation4 != null) longest = Mathf.Max(longest, d.attackAnimation4.length);
+            return longest;
         }
 
         static void ValidateClip(AnimationClip clip, string stateName, bool shouldLoop,

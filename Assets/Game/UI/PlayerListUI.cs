@@ -40,11 +40,23 @@ public class PlayerListUI : MonoBehaviour
     // ── Class colours — match PlayerNameplate ────────────────────────────
     static readonly string[] ClassColors =
     {
-        "#59BFFF", // Engineer  — blue
-        "#FFCC33", // Guardian  — gold
-        "#B366FF", // Wraith    — purple
-        "#59FF8C", // Medic     — green
+        "#59BFFF", // Marauder
+        "#FFCC33", // Ironclad
+        "#B366FF", // Shadowblade
+        "#59FF8C", // Cleric
+        "#38BDF8", // Arcanist
     };
+
+    static readonly string[] ClassNames =
+        { "Marauder", "Ironclad", "Shadowblade", "Cleric", "Arcanist" };
+
+    sealed class OnlinePlayerEntry
+    {
+        public string playerName;
+        public int classIndex;
+        public string sceneName;
+        public bool isLocal;
+    }
 
     // ── UI ────────────────────────────────────────────────────────────────
     Canvas          _canvas;
@@ -56,6 +68,8 @@ public class PlayerListUI : MonoBehaviour
     bool  _open    = true;   // visible by default so it's obvious on first connect
     float _refreshTimer;
     const float RefreshInterval = 2f;
+    readonly List<OnlinePlayerEntry> _onlineRoster = new();
+    bool _hasServerRoster;
 
     // ── Lifecycle ─────────────────────────────────────────────────────────
 
@@ -95,17 +109,59 @@ public class PlayerListUI : MonoBehaviour
     /// <summary>Call from PlayerIdentity.OnStartClient / OnStopClient to trigger an immediate refresh.</summary>
     public static void RequestRefresh() => _instance?.Refresh();
 
+    public static void ReceiveOnlineRoster(
+        string[] names, int[] classes, string[] scenes, int localIndex)
+    {
+        _instance?.ApplyOnlineRoster(names, classes, scenes, localIndex);
+    }
+
     // ── Core ──────────────────────────────────────────────────────────────
 
     void Refresh()
     {
-        // Clear old rows
+        RodChatManager.Instance?.RequestOnlineRoster();
+
+        if (_hasServerRoster)
+            RenderOnlineRoster();
+        else
+            RenderSceneFallback();
+    }
+
+    void ApplyOnlineRoster(string[] names, int[] classes, string[] scenes, int localIndex)
+    {
+        _onlineRoster.Clear();
+
+        int count = Mathf.Min(
+            names != null ? names.Length : 0,
+            Mathf.Min(classes != null ? classes.Length : 0, scenes != null ? scenes.Length : 0));
+
+        for (int i = 0; i < count; i++)
+        {
+            _onlineRoster.Add(new OnlinePlayerEntry
+            {
+                playerName = string.IsNullOrWhiteSpace(names[i]) ? "Connecting..." : names[i],
+                classIndex = classes[i],
+                sceneName = scenes[i] ?? string.Empty,
+                isLocal = i == localIndex
+            });
+        }
+
+        _hasServerRoster = true;
+        if (_open)
+            RenderOnlineRoster();
+    }
+
+    void ClearRows()
+    {
         foreach (Transform child in _rowContainer)
             Destroy(child.gameObject);
+    }
 
+    void RenderSceneFallback()
+    {
+        ClearRows();
         var identities = Object.FindObjectsByType<PlayerIdentity>(FindObjectsInactive.Exclude);
-
-        _headerText.text = $"ONLINE  <size=10><color=#64748b>{identities.Length} player{(identities.Length == 1 ? "" : "s")}</color></size>";
+        SetHeader(identities.Length, identities.Length);
 
         if (identities.Length == 0)
         {
@@ -113,25 +169,83 @@ public class PlayerListUI : MonoBehaviour
             return;
         }
 
-        // Sort: local player first, then alphabetical
         var sorted = new List<PlayerIdentity>(identities);
         sorted.Sort((a, b) =>
         {
             if (a.isLocalPlayer) return -1;
-            if (b.isLocalPlayer) return  1;
+            if (b.isLocalPlayer) return 1;
             return string.Compare(a.playerName, b.playerName,
                 System.StringComparison.OrdinalIgnoreCase);
         });
 
-        foreach (var id in sorted)
+        foreach (PlayerIdentity id in sorted)
         {
-            int ci   = Mathf.Clamp(id.classIndex, 0, ClassColors.Length - 1);
-            string nameCol  = id.isLocalPlayer ? "#FFFFFF" : "#CBD5E1";
-            string classCol = ClassColors[ci];
-            string you      = id.isLocalPlayer ? " <color=#fbbf24>[you]</color>" : "";
-
-            AddRow(id.playerName + you, nameCol, id.ClassName, classCol);
+            int ci = Mathf.Clamp(id.classIndex, 0, ClassColors.Length - 1);
+            string nameCol = id.isLocalPlayer ? "#FFFFFF" : "#CBD5E1";
+            string you = id.isLocalPlayer ? " <color=#fbbf24>[you]</color>" : "";
+            AddRow(id.playerName + you, nameCol, id.ClassName, ClassColors[ci]);
         }
+    }
+
+    void RenderOnlineRoster()
+    {
+        ClearRows();
+
+        string localScene = string.Empty;
+        for (int i = 0; i < _onlineRoster.Count; i++)
+        {
+            if (_onlineRoster[i].isLocal)
+            {
+                localScene = _onlineRoster[i].sceneName;
+                break;
+            }
+        }
+
+        int sceneCount = 0;
+        for (int i = 0; i < _onlineRoster.Count; i++)
+        {
+            if (string.Equals(_onlineRoster[i].sceneName, localScene,
+                    System.StringComparison.OrdinalIgnoreCase))
+                sceneCount++;
+        }
+
+        SetHeader(_onlineRoster.Count, sceneCount);
+
+        if (_onlineRoster.Count == 0)
+        {
+            AddRow("—", "#475569", "");
+            return;
+        }
+
+        _onlineRoster.Sort((a, b) =>
+        {
+            if (a.isLocal != b.isLocal) return a.isLocal ? -1 : 1;
+
+            bool aInScene = string.Equals(a.sceneName, localScene,
+                System.StringComparison.OrdinalIgnoreCase);
+            bool bInScene = string.Equals(b.sceneName, localScene,
+                System.StringComparison.OrdinalIgnoreCase);
+            if (aInScene != bInScene) return aInScene ? -1 : 1;
+
+            return string.Compare(a.playerName, b.playerName,
+                System.StringComparison.OrdinalIgnoreCase);
+        });
+
+        foreach (OnlinePlayerEntry entry in _onlineRoster)
+        {
+            int ci = Mathf.Clamp(entry.classIndex, 0, ClassColors.Length - 1);
+            string nameCol = entry.isLocal ? "#FFFFFF" : "#CBD5E1";
+            string you = entry.isLocal ? " <color=#fbbf24>[you]</color>" : "";
+            string className = ci < ClassNames.Length ? ClassNames[ci] : "Unknown";
+            AddRow(entry.playerName + you, nameCol, className, ClassColors[ci]);
+        }
+    }
+
+    void SetHeader(int totalOnline, int sceneOnline)
+    {
+        _headerText.text =
+            $"TOTAL ONLINE <color=#FFFFFF>{totalOnline}</color>" +
+            $"  <color=#334155>|</color>  SCENE <color=#FFFFFF>{sceneOnline}</color>";
     }
 
     void AddRow(string name, string nameColor, string className, string classColor = "#64748b")
@@ -204,7 +318,7 @@ public class PlayerListUI : MonoBehaviour
         panelRt.anchorMax = new Vector2(1f, 1f);
         panelRt.pivot     = new Vector2(1f, 1f);
         panelRt.anchoredPosition = new Vector2(-12f, -48f);
-        panelRt.sizeDelta = new Vector2(200f, 0f); // width fixed, height auto
+        panelRt.sizeDelta = new Vector2(270f, 0f); // width fixed, height auto
 
         var vlg = _panel.GetComponent<VerticalLayoutGroup>();
         vlg.padding           = new RectOffset(8, 8, 6, 8);

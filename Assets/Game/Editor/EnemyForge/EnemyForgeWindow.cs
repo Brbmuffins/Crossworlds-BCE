@@ -100,7 +100,7 @@ namespace Crossworlds.EditorTools.EnemyForge
                 "agentBaseOffset", "stoppingDistance", "aggroRadius", "leashRadius",
                 "enableRoaming", "roamingRadius", "roamingMinWait", "roamingMaxWait");
             DrawPropertySection(serialized, "Basic Attack", ref showBasicAttack,
-                "aggroWhenDamaged", "attackRange", "attackInterval", "damage", "combatTurnSpeed", "attackImpactPoint",
+                "aggroWhenDamaged", "attackRange", "attackInterval", "damage", "combatTurnSpeed",
                 "projectilePrefab", "preferredRange", "tooCloseDistance");
             DrawCastAttackSection(serialized);
             DrawPropertySection(serialized, "Rewards", ref showRewards, "dropTable", "worldItemPrefab");
@@ -543,7 +543,10 @@ namespace Crossworlds.EditorTools.EnemyForge
             if (definition == null) return states;
             AddPreviewState(states, "Idle", definition.idleAnimation);
             AddPreviewState(states, "Chase", definition.chaseAnimation);
-            AddPreviewState(states, "Attack", definition.attackAnimation);
+            AddPreviewState(states, "Attack 1", definition.attackAnimation);
+            AddPreviewState(states, "Attack 2", definition.attackAnimation2);
+            AddPreviewState(states, "Attack 3", definition.attackAnimation3);
+            AddPreviewState(states, "Attack 4", definition.attackAnimation4);
             AddPreviewState(states, "Get Hit", definition.getHitAnimation);
             AddPreviewState(states, "Death", definition.deathAnimation);
             return states;
@@ -681,6 +684,12 @@ namespace Crossworlds.EditorTools.EnemyForge
             definition.idleAnimation = null;
             definition.chaseAnimation = null;
             definition.attackAnimation = null;
+            definition.attackAnimation2 = null;
+            definition.attackAnimation3 = null;
+            definition.attackAnimation4 = null;
+            definition.attackImpactPoint2 = 0.45f;
+            definition.attackImpactPoint3 = 0.45f;
+            definition.attackImpactPoint4 = 0.45f;
             definition.getHitAnimation = null;
             definition.deathAnimation = null;
 
@@ -716,6 +725,15 @@ namespace Crossworlds.EditorTools.EnemyForge
                     case "EnemyForge_Attack":
                         definition.attackAnimation = mapping.Value;
                         break;
+                    case "EnemyForge_Attack2":
+                        definition.attackAnimation2 = mapping.Value;
+                        break;
+                    case "EnemyForge_Attack3":
+                        definition.attackAnimation3 = mapping.Value;
+                        break;
+                    case "EnemyForge_Attack4":
+                        definition.attackAnimation4 = mapping.Value;
+                        break;
                     case "EnemyForge_GetHit":
                         definition.getHitAnimation = mapping.Value;
                         break;
@@ -724,6 +742,19 @@ namespace Crossworlds.EditorTools.EnemyForge
                         break;
                 }
             }
+
+            var controller = definition.source.GetComponent<EnemyController>();
+            var delays = controller != null ? controller.attackAnimationImpactDelays : null;
+            if (delays == null) return;
+            if (definition.attackAnimation2 != null && definition.attackAnimation2.length > 0.01f &&
+                delays.Length > 1)
+                definition.attackImpactPoint2 = Mathf.Clamp01(delays[1] / definition.attackAnimation2.length);
+            if (definition.attackAnimation3 != null && definition.attackAnimation3.length > 0.01f &&
+                delays.Length > 2)
+                definition.attackImpactPoint3 = Mathf.Clamp01(delays[2] / definition.attackAnimation3.length);
+            if (definition.attackAnimation4 != null && definition.attackAnimation4.length > 0.01f &&
+                delays.Length > 3)
+                definition.attackImpactPoint4 = Mathf.Clamp01(delays[3] / definition.attackAnimation4.length);
         }
 
         void DrawAnimationMapping()
@@ -789,7 +820,18 @@ namespace Crossworlds.EditorTools.EnemyForge
 
             DrawAnimationChoice("Idle", clips, ref definition.idleAnimation);
             DrawAnimationChoice("Chase / Movement", clips, ref definition.chaseAnimation);
-            DrawAnimationChoice("Combat Attack", clips, ref definition.attackAnimation);
+            DrawAnimationChoice("Combat Attack 1", clips, ref definition.attackAnimation);
+            DrawAttackTimingSlider("Attack 1 Hit / VFX Timing", definition.attackAnimation,
+                ref definition.attackImpactPoint);
+            DrawAnimationChoice("Combat Attack 2", clips, ref definition.attackAnimation2);
+            DrawAttackTimingSlider("Attack 2 Hit / VFX Timing", definition.attackAnimation2,
+                ref definition.attackImpactPoint2);
+            DrawAnimationChoice("Combat Attack 3", clips, ref definition.attackAnimation3);
+            DrawAttackTimingSlider("Attack 3 Hit / VFX Timing", definition.attackAnimation3,
+                ref definition.attackImpactPoint3);
+            DrawAnimationChoice("Combat Attack 4", clips, ref definition.attackAnimation4);
+            DrawAttackTimingSlider("Attack 4 Hit / VFX Timing", definition.attackAnimation4,
+                ref definition.attackImpactPoint4);
             DrawAnimationChoice("Get Hit", clips, ref definition.getHitAnimation);
             DrawAnimationChoice("Death", clips, ref definition.deathAnimation);
         }
@@ -828,6 +870,34 @@ namespace Crossworlds.EditorTools.EnemyForge
                         EditorUtility.SetDirty(definition);
                     }
                 }
+            }
+        }
+
+        void DrawAttackTimingSlider(string label, AnimationClip clip, ref float normalizedPoint)
+        {
+            using (new EditorGUI.DisabledScope(clip == null))
+            {
+                EditorGUI.indentLevel++;
+                float next = EditorGUILayout.Slider(
+                    new GUIContent(label,
+                        "Normalized position inside this animation. Move right to place the hit/VFX closer to the end."),
+                    normalizedPoint, 0f, 1f);
+                if (!Mathf.Approximately(next, normalizedPoint))
+                {
+                    Undo.RecordObject(definition, "Adjust " + label);
+                    normalizedPoint = next;
+                    EditorUtility.SetDirty(definition);
+                }
+
+                if (clip != null)
+                {
+                    float impactSeconds = clip.length * normalizedPoint;
+                    float secondsBeforeEnd = Mathf.Max(0f, clip.length - impactSeconds);
+                    EditorGUILayout.LabelField(
+                        $"{impactSeconds:0.00}s from start  •  {secondsBeforeEnd:0.00}s before animation end",
+                        EditorStyles.miniLabel);
+                }
+                EditorGUI.indentLevel--;
             }
         }
 

@@ -18,7 +18,7 @@ using Mirror;
 [RequireComponent(typeof(NavMeshAgent))]
 public class EnemyController : NetworkBehaviour
 {
-    public const int EnemyForgeRuntimeProfileVersion = 25;
+    public const int EnemyForgeRuntimeProfileVersion = 27;
 
     public enum EnemyState { Idle, Chase, Attack, Dead }
 
@@ -54,6 +54,10 @@ public class EnemyController : NetworkBehaviour
     [Min(0f)] public float combatTurnSpeed = 1080f;
     [Tooltip("Seconds between starting the attack animation and applying its hit. Enemy Forge derives this from the selected attack clip.")]
     [Min(0f)] public float attackImpactDelay = 0.35f;
+    [Tooltip("Bit mask of configured Enemy Forge attack animation slots. Bit 0 is Combat Attack 1.")]
+    public int attackAnimationVariantMask = 1;
+    [Tooltip("Impact delay for each Enemy Forge attack animation slot.")]
+    public float[] attackAnimationImpactDelays = { 0.35f, 0.35f, 0.35f, 0.35f };
 
     // ── Ranged ───────────────────────────────────────────────────────────────────
     [Header("Ranged")]
@@ -106,6 +110,7 @@ public class EnemyController : NetworkBehaviour
     private Animator             _animator;
     private bool                 _hasSpeedParam;
     private bool                 _hasAttackParam;
+    private bool                 _hasAttackVariantParam;
     private bool                 _hasGetHitParam;
     private bool                 _hasDeathParam;
     private bool                 _returningHome;
@@ -133,6 +138,7 @@ public class EnemyController : NetworkBehaviour
 
     static readonly int SpeedHash = Animator.StringToHash("Speed");
     static readonly int AttackHash = Animator.StringToHash("Attack");
+    static readonly int AttackVariantHash = Animator.StringToHash("AttackVariant");
     static readonly int GetHitHash = Animator.StringToHash("GetHit");
     static readonly int DeathHash = Animator.StringToHash("Death");
 
@@ -875,17 +881,18 @@ public class EnemyController : NetworkBehaviour
         var targetNetId = _target.GetComponent<NetworkIdentity>();
         uint hitNetId = targetNetId != null ? targetNetId.netId : 0u;
 
-        if (isRanged) PlayRangedShot(hitNetId);
-        else PlayMeleeSwing(hitNetId);
+        int attackVariant = SelectAttackAnimationVariant();
+        if (isRanged) PlayRangedShot(hitNetId, attackVariant);
+        else PlayMeleeSwing(hitNetId, attackVariant);
 
-        StartCoroutine(ResolveAttackImpact(targetHealth));
+        StartCoroutine(ResolveAttackImpact(targetHealth, GetAttackImpactDelay(attackVariant)));
     }
 
-    IEnumerator ResolveAttackImpact(Health intendedTarget)
+    IEnumerator ResolveAttackImpact(Health intendedTarget, float impactDelay)
     {
         _attackInProgress = true;
-        if (attackImpactDelay > 0f)
-            yield return new WaitForSeconds(attackImpactDelay);
+        if (impactDelay > 0f)
+            yield return new WaitForSeconds(impactDelay);
 
         _attackInProgress = false;
         if (!_simulationInitialized || state == EnemyState.Dead || _returningHome ||
@@ -1282,10 +1289,10 @@ public class EnemyController : NetworkBehaviour
     // ─────────────────────────────────────────────────────────────────────────────
 
     [ClientRpc]
-    void RpcMeleeSwing(uint targetNetId)
+    void RpcMeleeSwing(uint targetNetId, int attackVariant)
     {
 #if UNITY_EDITOR || !UNITY_SERVER
-        TriggerAnimator(AttackHash, _hasAttackParam);
+        PlayAttackAnimation(attackVariant);
 
         bool eliteImpact = IsEliteEnemy();
 
@@ -1304,12 +1311,12 @@ public class EnemyController : NetworkBehaviour
 #endif
     }
 
-    void PlayMeleeSwing(uint targetNetId)
+    void PlayMeleeSwing(uint targetNetId, int attackVariant)
     {
-        if (NetworkServer.active) RpcMeleeSwing(targetNetId);
+        if (NetworkServer.active) RpcMeleeSwing(targetNetId, attackVariant);
         else
         {
-            TriggerAnimator(AttackHash, _hasAttackParam);
+            PlayAttackAnimation(attackVariant);
 #if UNITY_EDITOR || !UNITY_SERVER
             CombatAudio.Instance?.PlayMeleeHit();
 #endif
@@ -1317,10 +1324,10 @@ public class EnemyController : NetworkBehaviour
     }
 
     [ClientRpc]
-    void RpcRangedShot(uint targetNetId)
+    void RpcRangedShot(uint targetNetId, int attackVariant)
     {
 #if UNITY_EDITOR || !UNITY_SERVER
-        TriggerAnimator(AttackHash, _hasAttackParam);
+        PlayAttackAnimation(attackVariant);
 
         CombatAudio.Instance?.PlayRangedHit();
         // Ranged: no hitstop; light shake only on the targeted player's client
@@ -1330,12 +1337,12 @@ public class EnemyController : NetworkBehaviour
 #endif
     }
 
-    void PlayRangedShot(uint targetNetId)
+    void PlayRangedShot(uint targetNetId, int attackVariant)
     {
-        if (NetworkServer.active) RpcRangedShot(targetNetId);
+        if (NetworkServer.active) RpcRangedShot(targetNetId, attackVariant);
         else
         {
-            TriggerAnimator(AttackHash, _hasAttackParam);
+            PlayAttackAnimation(attackVariant);
 #if UNITY_EDITOR || !UNITY_SERVER
             CombatAudio.Instance?.PlayRangedHit();
 #endif
@@ -1362,9 +1369,11 @@ public class EnemyController : NetworkBehaviour
     }
 
     [Server]
-    public void PlayCastAnimation()
+    public float PlayCastAnimation()
     {
-        RpcCastAnimation();
+        int attackVariant = SelectAttackAnimationVariant();
+        RpcCastAnimation(attackVariant);
+        return GetAttackImpactDelay(attackVariant);
     }
 
     [Server]
@@ -1374,10 +1383,10 @@ public class EnemyController : NetworkBehaviour
     }
 
     [ClientRpc]
-    void RpcCastAnimation()
+    void RpcCastAnimation(int attackVariant)
     {
 #if UNITY_EDITOR || !UNITY_SERVER
-        TriggerAnimator(AttackHash, _hasAttackParam);
+        PlayAttackAnimation(attackVariant);
         CombatAudio.Instance?.PlayAbilityCast();
 #endif
     }
@@ -1442,6 +1451,8 @@ public class EnemyController : NetworkBehaviour
                 _hasSpeedParam = true;
             else if (parameter.nameHash == AttackHash && parameter.type == AnimatorControllerParameterType.Trigger)
                 _hasAttackParam = true;
+            else if (parameter.nameHash == AttackVariantHash && parameter.type == AnimatorControllerParameterType.Int)
+                _hasAttackVariantParam = true;
             else if (parameter.nameHash == GetHitHash && parameter.type == AnimatorControllerParameterType.Trigger)
                 _hasGetHitParam = true;
             else if (parameter.nameHash == DeathHash && parameter.type == AnimatorControllerParameterType.Trigger)
@@ -1456,6 +1467,38 @@ public class EnemyController : NetworkBehaviour
                 pair.Key.name == "EnemyForge_GetHit" && pair.Value != null);
             _hasGetHitParam = hasGetHitClip;
         }
+    }
+
+    int SelectAttackAnimationVariant()
+    {
+        int mask = attackAnimationVariantMask | 1;
+        int count = 0;
+        for (int i = 0; i < 4; i++)
+            if ((mask & (1 << i)) != 0)
+                count++;
+
+        int pick = UnityEngine.Random.Range(0, count);
+        for (int i = 0; i < 4; i++)
+        {
+            if ((mask & (1 << i)) == 0) continue;
+            if (pick-- == 0) return i;
+        }
+        return 0;
+    }
+
+    public float GetAttackImpactDelay(int attackVariant)
+    {
+        if (attackAnimationImpactDelays != null &&
+            attackVariant >= 0 && attackVariant < attackAnimationImpactDelays.Length)
+            return Mathf.Max(0f, attackAnimationImpactDelays[attackVariant]);
+        return Mathf.Max(0f, attackImpactDelay);
+    }
+
+    void PlayAttackAnimation(int attackVariant)
+    {
+        if (_animator != null && _hasAttackVariantParam)
+            _animator.SetInteger(AttackVariantHash, Mathf.Clamp(attackVariant, 0, 3));
+        TriggerAnimator(AttackHash, _hasAttackParam);
     }
 
     void SetAnimatorSpeed(float speed)

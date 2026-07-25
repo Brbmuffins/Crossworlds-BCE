@@ -49,6 +49,12 @@ namespace Crossworlds.EditorTools.EnemyForge
         [HideInInspector]
         public AnimationClip attackAnimation;
         [HideInInspector]
+        public AnimationClip attackAnimation2;
+        [HideInInspector]
+        public AnimationClip attackAnimation3;
+        [HideInInspector]
+        public AnimationClip attackAnimation4;
+        [HideInInspector]
         public AnimationClip getHitAnimation;
         [HideInInspector]
         public AnimationClip deathAnimation;
@@ -82,6 +88,9 @@ namespace Crossworlds.EditorTools.EnemyForge
         [Min(0f)] public float damage = 12f;
         [Min(0f)] public float combatTurnSpeed = 1080f;
         [Range(0f, 1f)] public float attackImpactPoint = 0.45f;
+        [HideInInspector, Range(0f, 1f)] public float attackImpactPoint2 = 0.45f;
+        [HideInInspector, Range(0f, 1f)] public float attackImpactPoint3 = 0.45f;
+        [HideInInspector, Range(0f, 1f)] public float attackImpactPoint4 = 0.45f;
         public GameObject projectilePrefab;
         [Min(0f)] public float preferredRange = 5f;
         [Min(0f)] public float tooCloseDistance = 3f;
@@ -209,6 +218,21 @@ namespace Crossworlds.EditorTools.EnemyForge
                 combatTurnSpeed = controller.combatTurnSpeed;
                 if (attackAnimation != null && attackAnimation.length > 0.01f)
                     attackImpactPoint = Mathf.Clamp01(controller.attackImpactDelay / attackAnimation.length);
+                if (controller.attackAnimationImpactDelays != null)
+                {
+                    if (attackAnimation2 != null && attackAnimation2.length > 0.01f &&
+                        controller.attackAnimationImpactDelays.Length > 1)
+                        attackImpactPoint2 = Mathf.Clamp01(
+                            controller.attackAnimationImpactDelays[1] / attackAnimation2.length);
+                    if (attackAnimation3 != null && attackAnimation3.length > 0.01f &&
+                        controller.attackAnimationImpactDelays.Length > 2)
+                        attackImpactPoint3 = Mathf.Clamp01(
+                            controller.attackAnimationImpactDelays[2] / attackAnimation3.length);
+                    if (attackAnimation4 != null && attackAnimation4.length > 0.01f &&
+                        controller.attackAnimationImpactDelays.Length > 3)
+                        attackImpactPoint4 = Mathf.Clamp01(
+                            controller.attackAnimationImpactDelays[3] / attackAnimation4.length);
+                }
                 projectilePrefab = controller.projectilePrefab;
                 preferredRange = controller.preferredRange;
                 tooCloseDistance = controller.tooCloseDistance;

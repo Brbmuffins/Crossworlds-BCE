@@ -68,6 +68,66 @@ public class RodChatManager : NetworkBehaviour
 
     readonly List<string> _history = new();
 
+    public void RequestOnlineRoster()
+    {
+        if (isClient)
+            CmdRequestOnlineRoster();
+    }
+
+    [Command(requiresAuthority = false)]
+    void CmdRequestOnlineRoster(NetworkConnectionToClient sender = null)
+    {
+        if (sender == null) return;
+
+        var names = new List<string>();
+        var classes = new List<int>();
+        var scenes = new List<string>();
+        int localIndex = -1;
+
+        foreach (NetworkConnectionToClient conn in NetworkServer.connections.Values)
+        {
+            if (conn == null || !conn.isAuthenticated) continue;
+
+            var identity = conn.identity != null
+                ? conn.identity.GetComponent<PlayerIdentity>()
+                : null;
+            var auth = conn.authenticationData as RodPlayerAuth;
+
+            string playerName = identity != null && !string.IsNullOrWhiteSpace(identity.playerName)
+                ? identity.playerName
+                : auth != null && !string.IsNullOrWhiteSpace(auth.username)
+                    ? auth.username
+                    : "Connecting...";
+            int classIndex = identity != null
+                ? identity.classIndex
+                : auth != null ? auth.classIndex : 0;
+            string sceneName = conn.identity != null && conn.identity.gameObject.scene.IsValid()
+                ? conn.identity.gameObject.scene.name
+                : SceneNames.NormalizeZone(auth != null ? auth.zone : null);
+
+            if (conn == sender) localIndex = names.Count;
+            names.Add(playerName);
+            classes.Add(classIndex);
+            scenes.Add(sceneName);
+        }
+
+        TargetReceiveOnlineRoster(
+            sender, names.ToArray(), classes.ToArray(), scenes.ToArray(), localIndex);
+    }
+
+    [TargetRpc]
+    void TargetReceiveOnlineRoster(
+        NetworkConnection target,
+        string[] names,
+        int[] classes,
+        string[] scenes,
+        int localIndex)
+    {
+#if UNITY_EDITOR || !UNITY_SERVER
+        PlayerListUI.ReceiveOnlineRoster(names, classes, scenes, localIndex);
+#endif
+    }
+
     // ── Name colours — deterministic from username hash ───────────────────
     static readonly string[] NAME_COLORS =
         { "#f472b6", "#a78bfa", "#34d399", "#60a5fa", "#fbbf24", "#fb923c" };
