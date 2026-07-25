@@ -10,7 +10,7 @@ using UnityEngine;
 /// inside each class prefab so players are visible in-game.
 ///
 /// Mappings (index → class → model FBX):
-///   0  Warden      → Characters/Engineer/Model/RoD-bike-ridah.fbx   (placeholder until Warden FBX ships)
+///   0  Marauder    → 3D Models/Heroes/Marauder
 ///   1  Ironclad    → Heroes/Guardian/Guardian.fbx
 ///   2  Shadowblade → Heroes/Bogar/Bogar.fbx
 ///   3  Cleric      → Heroes/Brandalf/Brandalf.fbx                    (temp; Brandalf decision pending)
@@ -34,10 +34,10 @@ public static class HeroModelSetupBuilder
     static readonly (string prefabPath, string modelPath, string controllerPath, string label)[] Entries =
     {
         (
-            "Assets/Game/Game_Prefabs/Warden.prefab",
-            "Assets/Game/Characters/Engineer/Model/RoD-bike-ridah.fbx",
+            "Assets/Game/Game_Prefabs/Marauder.prefab",
+            "Assets/Game/3D Models/Heroes/Marauder/tripo_convert_6af764f8-667b-4b86-846d-7567dc4750ac.fbx",
             null,
-            "Warden"
+            "Marauder"
         ),
         (
             "Assets/Game/Game_Prefabs/Ironclad.prefab",

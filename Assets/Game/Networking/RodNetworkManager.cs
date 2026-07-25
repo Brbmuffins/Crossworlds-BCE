@@ -8,7 +8,7 @@ using UnityEngine.SceneManagement;
 //  RodNetworkManager
 //
 //  Inspector setup:
-//    • classPrefabs[0] = Warden prefab
+//    • classPrefabs[0] = Marauder prefab
 //    • classPrefabs[1] = Ironclad prefab
 //    • classPrefabs[2] = Shadowblade prefab
 //    • classPrefabs[3] = Cleric prefab
@@ -32,7 +32,7 @@ using UnityEngine.SceneManagement;
 public class RodNetworkManager : NetworkManager
 {
     [Header("Class Prefabs")]
-    [Tooltip("0=Warden, 1=Ironclad, 2=Shadowblade, 3=Cleric, 4=Arcanist")]
+    [Tooltip("0=Marauder, 1=Ironclad, 2=Shadowblade, 3=Cleric, 4=Arcanist")]
     public GameObject[] classPrefabs;
 
     [Header("World / Combat Prefabs")]

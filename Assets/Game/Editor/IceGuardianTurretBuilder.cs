@@ -7,7 +7,7 @@ using UnityEngine;
 /// BCE/Setup/4g — Ice Guardian Turret Prefab
 ///
 /// Builds Assets/Game/Networking/IceGuardianTurret.prefab — a fully networked
-/// deployable turret for the Warden's "Runic Sentinel" ability.
+/// deployable turret for the Marauder's "Runic Sentinel" ability.
 ///
 /// Components added to the prefab root:
 ///   • Rigidbody           (kinematic, no gravity — required by GuardianFollower)

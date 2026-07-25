@@ -16,7 +16,7 @@ using UnityEngine;
 ///   4. Wires the Model's Animator: controller, avatar = the new model's avatar,
 ///      root motion off.
 ///
-/// Warden is intentionally skipped — its model already IS the Engineer model.
+/// Marauder is intentionally skipped — its prefab already contains its final model.
 /// PlayerMovement finds the Animator via GetComponentInChildren at runtime, so no
 /// serialized references need fixing.
 /// </summary>
@@ -123,7 +123,7 @@ public static class CharacterModelSwapper
         AssetDatabase.Refresh();
         Debug.Log($"[ModelSwap] Swapped {done}/{Map.Length} class prefabs.\n" +
                   string.Join("\n", report) +
-                  "\nWarden left as-is (already uses the Engineer model).");
+                  "\nMarauder left as-is (already contains its final model).");
     }
 
     // Force a model to Humanoid + create-from-this-model avatar. Returns the avatar,

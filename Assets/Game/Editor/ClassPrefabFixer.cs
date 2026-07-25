@@ -11,7 +11,7 @@ using UnityEngine;
 /// NetworkIdentity.OnValidate(), which only runs when a prefab is imported
 /// or touched in the editor.
 ///
-/// Warden, Ironclad, Shadowblade, and Cleric currently have _assetId: 0 in
+/// Marauder, Ironclad, Shadowblade, and Cleric currently have _assetId: 0 in
 /// their .prefab files (visible in raw YAML).  Arcanist has a correct
 /// non-zero value.  ChatManager.prefab also has _assetId: 0 which breaks
 /// chat for non-host clients (RPC delivery and UI never exist on their end).
@@ -28,7 +28,7 @@ public static class ClassPrefabFixer
     const string PREFABS_DIR = "Assets/Game/Game_Prefabs";
 
     static readonly string[] ClassNames =
-        { "Warden", "Ironclad", "Shadowblade", "Cleric", "Arcanist" };
+        { "Marauder", "Ironclad", "Shadowblade", "Cleric", "Arcanist" };
 
     // Additional networked prefabs (not class heroes) that also need a valid assetId.
     static readonly string[] ExtraPrefabs =

@@ -9,7 +9,7 @@ using UnityEngine;
 /// and enemy prefabs so remote players/enemies are SEEN MOVING by other clients.
 ///
 /// Why this exists:
-///   The 5 hero prefabs (Warden/Ironclad/Shadowblade/Cleric/Arcanist) and the 3
+///   The 5 hero prefabs (Marauder/Ironclad/Shadowblade/Cleric/Arcanist) and the 3
 ///   base enemy prefabs (Grunt/Ranged/Elite) carry a NetworkIdentity — so they
 ///   SPAWN on every client — but they have no NetworkTransform. Mirror never
 ///   replicates their position, so to everyone except the owner they stand frozen
@@ -31,7 +31,7 @@ using UnityEngine;
 /// </summary>
 public static class NetworkSyncFixer
 {
-    static readonly string[] HeroNames  = { "Warden", "Ironclad", "Shadowblade", "Cleric", "Arcanist" };
+    static readonly string[] HeroNames  = { "Marauder", "Ironclad", "Shadowblade", "Cleric", "Arcanist" };
     static readonly string[] EnemyNames = { "Enemy_Grunt", "Enemy_Ranged", "Enemy_Elite" };
 
     [MenuItem("BCE/Setup/4n ▶ Add Movement Sync (Players + Enemies)", priority = 7)]

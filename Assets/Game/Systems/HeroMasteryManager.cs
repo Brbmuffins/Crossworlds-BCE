@@ -11,7 +11,7 @@ using UnityEngine.Networking;
 /// posts XP awards to /api/mastery/award-xp.
 ///
 /// L6 / L10 passive bonuses per hero:
-///   0 Warden:     L6 = +8% dmg,      L10 = +5% CDR
+///   0 Marauder:   L6 = +8% dmg,      L10 = +5% CDR
 ///   1 Ironclad:   L6 = +10% max HP,  L10 = +8% dmg
 ///   2 Shadowblade: L6 = +8% dmg,     L10 = +8% CDR
 ///   3 Cleric:      L6 = +15% heal,   L10 = +10% max HP
@@ -278,7 +278,7 @@ public class HeroMasteryManager : MonoBehaviour
     // ── Per-hero bonus definitions ────────────────────────────────────────────
     // All values are percentages (0.08 = 8%). maxHp values are fractions of BaseMaxHealth.
     //
-    //   Hero 0 Warden:      L6 = +8% dmg,     L10 = +5% CDR
+    //   Hero 0 Marauder:    L6 = +8% dmg,     L10 = +5% CDR
     //   Hero 1 Ironclad:    L6 = +10% maxHp,  L10 = +8% dmg
     //   Hero 2 Shadowblade: L6 = +8% dmg,     L10 = +8% CDR
     //   Hero 3 Cleric:      L6 = +15% heal,   L10 = +10% maxHp
@@ -290,7 +290,7 @@ public class HeroMasteryManager : MonoBehaviour
         d6 = h6 = c6 = hp6 = d10 = h10 = c10 = hp10 = 0f;
         switch (heroId)
         {
-            case 0: // Warden
+            case 0: // Marauder
                 d6 = 0.08f; c10 = 0.05f;
                 break;
             case 1: // Ironclad

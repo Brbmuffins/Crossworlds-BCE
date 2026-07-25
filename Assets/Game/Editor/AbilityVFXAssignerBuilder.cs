@@ -32,7 +32,7 @@ public static class AbilityVFXAssignerBuilder
 
     static readonly string[] HeroPrefabs =
     {
-        "Assets/Game/Game_Prefabs/Warden.prefab",
+        "Assets/Game/Game_Prefabs/Marauder.prefab",
         "Assets/Game/Game_Prefabs/Ironclad.prefab",
         "Assets/Game/Game_Prefabs/Shadowblade.prefab",
         "Assets/Game/Game_Prefabs/Cleric.prefab",
@@ -57,7 +57,7 @@ public static class AbilityVFXAssignerBuilder
         { "Void Maw",           ("Death magic circle",               "Plexus AoE",                "Death magic circle") },
         { "Arcane Step",        ("Teleport",                         "Glowing orbs",              null) },
 
-        // ── Warden ───────────────────────────────────────────────────────────
+        // ── Marauder ─────────────────────────────────────────────────────────
         // Runic Sentinel turretPrefab is handled separately in TurretMap below
         { "Runic Sentinel",     ("Magic circle",                     "Electro hit",               "Magic circle") },
         { "Runic Snare",        ("Magic circle",                     "Ground AOE explosion",      "Magic circle") },

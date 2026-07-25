@@ -9,7 +9,7 @@ public static class SpellIconAssigner
 
     static readonly string[] HeroPrefabs = new[]
     {
-        "Assets/Game/Game_Prefabs/Warden.prefab",
+        "Assets/Game/Game_Prefabs/Marauder.prefab",
         "Assets/Game/Game_Prefabs/Ironclad.prefab",
         "Assets/Game/Game_Prefabs/Shadowblade.prefab",
         "Assets/Game/Game_Prefabs/Cleric.prefab",
@@ -166,7 +166,7 @@ public static class SpellIconAssigner
         "Fireball"           => "ember-surge",
         "Chain Lightning"    => "storm-lash",
         "Frost Nova"         => "ice-spikes",
-        // Warden new
+        // Marauder
         "Thorn Volley"       => "dark-harvest",
         "Earth Surge"        => "shatter-ground",
         "Vine Grasp"         => "silence-ward",

@@ -226,7 +226,7 @@ public static class RodEditorSetup
             "LoginScene.unity created and wired!\n\n" +
             "Just 2 quick drags left:\n" +
             "  1. NetworkManager → classPrefabs [0–4]\n" +
-            "     (Warden / Ironclad / Shadowblade / Cleric / Arcanist)\n\n" +
+            "     (Marauder / Ironclad / Shadowblade / Cleric / Arcanist)\n\n" +
             "  2. LoginUI (LoginScreenVFX) → VFX prefab slots\n\n" +
             "Then run menu item 2 to clean GameWorld.",
             "Got it!");

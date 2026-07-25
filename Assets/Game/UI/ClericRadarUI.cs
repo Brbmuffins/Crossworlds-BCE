@@ -226,7 +226,7 @@ public class ClericRadarUI : MonoBehaviour
 
     Color ClassColor(int idx) => idx switch
     {
-        0 => new Color(0.4f, 0.7f, 0.4f),  // Warden   — green
+        0 => new Color(0.4f, 0.7f, 0.4f),  // Marauder — green
         1 => new Color(0.6f, 0.6f, 0.7f),  // Ironclad — silver
         2 => new Color(0.5f, 0.1f, 0.7f),  // Shadowblade — purple
         3 => new Color(0.9f, 0.85f, 0.3f), // Cleric   — gold

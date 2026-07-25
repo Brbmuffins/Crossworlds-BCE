@@ -6,7 +6,7 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 
 /// <summary>
-/// BCE/Setup/4 — Creates Warden/Ironclad/Shadowblade/Cleric/Arcanist prefabs
+/// BCE/Setup/4 — Creates Marauder/Ironclad/Shadowblade/Cleric/Arcanist prefabs
 /// from the character FBX model and auto-assigns them to RodNetworkManager.
 /// </summary>
 public static class RodPrefabBuilder
@@ -16,7 +16,7 @@ public static class RodPrefabBuilder
     const string LOGIN_SCENE   = "Assets/Game/Scenes/LoginScene.unity";
     const string ANIM_CTRL     = "Assets/Game/Characters/Engineer/Animations/AnimationController.controller";
 
-    static readonly string[] ClassNames = { "Warden", "Ironclad", "Shadowblade", "Cleric", "Arcanist" };
+    static readonly string[] ClassNames = { "Marauder", "Ironclad", "Shadowblade", "Cleric", "Arcanist" };
     // The 5 canonical hero prefabs the combat stack applies to. (Legacy Engineer/
     // Guardian/Medic prefabs were removed; Wraith is an enemy, not a player class.)
     static readonly string[] ExistingCombatPrefabNames = ClassNames;
@@ -29,7 +29,7 @@ public static class RodPrefabBuilder
         // heroes from the Engineer FBX (losing their real models) and can break
         // spawning — so require explicit confirmation. Only run on a fresh setup.
         if (!EditorUtility.DisplayDialog("Rebuild all 5 class prefabs?",
-            "This OVERWRITES Warden/Ironclad/Shadowblade/Cleric/Arcanist.prefab from the " +
+            "This OVERWRITES Marauder/Ironclad/Shadowblade/Cleric/Arcanist.prefab from the " +
             "Engineer FBX and reassigns RodNetworkManager.classPrefabs + spawnPrefabs.\n\n" +
             "You will lose the current hero models/components. Only do this on a fresh project.",
             "Overwrite", "Cancel"))

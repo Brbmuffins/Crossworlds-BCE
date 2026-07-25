@@ -50,7 +50,7 @@ public static class CharacterSelectDataBuilder
             AssetDatabase.CreateFolder("Assets/Game/Data", "CharacterSelect");
         }
 
-        CreateWarden();
+        CreateMarauder();
         CreateIronclad();
         CreateShadowblade();
         CreateCleric();
@@ -63,19 +63,19 @@ public static class CharacterSelectDataBuilder
                   "\nNEXT: drag them into CharacterSelectUI.characters[0-4] in the Inspector.");
     }
 
-    // ── 0 — Warden ────────────────────────────────────────────────────────────
+    // ── 0 — Marauder ──────────────────────────────────────────────────────────
 
-    static void CreateWarden()
+    static void CreateMarauder()
     {
-        var d = Make("Warden");
-        d.className       = "Warden";
+        var d = Make("Marauder");
+        d.className       = "Marauder";
         d.roleTagline     = "Control DPS  ·  Turret Tactician  ·  Area Denial";
         d.loreDescription =
-            "A master of runic constructs, the Warden bends the battlefield through automated sentinels and snare fields. " +
-            "Where others fight with muscle and steel, the Warden fights with precision and architecture — turning every engagement into a controlled kill zone.";
+            "A master of runic constructs, the Marauder bends the battlefield through automated sentinels and snare fields. " +
+            "Where others fight with muscle and steel, the Marauder fights with precision and architecture — turning every engagement into a controlled kill zone.";
         d.classColor     = new Color(0.88f, 0.58f, 0.18f);
         d.classColorDark = new Color(0.30f, 0.18f, 0.05f);
-        d.portrait       = LoadPortrait("warden");
+        d.portrait       = LoadPortrait("marauder");
 
         d.traits = new TraitPill[]
         {
@@ -117,10 +117,10 @@ public static class CharacterSelectDataBuilder
         };
 
         d.deployableName        = "Runic Sentinel";
-        d.deployableDescription = "Places an automated turret. Warden's signature — persists between waves and scales with tech upgrades.";
+        d.deployableDescription = "Places an automated turret. Marauder's signature — persists between waves and scales with tech upgrades.";
         d.deployableIcon        = LoadIcon("runic-sentinel");
 
-        Save(d, "Warden");
+        Save(d, "Marauder");
     }
 
     // ── 1 — Ironclad ─────────────────────────────────────────────────────────

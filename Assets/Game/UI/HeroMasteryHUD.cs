@@ -41,7 +41,7 @@ public class HeroMasteryHUD : MonoBehaviour
     // Class fill colours (one per hero 0-4, matches ClassColor in ClericRadarUI)
     static readonly Color[] ClassColors =
     {
-        new Color(0.40f, 0.80f, 0.40f, 1f), // 0 Warden   — green
+        new Color(0.40f, 0.80f, 0.40f, 1f), // 0 Marauder — green
         new Color(0.60f, 0.60f, 0.75f, 1f), // 1 Ironclad — silver-blue
         new Color(0.60f, 0.10f, 0.80f, 1f), // 2 Shadowblade — purple
         new Color(0.95f, 0.80f, 0.20f, 1f), // 3 Cleric   — gold

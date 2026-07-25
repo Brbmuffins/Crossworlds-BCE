@@ -13,7 +13,8 @@ using Mirror;
 ///   bool   IsInCombat    true when an enemy is within combatCheckRadius →
 ///                        switches the resting pose from Idle to IdleCombat
 ///   trigger GetHit       fired when the local player takes damage
-///   trigger Death        fired when the local player dies
+///   trigger Death        fired when the local player becomes downed
+///   bool    IsDead       true while the local player is downed
 ///
 /// Required animator parameters on the controller assigned to this prefab
 /// (create with BCE/Setup/5a ▶ Create Player AnimController):
@@ -22,6 +23,7 @@ using Mirror;
 ///   bool    isBackwards   (set by PlayerMovement)
 ///   trigger GetHit
 ///   trigger Death
+///   bool    IsDead
 ///   trigger CastDamage    (set by CastAnimator)
 ///   trigger CastHeal
 ///   trigger CastSupport
@@ -80,6 +82,8 @@ public class PlayerAnimator : MonoBehaviour
         {
             _health.onDamageTaken.AddListener(OnDamageTaken);
             _health.onDeath.AddListener(OnDeath);
+            _health.onDownedChanged.AddListener(OnDownedChanged);
+            SetDead(_health.IsDowned);
         }
     }
 
@@ -89,6 +93,7 @@ public class PlayerAnimator : MonoBehaviour
         {
             _health.onDamageTaken.RemoveListener(OnDamageTaken);
             _health.onDeath.RemoveListener(OnDeath);
+            _health.onDownedChanged.RemoveListener(OnDownedChanged);
         }
     }
 
@@ -137,9 +142,29 @@ public class PlayerAnimator : MonoBehaviour
 
     void OnDeath()
     {
-        _dead = true;
-        SetTrigger("Death");
-        CombatAudio.Instance?.PlayDeath();
+        SetDead(true);
+    }
+
+    void OnDownedChanged(bool isDowned)
+    {
+        SetDead(isDowned);
+    }
+
+    void SetDead(bool isDead)
+    {
+        bool wasDead = _dead;
+        _dead = isDead;
+        SetBool("IsDead", isDead);
+
+        if (isDead && !wasDead)
+        {
+            SetTrigger("Death");
+            CombatAudio.Instance?.PlayDeath();
+        }
+        else if (!isDead && _anim != null && _params.Contains("Death"))
+        {
+            _anim.ResetTrigger("Death");
+        }
     }
 
     // ── Safe animator helpers (no-op if param doesn't exist) ─────────────────────

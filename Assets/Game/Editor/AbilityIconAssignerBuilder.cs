@@ -22,7 +22,7 @@ public static class AbilityIconAssignerBuilder
 
     static readonly string[] PrefabPaths =
     {
-        "Assets/Game/Prefabs/Warden.prefab",
+        "Assets/Game/Game_Prefabs/Marauder.prefab",
         "Assets/Game/Prefabs/Ironclad.prefab",
         "Assets/Game/Prefabs/Shadowblade.prefab",
         "Assets/Game/Prefabs/Cleric.prefab",

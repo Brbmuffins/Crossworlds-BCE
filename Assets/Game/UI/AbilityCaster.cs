@@ -186,7 +186,7 @@ public class AbilityCaster : NetworkBehaviour
         "Binding Wave",
         "Arcane Ward",
     };
-    static readonly string[] WardenAbilityNames =
+    static readonly string[] MarauderAbilityNames =
     {
         "Runic Snare",
         "Battle Hymn",
@@ -250,7 +250,7 @@ public class AbilityCaster : NetworkBehaviour
         "Poison Cloud",
         "Death Strike",
     };
-    static readonly string[] WardenDefaultAbilityNames = { "Runic Sentinel", "Runic Snare", "Battle Hymn", "Mend" };
+    static readonly string[] MarauderDefaultAbilityNames = { "Runic Sentinel", "Runic Snare", "Battle Hymn", "Mend" };
     static readonly string[] IroncladDefaultAbilityNames = { "Arcane Ward", "Shieldwall Charge", "Stalwart Stance", "Iron Rampart" };
     static readonly string[] ClericDefaultAbilityNames = { "Healing Cone", "Mending Beam", "Sacred Aegis", "Temporal Grace" };
     static readonly string[] ShadowbladeDefaultAbilityNames = { "Fan of Blades", "Dark Mark", "Dark Harvest", "Shadow Veil" };
@@ -340,8 +340,8 @@ public class AbilityCaster : NetworkBehaviour
         new AbilityDef { abilityName = "Binding Wave",     shape = AbilityShape.Circle,    category = AbilityCategory.Damage,  range = 5f, indicatorSize = 5f, cooldown = 6f, damage = 15f, targetTag = "Enemy" },
         new AbilityDef { abilityName = "Arcane Ward",      shape = AbilityShape.Circle,    category = AbilityCategory.Support, range = 0f, indicatorSize = 1f, cooldown = 8f, shieldAbsorb = 50f, shieldDuration = 5f },
 
-        // ── WARDEN (indices 8–12) ───────────────────────────────────────────────────────
-        // [8]  Runic Snare — proximity burst rune trap; Warden and Shadowblade
+        // ── MARAUDER (indices 8–12) ─────────────────────────────────────────────────────
+        // [8]  Runic Snare — proximity burst rune trap; Marauder and Shadowblade
         new AbilityDef { abilityName = "Runic Snare",      shape = AbilityShape.Circle,    category = AbilityCategory.Damage,  range = 8f, indicatorSize = 1f, cooldown = 5f, damage = 40f, targetTag = "Enemy" },
         // [9]  Battle Hymn — team CDR aura; instant self-cast
         new AbilityDef { abilityName = "Battle Hymn",      shape = AbilityShape.Circle,    category = AbilityCategory.Support, range = 0f, indicatorSize = 6f, cooldown = 12f },
@@ -349,7 +349,7 @@ public class AbilityCaster : NetworkBehaviour
         new AbilityDef { abilityName = "Spirit Redirect",  shape = AbilityShape.Circle,    category = AbilityCategory.Support, range = 12f, indicatorSize = 1f, cooldown = 8f },
         // [11] Mend — single-target direct heal + debuff cleanse
         new AbilityDef { abilityName = "Mend",             shape = AbilityShape.Circle,    category = AbilityCategory.Heal,    range = 6f, indicatorSize = 1f, cooldown = 6f },
-        // [12] Conjurer's Surge (Warden Ultimate) — all constructs activate at full power simultaneously
+        // [12] Conjurer's Surge (Marauder Ultimate) — all constructs activate at full power simultaneously
         new AbilityDef { abilityName = "Conjurer's Surge", shape = AbilityShape.Circle,    category = AbilityCategory.Support, range = 0f, indicatorSize = 1f, cooldown = 45f },
 
         // ── IRONCLAD (indices 13–18) ───────────────────────────────────────────────────
@@ -427,7 +427,7 @@ public class AbilityCaster : NetworkBehaviour
         // [43] Frost Nova — circle AoE control: V0 chill, V1 freeze, V2 blizzard
         new AbilityDef { abilityName = "Frost Nova",        shape = AbilityShape.Circle,    category = AbilityCategory.Damage,  range = 8f,  indicatorSize = 4f, cooldown = 6f, targetTag = "Enemy", damage = 15f },
 
-        // ── NEW WARDEN ────────────────────────────────────────────────────────────────
+        // ── NEW MARAUDER ──────────────────────────────────────────────────────────────
         // [44] Thorn Volley — cone: V0 single thorn, V1 3-shot volley, V2 briar storm
         new AbilityDef { abilityName = "Thorn Volley",      shape = AbilityShape.Cone,      category = AbilityCategory.Damage,  range = 9f,  coneAngle = 50f,  cooldown = 4f,  targetTag = "Enemy", damage = 20f, chargeable = true, maxChargeTime = 1.0f, maxChargeDamage = 36f, maxChargeSizeMultiplier = 1.5f, chargedTint = new Color(0.1f,0.7f,0.1f,0.9f) },
         // [45] Earth Surge — circle: V0 tremor, V1 quake, V2 fissure
@@ -974,8 +974,8 @@ public class AbilityCaster : NetworkBehaviour
     {
         switch (className)
         {
-            case "Warden":
-                abilityNames = WardenAbilityNames;
+            case "Marauder":
+                abilityNames = MarauderAbilityNames;
                 return true;
             case "Ironclad":
                 abilityNames = IroncladAbilityNames;
@@ -999,8 +999,8 @@ public class AbilityCaster : NetworkBehaviour
     {
         switch (className)
         {
-            case "Warden":
-                abilityNames = WardenDefaultAbilityNames;
+            case "Marauder":
+                abilityNames = MarauderDefaultAbilityNames;
                 return true;
             case "Ironclad":
                 abilityNames = IroncladDefaultAbilityNames;
@@ -1031,7 +1031,7 @@ public class AbilityCaster : NetworkBehaviour
     static bool IsKnownAbilityName(string abilityName)
     {
         return ContainsAbilityName(SharedClassAbilityNames, abilityName)
-            || ContainsAbilityName(WardenAbilityNames, abilityName)
+            || ContainsAbilityName(MarauderAbilityNames, abilityName)
             || ContainsAbilityName(IroncladAbilityNames, abilityName)
             || ContainsAbilityName(ArcanistAbilityNames, abilityName)
             || ContainsAbilityName(ClericAbilityNames, abilityName)
@@ -3109,7 +3109,7 @@ public class AbilityCaster : NetworkBehaviour
     {
         switch (ability.abilityName)
         {
-            // ─ Warden ────────────────────────────────────────────
+            // ─ Marauder ──────────────────────────────────────────
             case "Runic Snare":
                 SpawnDeployableAt(shockMinePrefab ?? ability.deployablePrefab, castPoint,
                     go => { var m = go.GetComponent<ShockMineBehaviour>(); if (m) m.owner = gameObject; });
@@ -3787,7 +3787,7 @@ public class AbilityCaster : NetworkBehaviour
     int GetClassDeployableLimit()
     {
         if (classPool == null) return 1;
-        return classPool.className == "Warden" ? 3 : 1;
+        return classPool.className == "Marauder" ? 3 : 1;
     }
 
     void ApplyCircleDamage(AbilityDef ability, GameObject indicator, float damageMultiplier = 1f)
@@ -4293,7 +4293,7 @@ public class AbilityCaster : NetworkBehaviour
             (41, new AbilityDef { abilityName = "Fireball",         shape = AbilityShape.Cone,      category = AbilityCategory.Damage,  range = 10f, coneAngle = 55f,   cooldown = 4f,  targetTag = "Enemy", damage = 25f }),
             (42, new AbilityDef { abilityName = "Chain Lightning",   shape = AbilityShape.Circle,    category = AbilityCategory.Damage,  range = 10f, indicatorSize = 3f, cooldown = 5f, targetTag = "Enemy", damage = 30f }),
             (43, new AbilityDef { abilityName = "Frost Nova",        shape = AbilityShape.Circle,    category = AbilityCategory.Damage,  range = 8f,  indicatorSize = 4f, cooldown = 6f, targetTag = "Enemy", damage = 15f }),
-            // New Warden
+            // New Marauder
             (44, new AbilityDef { abilityName = "Thorn Volley",      shape = AbilityShape.Cone,      category = AbilityCategory.Damage,  range = 9f,  coneAngle = 50f,   cooldown = 4f,  targetTag = "Enemy", damage = 20f }),
             (45, new AbilityDef { abilityName = "Earth Surge",       shape = AbilityShape.Circle,    category = AbilityCategory.Damage,  range = 8f,  indicatorSize = 3f, cooldown = 5f, targetTag = "Enemy", damage = 20f }),
             (46, new AbilityDef { abilityName = "Vine Grasp",        shape = AbilityShape.Circle,    category = AbilityCategory.Damage,  range = 9f,  indicatorSize = 2f, cooldown = 7f, targetTag = "Enemy", damage = 10f }),
@@ -4372,7 +4372,7 @@ public class AbilityCaster : NetworkBehaviour
                     FillVFX(ab,2,"FX/Spells/Human_Spell_Shield",                  "FX/Spells/Human_Spell_Shield");
                     break;
 
-                // ── WARDEN ───────────────────────────────────────────────────────────────
+                // ── MARAUDER ─────────────────────────────────────────────────────────────
                 case "Runic Snare":
                     FillVFX(ab,0,"FX/dark magic/Leaves shield",                   "FX/dark magic/Ground spikes");
                     FillVFX(ab,1,"FX/Particle Pack/EffectExamples/Smoke & Steam Effects/Prefabs/PoisonGas","FX/Particle Pack/EffectExamples/Smoke & Steam Effects/Prefabs/PoisonGas");
@@ -4893,7 +4893,7 @@ public class AbilityCaster : NetworkBehaviour
                     };
                     break;
 
-                // ── WARDEN ────────────────────────────────────────────────────────────
+                // ── MARAUDER ──────────────────────────────────────────────────────────
                 case "Runic Snare":
                     ability.variants = new AbilityVariant[]
                     {
@@ -5444,7 +5444,7 @@ public class AbilityCaster : NetworkBehaviour
                     };
                     break;
 
-                // ── NEW WARDEN ────────────────────────────────────────────────────────
+                // ── NEW MARAUDER ──────────────────────────────────────────────────────
                 case "Thorn Volley":
                     ability.variants = new AbilityVariant[]
                     {

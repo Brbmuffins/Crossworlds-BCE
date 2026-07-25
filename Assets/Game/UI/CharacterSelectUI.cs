@@ -249,20 +249,42 @@ public class CharacterSelectUI : MonoBehaviour
         Transform spawnParent = _previewRoot != null ? _previewRoot.transform : previewSpawnPoint;
         if (prefab != null && spawnParent != null)
         {
-            _previewInstance = Instantiate(prefab, spawnParent);
+            // Stage the clone beneath an inactive object so gameplay Awake methods
+            // (notably Mirror.NetworkAnimator) cannot run before preview cleanup.
+            var staging = new GameObject("PreviewStaging");
+            staging.SetActive(false);
+            staging.transform.SetParent(spawnParent, false);
+
+            _previewInstance = Instantiate(prefab, staging.transform);
+
+            // NetworkAnimator initializes from Awake even when it is disabled, so
+            // remove it from this visual-only clone before activation. Keep the
+            // remaining gameplay component graph intact because several scripts
+            // use RequireComponent dependencies (for example CharacterStats
+            // depends on Health); disabling them is sufficient for the preview.
+            foreach (var networkAnimator in
+                     _previewInstance.GetComponentsInChildren<Mirror.NetworkAnimator>(true))
+            {
+                if (networkAnimator) DestroyImmediate(networkAnimator);
+            }
+
+            foreach (var mb in _previewInstance.GetComponentsInChildren<MonoBehaviour>(true))
+            {
+                if (mb) mb.enabled = false;
+            }
+
+            _previewInstance.transform.SetParent(spawnParent, false);
+            Destroy(staging);
             _previewInstance.transform.localPosition = Vector3.zero;
             _previewInstance.transform.localRotation = Quaternion.identity;
             _previewInstance.transform.localScale    = Vector3.one;
 
-            // Neutralize gameplay: kill physics, disable all scripts (controllers,
-            // Mirror NetworkBehaviours, etc.). Animator/renderers are Behaviours, not
-            // MonoBehaviours, so the idle pose + mesh survive.
+            // Neutralize preview physics. Animator/renderers are Behaviours rather
+            // than MonoBehaviours, so the idle pose and mesh remain intact.
             foreach (var rb in _previewInstance.GetComponentsInChildren<Rigidbody>(true))
                 rb.isKinematic = true;
             foreach (var col in _previewInstance.GetComponentsInChildren<Collider>(true))
                 col.enabled = false;
-            foreach (var mb in _previewInstance.GetComponentsInChildren<MonoBehaviour>(true))
-                if (mb) mb.enabled = false;
 
             SetLayer(_previewInstance, PREV_LAY);
             FitPreview(_previewInstance);   // bounds-based auto-scale + ground on platform

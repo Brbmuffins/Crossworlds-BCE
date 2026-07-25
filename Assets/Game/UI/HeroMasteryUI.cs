@@ -36,7 +36,7 @@ public class HeroMasteryUI : MonoBehaviour
     }
 
     // ── Hero metadata ─────────────────────────────────────────────────────────
-    static readonly string[] HeroNames = { "Warden", "Ironclad", "Shadowblade", "Cleric", "Arcanist" };
+    static readonly string[] HeroNames = { "Marauder", "Ironclad", "Shadowblade", "Cleric", "Arcanist" };
 
     // Matches ClassColors in HeroMasteryHUD
     static readonly Color[] HeroColors =
@@ -51,7 +51,7 @@ public class HeroMasteryUI : MonoBehaviour
     // Reward text per hero per milestone
     static readonly string[,] RewardTextL6 =
     {
-        { "Warden",     "+8% Damage"  },
+        { "Marauder",   "+8% Damage"  },
         { "Ironclad",   "+10% Max HP" },
         { "Shadowblade","+8% Damage"  },
         { "Cleric",     "+15% Healing"},
@@ -59,7 +59,7 @@ public class HeroMasteryUI : MonoBehaviour
     };
     static readonly string[,] RewardTextL10 =
     {
-        { "Warden",     "+5% CDR"     },
+        { "Marauder",   "+5% CDR"     },
         { "Ironclad",   "+8% Damage"  },
         { "Shadowblade","+8% CDR"     },
         { "Cleric",     "+10% Max HP" },

@@ -20,9 +20,9 @@ public static class SpellIconImporter
             AssetDatabase.Refresh();
         }
 
-        string[] classes = { "Warden", "Ironclad", "Shadowblade", "Cleric", "Arcanist" };
+        string[] classes = { "Marauder", "Ironclad", "Shadowblade", "Cleric", "Arcanist" };
         Color[] classColors = {
-            new Color(0.18f, 0.49f, 0.20f), // Warden: Forest Green #2E7D32
+            new Color(0.18f, 0.49f, 0.20f), // Marauder: Forest Green #2E7D32
             new Color(0.90f, 0.32f, 0.00f), // Ironclad: Steel Orange #E65100
             new Color(0.29f, 0.08f, 0.55f), // Shadowblade: Deep Purple #4A148C
             new Color(0.00f, 0.41f, 0.36f), // Cleric: Teal Gold #00695C
@@ -97,9 +97,9 @@ public static class SpellIconImporter
 
     private static bool iClassIndex(int index, out string name, out Color color)
     {
-        string[] classes = { "Warden", "Ironclad", "Shadowblade", "Cleric", "Arcanist" };
+        string[] classes = { "Marauder", "Ironclad", "Shadowblade", "Cleric", "Arcanist" };
         Color[] classColors = {
-            new Color(0.18f, 0.49f, 0.20f), // Warden: Forest Green #2E7D32
+            new Color(0.18f, 0.49f, 0.20f), // Marauder: Forest Green #2E7D32
             new Color(0.90f, 0.32f, 0.00f), // Ironclad: Steel Orange #E65100
             new Color(0.29f, 0.08f, 0.55f), // Shadowblade: Deep Purple #4A148C
             new Color(0.00f, 0.41f, 0.36f), // Cleric: Teal Gold #00695C

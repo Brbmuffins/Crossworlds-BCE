@@ -454,7 +454,7 @@ MonoBehaviour:
   autoCreatePlayer: 0
   playerSpawnMethod: 0
   spawnPrefabs:
-  - {fileID: 2247696185094625769, guid: a95991ea360299a4382781139983a9bf, type: 3}
+  - {fileID: 5942873300349862976, guid: f5061a9f1946be54ab16f2bcc12bc500, type: 3}
   - {fileID: 4515746899207060477, guid: 2ab35200bba8384449966902eaed9cab, type: 3}
   - {fileID: 2286457734563818783, guid: d228dda3426926b41ae915d331560f12, type: 3}
   - {fileID: 5383663458828750495, guid: ee265e874399c4643b9b9e77a5bc83c6, type: 3}
@@ -492,7 +492,7 @@ MonoBehaviour:
   evaluationInterval: 3
   timeInterpolationGui: 0
   classPrefabs:
-  - {fileID: 2247696185094625769, guid: a95991ea360299a4382781139983a9bf, type: 3}
+  - {fileID: 5942873300349862976, guid: f5061a9f1946be54ab16f2bcc12bc500, type: 3}
   - {fileID: 4515746899207060477, guid: 2ab35200bba8384449966902eaed9cab, type: 3}
   - {fileID: 2286457734563818783, guid: d228dda3426926b41ae915d331560f12, type: 3}
   - {fileID: 5383663458828750495, guid: ee265e874399c4643b9b9e77a5bc83c6, type: 3}

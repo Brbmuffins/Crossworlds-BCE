@@ -23,7 +23,7 @@ public static class ClassPoolBuilder
             AssetDatabase.Refresh();
         }
 
-        CreatePool("Warden",
+        CreatePool("Marauder",
             availableIndices: new[] { 0,1,2,3,4,5,6,7,8,9,10,11,12,44,45,46 },
             defaultEquipped:  new[] { 0,8,9,11 });          // Sentinel, Snare, Hymn, Mend
 
@@ -79,7 +79,7 @@ public static class ClassPoolBuilder
 
     static void AssignToPrefabs()
     {
-        string[] classNames = { "Warden", "Ironclad", "Arcanist", "Cleric", "Shadowblade" };
+        string[] classNames = { "Marauder", "Ironclad", "Arcanist", "Cleric", "Shadowblade" };
 
         foreach (string cls in classNames)
         {

@@ -44,8 +44,8 @@ public class CharacterSelectManager : MonoBehaviour
     {
         new ClassDef
         {
-            idx = 0, name = "WARDEN", role = "Damage  ·  Control",
-            blurb = "Commands runic sentinels and snare traps that work in concert. Set up the killzone before enemies arrive — place, position, activate. Reactive Wardens lose; patient ones dominate.",
+            idx = 0, name = "MARAUDER", role = "Damage  ·  Control",
+            blurb = "Commands runic sentinels and snare traps that work in concert. Set up the killzone before enemies arrive — place, position, activate. Reactive Marauders lose; patient ones dominate.",
             abilities = new[] { "Runic Sentinel", "Runic Snare", "Battle Hymn", "Mend" },
             passive = "Overengineered — constructs in overlapping zones stack output",
             accent = new Color(1f, 0.55f, 0.05f),
