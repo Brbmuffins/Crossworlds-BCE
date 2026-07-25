@@ -3,7 +3,7 @@ using UnityEngine.AI;
 
 public static class EnemyCrowdUtility
 {
-    const float GoldenAngle = 2.3999631f;
+    const int ChaseSlotSectorCount = 12;
 
     public static float Stable01(Component owner, int salt = 0)
     {
@@ -41,8 +41,19 @@ public static class EnemyCrowdUtility
         if (target == null)
             return self.position;
 
-        uint id = unchecked((uint)self.GetInstanceID());
-        float angle = ((id % 32u) * GoldenAngle) + (Stable01(self, 17) - 0.5f) * 0.35f;
+        // Pick the closest member of a per-enemy slot ring to the side from
+        // which this enemy is approaching. A fully absolute slot can be on the
+        // opposite side of the target and make the agent path through it.
+        Vector3 approach = self.position - target.position;
+        approach.y = 0f;
+        if (approach.sqrMagnitude < 0.0001f)
+            approach = self.forward;
+
+        float approachAngle = Mathf.Atan2(approach.z, approach.x);
+        float sectorAngle = Mathf.PI * 2f / ChaseSlotSectorCount;
+        float phase = Stable01(self, 17) * sectorAngle;
+        float nearestSector = Mathf.Round((approachAngle - phase) / sectorAngle);
+        float angle = phase + nearestSector * sectorAngle;
         float radiusOffset = (Stable01(self, 29) - 0.5f) * radiusJitter;
         float radius = Mathf.Max(0.45f, slotRadius + radiusOffset);
         Vector3 offset = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * radius;
@@ -59,8 +70,16 @@ public static class EnemyCrowdUtility
         if (self == null || target == null)
             return false;
 
-        return HorizontalDistance(self.position, target.position) > MeleeAttackReach(attackRange)
-            || HorizontalDistance(self.position, slot) > MeleeSlotTolerance(attackRange);
+        float targetDistance = HorizontalDistance(self.position, target.position);
+        if (targetDistance > MeleeAttackReach(attackRange))
+            return true;
+
+        // Once an enemy has reached a usable position, do not make it circle
+        // through the target just to match its crowd slot exactly. Reposition
+        // only when it is genuinely overlapping the target.
+        float overlapDistance = Mathf.Max(0.35f, MeleeSlotRadius(attackRange) * 0.55f);
+        return targetDistance < overlapDistance
+            && HorizontalDistance(self.position, slot) > MeleeSlotTolerance(attackRange);
     }
 
     public static bool CanMeleeAttack(Transform self, Transform target, Vector3 slot, float attackRange)
@@ -88,8 +107,10 @@ public static class EnemyCrowdUtility
         if (agent == null)
             return;
 
-        agent.obstacleAvoidanceType = ObstacleAvoidanceType.NoObstacleAvoidance;
-        agent.radius = Mathf.Min(agent.radius, 0.25f);
+        // Low quality avoidance is sufficient for crowds and prevents agents
+        // from treating the target and one another as pass-through space.
+        // Preserve the radius configured on the prefab/Forge profile.
+        agent.obstacleAvoidanceType = ObstacleAvoidanceType.LowQualityObstacleAvoidance;
         agent.avoidancePriority = Mathf.RoundToInt(Mathf.Lerp(35f, 75f, Stable01(owner, 43)));
     }
 

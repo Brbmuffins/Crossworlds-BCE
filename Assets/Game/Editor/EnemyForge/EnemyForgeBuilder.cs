@@ -20,9 +20,9 @@ namespace Crossworlds.EditorTools.EnemyForge
             "Assets/Game/Prefabs/EnemyForge/EnemyForge_RangedTestProjectile.prefab";
 
         [InitializeOnLoadMethod]
-        static void ScheduleGeneratedLocomotionRepair()
+        static void ScheduleGeneratedAnimationRepair()
         {
-            EditorApplication.delayCall += NormalizeExistingGeneratedChaseClips;
+            EditorApplication.delayCall += NormalizeExistingGeneratedClips;
         }
 
         [Serializable]
@@ -125,17 +125,22 @@ namespace Crossworlds.EditorTools.EnemyForge
             controller.attackRange = d.IsRanged
                 ? Mathf.Max(d.attackRange, rangedEngagementRange)
                 : d.attackRange;
-            // A zero spell cooldown must still allow the selected cast animation
-            // to complete before the next trigger. Each forged ranged prefab gets
-            // its own clip-derived cycle without changing the shared controller.
-            controller.attackInterval = d.IsRanged && d.attackAnimation != null
-                ? Mathf.Max(d.attackInterval, d.attackAnimation.length)
+            var attackClips = GetAttackClips(d);
+            float longestAttackClip = LongestClipLength(attackClips);
+            bool hasAlternateAttacks = d.attackAnimation2 != null ||
+                d.attackAnimation3 != null || d.attackAnimation4 != null;
+            // Ranged casts and randomized attack sets must complete their longest
+            // selected clip before another attack can retrigger the Animator.
+            controller.attackInterval = (d.IsRanged || hasAlternateAttacks) && longestAttackClip > 0f
+                ? Mathf.Max(d.attackInterval, longestAttackClip)
                 : d.attackInterval;
             controller.damage = d.damage;
             controller.combatTurnSpeed = d.combatTurnSpeed;
-            controller.attackImpactDelay = d.attackAnimation != null
-                ? Mathf.Clamp(d.attackAnimation.length * d.attackImpactPoint, 0f, Mathf.Max(0f, d.attackInterval - 0.05f))
-                : Mathf.Min(0.35f, Mathf.Max(0f, d.attackInterval - 0.05f));
+            float maximumImpactDelay = Mathf.Max(0f, controller.attackInterval - 0.05f);
+            controller.attackAnimationVariantMask = BuildAttackVariantMask(attackClips);
+            controller.attackAnimationImpactDelays = BuildAttackImpactDelays(
+                attackClips, GetAttackImpactPoints(d), maximumImpactDelay);
+            controller.attackImpactDelay = controller.attackAnimationImpactDelays[0];
             controller.isRanged = d.IsRanged;
             controller.projectilePrefab = d.IsRanged
                 ? (d.projectilePrefab != null ? d.projectilePrefab : EnsureFallbackProjectilePrefab())
@@ -536,6 +541,50 @@ namespace Crossworlds.EditorTools.EnemyForge
             }
         }
 
+        static AnimationClip[] GetAttackClips(EnemyForgeDefinition d) =>
+            new[] { d.attackAnimation, d.attackAnimation2, d.attackAnimation3, d.attackAnimation4 };
+
+        static float[] GetAttackImpactPoints(EnemyForgeDefinition d) =>
+            new[]
+            {
+                d.attackImpactPoint,
+                d.attackImpactPoint2,
+                d.attackImpactPoint3,
+                d.attackImpactPoint4
+            };
+
+        static float LongestClipLength(AnimationClip[] clips)
+        {
+            float longest = 0f;
+            foreach (AnimationClip clip in clips)
+                if (clip != null)
+                    longest = Mathf.Max(longest, clip.length);
+            return longest;
+        }
+
+        static int BuildAttackVariantMask(AnimationClip[] clips)
+        {
+            int mask = 1;
+            for (int i = 1; i < clips.Length; i++)
+                if (clips[i] != null)
+                    mask |= 1 << i;
+            return mask;
+        }
+
+        static float[] BuildAttackImpactDelays(AnimationClip[] clips, float[] normalizedImpacts,
+            float maximumDelay)
+        {
+            var delays = new float[4];
+            float fallback = clips[0] != null
+                ? Mathf.Clamp(clips[0].length * normalizedImpacts[0], 0f, maximumDelay)
+                : Mathf.Min(0.35f, maximumDelay);
+            for (int i = 0; i < delays.Length; i++)
+                delays[i] = clips[i] != null
+                    ? Mathf.Clamp(clips[i].length * normalizedImpacts[i], 0f, maximumDelay)
+                    : fallback;
+            return delays;
+        }
+
         static void GenerateAnimatorOverride(GameObject root, EnemyForgeDefinition d, string prefabPath)
         {
             if (d.idleAnimation == null)
@@ -566,6 +615,9 @@ namespace Crossworlds.EditorTools.EnemyForge
             AnimationClip chaseSource = d.chaseAnimation != null ? d.chaseAnimation : d.idleAnimation;
             AnimationClip chase = EnsurePrefabClip(chaseSource, generatedClipFolder, prefabName, "Chase", true);
             AnimationClip attack = EnsurePrefabClip(d.attackAnimation, generatedClipFolder, prefabName, "Attack", false);
+            AnimationClip attack2 = EnsurePrefabClip(d.attackAnimation2, generatedClipFolder, prefabName, "Attack2", false);
+            AnimationClip attack3 = EnsurePrefabClip(d.attackAnimation3, generatedClipFolder, prefabName, "Attack3", false);
+            AnimationClip attack4 = EnsurePrefabClip(d.attackAnimation4, generatedClipFolder, prefabName, "Attack4", false);
             AnimationClip getHit = EnsurePrefabClip(d.getHitAnimation, generatedClipFolder, prefabName, "GetHit", false);
             AnimationClip death = EnsurePrefabClip(d.deathAnimation, generatedClipFolder, prefabName, "Death", false);
             var overrides = new List<KeyValuePair<AnimationClip, AnimationClip>>
@@ -573,6 +625,9 @@ namespace Crossworlds.EditorTools.EnemyForge
                 OverridePair(baseClipFolder + "/EnemyForge_Idle.anim", idle),
                 OverridePair(baseClipFolder + "/EnemyForge_Chase.anim", chase),
                 OverridePair(baseClipFolder + "/EnemyForge_Attack.anim", attack),
+                OverridePair(baseClipFolder + "/EnemyForge_Attack2.anim", attack2),
+                OverridePair(baseClipFolder + "/EnemyForge_Attack3.anim", attack3),
+                OverridePair(baseClipFolder + "/EnemyForge_Attack4.anim", attack4),
                 OverridePair(baseClipFolder + "/EnemyForge_GetHit.anim", getHit),
                 OverridePair(baseClipFolder + "/EnemyForge_Death.anim", death)
             };
@@ -610,6 +665,19 @@ namespace Crossworlds.EditorTools.EnemyForge
             var settings = AnimationUtility.GetAnimationClipSettings(local);
             settings.loopTime = loop;
             settings.loopBlend = loop;
+            if (IsAttackState(stateName))
+            {
+                // Enemy prefabs remain NavMesh/server driven, so root motion is
+                // disabled on their Animator. Preserve vertical hip movement,
+                // but leave horizontal travel and global orientation extracted.
+                // Baking horizontal travel while the controller turns toward a
+                // moving target makes the rendered model orbit its prefab root.
+                // Leave global orientation extracted so EnemyController's
+                // per-frame target facing can steer long/combo attacks.
+                settings.loopBlendOrientation = false;
+                settings.loopBlendPositionY = true;
+                settings.loopBlendPositionXZ = false;
+            }
             if (stateName.Equals("Death", StringComparison.OrdinalIgnoreCase))
             {
                 // Normalize the prefab-local death clip against its feet. Many
@@ -627,23 +695,54 @@ namespace Crossworlds.EditorTools.EnemyForge
             return local;
         }
 
-        static void NormalizeExistingGeneratedChaseClips()
+        static bool IsAttackState(string stateName)
+        {
+            return !string.IsNullOrEmpty(stateName) &&
+                stateName.StartsWith("Attack", StringComparison.OrdinalIgnoreCase);
+        }
+
+        static void NormalizeExistingGeneratedClips()
         {
             bool changed = false;
             foreach (string guid in AssetDatabase.FindAssets("t:AnimationClip", new[] { "Assets/Game" }))
             {
                 string path = AssetDatabase.GUIDToAssetPath(guid).Replace('\\', '/');
-                if (!path.Contains("/EnemyForgeClips/") ||
-                    !path.EndsWith("_Chase.anim", StringComparison.OrdinalIgnoreCase))
+                if (!path.Contains("/EnemyForgeClips/"))
                     continue;
 
                 var clip = AssetDatabase.LoadAssetAtPath<AnimationClip>(path);
-                if (clip != null && NormalizeLocomotionRootTranslation(clip))
+                if (clip == null) continue;
+
+                if (path.EndsWith("_Chase.anim", StringComparison.OrdinalIgnoreCase) &&
+                    NormalizeLocomotionRootTranslation(clip))
+                    changed = true;
+
+                string clipName = Path.GetFileNameWithoutExtension(path);
+                int attackMarker = clipName.LastIndexOf("_Attack", StringComparison.OrdinalIgnoreCase);
+                if (attackMarker >= 0 && BakeAttackRootIntoPose(clip))
                     changed = true;
             }
 
             if (changed)
                 AssetDatabase.SaveAssets();
+        }
+
+        static bool BakeAttackRootIntoPose(AnimationClip clip)
+        {
+            if (clip == null) return false;
+
+            var settings = AnimationUtility.GetAnimationClipSettings(clip);
+            if (!settings.loopBlendOrientation &&
+                settings.loopBlendPositionY &&
+                !settings.loopBlendPositionXZ)
+                return false;
+
+            settings.loopBlendOrientation = false;
+            settings.loopBlendPositionY = true;
+            settings.loopBlendPositionXZ = false;
+            AnimationUtility.SetAnimationClipSettings(clip, settings);
+            EditorUtility.SetDirty(clip);
+            return true;
         }
 
         static bool NormalizeLocomotionRootTranslation(AnimationClip clip)
@@ -725,6 +824,9 @@ namespace Crossworlds.EditorTools.EnemyForge
             var idleClip = EnsurePlaceholderClip(clipFolder + "/EnemyForge_Idle.anim", "EnemyForge_Idle");
             var chaseClip = EnsurePlaceholderClip(clipFolder + "/EnemyForge_Chase.anim", "EnemyForge_Chase");
             var attackClip = EnsurePlaceholderClip(clipFolder + "/EnemyForge_Attack.anim", "EnemyForge_Attack");
+            var attackClip2 = EnsurePlaceholderClip(clipFolder + "/EnemyForge_Attack2.anim", "EnemyForge_Attack2");
+            var attackClip3 = EnsurePlaceholderClip(clipFolder + "/EnemyForge_Attack3.anim", "EnemyForge_Attack3");
+            var attackClip4 = EnsurePlaceholderClip(clipFolder + "/EnemyForge_Attack4.anim", "EnemyForge_Attack4");
             var hitClip = EnsurePlaceholderClip(clipFolder + "/EnemyForge_GetHit.anim", "EnemyForge_GetHit");
             var deathClip = EnsurePlaceholderClip(clipFolder + "/EnemyForge_Death.anim", "EnemyForge_Death");
 
@@ -735,6 +837,7 @@ namespace Crossworlds.EditorTools.EnemyForge
             {
                 new AnimatorControllerParameter { name = "Speed", type = AnimatorControllerParameterType.Float },
                 new AnimatorControllerParameter { name = "Attack", type = AnimatorControllerParameterType.Trigger },
+                new AnimatorControllerParameter { name = "AttackVariant", type = AnimatorControllerParameterType.Int },
                 new AnimatorControllerParameter { name = "GetHit", type = AnimatorControllerParameterType.Trigger },
                 new AnimatorControllerParameter { name = "Death", type = AnimatorControllerParameterType.Trigger }
             };
@@ -744,6 +847,9 @@ namespace Crossworlds.EditorTools.EnemyForge
             var idle = AddAnimationState(machine, "Idle", idleClip, new Vector3(100f, 80f));
             var chase = AddAnimationState(machine, "Chase", chaseClip, new Vector3(350f, 80f));
             var attack = AddAnimationState(machine, "Attack", attackClip, new Vector3(350f, 220f));
+            var attack2 = AddAnimationState(machine, "Attack 2", attackClip2, new Vector3(350f, 340f));
+            var attack3 = AddAnimationState(machine, "Attack 3", attackClip3, new Vector3(520f, 340f));
+            var attack4 = AddAnimationState(machine, "Attack 4", attackClip4, new Vector3(690f, 340f));
             var hit = AddAnimationState(machine, "GetHit", hitClip, new Vector3(600f, 80f));
             var death = AddAnimationState(machine, "Dead", deathClip, new Vector3(600f, 220f));
             machine.defaultState = idle;
@@ -751,8 +857,14 @@ namespace Crossworlds.EditorTools.EnemyForge
             AddFloatTransition(chase, idle, "Speed", AnimatorConditionMode.Less, 0.05f, 0.05f);
             AddAnyTrigger(machine, death, "Death", 0.08f);
             AddAnyTrigger(machine, hit, "GetHit", 0.08f);
-            AddAnyTrigger(machine, attack, "Attack", 0.08f);
+            AddAnyAttackTrigger(machine, attack, 0, 0.08f);
+            AddAnyAttackTrigger(machine, attack2, 1, 0.08f);
+            AddAnyAttackTrigger(machine, attack3, 2, 0.08f);
+            AddAnyAttackTrigger(machine, attack4, 3, 0.08f);
             AddExitLocomotionTransitions(attack, idle, chase, 0.9f, 0.12f);
+            AddExitLocomotionTransitions(attack2, idle, chase, 0.9f, 0.12f);
+            AddExitLocomotionTransitions(attack3, idle, chase, 0.9f, 0.12f);
+            AddExitLocomotionTransitions(attack4, idle, chase, 0.9f, 0.12f);
             AddExitLocomotionTransitions(hit, idle, chase, 0.85f, 0.12f);
             EditorUtility.SetDirty(controller);
             AssetDatabase.SaveAssets();
@@ -796,6 +908,19 @@ namespace Crossworlds.EditorTools.EnemyForge
             transition.canTransitionToSelf = false;
             transition.interruptionSource = TransitionInterruptionSource.None;
             transition.AddCondition(AnimatorConditionMode.If, 0f, parameter);
+        }
+
+        static void AddAnyAttackTrigger(AnimatorStateMachine machine, AnimatorState state,
+            int variant, float duration)
+        {
+            var transition = machine.AddAnyStateTransition(state);
+            transition.hasExitTime = false;
+            transition.duration = duration;
+            transition.hasFixedDuration = false;
+            transition.canTransitionToSelf = false;
+            transition.interruptionSource = TransitionInterruptionSource.None;
+            transition.AddCondition(AnimatorConditionMode.If, 0f, "Attack");
+            transition.AddCondition(AnimatorConditionMode.Equals, variant, "AttackVariant");
         }
 
         static void AddExitLocomotionTransitions(AnimatorState from, AnimatorState idle, AnimatorState chase,

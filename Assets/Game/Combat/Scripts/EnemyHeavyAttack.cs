@@ -246,9 +246,9 @@ public class EnemyHeavyAttack : NetworkBehaviour
         }
         // Trigger the prefab-selected cast/attack clip on every client before
         // the telegraph and resolve damage at its configured impact point.
-        _enemy.PlayCastAnimation();
+        float selectedImpactDelay = _enemy.PlayCastAnimation();
         RpcTelegraph(type, transform.position);
-        float windup = Mathf.Max(0.05f, _enemy.attackImpactDelay);
+        float windup = Mathf.Max(0.05f, selectedImpactDelay);
         float remainingWindup = windup;
         while (remainingWindup > 0f)
         {
