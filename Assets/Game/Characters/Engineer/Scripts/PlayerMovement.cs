@@ -61,6 +61,7 @@ public class PlayerMovement : NetworkBehaviour
     private bool jumpRequested = false;
     private float currentSpeed;
     private float movementLockUntil = -1f;
+    private Coroutine abilityMovementRoutine;
 
     void Start()
     {
@@ -167,6 +168,138 @@ public class PlayerMovement : NetworkBehaviour
         movementLocked = true;
         ClearMovementIntent();
         StopHorizontalMotion();
+    }
+
+    /// <summary>
+    /// Moves this locally controlled player to a spell's selected ground point.
+    /// NetworkTransform propagates the Rigidbody position to the server and peers.
+    /// </summary>
+    public void MoveToAbilityTarget(
+        Vector3 destination,
+        float speed,
+        bool instant,
+        float arcHeight = 0f,
+        float durationOverride = -1f)
+    {
+        if (health == null)
+            health = GetComponent<Health>();
+        if (health != null && health.IsDowned)
+            return;
+
+        if (rb == null)
+            rb = GetComponent<Rigidbody>();
+
+        if (abilityMovementRoutine != null)
+        {
+            StopCoroutine(abilityMovementRoutine);
+            abilityMovementRoutine = null;
+        }
+
+        ClearMovementIntent();
+
+        Vector3 start = rb != null ? rb.position : transform.position;
+        Vector3 facing = destination - start;
+        facing.y = 0f;
+        if (!lockCharacterRotation && facing.sqrMagnitude > 0.0001f)
+        {
+            targetRotation = UprightRotation(
+                Quaternion.LookRotation(facing.normalized));
+            if (rb != null)
+                rb.rotation = targetRotation;
+            else
+                transform.rotation = targetRotation;
+        }
+
+        if (instant || Vector3.Distance(start, destination) < 0.01f)
+        {
+            RequestMovementLock(0.08f);
+            SetAbilityMovementPosition(destination, true);
+            return;
+        }
+
+        float safeSpeed = Mathf.Max(0.1f, speed);
+        float duration = durationOverride >= 0f
+            ? durationOverride
+            : Vector3.Distance(start, destination) / safeSpeed;
+
+        if (duration < 0.01f)
+        {
+            RequestMovementLock(0.08f);
+            SetAbilityMovementPosition(destination, true);
+            return;
+        }
+
+        RequestMovementLock(duration + 0.1f);
+        abilityMovementRoutine = StartCoroutine(
+            AbilityMovementRoutine(
+                start,
+                destination,
+                duration,
+                Mathf.Max(0f, arcHeight)));
+    }
+
+    IEnumerator AbilityMovementRoutine(
+        Vector3 start,
+        Vector3 destination,
+        float duration,
+        float arcHeight)
+    {
+        float elapsed = 0f;
+        while (elapsed < duration &&
+               (health == null || !health.IsDowned))
+        {
+            elapsed = Mathf.Min(
+                duration,
+                elapsed + Time.fixedDeltaTime);
+            float t = duration > 0f
+                ? elapsed / duration
+                : 1f;
+
+            Vector3 position =
+                Vector3.Lerp(start, destination, t);
+            position.y +=
+                4f * t * (1f - t) * arcHeight;
+
+            SetAbilityMovementPosition(position, false);
+            yield return new WaitForFixedUpdate();
+        }
+
+        if (health == null || !health.IsDowned)
+            SetAbilityMovementPosition(destination, true);
+
+        movementLockUntil = Mathf.Min(
+            movementLockUntil,
+            Time.time + 0.05f);
+        abilityMovementRoutine = null;
+    }
+
+    void SetAbilityMovementPosition(
+        Vector3 position,
+        bool teleport)
+    {
+        if (rb != null)
+        {
+            rb.linearVelocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+
+            if (teleport)
+                rb.position = position;
+            else
+                rb.MovePosition(position);
+        }
+        else
+        {
+            transform.position = position;
+        }
+    }
+
+    void OnDisable()
+    {
+        if (abilityMovementRoutine != null)
+        {
+            StopCoroutine(abilityMovementRoutine);
+            abilityMovementRoutine = null;
+        }
     }
 
     void Update()

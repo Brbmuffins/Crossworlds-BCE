@@ -10,6 +10,15 @@ using UnityEditor;
 
 public enum AbilityShape { Circle, Cone, Rectangle }
 public enum AbilityCategory { Damage, Heal, Support }
+public enum AbilityMovementTiming { ConstantSpeed, FixedDuration }
+
+/// <summary>
+/// Draws an AnimationClip field as a dropdown populated from the Marauder's
+/// animation folder. The editor-only drawer lives under Assets/Game/Editor.
+/// </summary>
+public sealed class MarauderAnimationClipAttribute : PropertyAttribute
+{
+}
 
 // One zone selector for a variant-spell. Cursor distance picks the active referenced spell.
 [System.Serializable]
@@ -89,6 +98,33 @@ public class AbilityDef
     [Header("Spell Timing")]
     [Tooltip("Seconds after committing the aim before this spell fires. Moving during this window cancels the cast without starting cooldown.")]
     [Min(0f)] public float castTime = 0.6f;
+
+    [Header("Cast Animation")]
+    [MarauderAnimationClip]
+    [Tooltip("Marauder animation clip played when this spell is committed.")]
+    public AnimationClip marauderCastAnimation;
+
+    [Header("Caster Movement")]
+    [Tooltip("Move the caster to the clicked ability location when this spell resolves.")]
+    public bool moveCasterToTarget = false;
+    [Tooltip("Teleport immediately to the clicked location. Turn this off for leaps and dashes.")]
+    public bool instantMovement = false;
+    [Tooltip("Constant Speed makes longer jumps take more time. Fixed Duration makes every chosen distance land on the same beat.")]
+    public AbilityMovementTiming movementTiming = AbilityMovementTiming.ConstantSpeed;
+    [Range(1f, 60f)]
+    [Tooltip("Movement speed in metres per second when Movement Timing is Constant Speed.")]
+    public float moveToSpeed = 14f;
+    [Range(0.1f, 5f)]
+    [Tooltip("Total airtime when Movement Timing is Fixed Duration.")]
+    public float fixedMovementDuration = 0.9f;
+    [Range(0f, 10f)]
+    [Tooltip("Extra height, in metres, reached halfway through a leap or dash. Set to 0 for flat movement. Ignored when Instant Movement is enabled.")]
+    public float movementArcHeight = 0f;
+    [Tooltip("Resolve damage and gameplay effects when the caster lands instead of when movement begins.")]
+    public bool resolveEffectsOnLanding = false;
+    [Range(0.1f, 1f)]
+    [Tooltip("Normalized point in the selected animation that represents ground contact. Animation speed is adjusted so this point matches landing.")]
+    public float animationLandingPoint = 0.8f;
 
     [Header("Charge")]
     public bool chargeable = false;
@@ -1206,8 +1242,13 @@ public class AbilityCaster : NetworkBehaviour
         RequestCommitMovementLock();
         SnapshotCommittedIndicator(indicator);
 
-        PlayCommittedCastAnimation(ability);
-        BroadcastCommittedCastAnimation(ability);
+        // Movement casts start their animation only after the server confirms
+        // the destination so animation, travel, and landing share one timeline.
+        if (!IsCasterMovementAbility(ability, variantIndex))
+        {
+            PlayCommittedCastAnimation(ability, variantIndex);
+            BroadcastCommittedCastAnimation(ability, variantIndex);
+        }
 
         float castTime = CastTimeFor(ability);
         Debug.Log($"[CastTime] {ability.abilityName} committed with castTime={castTime:0.###}s.", this);
@@ -1266,8 +1307,8 @@ public class AbilityCaster : NetworkBehaviour
             {
                 Debug.Log($"Cast interrupted: {ability.abilityName}");
                 bool preferMovementState = HasMovementInput();
-                CancelCommittedCastAnimation(ability, preferMovementState);
-                BroadcastCommittedCastAnimationCancelled(ability, preferMovementState);
+                CancelCommittedCastAnimation(ability, variantIndex, preferMovementState);
+                BroadcastCommittedCastAnimationCancelled(ability, variantIndex, preferMovementState);
                 if (indicator != null) Destroy(indicator);
                 ClearCommittedCast();
                 yield break;
@@ -1331,8 +1372,8 @@ public class AbilityCaster : NetworkBehaviour
         if (committedCastSlot >= 0 && committedCastSlot < abilities.Length)
         {
             AbilityDef ability = abilities[committedCastSlot];
-            CancelCommittedCastAnimation(ability, false);
-            BroadcastCommittedCastAnimationCancelled(ability, false);
+            CancelCommittedCastAnimation(ability, committedCastVariantIndex, false);
+            BroadcastCommittedCastAnimationCancelled(ability, committedCastVariantIndex, false);
         }
 
         if (committedCastRoutine != null)
@@ -1361,75 +1402,79 @@ public class AbilityCaster : NetworkBehaviour
         cooldownTimers[slot] = CooldownFor(ability);
     }
 
-    void PlayCommittedCastAnimation(AbilityDef ability)
+    void PlayCommittedCastAnimation(AbilityDef ability, int variantIndex)
     {
         if (ability == null) return;
-        castAnimator?.PlayCast(ability.category);
+
+        AbilityDef animationAbility = GetVariantPayload(ability, variantIndex) ?? ability;
+        castAnimator?.PlayCast(
+            animationAbility.category,
+            animationAbility.marauderCastAnimation);
     }
 
-    void BroadcastCommittedCastAnimation(AbilityDef ability)
+    void BroadcastCommittedCastAnimation(AbilityDef ability, int variantIndex)
     {
         int spellbookIndex = FindSpellbookIndex(ability);
         if (spellbookIndex < 0) return;
 
         if (ShouldRouteCastToServer())
-            CmdCommittedCastAnimationStarted(spellbookIndex);
+            CmdCommittedCastAnimationStarted(spellbookIndex, variantIndex);
         else if (NetworkServer.active)
-            RpcCommittedCastAnimationStarted(spellbookIndex);
+            RpcCommittedCastAnimationStarted(spellbookIndex, variantIndex);
     }
 
     [Command]
-    void CmdCommittedCastAnimationStarted(int spellbookIndex)
+    void CmdCommittedCastAnimationStarted(int spellbookIndex, int variantIndex)
     {
         if (spellbookIndex < 0 || spellbookIndex >= spellbook.Length) return;
         int equippedSlot = FindEquippedSlotForSpellbookIndex(spellbookIndex);
         if (equippedSlot < 0) return;
         if (cooldownTimers[equippedSlot] > 0f) return;
 
-        RpcCommittedCastAnimationStarted(spellbookIndex);
+        RpcCommittedCastAnimationStarted(spellbookIndex, variantIndex);
     }
 
     [ClientRpc]
-    void RpcCommittedCastAnimationStarted(int spellbookIndex)
+    void RpcCommittedCastAnimationStarted(int spellbookIndex, int variantIndex)
     {
         if (isLocalPlayer) return;
         if (spellbookIndex < 0 || spellbookIndex >= spellbook.Length) return;
-        PlayCommittedCastAnimation(spellbook[spellbookIndex]);
+        PlayCommittedCastAnimation(spellbook[spellbookIndex], variantIndex);
     }
 
-    void CancelCommittedCastAnimation(AbilityDef ability, bool preferMovementState)
+    void CancelCommittedCastAnimation(AbilityDef ability, int variantIndex, bool preferMovementState)
     {
         if (ability == null) return;
         castAnimator?.CancelCast(preferMovementState);
     }
 
-    void BroadcastCommittedCastAnimationCancelled(AbilityDef ability, bool preferMovementState)
+    void BroadcastCommittedCastAnimationCancelled(AbilityDef ability, int variantIndex, bool preferMovementState)
     {
         int spellbookIndex = FindSpellbookIndex(ability);
         if (spellbookIndex < 0) return;
 
         if (ShouldRouteCastToServer())
-            CmdCommittedCastAnimationCancelled(spellbookIndex, preferMovementState);
+            CmdCommittedCastAnimationCancelled(spellbookIndex, variantIndex, preferMovementState);
         else if (NetworkServer.active)
-            RpcCommittedCastAnimationCancelled(spellbookIndex, preferMovementState);
+            RpcCommittedCastAnimationCancelled(spellbookIndex, variantIndex, preferMovementState);
     }
 
     [Command]
-    void CmdCommittedCastAnimationCancelled(int spellbookIndex, bool preferMovementState)
+    void CmdCommittedCastAnimationCancelled(int spellbookIndex, int variantIndex, bool preferMovementState)
     {
         if (spellbookIndex < 0 || spellbookIndex >= spellbook.Length) return;
         int equippedSlot = FindEquippedSlotForSpellbookIndex(spellbookIndex);
         if (equippedSlot < 0) return;
 
-        RpcCommittedCastAnimationCancelled(spellbookIndex, preferMovementState);
+        RpcCommittedCastAnimationCancelled(spellbookIndex, variantIndex, preferMovementState);
     }
 
     [ClientRpc]
-    void RpcCommittedCastAnimationCancelled(int spellbookIndex, bool preferMovementState)
+    void RpcCommittedCastAnimationCancelled(int spellbookIndex, int variantIndex, bool preferMovementState)
     {
         if (isLocalPlayer) return;
         if (spellbookIndex < 0 || spellbookIndex >= spellbook.Length) return;
-        CancelCommittedCastAnimation(spellbook[spellbookIndex], preferMovementState);
+        CancelCommittedCastAnimation(spellbook[spellbookIndex], variantIndex, preferMovementState);
     }
 
     public float GetCooldownFraction(int slot)
@@ -2849,6 +2894,10 @@ public class AbilityCaster : NetworkBehaviour
             Vector3    castPosition = indicator != null ? indicator.transform.position : transform.position;
             Quaternion castRotation = indicator != null ? indicator.transform.rotation : transform.rotation;
             Vector3    castScale    = indicator != null ? indicator.transform.localScale : Vector3.one;
+            castPosition = ClampCasterMovementDestination(
+                ability,
+                variantIndex,
+                castPosition);
 
             if (!TrySpendManaForCast(ability, variantIndex))
             {
@@ -2887,10 +2936,83 @@ public class AbilityCaster : NetworkBehaviour
         if (_characterStats != null)
             damageMultiplier *= _characterStats.DamageMultiplier;
 
-        ResolveCastEffects(ability, indicator, aimTime, damageMultiplier, transform.position, variantIndex);
+        Vector3 castOrigin = transform.position;
+        Vector3 movementDestination = indicator != null
+            ? indicator.transform.position
+            : castOrigin;
+        movementDestination = ClampCasterMovementDestination(
+            ability,
+            variantIndex,
+            movementDestination);
+
+        float movementDuration = GetCasterMovementDuration(
+            ability,
+            variantIndex,
+            castOrigin,
+            movementDestination);
+
+        AbilityDef movementAbility =
+            GetVariantPayload(ability, variantIndex) ?? ability;
+        bool resolveOnLanding =
+            movementAbility != null &&
+            movementAbility.moveCasterToTarget &&
+            movementAbility.resolveEffectsOnLanding &&
+            movementDuration > 0f;
+
+        if (resolveOnLanding)
+        {
+            StartCoroutine(ResolveCastEffectsOnLanding(
+                ability,
+                indicator,
+                aimTime,
+                damageMultiplier,
+                castOrigin,
+                variantIndex,
+                movementDuration));
+        }
+        else
+        {
+            ResolveCastEffects(
+                ability,
+                indicator,
+                aimTime,
+                damageMultiplier,
+                castOrigin,
+                variantIndex);
+            if (indicator != null)
+                Destroy(indicator);
+        }
+
+        BeginCasterMovementTimeline(
+            ability,
+            variantIndex,
+            movementDestination,
+            movementDuration);
+        return true;
+    }
+
+    System.Collections.IEnumerator ResolveCastEffectsOnLanding(
+        AbilityDef ability,
+        GameObject indicator,
+        float aimTime,
+        float damageMultiplier,
+        Vector3 castOrigin,
+        int variantIndex,
+        float movementDuration)
+    {
+        yield return new WaitForSeconds(
+            Mathf.Max(0f, movementDuration));
+
+        ResolveCastEffects(
+            ability,
+            indicator,
+            aimTime,
+            damageMultiplier,
+            castOrigin,
+            variantIndex);
+
         if (indicator != null)
             Destroy(indicator);
-        return true;
     }
 
     void ResolveCastEffects(AbilityDef ability, GameObject indicator, float aimTime, float damageMultiplier, Vector3 castOrigin, int variantIndex = 0)
@@ -3003,6 +3125,11 @@ public class AbilityCaster : NetworkBehaviour
         if (cooldownTimers[equippedSlot] > 0f) return;
         if (!HasEnoughManaForCast(ability, variantIndex)) return;
 
+        castPosition = ClampCasterMovementDestination(
+            ability,
+            variantIndex,
+            castPosition);
+
         GameObject serverIndicator = CreateServerCastProxy(ability, castPosition, castRotation, castScale);
         if (!FinalizeCast(ability, serverIndicator, aimTime, variantIndex))
         {
@@ -3018,9 +3145,207 @@ public class AbilityCaster : NetworkBehaviour
     [ClientRpc]
     void RpcCastConfirmed(int spellbookIndex, Vector3 position, Quaternion rotation, int variantIndex)
     {
-        if (isLocalPlayer) return;
         if (spellbookIndex < 0 || spellbookIndex >= spellbook.Length) return;
+
+        if (isLocalPlayer) return;
+
         PlayLocalCastVFX(spellbook[spellbookIndex], position, rotation, variantIndex);
+    }
+
+    bool IsCasterMovementAbility(
+        AbilityDef ability,
+        int variantIndex)
+    {
+        AbilityDef movementAbility =
+            GetVariantPayload(ability, variantIndex) ?? ability;
+        return movementAbility != null &&
+               movementAbility.moveCasterToTarget;
+    }
+
+    float GetCasterMovementDuration(
+        AbilityDef ability,
+        int variantIndex,
+        Vector3 origin,
+        Vector3 destination)
+    {
+        AbilityDef movementAbility =
+            GetVariantPayload(ability, variantIndex) ?? ability;
+        if (movementAbility == null ||
+            !movementAbility.moveCasterToTarget ||
+            movementAbility.instantMovement)
+            return 0f;
+
+        if (movementAbility.movementTiming ==
+            AbilityMovementTiming.FixedDuration)
+        {
+            return Mathf.Max(
+                0.05f,
+                movementAbility.fixedMovementDuration);
+        }
+
+        float distance = Vector3.Distance(origin, destination);
+        return distance /
+               Mathf.Max(0.1f, movementAbility.moveToSpeed);
+    }
+
+    void BeginCasterMovementTimeline(
+        AbilityDef ability,
+        int variantIndex,
+        Vector3 destination,
+        float movementDuration)
+    {
+        if (!IsCasterMovementAbility(ability, variantIndex))
+            return;
+
+        if (NetworkServer.active)
+        {
+            int spellbookIndex = FindSpellbookIndex(ability);
+            if (spellbookIndex < 0)
+                return;
+
+            double landingNetworkTime =
+                NetworkTime.time + movementDuration;
+            RpcCasterMovementConfirmed(
+                spellbookIndex,
+                destination,
+                variantIndex,
+                landingNetworkTime);
+            return;
+        }
+
+        // Offline editor play has no RPC round-trip.
+        PlayMovementCastAnimation(
+            ability,
+            variantIndex,
+            movementDuration);
+        StartCasterMovement(
+            ability,
+            variantIndex,
+            destination,
+            movementDuration);
+    }
+
+    [ClientRpc]
+    void RpcCasterMovementConfirmed(
+        int spellbookIndex,
+        Vector3 destination,
+        int variantIndex,
+        double landingNetworkTime)
+    {
+        if (spellbookIndex < 0 ||
+            spellbookIndex >= spellbook.Length)
+            return;
+
+        float remainingDuration = Mathf.Max(
+            0f,
+            (float)(landingNetworkTime - NetworkTime.time));
+        AbilityDef ability = spellbook[spellbookIndex];
+
+        PlayMovementCastAnimation(
+            ability,
+            variantIndex,
+            remainingDuration);
+
+        if (isLocalPlayer)
+        {
+            StartCasterMovement(
+                ability,
+                variantIndex,
+                destination,
+                remainingDuration);
+        }
+    }
+
+    void PlayMovementCastAnimation(
+        AbilityDef ability,
+        int variantIndex,
+        float movementDuration)
+    {
+        AbilityDef movementAbility =
+            GetVariantPayload(ability, variantIndex) ?? ability;
+        if (movementAbility == null)
+            return;
+
+        float playbackSpeed = 1f;
+        AnimationClip clip =
+            movementAbility.marauderCastAnimation;
+        if (clip != null && movementDuration > 0.01f)
+        {
+            float landingPoint = Mathf.Clamp(
+                movementAbility.animationLandingPoint,
+                0.1f,
+                1f);
+            playbackSpeed =
+                clip.length * landingPoint /
+                movementDuration;
+        }
+
+        castAnimator?.PlayCast(
+            movementAbility.category,
+            clip,
+            playbackSpeed);
+    }
+
+    void StartCasterMovement(
+        AbilityDef ability,
+        int variantIndex,
+        Vector3 destination,
+        float movementDuration)
+    {
+        AbilityDef movementAbility =
+            GetVariantPayload(ability, variantIndex) ?? ability;
+        if (movementAbility == null ||
+            !movementAbility.moveCasterToTarget)
+            return;
+
+        PlayerMovement movement = GetComponent<PlayerMovement>();
+        if (movement == null)
+        {
+            Debug.LogWarning(
+                $"[COMBAT] '{movementAbility.abilityName}' is configured to move its caster, " +
+                "but no PlayerMovement component was found.",
+                this);
+            return;
+        }
+
+        movement.MoveToAbilityTarget(
+            destination,
+            movementAbility.moveToSpeed,
+            movementAbility.instantMovement,
+            movementAbility.movementArcHeight,
+            movementDuration);
+    }
+
+    Vector3 ClampCasterMovementDestination(
+        AbilityDef ability,
+        int variantIndex,
+        Vector3 requestedDestination)
+    {
+        AbilityDef movementAbility =
+            GetVariantPayload(ability, variantIndex) ?? ability;
+        if (movementAbility == null ||
+            !movementAbility.moveCasterToTarget)
+            return requestedDestination;
+
+        Vector3 origin = transform.position;
+        Vector3 horizontalOffset = requestedDestination - origin;
+        horizontalOffset.y = 0f;
+
+        float maximumDistance = Mathf.Max(0f, ability.range);
+        if (maximumDistance > 0f &&
+            horizontalOffset.sqrMagnitude >
+            maximumDistance * maximumDistance)
+        {
+            horizontalOffset =
+                horizontalOffset.normalized * maximumDistance;
+            requestedDestination.x = origin.x + horizontalOffset.x;
+            requestedDestination.z = origin.z + horizontalOffset.z;
+        }
+
+        Vector3 groundPoint =
+            ProjectToGround(requestedDestination, out Vector3 groundNormal);
+        return groundPoint -
+               groundNormal * indicatorGroundOffset;
     }
 
     GameObject CreateServerCastProxy(AbilityDef ability, Vector3 position, Quaternion rotation, Vector3 scale)
@@ -3381,7 +3706,10 @@ public class AbilityCaster : NetworkBehaviour
 
     void DealAbilityDamage(Health health, float damage)
     {
-        if (health == null) return;
+        // A caster can overlap their own landing/area collider. Offensive abilities
+        // must never turn that overlap into self-damage, even if their target tag is
+        // accidentally left blank on the prefab.
+        if (health == null || health == _health) return;
 
         bool wasCritical = false;
         float finalDamage = _characterStats != null
@@ -4705,6 +5033,15 @@ public class AbilityCaster : NetworkBehaviour
         payload.cooldown = owner.cooldown;
         payload.manaCost = owner.manaCost;
         payload.castTime = owner.castTime;
+        payload.marauderCastAnimation = owner.marauderCastAnimation;
+        payload.moveCasterToTarget = owner.moveCasterToTarget;
+        payload.instantMovement = owner.instantMovement;
+        payload.movementTiming = owner.movementTiming;
+        payload.moveToSpeed = owner.moveToSpeed;
+        payload.fixedMovementDuration = owner.fixedMovementDuration;
+        payload.movementArcHeight = owner.movementArcHeight;
+        payload.resolveEffectsOnLanding = owner.resolveEffectsOnLanding;
+        payload.animationLandingPoint = owner.animationLandingPoint;
         payload.icon = owner.icon;
         payload.category = InferVariantPayloadCategory(owner, variant);
         payload.targetTag = !string.IsNullOrEmpty(variant.targetTag) ? variant.targetTag : owner.targetTag;
