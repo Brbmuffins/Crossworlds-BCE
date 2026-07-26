@@ -89,6 +89,10 @@ public class WorldItem : NetworkBehaviour
     {
         if (_pickedUp && !isServer) return;
         _pickedUp = true;
+        if (NetworkServer.spawned.TryGetValue(playerNetId, out NetworkIdentity picker) &&
+            picker.connectionToClient != null && !itemId.StartsWith("gold:"))
+            QuestLocalRuntime.ServerReport(picker.connectionToClient,
+                QuestObjectiveType.CollectItem, itemId, Mathf.Max(1, quantity));
         RpcOnPickedUp(playerNetId, itemId, quantity);
         NetworkServer.Destroy(gameObject);
     }
