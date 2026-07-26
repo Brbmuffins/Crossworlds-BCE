@@ -131,6 +131,65 @@ public class RodChatManager : NetworkBehaviour
 #endif
     }
 
+    // Quest Forge transport. Quest rules remain isolated in QuestLocalRuntime;
+    // this global Mirror object only carries owner requests and responses.
+    public void RequestQuestAccept(string questId)
+    {
+        if (isClient && !string.IsNullOrWhiteSpace(questId)) CmdQuestAccept(questId);
+    }
+
+    public void RequestQuestComplete(string questId)
+    {
+        if (isClient && !string.IsNullOrWhiteSpace(questId)) CmdQuestComplete(questId);
+    }
+
+    public void RequestQuestInteraction(string targetId)
+    {
+        if (isClient && !string.IsNullOrWhiteSpace(targetId)) CmdQuestInteraction(targetId);
+    }
+
+    [Command(requiresAuthority = false)]
+    void CmdQuestAccept(string questId, NetworkConnectionToClient sender = null) =>
+        QuestLocalRuntime.ServerAccept(sender, questId);
+
+    [Command(requiresAuthority = false)]
+    void CmdQuestComplete(string questId, NetworkConnectionToClient sender = null) =>
+        QuestLocalRuntime.ServerComplete(sender, questId);
+
+    [Command(requiresAuthority = false)]
+    void CmdQuestInteraction(string targetId, NetworkConnectionToClient sender = null) =>
+        QuestLocalRuntime.ServerRequestInteraction(sender, targetId);
+
+    [Server]
+    public void ServerSendQuestState(NetworkConnectionToClient target, string json)
+    {
+        if (target != null) TargetReceiveQuestState(target, json);
+    }
+
+    [Server]
+    public void ServerGrantQuestReward(
+        NetworkConnectionToClient target, int gold, int xp, string itemId, int itemQuantity)
+    {
+        if (target != null) TargetGrantQuestReward(target, gold, xp, itemId ?? "", itemQuantity);
+    }
+
+    [TargetRpc]
+    void TargetReceiveQuestState(NetworkConnection target, string json)
+    {
+#if UNITY_EDITOR || !UNITY_SERVER
+        QuestLocalRuntime.ClientApplyState(json);
+#endif
+    }
+
+    [TargetRpc]
+    void TargetGrantQuestReward(
+        NetworkConnection target, int gold, int xp, string itemId, int itemQuantity)
+    {
+#if UNITY_EDITOR || !UNITY_SERVER
+        QuestLocalRuntime.ClientGrantReward(gold, xp, itemId, itemQuantity);
+#endif
+    }
+
     // ── Name colours — deterministic from username hash ───────────────────
     static readonly string[] NAME_COLORS =
         { "#f472b6", "#a78bfa", "#34d399", "#60a5fa", "#fbbf24", "#fb923c" };
@@ -151,6 +210,12 @@ public class RodChatManager : NetworkBehaviour
 
         // Keep chat visible across all ServerChangeScene transitions.
         UnityEngine.SceneManagement.SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+
+    public override void OnStartServer()
+    {
+        base.OnStartServer();
+        if (Instance == null) Instance = this;
     }
 
     public override void OnStopClient()

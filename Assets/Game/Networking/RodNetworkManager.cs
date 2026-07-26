@@ -347,6 +347,7 @@ public class RodNetworkManager : NetworkManager
 
     public override void OnServerDisconnect(NetworkConnectionToClient conn)
     {
+        QuestLocalRuntime.ServerForget(conn);
         // Free the player's zone slot first — this is what lets an emptied zone
         // unload (ROADMAP 6.3). base.OnServerDisconnect destroys conn.identity.
         ZoneManager.Instance?.OnPlayerDisconnected(conn);
