@@ -129,10 +129,11 @@ Material:
     - _Surface: 0
     - _UVSec: 0
     - _WorkflowMode: 1
+    - _XRMotionVectorsPass: 1
     - _ZWrite: 1
     m_Colors:
     - _BaseColor: {r: 0.2785111, g: 0.84055775, b: 0.90588605, a: 1}
-    - _Color: {r: 0.27851108, g: 0.84055775, b: 0.90588605, a: 1}
+    - _Color: {r: 0.2785111, g: 0.84055775, b: 0.90588605, a: 1}
     - _EmissionColor: {r: 0.031862397, g: 1.0520324, b: 1.4799995, a: 1.4799995}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
