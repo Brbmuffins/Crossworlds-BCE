@@ -1,8 +1,48 @@
 # SNAPSHOT.md — Crossworlds BCE, State of the Project
 
-**Audit date:** 2026-07-03
+**Audit date:** 2026-07-03 (full audit) — **delta update 2026-07-25 below supersedes stale claims**
 **Auditor:** Claude (senior-lead audit pass)
 **Scope:** `D:\Crossworlds` working tree (branch `main`, HEAD `ee7706d`) + server docs in `_CONTEXT/` and `CrossWorlds/CLAUDE.md`
+
+---
+
+## ⚡ Delta update — 2026-07-25 (HEAD `2daa100f`, verified against code)
+
+Three weeks and ~275 CI deploys have passed since the full audit. Verified changes
+that override statements below:
+
+- **Class 0 renamed: Warden → Marauder.** `PlayerIdentity.ClassNames` =
+  `{ "Marauder", "Ironclad", "Shadowblade", "Cleric", "Arcanist" }`; roles per
+  CharacterSelect: Marauder Damage·Control, Ironclad Tank·CC, Shadowblade
+  Stealth·Burst, Cleric Support·Sustain, Arcanist Assassin·Mobility. Indices
+  unchanged. ("Iron Warden" = world boss, `IronWardenController` — not the class.)
+- **The "no arena scene" blocker (§2) is RESOLVED.** Build list now has 9 scenes:
+  LoginScene, CharacterSelect, HUB, **Darkwood, Ashen Wastelands, Toujam Basin,
+  GM Island, VoidDungeon**, _Container. `Arena_Copper` / TutorialIsland references
+  below are historical.
+- **Enemy Forge exists**: `Assets/Game/Editor/EnemyForge/` — data-driven enemy
+  authoring (Definition/Builder/Validator/Deployment/AnimationLibrary/Window),
+  generating prefabs into `Assets/Game/Prefabs/EnemyForge/`. New enemy types
+  (Templar, Wizard, Chaos Weaver w/ ChainLightning) are Forge content, not classes.
+  `EnemyAI.cs` now lives in `Combat/Scripts/` alongside `EnemyController`.
+- **`GmConsole.cs` guard bug (§2) is FIXED** — file opens with
+  `#if UNITY_EDITOR || !UNITY_SERVER`.
+- **`Assets/Game/Heroes/` (Brandalf model dir) is gone**; only editor tooling
+  (`BrandalfSetupBuilder`, `CharacterModelSwapper`) remains. Decision still open.
+- **No mount code exists** in `Assets/Game` despite a wiki "Mounts & Traversal" page.
+- Working tree is clean and synced with origin/main (the §2 "uncommitted month of
+  work" is resolved); CI (GitHub Actions "Build and Deploy") is the live pipeline.
+- **2026-07-26 audit addendum** (delta above verified at `2daa100f`; since then):
+  Marauder Crashing Leap implementation (`451913e4`), Enemy Forge + online-player
+  rework (`109942a3`) — `CastAnimator.PlayCast` / `EnemyController.PlayCastAnimation`
+  signatures changed, all call sites updated. Audit rewrote the 8 remaining bare
+  `#if !UNITY_SERVER` guards to `#if UNITY_EDITOR || !UNITY_SERVER` (6 UI/Systems
+  files + AfkStationBuilder + HubSceneBuilder) — review-only, pending editor compile.
+  Origin is 1 commit ahead of local (`65138e5e` Darkwood/Marauder VFX); pull via
+  GitHub Desktop. Tree itself is clean.
+
+Sections below are accurate as of 2026-07-03 except where contradicted above.
+A fresh full audit is warranted; this delta corrects only verified headline facts.
 
 ---
 

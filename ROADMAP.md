@@ -60,6 +60,18 @@ conversation: it names its files, acceptance criteria, and dependencies. Tasks m
 > **Blocked on owner auth:** `git push` (~50 commits ahead) and `git lfs pull`
 > (2 missing LFS objects: Wisp_Mob.prefab, grass.png) need GitHub Desktop auth.
 
+> **Status 2026-07-26 (audit sweep):** The "~50 commits ahead / push blocked" note
+> above is RESOLVED — CI (GitHub Actions) is the live build+deploy pipeline and the
+> branch has been syncing. As of this audit local main is 2 ahead (audit commits) /
+> 1 behind origin (`65138e5e` "Darkwood changes - Marauder VFX updates") — pull/push
+> via GitHub Desktop, not CLI. `tools/deploy-server.sh` is RETIRED; CI deploys to
+> numbered `/game/<runid>/` dirs (see CLAUDE.md). Unity is 6000.4.11f1 (not 6000.4.10f1).
+> The `#if !UNITY_SERVER` guards described in the 1.5 note above were the *bare* form;
+> the required convention is `#if UNITY_EDITOR || !UNITY_SERVER`, and the 8 remaining
+> bare guards (HeroCosmeticApplier, StatusEffectHUD, ShieldValueHUD, GoldHUD,
+> ClericRadarUI, CharacterSheetUI, AfkStationBuilder, HubSceneBuilder) were rewritten
+> by the audit — review-only, needs one editor open to confirm compilation.
+
 - **0.1 — Commit the working tree in reviewable slices.** Files: everything in `git status`.
   Group commits by system (prefabs+scenes / combat scripts / UI / networking / docs); do not
   squash into one blob. Add `.gitattributes` with `*.cs text eol=lf`, `*.unity -text`,
