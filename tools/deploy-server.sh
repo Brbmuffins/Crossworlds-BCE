@@ -26,7 +26,7 @@ done
 [[ -n "$UNIT" ]] || { echo "FATAL: no crossworlds game unit found (tried crossworlds-server, crossworlds)"; exit 1; }
 
 # ── Discover the install dir from the unit's ExecStart ───────────────────
-# ExecStart is e.g. `/game/<runid>/CrossworldsBCE.x86_64 -batchmode ...`.
+# ExecStart is e.g. `/game/<runid>/CrossWords.x86_64 -batchmode ...`.
 # The install dir is the directory that binary lives in — whatever it is.
 EXEC_BIN="$(systemctl show -p ExecStart --value "$UNIT" \
             | grep -oE '/[^ ]*CrossWords\.x86_64' | head -n1)"

@@ -6,9 +6,9 @@
 #   2. Unity editor version in ProjectSettings/ProjectVersion.txt installed
 #      with the "Linux Dedicated Server Build Support" module.
 #
-# Output: build\DedicatedServer\  renamed to the names the VPS systemd unit
-# expects (CrossworldsBCE.x86_64 + CrossworldsBCE_Data), then packed into
-# build\crossworlds-server.tar.gz for upload with tools\deploy-server.sh.
+# Output: build\DedicatedServer\CrossWords.x86_64 (+ CrossWords_Data) — the exact
+# names the live crossworlds-server systemd unit's ExecStart expects — then packed
+# into build\crossworlds-server.tar.gz for upload with tools\deploy-server.sh.
 
 $ErrorActionPreference = 'Stop'
 $repo = Split-Path -Parent $PSScriptRoot
@@ -32,12 +32,11 @@ New-Item -ItemType Directory -Force "$repo\build" | Out-Null
   -logFile $log
 if ($LASTEXITCODE -ne 0) { throw "Build FAILED (exit $LASTEXITCODE) - see $log" }
 
-# Rename to the exact names /etc/systemd/system/crossworlds.service expects.
-# Binary and _Data folder names MUST match each other.
+# BuildScript already emits CrossWords.x86_64 / CrossWords_Data (the names the
+# live crossworlds-server unit expects) — no rename needed.
 $out = "$repo\build\DedicatedServer"
-if (Test-Path "$out\Crossworlds.x86_64") {
-  Move-Item -Force "$out\Crossworlds.x86_64" "$out\CrossworldsBCE.x86_64"
-  Move-Item -Force "$out\Crossworlds_Data"  "$out\CrossworldsBCE_Data"
+if (-not (Test-Path "$out\CrossWords.x86_64")) {
+  throw "Expected $out\CrossWords.x86_64 not found — did BuildScript.locationPathName change?"
 }
 
 $tar = "$repo\build\crossworlds-server.tar.gz"
