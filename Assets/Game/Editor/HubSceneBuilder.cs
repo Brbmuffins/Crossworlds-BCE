@@ -228,7 +228,7 @@ public static class HubSceneBuilder
             bc.size   = new Vector3(0.9f, 0.7f, 0.9f);
 
             // Server-backed gathering station.
-#if !UNITY_SERVER
+#if UNITY_EDITOR || !UNITY_SERVER
             var station = mineGO.AddComponent<AfkGatheringStation>();
             station.stationName      = "Copper Vein";
             station.professionId     = 2;

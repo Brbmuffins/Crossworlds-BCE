@@ -1,6 +1,6 @@
-// AfkGatheringStation and ProfessionManager are #if !UNITY_SERVER — guard this
+// AfkGatheringStation and ProfessionManager are #if UNITY_EDITOR || !UNITY_SERVER — guard this
 // editor script the same way so it compiles cleanly under the Dedicated Server target.
-#if !UNITY_SERVER
+#if UNITY_EDITOR || !UNITY_SERVER
 using UnityEngine;
 using UnityEditor;
 
@@ -185,4 +185,4 @@ public static class AfkStationBuilder
                   $"item '{cfg.itemId}', {cfg.tickInterval}s tick.");
     }
 }
-#endif // !UNITY_SERVER
+#endif // UNITY_EDITOR || !UNITY_SERVER
