@@ -77,3 +77,12 @@ Assets/brbmuffins Trails.meta
 # ── Local CI/CD setup helper (one-shot, prompts for secrets — not for git) ───
 tools/ci-setup.sh
 _CONTEXT/VFX_VARIANT_ASSIGNMENT_PROMPT.txt.md
+
+# ── Claude / AI session files (local only, never share) ──────────────────────
+.claude/
+HISTORY_SCRUB_PLAN.md
+
+# ── Session artifacts / accidental junk ──────────────────────────────────────
+dev/
+*_prompt_summary.txt
+tonight_*.txt
