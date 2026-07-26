@@ -27,6 +27,10 @@ on:
   push:
     branches: [main]
   workflow_dispatch:   # also triggerable manually from the Actions tab
+  schedule:
+    # Daily rebuild + redeploy of main. GitHub cron is UTC with no DST
+    # awareness, so this fixed time = 6:00am EDT (summer) / 5:00am EST (winter).
+    - cron: '0 10 * * *'
 
 # Only one build+deploy at a time: a new push to main cancels an in-progress
 # run so the VPS only ever receives the latest commit (no racing deploys).
