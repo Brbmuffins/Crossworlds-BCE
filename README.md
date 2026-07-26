@@ -1,6 +1,6 @@
 # Crossworlds BCE
 
-> **Co-op action RPG · 5 classes · 32 abilities · Smite-style combat · Multiplayer hub + arenas**
+> **Co-op action RPG · 5 classes · 32 abilities · Smite-style combat · Multiplayer hub + persistent zones**
 
 ![Crossworlds BCE](Docs/logo.png)
 
@@ -31,7 +31,7 @@ Crossworlds BCE is a server-authoritative co-op action RPG built on Unity 6 and 
   - [Enemy Roster](#enemy-roster)
   - [Boss Encounter — The Null Architect](#boss-encounter--the-null-architect)
   - [Boss Encounter — The Iron Warden](#boss-encounter--the-iron-warden)
-- [Features Status](#features-status)
+- [Current State vs Phase 1 Roadmap](#current-state-vs-phase-1-roadmap)
 - [Developer Reference](#developer-reference)
   - [VPS Operations](#vps-operations)
   - [Database Schema](#database-schema)
@@ -94,9 +94,11 @@ Power comes primarily from **gear, hero mastery, and player skill** — reading 
 
 Five hero classes, each with a distinct role and playstyle. Class indices are fixed — never renumber.
 
+> **Naming note (2026-07):** class 0 was renamed **Warden → Marauder** in code (`PlayerIdentity.ClassNames`, `RodNetworkManager.classPrefabs[0]`). The lore/ability sections below still use "Warden" — same class, same index, same kit.
+
 | # | Class | Hero | Role | Identity |
 |---|-------|------|------|----------|
-| 0 | **Warden** | | Battlemage / Utility | Deploys construct turrets, buffs allies, traps and controls space |
+| 0 | **Marauder** *(formerly Warden)* | | Battlemage / Utility | Deploys construct turrets, buffs allies, traps and controls space |
 | 1 | **Ironclad** | | Tank / Disruptor | Absorbs damage, counters attacks, pulls enemies into the team |
 | 2 | **Shadowblade** | **Bo-gar** | Assassin / Disruptor | Stealth burst, debuff stacking, silence zones, harvests stacks for big AoE |
 | 3 | **Cleric** | **Brandolf** | Support / Healer | Heals, shields, revives, soul bonds, and in extremis rewinds time |
@@ -1010,31 +1012,46 @@ Kill:             ArenaSessionController.OnBossKilled() → chest + XP
 
 ---
 
-## Features Status
+## Current State vs Phase 1 Roadmap
 
-| Feature | Status |
-|---------|--------|
-| Login / register / JWT auth | ✅ Live |
-| Character select (5 classes) | ✅ Live |
-| Shared hub world (multiplayer) | ✅ Live |
-| Chat system | ✅ Live |
-| Ability bar (1–4 hotkeys) | ✅ Live |
-| AoE / Cone / Line indicators | ✅ Live |
-| Skill shot (Void Bolt) | ✅ Implemented |
-| Spellbook panel (Tab) | ✅ Live |
-| Ability tooltip on hover | ✅ Live |
-| Dodge roll (Alt/V, 2 charges) | ✅ Live |
-| Enemy telegraph indicators | ✅ Implemented |
-| Enemy AI (NavMesh, aggro) | 🔶 Editor steps pending |
-| Arena portal transition | 🔶 In progress |
-| Drop table / loot | ✅ API live · 🔶 Unity client pending |
-| Inventory bag UI | 🔶 Pending |
-| Progression (XP / levels) | ✅ API live · 🔶 Unity pending |
-| Crafting | ✅ API live · 🔶 Unity pending |
-| GM dashboard | ✅ Live |
-| Uptime monitoring (Kuma) | 🔶 Needs web UI config |
-| HTTPS / SSL | 🔶 Pending |
-| CI/CD pipeline | 🔶 Secrets not configured |
+> Cross-referenced against the team's **Phase 1 "8 Week Vertical Slice" roadmap** ([15.204.243.36/roadmap.html](http://15.204.243.36/roadmap.html)) — *"prove the core loop: log in, meet in the hub, enter a portal, fight monsters, earn loot, level up, craft an upgrade, and want to run it again."* Last cross-checked **2026-07-25**.
+
+### End of Phase 1 Checklist — status
+
+| Phase 1 goal | Status | Where it lives |
+|---|---|---|
+| Login | ✅ | LoginScene + JWT auth (`/login`, `/register`) |
+| Character select | ✅ | 5 classes — Marauder, Ironclad, Shadowblade, Cleric, Arcanist |
+| Multiplayer hub | ✅ | Shared `HUB` zone on the dedicated server (Mirror/KCP) |
+| Chat | ✅ | `RodChatManager` — global, spans all zones |
+| Portal to arena | ✅ | Portals/waypoints route through `ZoneManager.MovePlayerToZone` — zones + instanced dungeons (`VoidDungeon`) |
+| Kill monsters | ✅ | Server-authoritative combat: `EnemyController` AI, wave arenas, open-zone mobs, 2 scripted 3-phase bosses |
+| Loot gear | ✅ | Server drops (`DropTable`/`WorldItem`) → `/api/inventory/*` persistence |
+| Level up | ✅ | XP/gold via `/api/combat/kill` (hit-gated); XP bar + level-up screen wired to `PlayerProgressManager` |
+| Craft one item | ✅ | Forge smelt/craft tabs + professions (`/api/craft`, `/api/professions/award-xp`) |
+| Return to hub | ✅ | `HubReturnTrigger` → `ZoneManager` |
+
+**Milestone read (2026-07-25):** every checklist item has a live or code-complete implementation. The project is effectively in the **Week 7–8 band** of the vertical slice — polish, readability, and playtest prep — with active dev on zone content (Darkwood, Ashen Wastelands) and enemy AI.
+
+### Ahead of the Phase 1 scope
+
+The roadmap's motto is *"build the loop first, add the world later"* — parts of the world arrived early and are live in the current build:
+
+- **Multi-zone persistent world** — `_Container` + `ZoneManager` host every zone additively on one server: HUB, Darkwood, Ashen Wastelands, Toujam Basin, GM Island, VoidDungeon (instanced per party/connection)
+- **Two scripted bosses** — Null Architect and Iron Warden, both 3-phase server-authoritative encounters
+- **AFK professions** (Mining / Woodcutting / Fishing) + Forge crafting loop
+- **Hero mastery** progression track and the state-layer combat design (DoTs/HoTs/transitions)
+- **GM console + web dashboard**
+
+### Infrastructure status
+
+| Item | Status |
+|---|---|
+| CI/CD | ✅ Live — push to `main` → GitHub Actions builds and deploys the `crossworlds-server` unit to the VPS |
+| GM dashboard (:4000) | ✅ Live |
+| Uptime Kuma (:3001) | 🔶 Needs web UI config |
+| HTTPS / SSL | 🔶 Web page has SSL (Certbot); API/JWT traffic still plain HTTP |
+| Credential rotation (Q7) | 🔶 Owner action pending |
 
 ---
 
@@ -1052,8 +1069,7 @@ Kill:             ArenaSessionController.OnBossKilled() → chest + XP
 |------|-------|
 | Host | `playcrossworlds.com` / `15.204.243.36` |
 | SSH | `ssh ubuntu@playcrossworlds.com` |
-| Game binary | `/game/Builds/CrossworldsBCE.x86_64` |
-| Game data dir | `/game/Builds/CrossworldsBCE_Data/` |
+| Game binary | Numbered CI run dir `/game/<runid>/` — **changes every deploy**; find it via `grep ExecStart /etc/systemd/system/crossworlds-server.service` (old `/game/Builds/` path retired) |
 | Auth server | `/opt/crossworlds-auth/server.js` (legacy path: `/opt/rod-auth/`) |
 | Dashboard | `/opt/crossworlds-dashboard/server.js` |
 | Game log | `/var/log/crossworlds.log` |
@@ -1064,10 +1080,11 @@ Kill:             ArenaSessionController.OnBossKilled() → chest + XP
 
 | Service | Port | What |
 |---------|------|------|
-| `crossworlds` | 7777/UDP | Unity game server (Mirror/KCP) |
+| `crossworlds-server` | 7777/UDP | Unity game server (Mirror/KCP) — **active unit**; `rod-server` and `crossworlds` units retired 2026-07-25 |
 | `crossworlds-auth` | 3000/TCP | Node.js auth + character + game API |
 | `crossworlds-dashboard` | 4000/TCP | GM/admin web dashboard + Socket.io |
-| `rod-realtime` | 5000/TCP (local) | Realtime relay — `/opt/rod-realtime/server.js` (purpose TBD) |
+| `rod-realtime` | 5000/TCP (local) | Realtime co-op relay — `/opt/rod-realtime/server.js` |
+| `spacetimedb` | 3500 (local) | SpacetimeDB instance |
 | nginx | 80/443 | Public download page, SSL via Certbot |
 | Uptime Kuma | 3001 | Monitoring (web UI needs config) |
 
@@ -1075,24 +1092,23 @@ Kill:             ArenaSessionController.OnBossKilled() → chest + XP
 
 ```bash
 # Status
-sudo systemctl status crossworlds crossworlds-auth crossworlds-dashboard
+sudo systemctl status crossworlds-server crossworlds-auth crossworlds-dashboard
 
 # Restart
 sudo systemctl restart crossworlds-auth
 sudo systemctl restart crossworlds-dashboard
-sudo systemctl restart crossworlds
+sudo systemctl restart crossworlds-server
 
 # Logs
 sudo journalctl -u crossworlds-auth -n 50 --no-pager
-sudo journalctl -u crossworlds -n 50 --no-pager
-tail -f /var/log/crossworlds.log
+sudo journalctl -u crossworlds-server -n 50 --no-pager
 
 # Ports
-ss -ulnp | grep 7777    # game UDP
-ss -tlnp                # all TCP
+sudo ss -ulnp | grep 7777    # game UDP — want exactly ONE binder
+ss -tlnp                     # all TCP
 
-# Binary sanity check
-ls -la /game/Builds/CrossworldsBCE.x86_64
+# Active binary (changes every CI deploy)
+grep ExecStart /etc/systemd/system/crossworlds-server.service
 
 # Health check
 curl http://localhost:3000/api/health
@@ -1103,23 +1119,16 @@ mysql -u crossworlds -p crossworlds   # password in /opt/crossworlds-auth/.env �
 
 ### Deploy New Build
 
-```bash
-# Local (PowerShell)
-powershell -ExecutionPolicy Bypass -File tools\build-server.ps1
-scp build\crossworlds-server.tar.gz tools\deploy-server.sh ubuntu@playcrossworlds.com:~
-
-# On VPS
-sudo bash deploy-server.sh             # auto-backup, restart, verify, auto-rollback on failure
-sudo bash deploy-server.sh --rollback  # manual rollback
-```
-
-**Binary name is critical.** The systemd service `ExecStart` must match exactly:
+**The live pipeline is CI, not manual scp.** Push to `main` on `Brbmuffins/Crossworlds-BCE` → GitHub Actions builds the dedicated server (`BuildScript.BuildDedicatedServer`), uploads it to a numbered run dir `/game/<runid>/` on the VPS, repoints `crossworlds-server.service`'s `ExecStart`, and restarts the unit.
 
 ```bash
-cat /etc/systemd/system/crossworlds.service
-# If you ever rename the binary:
-systemctl daemon-reload && systemctl restart crossworlds
+# Verify a deploy landed
+grep ExecStart /etc/systemd/system/crossworlds-server.service
+sudo journalctl -u crossworlds-server -n 50 --no-pager
+sudo ss -ulnp | grep 7777   # exactly one binder
 ```
+
+Manual local build (compile check / out-of-band only): `powershell -ExecutionPolicy Bypass -File tools\build-server.ps1` — requires `git lfs pull` first (GitHub Desktop auth). The old `deploy-server.sh` → `/game/Builds` → `crossworlds.service` path is **retired** — do not deploy there.
 
 ### Dashboard URLs
 
@@ -1357,7 +1366,7 @@ SQL: parameterized queries only. No string interpolation. Ever.
 
 ## Networking
 
-**Stack:** Unity 6 (6000.4.10f1) + Mirror + KCP transport, UDP 7777.
+**Stack:** Unity 6 (6000.4.11f1) + Mirror + KCP transport, UDP 7777.
 
 **Ports — frozen:**
 
@@ -1369,7 +1378,7 @@ SQL: parameterized queries only. No string interpolation. Ever.
 | 80/443 | Nginx | SSL live via Certbot |
 | 3001 | Uptime Kuma | Do not touch |
 
-**Scene order:** LoginScene (0) → CharacterSelect (1) → Darkwood (2, the hub — renamed from Hub) → Arena (in progress). Also present: `TutorialIsland`, `VoidDungeon` (placeholder, not yet in Build Settings). `RodNetworkManager` sets `onlineScene = Darkwood.unity` and `offlineScene = LoginScene.unity` in `Awake()` — never in the Inspector.
+**Scenes & zones (multi-zone architecture):** Build Settings — LoginScene (0), CharacterSelect (1), then the zone scenes (`HUB`, `Darkwood`, `Ashen Wastelands`, `Toujam Basin`, `GM Island`, `VoidDungeon`) and `_Container` (8). The server's active scene is the empty `_Container`; every zone — HUB included — is loaded **additively** on demand by `ZoneManager` (own physics scene per zone via `LocalPhysicsMode.Physics3D`). Players travel individually: portals/waypoints call `ZoneManager.MovePlayerToZone(conn, zone, spawnId)`, open zones are shared, `VoidDungeon` is instanced. Each zone scene carries its own Camera + AudioListener; `ZoneCameraDirector` enables only the current zone's. `RodNetworkManager` sets `onlineScene = _Container` and `offlineScene = LoginScene` in `Awake()` — never in the Inspector.
 
 **Mirror discipline:**
 - `[Server]` on every game-state mutation
@@ -1381,7 +1390,7 @@ SQL: parameterized queries only. No string interpolation. Ever.
 **Class indices (canonical — never renumber):**
 
 ```
-0 = Warden       (legacy docs: Engineer)
+0 = Marauder     (formerly Warden; legacy docs: Engineer)
 1 = Ironclad     (legacy docs: Guardian)
 2 = Shadowblade
 3 = Cleric
@@ -1453,21 +1462,21 @@ Play** until the server explicitly spawns it — so it vanishes.
 
 ## Build & Deploy
 
-Unity version: **6000.4.10f1** (from `ProjectSettings/ProjectVersion.txt` — older docs saying `6000.0.77f1` are stale).
+Unity version: **6000.4.11f1** (from `ProjectSettings/ProjectVersion.txt` — older docs saying `6000.4.10f1` / `6000.0.77f1` are stale).
 
 ### Server Build (Linux x86_64 headless)
+
+**Normal path: just push to `main`** — CI builds and deploys automatically (see [VPS Operations → Deploy New Build](#deploy-new-build)). The build's scene list is derived from Scenes-In-Build, so every zone (incl. `_Container`) is included.
+
+Manual/out-of-band build:
 
 ```powershell
 # 1. Pull LFS assets (requires GitHub Desktop — CLI agent has no LFS auth)
 git lfs pull
 
-# 2. Build
+# 2. Build (compile check or emergency deploy)
 powershell -ExecutionPolicy Bypass -File tools\build-server.ps1
 # Refuses if LFS pointer files remain; output: build\crossworlds-server.tar.gz
-
-# 3. Upload + deploy
-scp build\crossworlds-server.tar.gz tools\deploy-server.sh ubuntu@playcrossworlds.com:~
-ssh ubuntu@playcrossworlds.com "sudo bash deploy-server.sh"
 ```
 
 ### Client Build (Windows)
@@ -1626,28 +1635,16 @@ Localized, behavior-preserving audit across combat, networking, abilities, statu
 
 ## Open TODOs
 
+> Trimmed 2026-07-25 — completed items (portal transition, inventory bag UI, progression HUD, CI/CD secrets, VPS seed) removed. Arena_Copper items dropped: that design direction is out of date; the multi-zone world superseded it.
+
 | Priority | Task |
 |----------|------|
-| 🔴 | **Delete `D:\Crossworlds\.git\index.lock`** (left by timed-out git diff), then commit: (1) guard sweep + i-frame fix, (2) feel system + EnemyController changes |
-| 🔴 | **Run VPS seed:** `mysql -u crossworlds -p crossworlds < _CONTEXT/seed_arena_content_2026-07-06.sql` |
 | 🔴 | Rotate credentials leaked into git history (ROADMAP Q7) |
-| 🔴 | **CLASS_NAMES** — live server still has `['Engineer','Guardian',...]`; live characters use those names. Changing to `['Warden','Ironclad',...]` needs coordinated Unity deploy + `UPDATE characters SET class_name=...` migration. See `_CONTEXT/VPS_SERVER.md` for migration plan. |
-| 🟡 | **Editor:** Add `ScreenShake` component to main camera GameObject |
-| 🟡 | **Editor:** Add `PlayerHitFeedback` to each hero prefab |
-| 🟡 | **Editor:** Create `FeelConfig.asset` (Right-click → Crossworlds/FeelConfig) in `Assets/Resources/` |
-| 🟡 | **Editor:** Assign audio clips to `CombatAudio` Inspector slots |
-| 🟡 | **Editor:** Set `enemyTemplateId` on enemy prefab variants after running seed (grunt→`grunt_basic`, ranged→`ranged_basic`, elite→`elite_basic`) |
-| 🟡 | Document `rod-realtime` (port 5000 local) — found on VPS during 2026-07-03 audit; purpose unknown |
-| 🟡 | Create `PlayerProjectile` prefab in editor; assign to hero prefabs; register in NetworkManager |
-| 🟡 | Bake NavMesh in Arena_Copper |
-| 🟡 | Add `hpScalePerWave` + `damageScalePerWave` to `WaveSpawner` (see `COMBAT_DESIGN_2026-07-06.md`) |
-| 🟡 | Inventory bag UI (4×6 grid, tooltip, equip) → `/api/inventory/*` |
-| 🟡 | Progression HUD (XP bar, level-up panel) → `/api/character/save-progress` |
-| 🟡 | Portal transition (Hub → Arena scene loading) |
+| 🟡 | **Verify server `CLASS_NAMES`** matches the client's current names (`['Marauder','Ironclad','Shadowblade','Cleric','Arcanist']`) — index positions are what matters, but display names in DB rows may still be legacy (`Engineer`/`Guardian`/`Warden`). See `_CONTEXT/VPS_SERVER.md`. |
+| 🟡 | **Editor feel steps** (if not already done): `ScreenShake` on main cameras, `PlayerHitFeedback` on hero prefabs, `FeelConfig.asset` in `Assets/Resources/`, `CombatAudio` clip slots |
+| 🟡 | Ability deployable prefabs (mines/walls/zones) — behaviours are coded but no prefabs reference them (ROADMAP 2.7) |
 | 🟢 | Configure Uptime Kuma web UI at `http://15.204.243.36:3001` |
-| 🟢 | HTTPS / Cloudflare SSL (all traffic plain HTTP; JWT in transit unencrypted) |
-| 🟢 | Configure CI/CD secrets (`.github/workflows/build-and-deploy.yml` exists, needs secrets) |
-| 🟢 | Domain name (currently IP-only on public page) |
+| 🟢 | HTTPS for API traffic (JWT currently travels plain HTTP; web page already has SSL) |
 
 ---
 
@@ -1670,9 +1667,10 @@ Assets/Game/
   Items/Scripts/           CharacterStats, Equipment, EquipmentUI, InventoryUI
   Objects/Scripts/         ItemPickup
   Networking/              RodNetworkManager, RodNetworkAuthenticator, PlayerIdentity,
-                           PortalTransition, RodChatManager, ForgeNPC
+                           PortalTransition, RodChatManager, ForgeNPC,
+                           ZoneManager, ZoneScene, ZoneCameraDirector, RodPositionSaver (multi-zone core)
   Systems/                 client REST singletons (InventoryManager, ItemCatalog, HeroMastery,
-                           ProfessionManager, ConsumableEffect, AfkGatheringStation)
+                           ProfessionManager, ConsumableEffect, AfkGatheringStation), SceneNames, ServerConfig
   UI/                      HUDs + panels: GmConsole, LoginManager, PlayerProgressManager,
                            AbilityCaster, AbilityBar, AbilityTooltipUI, InventoryBagUI,
                            ForgeCraftingPanel, GatheringHUD, CharacterSelectUI, WorldBossHealthBar
@@ -1680,9 +1678,10 @@ Assets/Game/
                            HubSceneBuilder, EnemyBuilder, AfkStationBuilder, IronWardenBuilder,
                            FieldGoulAnimatorBuilder
   3d Assets/Fences/        wooden-fence set (Gundab dressing; see Tools/generate_wooden_fence_fbx.py)
-  Scenes/                  LoginScene(0), CharacterSelect(1), Darkwood(2, hub — renamed from Hub);
-                           TutorialIsland, VoidDungeon (placeholder for a future dungeon build)
-  Prefabs/                 5 hero prefabs + Enemy_Grunt / Enemy_Ranged / Enemy_Elite
+  Scenes/                  LoginScene(0), CharacterSelect(1), _Container (server's active scene) +
+                           zones loaded additively: HUB, Darkwood, Ashen Wastelands, Toujam Basin,
+                           GM Island, VoidDungeon (instanced)
+  Game_Prefabs/Muffin Junk/  Enemy_Grunt / Enemy_Ranged / Enemy_Elite (moved from Prefabs/)
   Heroes/Brandalf/         6th-hero model — DECISION PENDING (skin vs class), don't wire
 
 CrossWorlds/               legacy staging tree + design docs (read-only reference);
@@ -1699,4 +1698,4 @@ web/                       Three.js browser client submodule (separate project)
 
 ---
 
-*Unity 6 (6000.4.10f1) · Mirror/KCP · Node.js/Express · MySQL 8 · VPS: playcrossworlds.com*
+*Unity 6 (6000.4.11f1) · Mirror/KCP · Node.js/Express · MySQL 8 · VPS: playcrossworlds.com · Team roadmap: [Phase 1 — 8 Week Vertical Slice](http://15.204.243.36/roadmap.html)*

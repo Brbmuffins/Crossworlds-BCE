@@ -1,3 +1,4 @@
+using System.Linq;
 using UnityEditor;
 using UnityEditor.Build.Reporting;
 using UnityEngine;
@@ -13,14 +14,12 @@ using UnityEngine;
 
 public static class BuildScript
 {
-    static readonly string[] SCENES =
-    {
-        "Assets/Game/Scenes/LoginScene.unity",
-        "Assets/Game/Scenes/CharacterSelect.unity",
-        "Assets/Game/Scenes/HUB.unity",
-        "Assets/Game/Scenes/Darkwood.unity",
-        "Assets/Game/Scenes/Ashen Wastelands.unity",
-    };
+    // Pull the enabled Scenes-In-Build list (the Linux Server profile uses the global
+    // list, OverrideGlobalSceneList=0) rather than a hardcoded array — so scenes added
+    // later (_Container onlineScene, extra zones) never silently drop out of the build.
+    // Scene 0 stays LoginScene as long as it's first in Build Settings.
+    static string[] SCENES =>
+        EditorBuildSettings.scenes.Where(s => s.enabled).Select(s => s.path).ToArray();
 
     // ── Dedicated Server (Linux) ─────────────────────────────────────────
 
@@ -35,7 +34,10 @@ public static class BuildScript
             report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
             {
                 scenes              = SCENES,
-                locationPathName    = "build/DedicatedServer/Crossworlds.x86_64",
+                // Must match the live systemd unit's ExecStart binary name exactly:
+                // /game/<runid>/CrossWords.x86_64 (and CrossWords_Data). Do NOT rename
+                // downstream — the pack/deploy steps and the VPS unit all expect this.
+                locationPathName    = "build/DedicatedServer/CrossWords.x86_64",
                 target              = BuildTarget.StandaloneLinux64,
                 subtarget           = (int)StandaloneBuildSubtarget.Server,
                 options             = BuildOptions.None,

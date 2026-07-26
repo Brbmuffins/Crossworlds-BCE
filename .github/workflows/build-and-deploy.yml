@@ -73,21 +73,16 @@ jobs:
           buildMethod:    BuildScript.BuildDedicatedServer
           versioning:     None
 
-      # Rename binaries to match the names systemd expects, then tar.gz
-      # Mirrors exactly what tools/build-server.ps1 does locally.
+      # BuildScript already emits CrossWords.x86_64 / CrossWords_Data — the exact
+      # names the live crossworlds-server unit's ExecStart expects. No rename here.
       - name: Pack server tarball
         run: |
           OUT=build/DedicatedServer
           # game-ci builds inside Docker as root, so the whole build/ dir is
-          # root-owned; take ownership of it all before we rename/chmod the
-          # binary AND write the tarball into build/ (runner has sudo).
+          # root-owned; take ownership of it all before we chmod the binary AND
+          # write the tarball into build/ (runner has sudo).
           sudo chown -R "$(id -u):$(id -g)" build
-          # Rename to the exact names /etc/systemd/system/crossworlds.service expects
-          if [ -f "$OUT/Crossworlds.x86_64" ]; then
-            mv "$OUT/Crossworlds.x86_64" "$OUT/CrossworldsBCE.x86_64"
-            mv "$OUT/Crossworlds_Data"   "$OUT/CrossworldsBCE_Data"
-          fi
-          chmod +x "$OUT/CrossworldsBCE.x86_64"
+          chmod +x "$OUT/CrossWords.x86_64"
           tar -czf build/crossworlds-server.tar.gz \
             -C "$OUT" \
             --exclude "*_BackUpThisFolder_ButDontShipItWithYourGame" \

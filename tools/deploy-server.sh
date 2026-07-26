@@ -29,7 +29,7 @@ done
 # ExecStart is e.g. `/game/<runid>/CrossworldsBCE.x86_64 -batchmode ...`.
 # The install dir is the directory that binary lives in — whatever it is.
 EXEC_BIN="$(systemctl show -p ExecStart --value "$UNIT" \
-            | grep -oE '/[^ ]*CrossworldsBCE\.x86_64' | head -n1)"
+            | grep -oE '/[^ ]*CrossWords\.x86_64' | head -n1)"
 [[ -n "$EXEC_BIN" ]] || { echo "FATAL: could not parse ExecStart binary path for unit '$UNIT'"; exit 1; }
 BUILDS="$(dirname "$EXEC_BIN")"
 # Safety rail: never operate outside /game (guards against a mangled parse
@@ -64,7 +64,7 @@ echo "== Deploying"
 systemctl stop "$UNIT"
 mkdir -p "$BUILDS"
 tar -xzf "$TAR" -C "$BUILDS"
-chmod +x "$BUILDS/CrossworldsBCE.x86_64"
+chmod +x "$BUILDS/CrossWords.x86_64"
 systemctl start "$UNIT"
 
 echo "== Verifying (10s)"

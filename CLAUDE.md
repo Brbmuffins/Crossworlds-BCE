@@ -12,8 +12,9 @@ and `CrossWorlds/CLAUDE.md` (legacy) defer to it.
 
 | Doc | When |
 |---|---|
-| `SNAPSHOT.md` | architecture map, what's implemented vs stubbed, dependency graph |
-| `ROADMAP.md` | the task list — **work from here**; check the Status note for what's done |
+| `SNAPSHOT.md` | architecture map — full audit 2026-07-03 + delta 2026-07-25; older sections may lag |
+| `ROADMAP.md` | the local task list (the HOW); check the Status note for what's done |
+| http://15.204.243.36/roadmap.html | TEAM roadmap (the WHAT) — Phase 1 vertical slice; owner-facing priority source |
 | `_CONTEXT/CLAUDE.md` | DB schema, API endpoints, server conventions, anti-exploit design |
 | `_CONTEXT/VPS_SERVER.md` | service commands, deploy, logs |
 | `CrossWorlds/_context/*.md` | design docs (combat, mastery, healing, retention) |
@@ -25,9 +26,10 @@ and `CrossWorlds/CLAUDE.md` (legacy) defer to it.
 - **Server work happens on the VPS, not here** (`/opt/crossworlds-auth/server.js`,
   SSH per `_CONTEXT/VPS_SERVER.md`). This repo is client + Unity dedicated server only.
 - **Class/hero indices** (server CLASS_NAMES, mirrored in `PlayerIdentity.ClassNames`,
-  `RodNetworkManager.classPrefabs`, CharacterSelect): 0=Warden(=Engineer legacy),
-  1=Ironclad(=Guardian legacy), 2=Shadowblade, 3=Cleric, 4=Arcanist. Legacy docs use the
-  old names; the index positions are what matters — never renumber.
+  `RodNetworkManager.classPrefabs`, CharacterSelect): 0=**Marauder** (legacy names:
+  Warden, Engineer), 1=Ironclad(=Guardian legacy), 2=Shadowblade, 3=Cleric, 4=Arcanist.
+  Verified in code 2026-07-25. Legacy docs use the old names; the index positions are
+  what matters — never renumber. ("Iron Warden" is a world boss, unrelated to the class.)
 - **Mirror discipline**: `[Server]` on every game-state mutation; client-only code
   (VFX, UI, HUD attach) behind `#if UNITY_EDITOR || !UNITY_SERVER` — **never
   `#if !UNITY_SERVER` alone**. The editor's active build target is Dedicated Server,
@@ -70,29 +72,50 @@ Assets/Game/
   UI/                  HUDs, panels, GmConsole, LoginManager, PlayerProgressManager
   Editor/              BCE menu builders — scenes/prefabs are reproducible from these;
                        prefer extending a builder over hand-editing scene YAML
-  Scenes/              LoginScene(0), CharacterSelect(1), Hub(2); NO arena scene yet
-  Prefabs/             5 hero prefabs + Enemy_Grunt/Ranged/Elite
-  Heroes/Brandalf/     6th-hero model — DECISION PENDING (skin vs class), don't wire
+  Editor/EnemyForge/   data-driven enemy authoring suite (definitions, builder,
+                       validator, deployment, animation library) — enemies like
+                       Templar/Wizard/Chaos Weaver are Forge content, NOT player classes
+  Scenes/              build list (2026-07-25): LoginScene(0), CharacterSelect(1),
+                       HUB(2), Darkwood(3), Ashen Wastelands(4), Toujam Basin(5),
+                       GM Island(6), VoidDungeon(7), _Container(8) — combat zones EXIST;
+                       "no arena scene" docs are stale
+  Prefabs/EnemyForge/  Forge-generated enemy prefabs (old 5-hero/Enemy_Grunt layout gone)
 CrossWorlds/           legacy staging tree + design docs — read-only reference
+                       (Brandalf: Assets/Game/Heroes/ dir is GONE; only editor tooling
+                       remains — BrandalfSetupBuilder etc. Decision still pending, don't wire)
 _CONTEXT/              server/API docs
 tools/                 build-server.ps1 (headless Linux server build + package),
-                       deploy-server.sh (VPS-side deploy with backup/rollback)
+                       deploy-server.sh (RETIRED /game/Builds path — CI deploys now)
 ```
 
 ## Build & deploy (dedicated server)
 
-Unity version comes from `ProjectSettings/ProjectVersion.txt` (6000.4.10f1 as of
-2026-07-03 — older docs saying 6000.0.77f1 are stale). Pipeline:
+Unity version comes from `ProjectSettings/ProjectVersion.txt` (6000.4.11f1 as of
+2026-07-25 — older docs saying 6000.4.10f1 / 6000.0.77f1 are stale).
 
-1. `git lfs pull` (interactive shell or GitHub Desktop — LFS/push auth is NOT
-   available to CLI agent sessions; wincred has no git token, only Desktop's).
-2. `powershell -ExecutionPolicy Bypass -File tools\build-server.ps1`
-   — refuses to build if LFS pointer files remain; renames output to the
-   `CrossworldsBCE.x86_64` / `CrossworldsBCE_Data` pair the systemd unit expects;
-   produces `build\crossworlds-server.tar.gz`.
-3. `scp build\crossworlds-server.tar.gz tools\deploy-server.sh ubuntu@playcrossworlds.com:~`
-4. On the VPS: `sudo bash deploy-server.sh` (auto-backup, restart, verify,
-   auto-rollback on failure; manual rollback: `--rollback`).
+**Live pipeline is CI (GitHub Actions), not manual scp.** On push to `main`,
+`Brbmuffins/Crossworlds-BCE` builds via `BuildScript.BuildDedicatedServer`
+(`Assets/Game/Editor/BuildScript.cs` — its scene list is now derived from
+Scenes-In-Build, so every build-profile scene, incl. `_Container`, is included)
+and deploys to a **numbered run dir `/game/<runid>/`** on the VPS, then repoints
+the `crossworlds-server.service` unit's `ExecStart` at that dir and restarts it.
+So the active binary path changes every deploy — read the unit to find it:
+`grep ExecStart /etc/systemd/system/crossworlds-server.service`.
+
+- **Active game-server unit is `crossworlds-server`** (NOT `rod-server` or
+  `crossworlds` — both retired 2026-07-25). Auth is `crossworlds-auth` (:3000),
+  dashboard `crossworlds-dashboard` (:4000), `rod-realtime` co-op (:5000),
+  `spacetimedb` (local :3500). See `verified-live-vps-topology` memory / wiki.
+- Restart / inspect: `sudo systemctl restart crossworlds-server`,
+  `sudo journalctl -u crossworlds-server -n 50 --no-pager`,
+  `sudo ss -ulnp | grep 7777` (want exactly one binder).
+
+Manual local build (compile check / out-of-band deploy):
+`powershell -ExecutionPolicy Bypass -File tools\build-server.ps1` (refuses to build
+if LFS pointer files remain; needs `git lfs pull` first — LFS/push auth is NOT
+available to CLI agent sessions, only GitHub Desktop's token). The old
+`deploy-server.sh` → `/game/Builds` → `crossworlds.service` path is **retired**;
+don't deploy into `/game/Builds` (deleted).
 
 ## Verification bar for code changes
 
@@ -111,5 +134,5 @@ tasks are blocked on the owner — ask, don't guess (open questions listed at th
 bottom of ROADMAP.md). Tasks are sized for one session; if one balloons, stop and
 re-scope rather than sprawling.
 
-Git: commit in topical slices; `Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>`.
+Git: commit in topical slices with descriptive messages.
 Check `git status -sb` first — origin may be ahead (it was on 2026-07-03).

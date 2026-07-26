@@ -16,8 +16,8 @@ not start one whose *Depends* is unmet. Update the checkbox + ROADMAP status whe
   (or, if LFS pointers block it, invoke Unity batchmode directly with
   `-executeMethod BuildScript.BuildDedicatedServer` and read `build\server-build.log`
   for `error CS`). Do not report done with compile errors.
-- Commit in topical slices, message footer:
-  `Co-Authored-By: <your model name> <noreply@anthropic.com>`
+- Commit in topical slices with descriptive messages (no Co-Authored-By or
+  AI attribution footers).
 - You cannot push or `git lfs pull` (no GitHub auth in CLI) — never try; note it for
   the owner instead.
 
