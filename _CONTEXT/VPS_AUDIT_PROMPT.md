@@ -46,8 +46,9 @@ ls -la /opt/crossworlds-dashboard/server.js 2>/dev/null && echo "EXISTS: /opt/cr
 # 4. What web roots exist?
 ls /var/www/ 2>/dev/null
 
-# 5. Binary
-ls -la /game/Builds/CrossworldsBCE.x86_64 2>/dev/null || echo "MISSING: game binary"
+# 5. Binary — path is the numbered run dir in the unit's ExecStart (not /game/Builds)
+GAME_BIN=$(systemctl show -p ExecStart --value crossworlds-server 2>/dev/null | grep -oE '/[^ ]*CrossWords\.x86_64' | head -1)
+ls -la "$GAME_BIN" 2>/dev/null || echo "MISSING: game binary (checked: ${GAME_BIN:-<no ExecStart>})"
 
 # 6. All services status
 sudo systemctl status --no-pager $(systemctl list-units --type=service --plain --no-legend | grep -Eo 'rod-[^ ]+|crossworlds[^ ]*\.service' | tr '\n' ' ') 2>/dev/null | head -80

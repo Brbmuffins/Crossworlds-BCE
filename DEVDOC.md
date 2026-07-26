@@ -316,46 +316,46 @@ Every UI system that can be hidden follows this pattern. Forgetting `blocksRayca
 ### Services & Ports
 | Port | Service | Notes |
 |------|---------|-------|
-| 22 | SSH | Root access |
-| 80 | Nginx | Public download / landing page |
-| 3000 | Node.js auth server (`rod-auth`) | **DO NOT TOUCH** — handles all JWT auth |
-| 4000 | Manager dashboard | Basic Auth protected |
+| 22 | SSH | `ubuntu` (sudo) |
+| 80/443 | Nginx | Public site / download (playcrossworlds.com, SSL via Certbot) |
+| 3000 | Node.js auth server (`crossworlds-auth`) | **DO NOT TOUCH** — handles all JWT auth |
+| 4000 | Manager dashboard (`crossworlds-dashboard`) | Basic Auth protected |
 | 4000/gm-dashboard | GM server health dashboard | Token auth — see bookmark below |
-| 7777 UDP | Mirror game server (`rod-server`) | Unity KCP transport |
+| 7777 UDP | Mirror game server (`crossworlds-server`) | Unity KCP transport — **active unit** (`rod-server`/`crossworlds` retired 2026-07-25) |
+| 5000 | `rod-realtime` co-op relay (local) | Still live under its legacy name — do NOT rename |
 | 3001 | Uptime Kuma | Monitoring (credentials in private notes) |
 
 ### GM Dashboard
-`http://15.204.243.36:4000/gm-dashboard?token=<ADMIN_TOKEN>` — token stored in `.env` on VPS. Shows: rod-server status, player spawn count, last 50 log lines (color-coded), restart button, log download, Uptime Kuma link.
+`http://15.204.243.36:4000/gm-dashboard?token=<ADMIN_TOKEN>` — token stored in `.env` on VPS. Shows: crossworlds-server status, player spawn count, last 50 log lines (color-coded), restart button, log download, Uptime Kuma link.
 
 ### Useful Server Commands
 ```bash
 # Check game server status
-systemctl status rod-server
+systemctl status crossworlds-server
 
 # Live log tail
 tail -f /var/log/crossworlds.log
 
 # Restart game server
-systemctl restart rod-server
+systemctl restart crossworlds-server
 
 # Check all listening ports
 ss -tlnp | grep LISTEN
 
-# Game server binary location
-ls /game/Builds/
+# Game server binary location (numbered CI run dir — changes every deploy)
+grep ExecStart /etc/systemd/system/crossworlds-server.service
 ```
 
 ### Game Server Binary
-- **Binary:** `/game/Builds/Crossworlds.x86_64`
-- **Data:** `/game/Builds/Crossworlds_Data/`
+- **Binary:** `/game/<runid>/CrossWords.x86_64` — numbered CI run dir; `/game/Builds` retired
+- **Data:** `/game/<runid>/CrossWords_Data/`
 - **Log:** `/var/log/crossworlds.log`
-- Managed by systemd service `rod-server`
+- Managed by systemd service `crossworlds-server`; deployed by CI (`deploy-server.sh` self-detects the unit + dir)
 
 ### Download Page
-Public landing page at `http://15.204.243.36`:
-- Dark decay aesthetic, "Survive Together. Decay Alone." tagline
-- Download button → `/downloads/RateOfDecayONLINE.zip`
-- To activate: build Windows client in Unity, zip output folder, drop as `/var/www/rod/downloads/RateOfDecayONLINE.zip`
+Public landing page at `https://playcrossworlds.com`:
+- Download button → `/downloads/WindowsClient.zip` (alias `CrossworldsBCE.zip`)
+- To activate: build Windows client in Unity (`BuildScript.BuildWindowsClient`), zip output, replace `/var/www/crossworlds/downloads/WindowsClient.zip`
 
 ---
 
@@ -500,7 +500,7 @@ Class is selected in CharacterSelect, stored in the DB, synced to the server via
 ### Server (VPS)
 | Path | Purpose |
 |------|---------|
-| `/game/Builds/Crossworlds.x86_64` | Game server binary |
+| `/game/<runid>/CrossWords.x86_64` | Game server binary (numbered CI run dir) |
 | `/var/log/crossworlds.log` | Game server log |
 | `/var/www/rod/` | Public website (Nginx port 80) |
 | `/var/www/rod/downloads/` | Drop `RateOfDecayONLINE.zip` here to activate download button |

@@ -18,7 +18,7 @@ Each file is self-contained: key files, known pitfalls, current state, active TO
 - **Server IP:** 15.204.243.36
 - **Auth server:** port 3000 (Node.js/Express, MySQL)
 - **Dashboard:** port 4000
-- **Binary:** `/game/Builds/CrossworldsBCE.x86_64`
+- **Binary:** `/game/<runid>/CrossWords.x86_64` (numbered CI run dir — `/game/Builds` retired; find via `grep ExecStart /etc/systemd/system/crossworlds-server.service`)
 - **Scene order:** LoginScene(0) → CharacterSelect(1) → Hub(2)
 - **Classes:** Warden(0), Ironclad(1), Shadowblade(2), Cleric(3), Arcanist(4)
 

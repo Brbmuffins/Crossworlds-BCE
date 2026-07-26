@@ -98,7 +98,7 @@ These drive: nameplates, player list UI, class coloring.
 |---------|-------------|-----|
 | `assetId=0` in prefab file | Silent skip in `RegisterPrefab`, spawn fails online | Force reimport after SaveAsPrefabAsset (see above) |
 | Old binary on VPS after prefab rebuild | assetId mismatch between client and server prefabs | Upload fresh server build after any Setup/4 run |
-| Binary name mismatch in systemd | Service fails to start, no game server | Binary is `CrossworldsBCE.x86_64` — check `/game/Builds/` |
+| Binary name mismatch in systemd | Service fails to start, no game server | Binary is `CrossWords.x86_64` in the numbered run dir — check the unit's `ExecStart` (`/game/<runid>/`, not `/game/Builds/`) |
 | First-time login spawns at (0,0,0) | All players underground or overlapping | Zero-check on DB coords — treat all-zero as "no saved pos" |
 | `autoCreatePlayer = false` | Must send `CreatePlayerMessage` manually | `CharacterSelectManager` sends this on "Enter World" |
 

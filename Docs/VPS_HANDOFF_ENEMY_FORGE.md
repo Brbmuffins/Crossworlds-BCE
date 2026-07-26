@@ -28,7 +28,7 @@ Getting the VPS ready for the build containing the Enemy Forge networked enemy
 GitHub Actions (`Build and Deploy` on push to main) builds the Linux dedicated
 server, then scp's `crossworlds-server.tar.gz` + `tools/deploy-server.sh` to
 `/home/ubuntu/deploy/` and runs `sudo bash deploy-server.sh` — which backs up
-`/game/Builds` to `/game/Builds.prev`, extracts, restarts `crossworlds`, verifies
+the live run dir to `<dir>.prev`, extracts in place, restarts `crossworlds-server`, verifies
 it stays up 10 s, and **auto-rolls-back on failure**.
 
 Check the run from any machine with `gh`:
@@ -91,7 +91,7 @@ systemctl status crossworlds --no-pager -n 5
 ss -ulnp | grep 7777
 
 # Binary is the fresh one (timestamp should match the deploy)
-ls -la /game/Builds/CrossworldsBCE.x86_64
+GAME_BIN=$(systemctl show -p ExecStart --value crossworlds-server | grep -oE '/[^ ]*CrossWords\.x86_64' | head -1); ls -la "$GAME_BIN"
 
 # Server log — scene + spawn sanity
 tail -50 /var/log/crossworlds.log
@@ -143,7 +143,7 @@ the deploy. Two caveats:
 cd /home/ubuntu/deploy && sudo bash deploy-server.sh --rollback
 ```
 
-Restores `/game/Builds.prev` and restarts. Remember old-server + new-client has
+Restores the previous run dir (`<dir>.prev`) and restarts. Remember old-server + new-client has
 the same parity problem in reverse — roll back the client link too if you roll
 back the server.
 

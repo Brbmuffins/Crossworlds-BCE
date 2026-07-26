@@ -54,7 +54,7 @@ this repository.** What actually exists:
 
 | Brief said | Repo actually has |
 |---|---|
-| Codename "Corrosion / Rate_of_Decay" | **Crossworlds BCE** — "RoD" survives only as legacy naming (`rod-auth`, `rod_online` DB, `Rod*` script prefixes) |
+| Codename "Corrosion / Rate_of_Decay" | **Crossworlds BCE** — "RoD" survives only in code prefixes (`Rod*` script/class names like `RodNetworkManager`); the live services and DB were renamed to `crossworlds-*` / `crossworlds` |
 | SQLite persistence | **MySQL 8 on a remote VPS**, accessed via a Node.js/Express REST API (port 3000). Unity never touches a DB directly. |
 | A* Pathfinding Pro | **Unity built-in NavMesh** (`NavMeshAgent` in `EnemyController`, `EnemyAI`, `NpcController`) |
 | DOTween / UniTask | **Neither installed.** Animation is manual lerp/coroutine; async is 142 `StartCoroutine` call sites across 63 files + `UnityWebRequest` coroutines for all HTTP. |
@@ -163,7 +163,7 @@ Marketplace, guilds, quests, talent trees (server side), more dungeons, arena se
 ## 3. Known Pain Points
 
 1. **Hardcoded server IP `15.204.243.36` in 10 files** (`RodNetworkManager`, `RodNetworkAuthenticator`, `LoginManager`, `CharacterSelectUI/Manager`, editor setup, LoginScene serialized fields). A server move = 10 edits + scene re-serialization.
-2. **Documentation triplication**: three diverging CLAUDE.md files (`_CONTEXT/`, `CrossWorlds/`, VPS copy) disagree on class names (Engineer/Guardian vs Warden/Ironclad), DB name (`rod_online` vs `crossworlds`), and endpoint lists. The `_CONTEXT/CLAUDE.md` also contains **plaintext production credentials** (MySQL password, dashboard admin password) in a git repo.
+2. **Documentation triplication**: three diverging CLAUDE.md files (`_CONTEXT/`, `CrossWorlds/`, VPS copy) disagree on class names (Engineer/Guardian vs Warden/Ironclad), DB name (`rod_online` vs `crossworlds`), and endpoint lists. Plaintext production credentials that once lived in these docs (MySQL password, dashboard admin password) have been **redacted from the working tree** (2026-07-26), but they **remain in git history** — rotate them on the VPS (ROADMAP Q7).
 3. **JSON fragility**: all client parsing is `JsonUtility` against snake_case ad-hoc classes; the server has already burned time on float-format (`orientation:F3`) and NaN-slot bugs. No shared DTO layer.
 4. **Client-trusted progression writes**: `POST /api/character/save-progress` accepts whatever level/xp/gold the client sends (JWT-gated but value-trusted). `/api/combat/kill` mitigates for kills, but the save path remains an open cheat vector — acknowledged in docs as Phase 2.
 5. **No server-side player HP** — `Health` on players is dealt with client-side by EnemyAI per docs; hacked clients can no-damage.

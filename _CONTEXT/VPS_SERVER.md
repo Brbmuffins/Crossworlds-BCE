@@ -2,21 +2,30 @@
 
 **When to load:** Deploying builds, server not starting, service crashes, log inspection, auth server issues, dashboard, upload process, binary name problems.
 
+> Canonical topology lives in the root `CLAUDE.md` and the wiki `Build & Deploy` /
+> `Architecture & Topology` pages. Where this file disagrees, those win.
+
 ---
 
 ## Key Info
 
 | Item | Value |
 |------|-------|
-| Server IP | `15.204.243.36` |
-| SSH | root access, port 22 |
-| Game binary | `/game/Builds/CrossworldsBCE.x86_64` |
-| Game data dir | `/game/Builds/CrossworldsBCE_Data/` |
+| Server IP | `15.204.243.36` (playcrossworlds.com) |
+| SSH | `ubuntu@15.204.243.36` (sudo), port 22 |
+| Game binary | `/game/<runid>/CrossWords.x86_64` — **numbered CI run dir, changes every deploy** |
+| Game data dir | `/game/<runid>/CrossWords_Data/` |
+| Find the live run dir | `grep ExecStart /etc/systemd/system/crossworlds-server.service` |
 | Game log | `/var/log/crossworlds.log` |
-| Auth server path | `/opt/rod-auth/` |
-| Dashboard path | `/opt/rod-dashboard/` |
-| Download zip path | `/var/www/rod/downloads/RateOfDecayONLINE.zip` |
+| Auth server path | `/opt/crossworlds-auth/` |
+| Dashboard path | `/opt/crossworlds-dashboard/` |
+| Client download | `/var/www/crossworlds/downloads/WindowsClient.zip` (alias `CrossworldsBCE.zip`) |
 | Credentials | `SERVER_REFERENCE.md` (PRIVATE — do not share) |
+
+> [!warning] `/game/Builds` is retired
+> The old fixed `/game/Builds` path and the `crossworlds` / `rod-server` units were
+> retired 2026-07-25. The active game unit is **`crossworlds-server`** and it runs from
+> a numbered run dir. Always resolve the real path from the unit's `ExecStart`.
 
 ---
 
@@ -24,11 +33,16 @@
 
 | Service name | Port | What it is |
 |-------------|------|------------|
-| `rod-server` | 7777 UDP | Unity game server (Mirror/KCP) |
-| `rod-auth` | 3000 | Node.js auth + character API |
-| `rod-dashboard` | 4000 | GM/admin web dashboard |
-| nginx | 80 | Public download page |
+| `crossworlds-server` | 7777 UDP | Unity game server (Mirror/KCP) — **active unit** |
+| `crossworlds-auth` | 3000 | Node.js auth + character API |
+| `crossworlds-dashboard` | 4000 | GM/admin web dashboard |
+| `rod-realtime` | 5000 (local) | Socket.io co-op relay — **still live under its legacy name, do NOT rename** |
+| `spacetimedb` | 3500 (local) | SpacetimeDB instance |
+| nginx | 80/443 | Public site / downloads (SSL via Certbot) |
 | Uptime Kuma | 3001 | Monitoring |
+
+Retired (may still have leftover unit files on disk): `rod-server`, `rod-auth`,
+`rod-dashboard`, `crossworlds`.
 
 ---
 
@@ -36,19 +50,20 @@
 
 ```bash
 # Check all services
-systemctl status rod-server rod-auth rod-dashboard
+systemctl status crossworlds-server crossworlds-auth crossworlds-dashboard
 
 # Live game server log
 tail -f /var/log/crossworlds.log
 
 # Restart game server
-systemctl restart rod-server
+systemctl restart crossworlds-server
 
-# Check UDP port 7777 is open
+# Check UDP port 7777 is open (want exactly one binder)
 ss -ulnp | grep 7777
 
-# Check binary exists and is executable
-ls -la /game/Builds/CrossworldsBCE.x86_64
+# Find + check the live binary (numbered run dir)
+GAME_BIN=$(systemctl show -p ExecStart --value crossworlds-server | grep -oE '/[^ ]*CrossWords\.x86_64' | head -1)
+ls -la "$GAME_BIN"
 
 # Check what's listening
 ss -tlnp
@@ -58,38 +73,43 @@ ss -tlnp
 
 ## Deploying a New Build
 
-### Server Build (Linux x86_64 headless)
-1. Unity → **File → Build Settings** → Linux, Dedicated Server
-2. Output: zip the build folder
-3. Upload via FileZilla to `/game/Builds/` on VPS
-4. Ensure binary is named `CrossworldsBCE.x86_64` (must match systemd service `ExecStart`)
-5. `chmod +x /game/Builds/CrossworldsBCE.x86_64`
-6. `systemctl restart rod-server`
+**The live path is CI (GitHub Actions), not manual scp.** On push to `main` (and daily
+at `0 10 * * *` UTC), the workflow builds the Linux dedicated server, ships the tarball
++ `tools/deploy-server.sh` to the VPS, and runs the deploy. `deploy-server.sh`
+self-detects the `crossworlds-server` unit and its run dir, backs up, extracts in place,
+restarts, and auto-rolls-back on failure.
+
+### Manual / out-of-band server deploy
+```bash
+# Local: build (emits CrossWords.x86_64 / CrossWords_Data) then upload
+powershell -ExecutionPolicy Bypass -File tools\build-server.ps1
+scp build/crossworlds-server.tar.gz tools/deploy-server.sh ubuntu@15.204.243.36:~
+# On the VPS:
+sudo bash deploy-server.sh            # rollback: sudo bash deploy-server.sh --rollback
+```
 
 ### Client Build (Windows)
-1. Unity → **File → Build Settings** → Windows x86_64
-2. Upload `.exe` + `_Data/` folder to `/var/www/rod/downloads/` as a zip
-3. Zip name: `RateOfDecayONLINE.zip`
+1. Unity → `BuildScript.BuildWindowsClient` (or **File → Build Settings** → Windows x86_64)
+2. Zip the output and replace `/var/www/crossworlds/downloads/WindowsClient.zip`
 
-### FileZilla Settings
-- Host: `15.204.243.36`, Port: 22, Protocol: SFTP
+### FileZilla / SFTP Settings
+- Host: `15.204.243.36`, Port: 22, Protocol: SFTP, User: `ubuntu`
 
 ---
 
 ## Binary Name — Critical
 
-The systemd service `rod-server` must reference the exact binary name. Past incident: build was renamed from `Crossworlds.x86_64` to `CrossworldsBCE.x86_64` but the service file still pointed to the old name → server silently failed to start.
+The systemd unit's `ExecStart` and the deployed binary must agree. The live name is
+**`CrossWords.x86_64`** (spelling: `CrossWords`, capital W, no "BCE") with a matching
+**`CrossWords_Data/`** folder. `BuildScript.locationPathName` emits exactly this, so the
+build → pack → deploy chain stays consistent; don't rename it downstream.
 
-**Check the service file:**
+Past incident: the binary was once renamed but the service file still pointed to the old
+name → server silently failed to start. If you ever change the name, update the unit and:
 ```bash
-cat /etc/systemd/system/rod-server.service
-# Look for ExecStart= line
-```
-
-If you ever rename the binary, update the service file and run:
-```bash
-systemctl daemon-reload
-systemctl restart rod-server
+grep ExecStart /etc/systemd/system/crossworlds-server.service   # confirm the path/name
+sudo systemctl daemon-reload
+sudo systemctl restart crossworlds-server
 ```
 
 ---
@@ -100,11 +120,11 @@ Give this to Claude Code running on the VPS for a full health check:
 
 ```
 Check the Crossworlds BCE game server health:
-1. systemctl status rod-server rod-auth rod-dashboard
-2. ss -ulnp | grep 7777 (UDP port open?)
+1. systemctl status crossworlds-server crossworlds-auth crossworlds-dashboard
+2. ss -ulnp | grep 7777 (UDP port open? exactly one binder?)
 3. tail -20 /var/log/crossworlds.log
-4. ls -la /game/Builds/CrossworldsBCE.x86_64
-5. curl -s http://localhost:3000/health
+4. grep ExecStart /etc/systemd/system/crossworlds-server.service, then ls -la that binary
+5. curl -s http://localhost:3000/api/health
 6. Report any errors or unexpected state
 ```
 
@@ -114,7 +134,7 @@ Check the Crossworlds BCE game server health:
 
 | URL | Access |
 |-----|--------|
-| `http://15.204.243.36` | Public download page |
+| `https://playcrossworlds.com` | Public download page |
 | `http://15.204.243.36:4000` | Manager dashboard (HTTP Basic Auth) |
 | `http://15.204.243.36:4000/gm-dashboard?token=<TOKEN>` | GM dashboard (token in VPS .env) |
 
@@ -124,10 +144,10 @@ GM Dashboard shows: server status, spawn events, last 50 log lines (color-coded)
 
 ## Auth Server Notes
 
-- **DO NOT restart `rod-auth` carelessly** — it handles all active JWTs and DB connections
+- **DO NOT restart `crossworlds-auth` carelessly** — it handles all active JWTs and DB connections
 - Auth server auto-starts on VPS reboot via systemd
-- Logs: `journalctl -u rod-auth -f`
-- Config: `/opt/rod-auth/.env` (JWT secret, DB credentials — see `SERVER_REFERENCE.md`)
+- Logs: `journalctl -u crossworlds-auth -f`
+- Config: `/opt/crossworlds-auth/.env` (JWT secret, DB credentials — see `SERVER_REFERENCE.md`)
 
 ---
 
@@ -135,16 +155,17 @@ GM Dashboard shows: server status, spawn events, last 50 log lines (color-coded)
 
 | Symptom | Cause | Fix |
 |---------|-------|-----|
-| Server starts then crashes | UnityPlayer.so version mismatch | Upload matching `UnityPlayer.so` from build output |
-| `Could not spawn` errors in game | Old binary on VPS after prefab rebuild | Upload fresh server build |
-| Game server not listening on 7777 | Binary name wrong in systemd, or crash | Check binary name, check log for crash |
+| Server starts then crashes | UnityPlayer.so version mismatch | Deploy a matching full build (don't hand-mix .so files) |
+| `Could not spawn` errors in game | Old binary on VPS after prefab rebuild | Redeploy a fresh server build |
+| Game server not listening on 7777 | Binary name/path wrong in systemd, or crash | Check `ExecStart` path, check log for crash |
+| Deploy "succeeds" but nothing changes | Binary extracted to a dir the unit doesn't run | Confirm deploy dir == `ExecStart` dir |
 | Players connect but see no other players | Client and server have different prefab assetIds | Rebuild BOTH client and server after any prefab changes |
-| Auth server returns 500 | DB connection issue or bad .env | Check `journalctl -u rod-auth`, verify MySQL is running |
+| Auth server returns 500 | DB connection issue or bad .env | Check `journalctl -u crossworlds-auth`, verify MySQL is running |
 
 ---
 
 ## Active TODOs
 
-- HTTPS / Cloudflare SSL — all traffic plain HTTP; JWT in transit is unencrypted
-- Domain name (currently IP-only)
-- CI/CD pipeline exists (`.github/workflows/build-and-deploy.yml`) but needs secrets configured — deferred
+- HTTPS is live via Certbot; keep the cert renewing
+- Rotate the DB/dashboard credentials that leaked into git history (ROADMAP Q7)
+- Clean up retired unit files (`rod-server`, `rod-auth`, `rod-dashboard`, `crossworlds`) on disk

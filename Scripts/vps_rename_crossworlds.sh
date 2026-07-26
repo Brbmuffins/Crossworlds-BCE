@@ -19,6 +19,17 @@
 
 set -euo pipefail
 
+# ═══════════════════════════════════════════════════════════════════════════════
+#  OBSOLETE — completed one-time migration, DO NOT RE-RUN.
+#  This renamed RateOfDecayOnline → Crossworlds long ago. Since then the live unit
+#  became `crossworlds-server` (not `crossworlds`), the binary became
+#  `CrossWords.x86_64` (not `Crossworlds.x86_64`), and deploys moved to numbered
+#  CI run dirs. Re-running this would stop the wrong service and mangle paths.
+#  Kept only as a historical record. Remove the guard below only if you truly know why.
+# ═══════════════════════════════════════════════════════════════════════════════
+echo "OBSOLETE migration script — refusing to run. See header. Current deploy: tools/deploy-server.sh"
+exit 0
+
 OLD_SERVICE="rod-server"
 NEW_SERVICE="crossworlds"
 OLD_BINARY="RateOfDecayOnline.x86_64"

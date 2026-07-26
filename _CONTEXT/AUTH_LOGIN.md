@@ -12,7 +12,7 @@
 | `Assets/Game/UI/CharacterSelectManager.cs` | Class picker; 3D preview via RenderTexture layer 31; sends `CreatePlayerMessage` on Enter World |
 | `Assets/Game/Networking/RodNetworkAuthenticator.cs` | Client sends JWT; server verifies via auth server; stores `RodPlayerAuth` on connection |
 | `Assets/Game/Networking/RodNetworkManager.cs` | `OnServerAddPlayer()` reads `conn.authenticationData` to pick class prefab + spawn position |
-| `/opt/rod-auth/` (VPS) | Node.js auth server — all account and character endpoints |
+| `/opt/crossworlds-auth/` (VPS) | Node.js auth server (`crossworlds-auth`, port 3000) — all account and character endpoints |
 
 ---
 

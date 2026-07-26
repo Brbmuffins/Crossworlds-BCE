@@ -50,9 +50,9 @@ enter portals into combat arenas, kill monsters, earn loot, level up, craft upgr
   server.js       — Dashboard API + Socket.io
   public/         — Dashboard UI
 
-/game/Builds/
-  CrossworldsBCE.x86_64   — Unity server binary
-  CrossworldsBCE_Data/    — Must match binary name exactly
+/game/<runid>/          — numbered CI run dir (changes every deploy; /game/Builds retired)
+  CrossWords.x86_64       — Unity server binary (spelling: CrossWords, not CrossworldsBCE)
+  CrossWords_Data/        — Must match binary name exactly
   GameAssembly.so         — Must match UnityPlayer.so build session
   UnityPlayer.so
 
@@ -301,10 +301,10 @@ tail -f /var/log/crossworlds.log
 # Database
 mysql -u crossworlds -p"$(grep DB_PASS /opt/crossworlds-auth/.env | cut -d= -f2)" crossworlds
 
-# Deploy build
-scp -r ./Build/* ubuntu@playcrossworlds.com:/game/Builds/
-chmod +x /game/Builds/CrossworldsBCE.x86_64
-sudo systemctl restart crossworlds
+# Deploy build — CI does this automatically on push to main (numbered run dir +
+# ExecStart repoint). Manual/out-of-band deploy uses the self-detecting script:
+scp build/crossworlds-server.tar.gz tools/deploy-server.sh ubuntu@playcrossworlds.com:~
+sudo bash deploy-server.sh          # discovers crossworlds-server + its run dir
 ```
 
 ---
