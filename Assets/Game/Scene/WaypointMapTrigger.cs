@@ -140,6 +140,11 @@ public sealed class WaypointMapTrigger : NetworkBehaviour
         if (!allowMapHotkey || mapHotkey == Key.None || _lastHotkeyFrame == Time.frameCount)
             return;
 
+        // The persistent GM map handler owns M while GM mode is active. This
+        // prevents a nearby waypoint from replacing the GM travel callback.
+        if (RodChatManager.Instance != null && RodChatManager.Instance.IsGmModeActive)
+            return;
+
         var keyboard = Keyboard.current;
         if (keyboard == null || !keyboard[mapHotkey].wasPressedThisFrame || IsTypingInInputField())
             return;
@@ -191,6 +196,75 @@ public sealed class WaypointMapTrigger : NetworkBehaviour
         }
 
         return nearest != null ? nearest : fallback;
+    }
+
+    public static void ShowForGm(Action<WaypointMapNode> onNodeSelected)
+    {
+        WaypointMapTrigger template = FindMapTemplate();
+        string title = template != null && !string.IsNullOrWhiteSpace(template.mapTitle)
+            ? template.mapTitle
+            : "WORLD MAP";
+        Sprite background = template != null ? template.mapBackground : null;
+        WaypointMapNode[] mapNodes = template != null && template.nodes != null && template.nodes.Length > 0
+            ? template.nodes
+            : DefaultNodes();
+        WaypointMapConnection[] mapConnections =
+            template != null && template.connections != null && template.connections.Length > 0
+                ? template.connections
+                : DefaultConnections();
+
+        WaypointMapUI.Show(
+            title + "  •  GM TRAVEL",
+            background,
+            AddGmDestinations(mapNodes),
+            mapConnections,
+            onNodeSelected);
+    }
+
+    static WaypointMapTrigger FindMapTemplate()
+    {
+        for (int i = ActiveTriggers.Count - 1; i >= 0; i--)
+        {
+            WaypointMapTrigger trigger = ActiveTriggers[i];
+            if (trigger == null)
+            {
+                ActiveTriggers.RemoveAt(i);
+                continue;
+            }
+
+            if (trigger.isActiveAndEnabled)
+                return trigger;
+        }
+
+        return null;
+    }
+
+    static WaypointMapNode[] AddGmDestinations(WaypointMapNode[] source)
+    {
+        var result = new List<WaypointMapNode>(source ?? Array.Empty<WaypointMapNode>());
+        bool hasHub = result.Exists(node =>
+            node != null &&
+            string.Equals(node.sceneName, SceneNames.Hub, StringComparison.OrdinalIgnoreCase));
+
+        if (!hasHub)
+        {
+            result.Add(new WaypointMapNode
+            {
+                id = "hub",
+                displayName = "HUB",
+                subtitle = "sanctuary",
+                sceneName = SceneNames.Hub,
+                arrivalSpawnId = HubReturnSpawnPoint.DefaultSpawnId,
+                useArrivalSpawnRotation = true,
+                unlocked = true,
+                normalizedPosition = new Vector2(0.33f, 0.58f),
+                labelOffset = new Vector2(0f, -34f),
+                color = new Color(0.35f, 0.68f, 0.9f, 1f),
+                description = "Return to the Hub."
+            });
+        }
+
+        return result.ToArray();
     }
 #endif
 

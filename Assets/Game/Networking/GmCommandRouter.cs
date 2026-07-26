@@ -66,6 +66,7 @@ public static class GmCommandRouter
 
         if (!IsGmAllowed(auth))
         {
+            chat.TargetSetGmMode(sender, false);
             chat.SendGmFeedback(sender, "GM access denied.");
             Debug.LogWarning($"[GM] Denied /gm request from '{auth.username}'.");
             return;
@@ -73,6 +74,7 @@ public static class GmCommandRouter
 
         if (parts.Length < 2)
         {
+            chat.TargetSetGmMode(sender, auth.gmActive);
             chat.SendGmFeedback(sender, auth.gmActive ? "GM mode is ON." : "GM mode is OFF. Use /gm on.");
             return;
         }
@@ -81,7 +83,8 @@ public static class GmCommandRouter
         if (mode == "on" || mode == "1" || mode == "true")
         {
             auth.gmActive = true;
-            chat.SendGmFeedback(sender, "GM mode ON.");
+            chat.TargetSetGmMode(sender, true);
+            chat.SendGmFeedback(sender, "GM mode ON. Press M anywhere to open GM travel.");
             Debug.Log($"[GM] {auth.username} enabled GM mode.");
             return;
         }
@@ -91,6 +94,7 @@ public static class GmCommandRouter
             auth.gmActive = false;
             auth.gmFlyEnabled = false;
             auth.gmSpeedMultiplier = 1f;
+            chat.TargetSetGmMode(sender, false);
             chat.TargetSetGmFly(sender, false);
             chat.TargetSetGmSpeed(sender, 1f);
             chat.SendGmFeedback(sender, "GM mode OFF. Fly and speed reset.");
@@ -203,6 +207,11 @@ public static class GmCommandRouter
         }
 
         return true;
+    }
+
+    public static bool IsActiveGm(RodPlayerAuth auth)
+    {
+        return auth != null && auth.gmActive && IsGmAllowed(auth);
     }
 
     static bool TryGetAuth(NetworkConnectionToClient sender, RodChatManager chat, out RodPlayerAuth auth)

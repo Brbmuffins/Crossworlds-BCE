@@ -18,6 +18,9 @@ public sealed class WaypointMapUI : MonoBehaviour
 
     static WaypointMapUI _instance;
 
+    public static bool IsVisible =>
+        _instance != null && _instance._panel != null && _instance._panel.activeSelf;
+
     Canvas _canvas;
     GameObject _panel;
     RectTransform _mapArea;

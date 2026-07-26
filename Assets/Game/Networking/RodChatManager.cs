@@ -39,6 +39,7 @@ public class RodChatManager : NetworkBehaviour
 
     /// <summary>True while the chat input field is open. Used by CameraFollow to suppress camera orbit.</summary>
     public bool IsOpen => _open;
+    public bool IsGmModeActive => _gmModeActive;
 
     // ── Tunables ──────────────────────────────────────────────────────────
     const int   MAX_MESSAGES = 60;
@@ -59,6 +60,8 @@ public class RodChatManager : NetworkBehaviour
     string _typedText   = "";
 
     bool _gmFlyActive;
+    bool _gmModeActive;
+    bool _gmMapTravelPending;
     float _gmSpeedMultiplier = 1f;
     GameObject _gmLocalPlayer;
     PlayerMovement _gmMovement;
@@ -144,6 +147,7 @@ public class RodChatManager : NetworkBehaviour
         EnsureEventSystem();
         BuildUI();
         AddSystemMessage("Connected to Hub.");
+        CmdRequestGmState();
 
         // Keep chat visible across all ServerChangeScene transitions.
         UnityEngine.SceneManagement.SceneManager.sceneLoaded += OnSceneLoaded;
@@ -161,6 +165,7 @@ public class RodChatManager : NetworkBehaviour
         // Re-wire EventSystem in case the new scene destroyed the one we made.
         EnsureEventSystem();
         ResetGmPlayerCache();
+        _gmMapTravelPending = false;
         if (_gmFlyActive || !Mathf.Approximately(_gmSpeedMultiplier, 1f))
             ApplyGmMovementState();
         AddSystemMessage($"Entered {scene.name}.");
@@ -199,6 +204,16 @@ public class RodChatManager : NetworkBehaviour
         // ── Input handling ─────────────────────────────────────────────
         var kb = Keyboard.current;
         if (kb == null) return;
+
+#if UNITY_EDITOR || !UNITY_SERVER
+        if (!_open &&
+            _gmModeActive &&
+            kb.mKey.wasPressedThisFrame &&
+            !AnyOtherInputFocused())
+        {
+            ToggleGmMap();
+        }
+#endif
 
         if (!_open)
         {
@@ -269,6 +284,52 @@ public class RodChatManager : NetworkBehaviour
         RpcReceiveChat(username, message, ts);
     }
 
+    [Command(requiresAuthority = false)]
+    void CmdRequestGmState(NetworkConnectionToClient sender = null)
+    {
+        if (sender == null)
+            return;
+
+        RodPlayerAuth auth = sender.authenticationData as RodPlayerAuth;
+        TargetSetGmMode(sender, GmCommandRouter.IsActiveGm(auth));
+    }
+
+    [Command(requiresAuthority = false)]
+    void CmdRequestGmMapTravel(
+        string sceneName,
+        string arrivalSpawnId,
+        NetworkConnectionToClient sender = null)
+    {
+        if (sender == null)
+            return;
+
+        RodPlayerAuth auth = sender.authenticationData as RodPlayerAuth;
+        if (!GmCommandRouter.IsActiveGm(auth))
+        {
+            TargetRejectGmMapTravel(sender, "GM mode is OFF. Use /gm on first.");
+            return;
+        }
+
+        sceneName = sceneName?.Trim();
+        arrivalSpawnId = arrivalSpawnId?.Trim();
+        if (string.IsNullOrWhiteSpace(sceneName) ||
+            !Application.CanStreamedLevelBeLoaded(sceneName))
+        {
+            TargetRejectGmMapTravel(sender, $"{sceneName ?? "That destination"} is not in Build Settings.");
+            return;
+        }
+
+        if (ZoneManager.Instance == null)
+        {
+            TargetRejectGmMapTravel(sender, "Zone system is not running. Try again shortly.");
+            return;
+        }
+
+        SendGmFeedback(sender, $"GM traveling to {sceneName}...");
+        Debug.Log($"[GM] {auth.username} requested map travel: {sceneName}/{arrivalSpawnId}");
+        ZoneManager.Instance.MovePlayerToZone(sender, sceneName, arrivalSpawnId);
+    }
+
     // ── Client-side receive ───────────────────────────────────────────────
 
     [ClientRpc]
@@ -314,6 +375,19 @@ public class RodChatManager : NetworkBehaviour
     }
 
     [TargetRpc]
+    public void TargetSetGmMode(NetworkConnectionToClient target, bool enabled)
+    {
+        _gmModeActive = enabled;
+        if (enabled)
+            return;
+
+        _gmMapTravelPending = false;
+#if UNITY_EDITOR || !UNITY_SERVER
+        WaypointMapUI.Hide();
+#endif
+    }
+
+    [TargetRpc]
     public void TargetSetGmFly(NetworkConnectionToClient target, bool enabled)
     {
         _gmFlyActive = enabled;
@@ -326,6 +400,47 @@ public class RodChatManager : NetworkBehaviour
         _gmSpeedMultiplier = Mathf.Clamp(multiplier, 0.25f, 8f);
         ApplyGmMovementState();
     }
+
+    [TargetRpc]
+    void TargetRejectGmMapTravel(NetworkConnectionToClient target, string message)
+    {
+        _gmMapTravelPending = false;
+        AddSystemMessage(message);
+#if UNITY_EDITOR || !UNITY_SERVER
+        WaypointMapUI.SetStatus(message);
+#endif
+    }
+
+#if UNITY_EDITOR || !UNITY_SERVER
+    void ToggleGmMap()
+    {
+        if (WaypointMapUI.IsVisible)
+        {
+            WaypointMapUI.Hide();
+            return;
+        }
+
+        _gmMapTravelPending = false;
+        WaypointMapTrigger.ShowForGm(HandleGmMapNodeSelected);
+    }
+
+    void HandleGmMapNodeSelected(WaypointMapNode node)
+    {
+        if (_gmMapTravelPending || node == null)
+            return;
+
+        if (!node.CanTravel)
+        {
+            WaypointMapUI.SetStatus($"{node.displayName} is not available yet.");
+            return;
+        }
+
+        _gmMapTravelPending = true;
+        WaypointMapUI.SetStatus($"GM traveling to {node.displayName}...");
+        CmdRequestGmMapTravel(node.sceneName, node.arrivalSpawnId);
+        WaypointMapUI.Hide();
+    }
+#endif
 
     void OpenInput()
     {
