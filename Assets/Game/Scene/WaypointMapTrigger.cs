@@ -12,6 +12,7 @@ using UnityEngine.SceneManagement;
 public sealed class WaypointMapTrigger : NetworkBehaviour
 {
     const string AshenWastelandsSpawnId = "AshenWastelandsSpawnPoint";
+    const string BoneyardSpawnId = "BoneYardPlayerSpawnPoint";
     const string DarkwoodSpawnId = "DarkwoodSpawnLocation";
 
 #if UNITY_EDITOR || !UNITY_SERVER
@@ -562,6 +563,20 @@ public sealed class WaypointMapTrigger : NetworkBehaviour
             },
             new WaypointMapNode
             {
+                id = "boneyard",
+                displayName = "BONE YARD",
+                subtitle = "restless dead",
+                sceneName = SceneNames.Boneyard,
+                arrivalSpawnId = BoneyardSpawnId,
+                useArrivalSpawnRotation = true,
+                unlocked = true,
+                normalizedPosition = new Vector2(0.64f, 0.31f),
+                labelOffset = new Vector2(0f, -36f),
+                color = new Color(0.64f, 0.58f, 0.50f, 1f),
+                description = "A graveyard haunted by the restless dead."
+            },
+            new WaypointMapNode
+            {
                 id = "ashen",
                 displayName = "ASHEN WASTELAND",
                 subtitle = "burned and blighted",
@@ -585,7 +600,8 @@ public sealed class WaypointMapTrigger : NetworkBehaviour
             new WaypointMapConnection { fromNodeId = "gathering", toNodeId = "brightwood" },
             new WaypointMapConnection { fromNodeId = "gathering", toNodeId = "darkwood" },
             new WaypointMapConnection { fromNodeId = "brightwood", toNodeId = "darkwood" },
-            new WaypointMapConnection { fromNodeId = "darkwood", toNodeId = "toujam" },
+            new WaypointMapConnection { fromNodeId = "darkwood", toNodeId = "boneyard" },
+            new WaypointMapConnection { fromNodeId = "boneyard", toNodeId = "toujam" },
             new WaypointMapConnection { fromNodeId = "toujam", toNodeId = "ashen" },
             new WaypointMapConnection { fromNodeId = "neimos", toNodeId = "darkwood", dashed = true },
         };

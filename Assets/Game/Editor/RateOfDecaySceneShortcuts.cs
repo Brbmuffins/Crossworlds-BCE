@@ -25,10 +25,13 @@ public static class RateOfDecaySceneShortcuts
     [MenuItem(MenuRoot + "Toujam Basin", priority = 22)]
     public static void OpenToujamBasin() => OpenScene("Assets/Game/Scenes/Toujam Basin.unity", "Toujam Basin");
 
-    [MenuItem(MenuRoot + "GM Island", priority = 23)]
+    [MenuItem(MenuRoot + "Boneyard", priority = 23)]
+    public static void OpenBoneyard() => OpenScene("Assets/Game/Scenes/Boneyard.unity", "Boneyard");
+
+    [MenuItem(MenuRoot + "GM Island", priority = 24)]
     public static void OpenGMIsland() => OpenScene("Assets/Game/Scenes/GM Island.unity", "GM Island");
 
-    [MenuItem(MenuRoot + "Void Dungeon", priority = 24)]
+    [MenuItem(MenuRoot + "Void Dungeon", priority = 25)]
     public static void OpenVoidDungeon() => OpenScene("Assets/Game/Scenes/VoidDungeon.unity", "Void Dungeon");
 
     static void OpenScene(string scenePath, string label)
