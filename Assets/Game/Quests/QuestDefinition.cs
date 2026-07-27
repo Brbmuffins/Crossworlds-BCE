@@ -4,6 +4,32 @@ using UnityEngine;
 
 public enum QuestObjectiveType { KillEnemy, CollectItem, InteractWithObject, EnterArea }
 
+public static class QuestTargetId
+{
+    /// <summary>
+    /// Converts scene-instance names such as gunda_(9), gunda (2), and
+    /// gunda(Clone) into the shared enemy identity "gunda".
+    /// </summary>
+    public static string NormalizeEnemy(string value)
+    {
+        string result = (value ?? "").Trim();
+        if (result.EndsWith("_discovery", StringComparison.OrdinalIgnoreCase))
+            result = result.Substring(0, result.Length - "_discovery".Length).TrimEnd(' ', '_');
+        if (result.EndsWith("(Clone)", StringComparison.OrdinalIgnoreCase))
+            result = result.Substring(0, result.Length - "(Clone)".Length).TrimEnd();
+
+        if (result.EndsWith(")", StringComparison.Ordinal))
+        {
+            int open = result.LastIndexOf('(');
+            if (open >= 0 &&
+                int.TryParse(result.Substring(open + 1, result.Length - open - 2), out _))
+                result = result.Substring(0, open).TrimEnd(' ', '_');
+        }
+
+        return result.Trim().ToLowerInvariant().Replace(" ", "_");
+    }
+}
+
 [Serializable]
 public sealed class QuestObjectiveDefinition
 {

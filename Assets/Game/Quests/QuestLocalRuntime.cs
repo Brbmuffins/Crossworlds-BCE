@@ -157,6 +157,8 @@ public sealed class QuestLocalRuntime : MonoBehaviour
         NetworkConnectionToClient sender, QuestObjectiveType type, string targetId, int amount)
     {
         if (sender == null || string.IsNullOrWhiteSpace(targetId) || amount <= 0) return;
+        string reportedTargetId = type == QuestObjectiveType.KillEnemy
+            ? QuestTargetId.NormalizeEnemy(targetId) : targetId;
         Dictionary<string, LocalQuestProgress> states = GetServerStates(sender);
         bool changed = false;
         foreach (var pair in states)
@@ -167,8 +169,11 @@ public sealed class QuestLocalRuntime : MonoBehaviour
             for (int i = 0; i < definition.objectives.Count; i++)
             {
                 QuestObjectiveDefinition objective = definition.objectives[i];
+                string objectiveTargetId = type == QuestObjectiveType.KillEnemy
+                    ? QuestTargetId.NormalizeEnemy(objective.targetId) : objective.targetId;
                 if (objective.type != type ||
-                    !string.Equals(objective.targetId, targetId, StringComparison.OrdinalIgnoreCase) ||
+                    !string.Equals(objectiveTargetId, reportedTargetId,
+                        StringComparison.OrdinalIgnoreCase) ||
                     (definition.objectivesMustBeCompletedInOrder && !PriorComplete(definition, state, i)))
                     continue;
                 int required = Mathf.Max(1, objective.requiredAmount);

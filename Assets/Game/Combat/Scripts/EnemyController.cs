@@ -166,6 +166,7 @@ public class EnemyController : NetworkBehaviour
     public override void OnStartServer()
     {
         base.OnStartServer();
+        QuestEnemyTarget.EnsureAttached(gameObject);
         InitializeSimulation();
     }
 

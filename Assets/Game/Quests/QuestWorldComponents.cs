@@ -226,8 +226,22 @@ public sealed class QuestEnemyTarget : MonoBehaviour
 {
     public string enemyTemplateId;
     Health _health;
+
+    public static QuestEnemyTarget EnsureAttached(GameObject enemyObject)
+    {
+        if (enemyObject == null) return null;
+        return enemyObject.GetComponent<QuestEnemyTarget>() ??
+               enemyObject.AddComponent<QuestEnemyTarget>();
+    }
+
     void OnEnable()
     {
+        EnemyController enemy = GetComponent<EnemyController>();
+        if (string.IsNullOrWhiteSpace(enemyTemplateId) && enemy != null)
+            enemyTemplateId = enemy.enemyTemplateId;
+        if (string.IsNullOrWhiteSpace(enemyTemplateId))
+            enemyTemplateId = gameObject.name;
+        enemyTemplateId = QuestTargetId.NormalizeEnemy(enemyTemplateId);
         _health = GetComponent<Health>();
         if (_health != null) _health.onKilledBy.AddListener(ReportDeath);
     }
@@ -239,7 +253,7 @@ public sealed class QuestEnemyTarget : MonoBehaviour
         NetworkIdentity identity = killer != null ? killer.GetComponentInParent<NetworkIdentity>() : null;
         if (identity?.connectionToClient != null)
             QuestLocalRuntime.ServerReport(identity.connectionToClient,
-                QuestObjectiveType.KillEnemy, enemyTemplateId, 1);
+                QuestObjectiveType.KillEnemy, QuestTargetId.NormalizeEnemy(enemyTemplateId), 1);
     }
 }
 
