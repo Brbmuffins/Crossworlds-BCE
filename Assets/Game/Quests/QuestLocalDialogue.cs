@@ -3,6 +3,7 @@ using UnityEngine;
 /// <summary>Development quest UI. Replace with the final styled UI before release.</summary>
 public sealed class QuestLocalDialogue : MonoBehaviour
 {
+    const int WindowId = 0x51554553;
     static QuestLocalDialogue _instance;
     QuestDefinition _quest;
     Rect _window = new Rect(0, 0, 520, 420);
@@ -66,7 +67,7 @@ public sealed class QuestLocalDialogue : MonoBehaviour
             Event.current.Use();
             return;
         }
-        _window = GUI.ModalWindow(GetInstanceID(), _window, DrawWindow, "QUEST");
+        _window = GUI.ModalWindow(WindowId, _window, DrawWindow, "QUEST");
     }
 
     void DrawWindow(int id)
