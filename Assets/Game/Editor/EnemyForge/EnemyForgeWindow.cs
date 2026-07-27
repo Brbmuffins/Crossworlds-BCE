@@ -784,40 +784,6 @@ namespace Crossworlds.EditorTools.EnemyForge
                 : string.Empty;
             var clips = EnemyForgeAnimationLibrary.LoadClips(folderPath);
 
-            using (new EditorGUILayout.HorizontalScope())
-            {
-                EditorGUILayout.LabelField(string.IsNullOrEmpty(folderPath) ? "No animation folder found" : folderPath, EditorStyles.wordWrappedLabel);
-                if (GUILayout.Button("Auto Find", GUILayout.Width(75)))
-                {
-                    string found = EnemyForgeAnimationLibrary.FindSuggestedFolder(definition.source);
-                    if (!string.IsNullOrEmpty(found))
-                    {
-                        Undo.RecordObject(definition, "Find animation folder");
-                        definition.animationFolder = AssetDatabase.LoadAssetAtPath<DefaultAsset>(found);
-                        EditorUtility.SetDirty(definition);
-                    }
-                }
-                if (GUILayout.Button("Find Folder", GUILayout.Width(85)))
-                {
-                    string selected = EnemyForgeAnimationLibrary.BrowseForFolder();
-                    if (!string.IsNullOrEmpty(selected))
-                    {
-                        if (!EnemyForgeAnimationLibrary.IsFolderForSource(definition.source, selected))
-                        {
-                            EditorUtility.DisplayDialog("Animation Folder Mismatch",
-                                "The selected Animation folder does not correspond to the current prefab's model family.", "OK");
-                            return;
-                        }
-                        Undo.RecordObject(definition, "Select animation folder");
-                        definition.animationFolder = AssetDatabase.LoadAssetAtPath<DefaultAsset>(selected);
-                        EditorUtility.SetDirty(definition);
-                    }
-                }
-            }
-
-            if (clips.Count == 0)
-                EditorGUILayout.HelpBox("No animation clips were found in the suggested location. Choose a folder or use Find File beside each state.", MessageType.Warning);
-
             DrawAnimationChoice("Idle", clips, ref definition.idleAnimation);
             DrawAnimationChoice("Chase / Movement", clips, ref definition.chaseAnimation);
             DrawAnimationChoice("Combat Attack 1", clips, ref definition.attackAnimation);
@@ -858,16 +824,10 @@ namespace Crossworlds.EditorTools.EnemyForge
                     var clip = EnemyForgeAnimationLibrary.BrowseForClip();
                     if (clip != null)
                     {
-                        string clipFolder = System.IO.Path.GetDirectoryName(AssetDatabase.GetAssetPath(clip))?.Replace('\\', '/');
-                        if (!EnemyForgeAnimationLibrary.IsFolderForSource(definition.source, clipFolder))
-                        {
-                            EditorUtility.DisplayDialog("Animation File Mismatch",
-                                "The selected FBX does not belong to the current prefab's model-family Animation folder.", "OK");
-                            return;
-                        }
                         Undo.RecordObject(definition, "Assign " + label + " animation");
                         selected = clip;
                         EditorUtility.SetDirty(definition);
+                        Repaint();
                     }
                 }
             }
