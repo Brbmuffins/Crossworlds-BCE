@@ -138,19 +138,25 @@ namespace Crossworlds.EditorTools.EnemyForge
 
         public static AnimationClip BrowseForClip()
         {
-            string absolute = EditorUtility.OpenFilePanel("Select FBX Animation File", Application.dataPath, "fbx");
+            string absolute = EditorUtility.OpenFilePanel(
+                "Select FBX Animation File", Application.dataPath, "fbx");
             string path = ToAssetPath(absolute);
             if (string.IsNullOrEmpty(path)) return null;
-            if (!path.StartsWith(ModelRoot + "/", StringComparison.OrdinalIgnoreCase) ||
-                !path.EndsWith(".fbx", StringComparison.OrdinalIgnoreCase) ||
-                !Path.GetFileName(Path.GetDirectoryName(path)).Equals("Animation", StringComparison.OrdinalIgnoreCase))
+            if (!path.EndsWith(".fbx", StringComparison.OrdinalIgnoreCase))
             {
                 EditorUtility.DisplayDialog("Invalid Animation File",
-                    "Choose an .fbx file inside an Animation folder beneath Assets/Game/3D Models.", "OK");
+                    "Choose an imported .fbx file inside this project's Assets folder.", "OK");
                 return null;
             }
-            return AssetDatabase.LoadAllAssetsAtPath(path).OfType<AnimationClip>()
-                .FirstOrDefault(clip => !clip.name.StartsWith("__preview__", StringComparison.OrdinalIgnoreCase));
+
+            AnimationClip clip = AssetDatabase.LoadAllAssetsAtPath(path).OfType<AnimationClip>()
+                .FirstOrDefault(candidate =>
+                    !candidate.name.StartsWith("__preview__", StringComparison.OrdinalIgnoreCase));
+            if (clip == null)
+                EditorUtility.DisplayDialog("No Animation Clip Found",
+                    $"'{Path.GetFileName(path)}' does not contain an imported AnimationClip. " +
+                    "Check the model's Animation import settings.", "OK");
+            return clip;
         }
 
         static string ToAssetPath(string absolute)
