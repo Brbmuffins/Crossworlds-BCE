@@ -16,6 +16,7 @@ public static class SceneNames
     public const string Darkwood        = "Darkwood";
     public const string ArenaCopper     = "Arena_Copper";
     public const string ToujamBasin     = "Toujam Basin";
+    public const string Boneyard        = "Boneyard";
     public const string AshenWastelands = "Ashen Wastelands";
     public const string GMIsland        = "GM Island";
     public const string VoidDungeon     = "VoidDungeon";      // placeholder — future dungeon build
@@ -29,6 +30,7 @@ public static class SceneNames
     public const string DarkwoodPath        = "Assets/Game/Scenes/Darkwood.unity";
     public const string ArenaCopperPath     = "Assets/Game/Scenes/Arena_Copper.unity";
     public const string ToujamBasinPath     = "Assets/Game/Scenes/Toujam Basin.unity";
+    public const string BoneyardPath        = "Assets/Game/Scenes/Boneyard.unity";
     public const string AshenWastelandsPath = "Assets/Game/Scenes/Ashen Wastelands.unity";
     public const string GMIslandPath        = "Assets/Game/Scenes/GM Island.unity";
     public const string VoidDungeonPath     = "Assets/Game/Scenes/VoidDungeon.unity";
@@ -42,7 +44,7 @@ public static class SceneNames
     /// <summary>Every scene a character can legitimately be saved in.</summary>
     public static readonly string[] Zones =
     {
-        Hub, Darkwood, ToujamBasin, AshenWastelands, GMIsland, VoidDungeon,
+        Hub, Darkwood, ToujamBasin, Boneyard, AshenWastelands, GMIsland, VoidDungeon,
         GatheringZone, ArenaCopper,
     };
 

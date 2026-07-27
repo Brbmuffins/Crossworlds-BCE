@@ -102,6 +102,18 @@ public class ZoneCameraDirector : MonoBehaviour
             Instance.Apply(force: true);
     }
 
+    /// <summary>
+    /// True when a scene owns the presentation currently selected for the local
+    /// player. With a remote client the player object remains in the container,
+    /// so trigger code cannot determine this from player.gameObject.scene.
+    /// </summary>
+    public static bool IsCurrentLocalZone(Scene scene)
+    {
+        return Instance == null
+               || !Instance._appliedZone.IsValid()
+               || Instance._appliedZone == scene;
+    }
+
     void Awake()
     {
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
@@ -286,8 +298,27 @@ public class ZoneCameraDirector : MonoBehaviour
                 : true;
         }
 
+        ApplyZoneMusic(zone);
+
         // RenderSettings are global across all additively-loaded scenes.
         RenderSettings.sun = chosenSun;
+    }
+
+    void ApplyZoneMusic(Scene zone)
+    {
+        foreach (MusicZoneTrigger trigger in FindSceneComponents<MusicZoneTrigger>(zone))
+        {
+            if (trigger == null || !trigger.isActiveAndEnabled)
+                continue;
+
+            trigger.ActivateForLocalZone();
+            return;
+        }
+
+        // A zone without authored music should be quiet, not inherit whichever
+        // track happened to be selected by the zone the player just left.
+        if (MusicController.Instance != null)
+            MusicController.Instance.Stop();
     }
 
     void ApplyZoneEnvironment(Scene zone)

@@ -38,13 +38,33 @@ public class MusicZoneTrigger : MonoBehaviour
 
     void OnTriggerEnter(Collider other)
     {
-        if (triggerOnce && _triggered)
-            return;
-
-        if (Time.unscaledTime - _lastTriggerTime < repeatDelay)
-            return;
-
         if (localPlayerOnly && !IsLocalPlayer(other))
+            return;
+
+        // Additive travel can leave the old zone loaded briefly. Never let its
+        // trigger select music for a player who has already moved to another scene.
+        if (!ZoneCameraDirector.IsCurrentLocalZone(gameObject.scene))
+            return;
+
+        ApplyTrack(respectTriggerTiming: true);
+    }
+
+    /// <summary>
+    /// Called by ZoneCameraDirector after the local player's destination scene is
+    /// confirmed. Additive scene travel does not reliably produce trigger-entry
+    /// callbacks, so zone music must not depend on physics alone.
+    /// </summary>
+    public void ActivateForLocalZone()
+    {
+        ApplyTrack(respectTriggerTiming: false);
+    }
+
+    void ApplyTrack(bool respectTriggerTiming)
+    {
+        if (respectTriggerTiming && triggerOnce && _triggered)
+            return;
+
+        if (respectTriggerTiming && Time.unscaledTime - _lastTriggerTime < repeatDelay)
             return;
 
         var controller = MusicController.Instance;

@@ -39,6 +39,8 @@ public class MusicController : MonoBehaviour
 
     private AudioSource _source;
     private Coroutine _fadeRoutine;
+    private AudioClip _pendingTrack;
+    private bool _trackTransitionPending;
     private float _volume;
     private bool _muted;
 
@@ -204,6 +206,12 @@ public class MusicController : MonoBehaviour
         if (_source == null)
             return;
 
+        // Additive zone activation can request the same destination track several
+        // times while cameras, lighting and old scenes settle. Do not cancel and
+        // restart an identical fade before it reaches the clip-swap point.
+        if (_trackTransitionPending && _pendingTrack == nextTrack && !restartIfSameTrack)
+            return;
+
         if (_source.clip == nextTrack && !restartIfSameTrack)
         {
             if (!_source.isPlaying && nextTrack != null && !Application.isBatchMode)
@@ -214,6 +222,8 @@ public class MusicController : MonoBehaviour
         }
 
         StopFade();
+        _pendingTrack = nextTrack;
+        _trackTransitionPending = true;
         _fadeRoutine = StartCoroutine(FadeToTrackRoutine(nextTrack, Mathf.Max(0f, fadeSeconds)));
     }
 
@@ -303,11 +313,14 @@ public class MusicController : MonoBehaviour
 
     private void StopFade()
     {
-        if (_fadeRoutine == null)
-            return;
+        if (_fadeRoutine != null)
+        {
+            StopCoroutine(_fadeRoutine);
+            _fadeRoutine = null;
+        }
 
-        StopCoroutine(_fadeRoutine);
-        _fadeRoutine = null;
+        _pendingTrack = null;
+        _trackTransitionPending = false;
     }
 
     private IEnumerator StopAfterFadeRoutine(float fadeSeconds)
@@ -335,6 +348,8 @@ public class MusicController : MonoBehaviour
             {
                 Debug.LogWarning($"[MusicController] Could not load music clip '{nextTrack.name}'. Check the audio import settings.");
                 ApplyVolumeImmediate();
+                _pendingTrack = null;
+                _trackTransitionPending = false;
                 _fadeRoutine = null;
                 yield break;
             }
@@ -348,6 +363,8 @@ public class MusicController : MonoBehaviour
             ApplyVolumeImmediate();
         }
 
+        _pendingTrack = null;
+        _trackTransitionPending = false;
         _fadeRoutine = null;
     }
 

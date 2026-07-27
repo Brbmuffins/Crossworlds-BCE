@@ -120,6 +120,7 @@ public static class MultiZoneSetupBuilder
             case SceneNames.Hub:             return SceneNames.HubPath;
             case SceneNames.Darkwood:        return SceneNames.DarkwoodPath;
             case SceneNames.ToujamBasin:     return SceneNames.ToujamBasinPath;
+            case SceneNames.Boneyard:        return SceneNames.BoneyardPath;
             case SceneNames.AshenWastelands: return SceneNames.AshenWastelandsPath;
             case SceneNames.GMIsland:        return SceneNames.GMIslandPath;
             case SceneNames.VoidDungeon:     return SceneNames.VoidDungeonPath;
