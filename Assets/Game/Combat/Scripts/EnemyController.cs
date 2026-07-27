@@ -100,11 +100,14 @@ public class EnemyController : NetworkBehaviour
     private NetworkTransformBase _networkTransform;
     private StatusEffectManager  _status;   // may be null on basic enemies
     private EnemyHeavyAttack     _heavyAttack;
+    private EnemyPatrolAgent     _patrolAgent;
     private float                _baseSpeed;
     private float                _configuredStoppingDistance;
     private Transform            _target;
     public Transform CurrentTarget => _target;
+    public bool IsReturningHome => _returningHome;
     private Vector3              _spawnPos;
+    private Vector3              _combatLeashOrigin;
     private Quaternion           _spawnRot;
     private float                _attackTimer;
     private Animator             _animator;
@@ -151,6 +154,7 @@ public class EnemyController : NetworkBehaviour
         _networkTransform = GetComponent<NetworkTransformBase>();
         _status    = GetComponent<StatusEffectManager>();
         _heavyAttack = GetComponent<EnemyHeavyAttack>();
+        _patrolAgent = GetComponent<EnemyPatrolAgent>();
         _baseSpeed = _agent != null ? _agent.speed : 0f;
         _configuredStoppingDistance = _agent != null ? Mathf.Max(0f, _agent.stoppingDistance) : 0f;
         _animator  = GetComponentInChildren<Animator>();
@@ -166,6 +170,9 @@ public class EnemyController : NetworkBehaviour
     public override void OnStartServer()
     {
         base.OnStartServer();
+        // Scene-added components can be restored after Awake during prefab/scene
+        // deserialization. Refresh here so every networked patrol instance is seen.
+        _patrolAgent = GetComponent<EnemyPatrolAgent>();
         QuestEnemyTarget.EnsureAttached(gameObject);
         InitializeSimulation();
     }
@@ -190,6 +197,7 @@ public class EnemyController : NetworkBehaviour
         // Preserve the authored transform position. NavMeshAgent.nextPosition may
         // include an internal vertical projection and caused respawns to drift upward.
         _spawnPos = transform.position;
+        _combatLeashOrigin = _spawnPos;
         _spawnRot = transform.rotation;
         _hasRoamDestination = false;
         ScheduleNextRoam();
@@ -467,6 +475,11 @@ public class EnemyController : NetworkBehaviour
         if (_returningHome && target != null) return;
 
         bool enteringAggro = _target == null && target != null;
+        if (enteringAggro)
+        {
+            _combatLeashOrigin = transform.position;
+            _patrolAgent?.SuspendForCombat();
+        }
         _target = target;
         _returningHome = false;
         _hasRoamDestination = false;
@@ -510,6 +523,10 @@ public class EnemyController : NetworkBehaviour
 
     void TickIdle()
     {
+        // Also recover after editor hot reloads or runtime component changes.
+        if (_patrolAgent == null)
+            _patrolAgent = GetComponent<EnemyPatrolAgent>();
+
         TickReturnHomeFacing();
         if (_returningHome) return;
 
@@ -811,14 +828,14 @@ public class EnemyController : NetworkBehaviour
         if (_target == null || !(_target.GetComponent<Health>()?.IsAlive ?? false))
         {
             ResetToIdle();
-            ReturnToSpawnPoint();
+            ResumePatrolOrReturnHome();
             return;
         }
 
         if (IsOutsideCombatLeash(transform.position) || !IsTargetWithinLeash(_target))
         {
             ResetToIdle();
-            ReturnToSpawnPoint();
+            ResumePatrolOrReturnHome();
             return;
         }
 
@@ -1353,18 +1370,37 @@ public class EnemyController : NetworkBehaviour
     public bool IsTargetWithinLeash(Transform target)
     {
         if (target == null) return false;
-        return !IsOutsideHomeRadius(target.position, leashRadius);
+        return !IsOutsideRadius(target.position, CombatLeashOrigin, leashRadius);
     }
 
     bool IsOutsideCombatLeash(Vector3 position)
     {
-        return IsOutsideHomeRadius(position, leashRadius);
+        return IsOutsideRadius(position, CombatLeashOrigin, leashRadius);
+    }
+
+    Vector3 CombatLeashOrigin =>
+        _patrolAgent != null && _patrolAgent.HasUsableRoute ? _combatLeashOrigin : _spawnPos;
+
+    void ResumePatrolOrReturnHome()
+    {
+        if (_patrolAgent != null && _patrolAgent.HasUsableRoute)
+        {
+            _patrolAgent.SuspendForCombat();
+            return;
+        }
+        ReturnToSpawnPoint();
     }
 
     bool IsOutsideHomeRadius(Vector3 position, float radius, float tolerance = 0f)
     {
+        return IsOutsideRadius(position, _spawnPos, radius, tolerance);
+    }
+
+    static bool IsOutsideRadius(
+        Vector3 position, Vector3 origin, float radius, float tolerance = 0f)
+    {
         float allowedRadius = Mathf.Max(0f, radius + tolerance);
-        Vector3 fromSpawn = position - _spawnPos;
+        Vector3 fromSpawn = position - origin;
         fromSpawn.y = 0f;
         return fromSpawn.sqrMagnitude > allowedRadius * allowedRadius;
     }

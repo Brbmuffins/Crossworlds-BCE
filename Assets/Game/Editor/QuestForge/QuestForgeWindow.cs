@@ -18,9 +18,9 @@ public sealed class QuestForgeWindow : EditorWindow
     static void Open() => GetWindow<QuestForgeWindow>("Quest Forge");
 
     [OnOpenAsset]
-    static bool OpenQuestAsset(int instanceId, int line)
+    static bool OpenQuestAsset(EntityId entityId, int line)
     {
-        string assetPath = AssetDatabase.GetAssetPath(instanceId);
+        string assetPath = AssetDatabase.GetAssetPath(entityId);
         QuestDefinition quest = AssetDatabase.LoadAssetAtPath<QuestDefinition>(assetPath);
         if (quest == null) return false;
         QuestForgeWindow window = GetWindow<QuestForgeWindow>("Quest Forge");
