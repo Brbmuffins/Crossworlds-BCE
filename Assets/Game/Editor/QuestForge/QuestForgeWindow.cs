@@ -1,4 +1,5 @@
 #if UNITY_EDITOR
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.Callbacks;
 using UnityEditor.SceneManagement;
@@ -100,7 +101,19 @@ public sealed class QuestForgeWindow : EditorWindow
             AssociateSelectedFindObject();
             serialized.Update();
         }
-        DrawProperty(serialized, "objectives", true);
+        if (GUILayout.Button("Use Selected Enemy as Kill Objective", GUILayout.Height(28)))
+        {
+            serialized.ApplyModifiedProperties();
+            AssociateSelectedKillEnemy();
+            serialized.Update();
+        }
+        if (GUILayout.Button("Use Selected Enemy as Kill Objective", GUILayout.Height(28)))
+        {
+            serialized.ApplyModifiedProperties();
+            AssociateSelectedKillEnemy();
+            serialized.Update();
+        }
+        DrawObjectivesWithKillEnemyDefault(serialized);
         EditorGUILayout.LabelField("Rewards", EditorStyles.boldLabel);
         foreach (string property in new[] { "goldReward", "experienceReward",
                      "itemRewardId", "itemRewardQuantity" })
@@ -233,6 +246,27 @@ public sealed class QuestForgeWindow : EditorWindow
         if (property != null) EditorGUILayout.PropertyField(property, children);
     }
 
+    static void DrawObjectivesWithKillEnemyDefault(SerializedObject serialized)
+    {
+        SerializedProperty objectives = serialized.FindProperty("objectives");
+        if (objectives == null) return;
+
+        int countBeforeDraw = objectives.arraySize;
+        EditorGUILayout.PropertyField(objectives, true);
+        if (objectives.arraySize <= countBeforeDraw) return;
+
+        for (int i = countBeforeDraw; i < objectives.arraySize; i++)
+        {
+            SerializedProperty objective = objectives.GetArrayElementAtIndex(i);
+            objective.FindPropertyRelative("type").enumValueIndex =
+                (int)QuestObjectiveType.KillEnemy;
+            objective.FindPropertyRelative("targetId").stringValue = "";
+            objective.FindPropertyRelative("description").stringValue = "Kill enemy";
+            objective.FindPropertyRelative("requiredAmount").intValue = 1;
+            objective.FindPropertyRelative("targetPrefab").objectReferenceValue = null;
+        }
+    }
+
     void CreateQuest()
     {
         _quest = CreateInstance<QuestDefinition>();
@@ -255,6 +289,8 @@ public sealed class QuestForgeWindow : EditorWindow
         _questName = cleanName;
         _quest.title = cleanName;
         _quest.questId = Slug(cleanName);
+        NormalizeKillObjectiveIds();
+        NormalizeKillObjectiveIds();
 
         string desiredPath = $"{DefaultFolder}/{cleanName}.asset";
         string currentPath = AssetDatabase.GetAssetPath(_quest);
@@ -288,6 +324,12 @@ public sealed class QuestForgeWindow : EditorWindow
     void DeployQuest()
     {
         if (!SaveQuest()) return;
+        List<string> blockingIssues = GetBlockingIssues();
+        if (blockingIssues.Count > 0)
+        {
+            ShowBlockingIssues(blockingIssues, "Quest cannot be deployed until these are corrected:");
+            return;
+        }
 
         if (EditorUtility.IsPersistent(_questGiverSource))
         {
@@ -319,6 +361,7 @@ public sealed class QuestForgeWindow : EditorWindow
                 "The quest giver was configured, but the Turn In reference is not a prefab asset.", "OK");
 
         RepairDiscoveryObjectiveAssociations();
+        RepairKillObjectiveAssociations();
         AssetDatabase.SaveAssets();
         Selection.activeObject = _questGiverSource;
         Debug.Log($"[Quest Forge] Deployed '{_quest.title}' to '{_questGiverSource.name}'.");
@@ -350,6 +393,30 @@ public sealed class QuestForgeWindow : EditorWindow
                 EnsureObjectiveMarker(candidate.parent.gameObject, _quest, objective.targetId);
                 EditorUtility.SetDirty(candidate.gameObject);
                 EditorSceneManager.MarkSceneDirty(candidate.gameObject.scene);
+            }
+        }
+    }
+
+    void RepairKillObjectiveAssociations()
+    {
+        foreach (QuestObjectiveDefinition objective in _quest.objectives)
+        {
+            if (objective.type != QuestObjectiveType.KillEnemy ||
+                string.IsNullOrWhiteSpace(objective.targetId)) continue;
+
+            string targetId = NormalizeEnemyTargetId(objective.targetId);
+            foreach (EnemyController enemy in
+                     Object.FindObjectsByType<EnemyController>(FindObjectsInactive.Include))
+            {
+                string enemyId = NormalizeEnemyTargetId(
+                    !string.IsNullOrWhiteSpace(enemy.enemyTemplateId)
+                        ? enemy.enemyTemplateId : enemy.gameObject.name);
+                if (!string.Equals(enemyId, targetId,
+                        System.StringComparison.OrdinalIgnoreCase)) continue;
+                ConfigureEnemyTarget(enemy.gameObject, targetId);
+                ConfigureEnemyPrefabSource(enemy.gameObject, targetId);
+                if (enemy.gameObject.scene.IsValid())
+                    EditorSceneManager.MarkSceneDirty(enemy.gameObject.scene);
             }
         }
     }
@@ -406,11 +473,122 @@ public sealed class QuestForgeWindow : EditorWindow
     void ConfigureEnemy()
     {
         GameObject selected = SelectedOrWarn(); if (selected == null) return;
-        QuestEnemyTarget target = selected.GetComponent<QuestEnemyTarget>() ??
-                                  Undo.AddComponent<QuestEnemyTarget>(selected);
         EnemyController enemy = selected.GetComponent<EnemyController>();
-        target.enemyTemplateId = enemy != null ? enemy.enemyTemplateId : Slug(selected.name);
+        string sourceId = enemy != null && !string.IsNullOrWhiteSpace(enemy.enemyTemplateId)
+            ? enemy.enemyTemplateId : selected.name;
+        string targetId = NormalizeEnemyTargetId(sourceId);
+        int configured = 0;
+
+        foreach (EnemyController candidate in
+                 Object.FindObjectsByType<EnemyController>(FindObjectsInactive.Include))
+        {
+            string candidateId = NormalizeEnemyTargetId(
+                !string.IsNullOrWhiteSpace(candidate.enemyTemplateId)
+                    ? candidate.enemyTemplateId : candidate.gameObject.name);
+            if (!string.Equals(candidateId, targetId,
+                    System.StringComparison.OrdinalIgnoreCase)) continue;
+            ConfigureEnemyTarget(candidate.gameObject, targetId);
+            ConfigureEnemyPrefabSource(candidate.gameObject, targetId);
+            if (candidate.gameObject.scene.IsValid())
+                EditorSceneManager.MarkSceneDirty(candidate.gameObject.scene);
+            configured++;
+        }
+
+        if (configured == 0)
+        {
+            ConfigureEnemyTarget(selected, targetId);
+            configured = 1;
+        }
+        Debug.Log($"[Quest Forge] Configured {configured} '{targetId}' enemy target instance(s).");
+    }
+
+    void AssociateSelectedKillEnemy()
+    {
+        if (_quest == null)
+        {
+            EditorUtility.DisplayDialog("Quest Forge",
+                "Create or select a quest definition first.", "OK");
+            return;
+        }
+
+        GameObject selected = Selection.activeGameObject;
+        if (selected == null || EditorUtility.IsPersistent(selected))
+        {
+            EditorUtility.DisplayDialog("Quest Forge",
+                "Select an enemy instance in the Scene hierarchy first.", "OK");
+            return;
+        }
+
+        EnemyController enemy = selected.GetComponentInParent<EnemyController>();
+        if (enemy == null)
+        {
+            EditorUtility.DisplayDialog("Quest Forge",
+                $"'{selected.name}' is not part of an enemy with an EnemyController.", "OK");
+            return;
+        }
+
+        string sourceId = !string.IsNullOrWhiteSpace(enemy.enemyTemplateId)
+            ? enemy.enemyTemplateId : enemy.gameObject.name;
+        string targetId = NormalizeEnemyTargetId(sourceId);
+        GameObject prefabSource = PrefabUtility.GetCorrespondingObjectFromOriginalSource(enemy.gameObject);
+
+        Undo.RecordObject(_quest, "Associate Kill Enemy Objective");
+        QuestObjectiveDefinition objective = null;
+        foreach (QuestObjectiveDefinition candidate in _quest.objectives)
+        {
+            if (candidate == null) continue;
+            bool samePrefab = prefabSource != null && candidate.targetPrefab == prefabSource;
+            bool sameTarget = string.Equals(
+                NormalizeEnemyTargetId(candidate.targetId), targetId,
+                System.StringComparison.OrdinalIgnoreCase);
+            if (samePrefab || sameTarget) { objective = candidate; break; }
+        }
+        if (objective == null)
+        {
+            objective = new QuestObjectiveDefinition();
+            _quest.objectives.Add(objective);
+        }
+
+        objective.type = QuestObjectiveType.KillEnemy;
+        objective.targetId = targetId;
+        objective.description = $"Kill {NicifyName(targetId.Replace("prefab_", ""))}";
+        objective.requiredAmount = Mathf.Max(1, objective.requiredAmount);
+        if (prefabSource != null) objective.targetPrefab = prefabSource;
+        EditorUtility.SetDirty(_quest);
+
+        ConfigureEnemyTarget(enemy.gameObject, targetId);
+        ConfigureEnemyPrefabSource(enemy.gameObject, targetId);
+        RepairKillObjectiveAssociations();
+        Debug.Log($"[Quest Forge] Associated all '{targetId}' enemies with a KillEnemy objective.");
+    }
+
+    static void ConfigureEnemyTarget(GameObject enemyObject, string targetId)
+    {
+        QuestEnemyTarget target = enemyObject.GetComponent<QuestEnemyTarget>() ??
+                                  Undo.AddComponent<QuestEnemyTarget>(enemyObject);
+        Undo.RecordObject(target, "Configure Quest Enemy Target");
+        target.enemyTemplateId = targetId;
         EditorUtility.SetDirty(target);
+    }
+
+    static void ConfigureEnemyPrefabSource(GameObject sceneEnemy, string targetId)
+    {
+        GameObject instanceRoot = PrefabUtility.GetNearestPrefabInstanceRoot(sceneEnemy);
+        if (instanceRoot == null) return;
+        GameObject prefabRoot = PrefabUtility.GetCorrespondingObjectFromOriginalSource(instanceRoot);
+        string path = AssetDatabase.GetAssetPath(prefabRoot);
+        if (string.IsNullOrWhiteSpace(path)) return;
+
+        GameObject contents = PrefabUtility.LoadPrefabContents(path);
+        try
+        {
+            QuestEnemyTarget target = contents.GetComponent<QuestEnemyTarget>() ??
+                                      contents.AddComponent<QuestEnemyTarget>();
+            target.enemyTemplateId = targetId;
+            EditorUtility.SetDirty(target);
+            PrefabUtility.SaveAsPrefabAsset(contents, path);
+        }
+        finally { PrefabUtility.UnloadPrefabContents(contents); }
     }
 
     void AssociateSelectedFindObject()
@@ -576,19 +754,100 @@ public sealed class QuestForgeWindow : EditorWindow
 
     void ValidateQuest()
     {
-        int errors = 0;
-        if (string.IsNullOrWhiteSpace(_quest.questId)) errors++;
-        if (string.IsNullOrWhiteSpace(_quest.title)) errors++;
-        if (_questGiverSource == null) errors++;
-        if (_quest.objectives.Count == 0) errors++;
-        foreach (QuestObjectiveDefinition objective in _quest.objectives)
-            if (string.IsNullOrWhiteSpace(objective.targetId)) errors++;
-        EditorUtility.DisplayDialog("Quest Forge Validation",
-            errors == 0 ? "Quest passed Mirror compatibility validation." :
-                $"Quest has {errors} blocking issue(s).", "OK");
+        List<string> blockingIssues = GetBlockingIssues();
+        if (blockingIssues.Count == 0)
+        {
+            EditorUtility.DisplayDialog("Quest Forge Validation",
+                "Quest passed validation and is ready for Mirror-compatible deployment.", "OK");
+            return;
+        }
+        ShowBlockingIssues(blockingIssues, "Quest is not ready to deploy:");
+    }
+
+    List<string> GetBlockingIssues()
+    {
+        var issues = new List<string>();
+        if (_quest == null)
+        {
+            issues.Add("No quest asset is open. Create a quest or drag a saved quest asset into Quest Forge.");
+            return issues;
+        }
+        if (string.IsNullOrWhiteSpace(_quest.questId))
+            issues.Add("Quest ID is empty. Enter a Quest Name and click Save Quest.");
+        if (string.IsNullOrWhiteSpace(_quest.title))
+            issues.Add("Quest title is empty. Enter a Quest Name and click Save Quest.");
+        if (_questGiverSource == null)
+            issues.Add("Quest Giver is not assigned. Select a scene object or prefab in the Quest Giver field.");
+        if (_quest.objectives == null || _quest.objectives.Count == 0)
+            issues.Add("No quest objective has been added. Add an objective or use Selected Model as Find Objective.");
+
+        if (_quest.objectives != null)
+        {
+            for (int i = 0; i < _quest.objectives.Count; i++)
+            {
+                QuestObjectiveDefinition objective = _quest.objectives[i];
+                string label = objective == null
+                    ? $"Objective {i + 1}"
+                    : $"Objective {i + 1} ({objective.type})";
+                if (objective == null)
+                {
+                    issues.Add($"{label} is empty. Remove it or configure the objective.");
+                    continue;
+                }
+                if (string.IsNullOrWhiteSpace(objective.targetId))
+                    issues.Add($"{label} has no Target ID. Assign its target object or enter a matching ID.");
+                if (objective.requiredAmount < 1)
+                    issues.Add($"{label} requires an amount of at least 1.");
+                if (objective.type == QuestObjectiveType.EnterArea &&
+                    objective.targetPrefab != null &&
+                    objective.targetPrefab.GetComponentInChildren<EnemyController>(true) != null)
+                    issues.Add($"{label} references an enemy prefab but is configured as EnterArea. " +
+                               "Select an enemy instance and use Selected Enemy as Kill Objective.");
+            }
+        }
+        return issues;
+    }
+
+    static void ShowBlockingIssues(List<string> issues, string heading)
+    {
+        var message = new System.Text.StringBuilder(heading);
+        message.AppendLine();
+        message.AppendLine();
+        for (int i = 0; i < issues.Count; i++)
+            message.AppendLine($"{i + 1}. {issues[i]}");
+        EditorUtility.DisplayDialog(
+            $"Quest Forge Validation - {issues.Count} Blocking Issue{(issues.Count == 1 ? "" : "s")}",
+            message.ToString(), "OK");
     }
 
     static string Slug(string value) => value.Trim().ToLowerInvariant().Replace(" ", "_");
+
+    static string NormalizeEnemyTargetId(string value)
+    {
+        string result = (value ?? "").Trim();
+        if (result.EndsWith("_discovery", System.StringComparison.OrdinalIgnoreCase))
+            result = result.Substring(0, result.Length - "_discovery".Length).TrimEnd(' ', '_');
+        if (result.EndsWith("(Clone)", System.StringComparison.OrdinalIgnoreCase))
+            result = result.Substring(0, result.Length - "(Clone)".Length).TrimEnd();
+        if (result.EndsWith(")", System.StringComparison.Ordinal))
+        {
+            int open = result.LastIndexOf('(');
+            if (open >= 0 &&
+                int.TryParse(result.Substring(open + 1, result.Length - open - 2), out _))
+                result = result.Substring(0, open).TrimEnd(' ', '_');
+        }
+        return Slug(result);
+    }
+
+    void NormalizeKillObjectiveIds()
+    {
+        if (_quest?.objectives == null) return;
+        foreach (QuestObjectiveDefinition objective in _quest.objectives)
+        {
+            if (objective == null || objective.type != QuestObjectiveType.KillEnemy) continue;
+            objective.targetId = NormalizeEnemyTargetId(objective.targetId);
+        }
+    }
 
     static string SanitizeFileName(string value)
     {
