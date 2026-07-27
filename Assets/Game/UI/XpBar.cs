@@ -35,13 +35,13 @@ public class XpBar : MonoBehaviour
     float _displayFraction = 0f;
     float _targetFraction  = 0f;
 
-    const int   CanvasOrder       = 101;
-    const float ActionBarXpWidth  = 380f;
-    const float ActionBarXpHeight = 20f;
-    const float ActionBarXpY      = 145f;
+    const int   CanvasOrder       = 99;
+    const float ActionBarXpWidth  = 530f;
+    const float ActionBarXpHeight = 30f;
+    const float ActionBarXpY      = 190f;
 
     static readonly Color NormalFill  = new Color(0.52f, 0.18f, 0.72f);
-    static readonly Color NormalBg    = new Color(0.08f, 0.04f, 0.14f, 0.78f);
+    static readonly Color NormalBg    = new Color(0.08f, 0.04f, 0.14f, 1.00f);
     static readonly Color LevelUpFill = new Color(1.0f,  0.80f, 0.10f);
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
@@ -155,7 +155,7 @@ public class XpBar : MonoBehaviour
 
         var root = _canvas.GetComponent<RectTransform>();
 
-        // Sits in the top channel of ActionBarHealthManaCombo, between the wells.
+        // Sits in the top channel of PlayerHUD, between the wells.
         var container = new GameObject("XpBarContainer", typeof(RectTransform));
         container.transform.SetParent(root, false);
         var cRt = container.GetComponent<RectTransform>();

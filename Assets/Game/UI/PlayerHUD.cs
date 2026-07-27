@@ -82,25 +82,26 @@ public class PlayerHUD : MonoBehaviour
 
     // Ability bar
     const int Slots = 4;
-    const string ActionBarFrameResource = "UI/ActionBarHealthManaCombo";
-    const string HealthWellGlassResource = "UI/HealthBubbleGlass";
-    const float ActionBarFrameWidth = 760f;
-    const float ActionBarFrameHeight = 507f;
-    const float ActionBarBottomOffset = -190f;
-    const float ActionBarSlotSize = 74f;
-    const float ActionBarSlotCenterY = 280f;
-    const float ActionBarSlotStartX = -137f;
-    const float ActionBarSlotStepX = 91f;
-    const float ActionBarNameY = 228f;
-    const float ActionBarSlotContentInset = 6f;
-    const float ActionBarHealthWellCenterY = 280f;
-    const float ActionBarHealthWellCenterX = -255f;
-    const float ActionBarHealthWellSize = 124f;
-    const float ActionBarHealthGlassSize = 148f;
-    const float ActionBarManaWellCenterX = 276f;
-    const float ActionBarManaWellCenterY = 282f;
-    const float ActionBarManaWellSize = 124f;
-    const float ActionBarManaGlassSize = 148f;
+    const string ActionBarFrameResource = "UI/PlayerHUD";
+    // The source artwork has transparent export padding around its 1431x382
+    // visible frame. These dimensions preserve the previous on-screen scale,
+    // while the negative offset places the visible frame back at screen bottom.
+    const float ActionBarFrameWidth = 965f;
+    const float ActionBarFrameHeight = 644f;
+    const float ActionBarBottomOffset = -219f;
+    const float ActionBarContentYOffset = 219f;
+    const float ActionBarSlotSize = 104f;
+    const float ActionBarSlotCenterY = 110f + ActionBarContentYOffset;
+    const float ActionBarSlotStartX = -175f;
+    const float ActionBarSlotStepX = 114.5f;
+    const float ActionBarNameY = 48f + ActionBarContentYOffset;
+    const float ActionBarSlotContentInset = 0f;
+    const float ActionBarHealthWellCenterY = 121f + ActionBarContentYOffset;
+    const float ActionBarHealthWellCenterX = -340f;
+    const float ActionBarHealthWellSize = 164f;
+    const float ActionBarManaWellCenterX = 340f;
+    const float ActionBarManaWellCenterY = 121f + ActionBarContentYOffset;
+    const float ActionBarManaWellSize = 164f;
     Image[]             _slotBg       = new Image[Slots];
     Image[]             _slotIcon     = new Image[Slots];
     Image[]             _slotCooldown = new Image[Slots];
@@ -390,6 +391,14 @@ public class PlayerHUD : MonoBehaviour
         BuildHealthWell(root);
         BuildManaWell(root);
 
+        // Build the ability contents before the artwork so the HUD's decorative
+        // borders mask their oversized edges and frame each slot cleanly.
+        for (int i = 0; i < Slots; i++)
+        {
+            float x = ActionBarSlotStartX + i * ActionBarSlotStepX;
+            BuildSlot(root, i, x, ActionBarSlotCenterY, ActionBarSlotSize);
+        }
+
         var frame = Img(root, "ActionBarFrame", Color.white);
         frame.sprite = Resources.Load<Sprite>(ActionBarFrameResource);
         frame.preserveAspect = true;
@@ -398,10 +407,18 @@ public class PlayerHUD : MonoBehaviour
             frame.color = BgDark;
         Stretch(frame.rectTransform);
 
+        // Selection rings must remain above the decorative frame, while the
+        // ability icon, backdrop, and cooldown stay masked beneath it.
         for (int i = 0; i < Slots; i++)
         {
             float x = ActionBarSlotStartX + i * ActionBarSlotStepX;
-            BuildSlot(root, i, x, ActionBarSlotCenterY, ActionBarSlotSize);
+            var ringRt = _slotRing[i].rectTransform;
+            ringRt.SetParent(root, false);
+            ringRt.anchorMin = new Vector2(0.5f, 0f);
+            ringRt.anchorMax = new Vector2(0.5f, 0f);
+            ringRt.pivot = new Vector2(0.5f, 0.5f);
+            ringRt.anchoredPosition = new Vector2(x, ActionBarSlotCenterY);
+            ringRt.sizeDelta = new Vector2(ActionBarSlotSize + 8f, ActionBarSlotSize + 8f);
         }
     }
 
@@ -428,19 +445,6 @@ public class PlayerHUD : MonoBehaviour
         _actionHealthFill.raycastTarget = false;
         Stretch(_actionHealthFill.rectTransform);
 
-        var glass = Img(wellRt, "Glass", Color.white);
-        glass.sprite = Resources.Load<Sprite>(HealthWellGlassResource);
-        glass.preserveAspect = true;
-        glass.raycastTarget = false;
-        if (glass.sprite == null)
-            glass.color = Transparent;
-
-        var glassRt = glass.rectTransform;
-        glassRt.anchorMin        = new Vector2(0.5f, 0.5f);
-        glassRt.anchorMax        = new Vector2(0.5f, 0.5f);
-        glassRt.pivot            = new Vector2(0.5f, 0.5f);
-        glassRt.anchoredPosition = Vector2.zero;
-        glassRt.sizeDelta        = new Vector2(ActionBarHealthGlassSize, ActionBarHealthGlassSize);
     }
 
     void BuildManaWell(RectTransform parent)
@@ -466,19 +470,6 @@ public class PlayerHUD : MonoBehaviour
         _actionManaFill.raycastTarget = false;
         Stretch(_actionManaFill.rectTransform);
 
-        var glass = Img(wellRt, "Glass", Color.white);
-        glass.sprite = Resources.Load<Sprite>(HealthWellGlassResource);
-        glass.preserveAspect = true;
-        glass.raycastTarget = false;
-        if (glass.sprite == null)
-            glass.color = Transparent;
-
-        var glassRt = glass.rectTransform;
-        glassRt.anchorMin        = new Vector2(0.5f, 0.5f);
-        glassRt.anchorMax        = new Vector2(0.5f, 0.5f);
-        glassRt.pivot            = new Vector2(0.5f, 0.5f);
-        glassRt.anchoredPosition = Vector2.zero;
-        glassRt.sizeDelta        = new Vector2(ActionBarManaGlassSize, ActionBarManaGlassSize);
     }
 
     void BuildSlot(RectTransform parent, int i, float x, float y, float size)
