@@ -33,6 +33,7 @@ public sealed class LoadingScreen : MonoBehaviour
     // ── Config ────────────────────────────────────────────────────────────────
     const float FadeOutDuration   = 0.4f;
     const float PhysicsSettleTime = 0.6f; // seconds after sceneLoaded before fade starts
+    const float EnvironmentSettleTime = 2.5f; // additive skybox/volume activation
 
     // ── State ─────────────────────────────────────────────────────────────────
     Canvas          _canvas;
@@ -58,6 +59,17 @@ public sealed class LoadingScreen : MonoBehaviour
     {
         if (_instance == null) return;
         _instance.DoHide();
+    }
+
+    /// <summary>
+    /// Restarts the settle countdown when the destination environment is actually
+    /// ready. Also handles host travel to an already server-cached zone, where no
+    /// sceneLoaded callback is raised and the old auto-hide path would wait forever.
+    /// </summary>
+    public static void NotifyEnvironmentReady()
+    {
+        if (_instance == null || !_instance._visible) return;
+        _instance.RestartAutoHide();
     }
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
@@ -103,6 +115,11 @@ public sealed class LoadingScreen : MonoBehaviour
     {
         // Auto-hide after physics has had time to bake colliders and settle rigidbodies
         if (!_visible) return;
+        RestartAutoHide();
+    }
+
+    void RestartAutoHide()
+    {
         if (_autoHideCo != null) StopCoroutine(_autoHideCo);
         _autoHideCo = StartCoroutine(AutoHideAfterSettle());
     }
@@ -126,6 +143,12 @@ public sealed class LoadingScreen : MonoBehaviour
 
         // Wait for physics/terrain to settle
         yield return new WaitForSeconds(PhysicsSettleTime);
+
+        // Additively-loaded scenes share global RenderSettings. Unity can finish
+        // skybox, ambient probe and URP volume activation a few frames after the
+        // sceneLoaded callback. Keep that bright-to-dark setup hidden rather than
+        // exposing the destination before its intended presentation is stable.
+        yield return new WaitForSecondsRealtime(EnvironmentSettleTime);
 
         // Re-enable physics
         if (playerRb != null)

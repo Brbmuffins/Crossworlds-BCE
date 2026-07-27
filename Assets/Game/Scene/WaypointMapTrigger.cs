@@ -295,6 +295,7 @@ public sealed class WaypointMapTrigger : NetworkBehaviour
         WaypointMapUI.SetStatus($"Traveling to {node.displayName}...");
         if (closeMapAfterTravelRequest)
             WaypointMapUI.Hide();
+        LoadingScreen.Show(node.displayName);
 #endif
 
         if (NetworkClient.active || NetworkServer.active)
@@ -344,6 +345,7 @@ public sealed class WaypointMapTrigger : NetworkBehaviour
         _loading = false;
 #if UNITY_EDITOR || !UNITY_SERVER
         WaypointMapUI.SetStatus(message);
+        LoadingScreen.Hide();
 #endif
     }
 

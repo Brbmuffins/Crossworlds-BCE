@@ -231,6 +231,18 @@ public class ZoneManager : MonoBehaviour
 
             ZoneScene.PlaceIn(player, destination);
             PlaceAtSpawnPoint(player, destination, spawnId);
+
+#if UNITY_EDITOR || !UNITY_SERVER
+            // Host mode shares the server's additive scenes with its local client.
+            // Apply the destination camera, skybox and lighting in this same frame,
+            // before the newly placed player can be rendered with the old zone's
+            // environment. Remote clients refresh from scene load/unload callbacks.
+            if (conn.identity.isLocalPlayer)
+            {
+                ZoneCameraDirector.RefreshNow();
+                LoadingScreen.NotifyEnvironmentReady();
+            }
+#endif
         }
 
         // Book-keeping. RemoveOccupant must run BEFORE AssignOccupant or the

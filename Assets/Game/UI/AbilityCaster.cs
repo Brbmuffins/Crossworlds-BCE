@@ -807,6 +807,18 @@ public class AbilityCaster : NetworkBehaviour
             return;
         }
 
+        // Additive travel briefly contains both the source and destination cameras.
+        // Camera.main is ambiguous in that window, so let ZoneCameraDirector choose
+        // the local player's zone camera and update this component through Rebind.
+#if UNITY_EDITOR || !UNITY_SERVER
+        if (mode == UnityEngine.SceneManagement.LoadSceneMode.Additive
+            && ZoneCameraDirector.Instance != null)
+        {
+            ZoneCameraDirector.RefreshNow();
+            return;
+        }
+#endif
+
         // Scene is fully loaded by the time this callback fires.
         Camera sceneCam = Camera.main;
         if (sceneCam != null)
@@ -854,7 +866,8 @@ public class AbilityCaster : NetworkBehaviour
         var follow = sceneCam.GetComponent<CameraFollow>()
                   ?? FindAnyObjectByType<CameraFollow>()
                   ?? sceneCam.gameObject.AddComponent<CameraFollow>();
-        follow.target = transform;
+        if (follow.target != transform)
+            follow.target = transform;
     }
 
     public void SyncEquippedFromSpellbook()

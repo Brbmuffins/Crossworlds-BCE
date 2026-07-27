@@ -1,6 +1,9 @@
 #if UNITY_EDITOR || !UNITY_SERVER
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
+using System.Collections;
+using System.Collections.Generic;
 
 // ═══════════════════════════════════════════════════════════════════════════
 //  ZoneCameraDirector — exactly one live camera, always (ROADMAP 6.9)
@@ -38,12 +41,45 @@ public class ZoneCameraDirector : MonoBehaviour
     public static ZoneCameraDirector Instance { get; private set; }
 
     [Tooltip("Seconds between checks for the local player having changed zone.")]
-    public float pollInterval = 0.25f;
+    public float pollInterval = 0.05f;
 
     Transform _localPlayer;
     Scene _appliedZone;
     int _appliedSceneCount = -1;
     float _nextPoll;
+
+    // Original component state is remembered so an object intentionally disabled
+    // by its scene is not accidentally enabled when that scene becomes local.
+    readonly Dictionary<Behaviour, bool> _originalEnabled = new Dictionary<Behaviour, bool>();
+    readonly Dictionary<AudioSource, bool> _originalAudioMute = new Dictionary<AudioSource, bool>();
+    readonly Dictionary<Scene, EnvironmentState> _zoneEnvironments = new Dictionary<Scene, EnvironmentState>();
+    readonly HashSet<Scene> _pendingEnvironmentCaptures = new HashSet<Scene>();
+
+    struct EnvironmentState
+    {
+        public Material skybox;
+        public bool fog;
+        public Color fogColor;
+        public FogMode fogMode;
+        public float fogDensity;
+        public float fogStartDistance;
+        public float fogEndDistance;
+        public AmbientMode ambientMode;
+        public Color ambientSkyColor;
+        public Color ambientEquatorColor;
+        public Color ambientGroundColor;
+        public Color ambientLight;
+        public float ambientIntensity;
+        public Color subtractiveShadowColor;
+        public DefaultReflectionMode defaultReflectionMode;
+        public int defaultReflectionResolution;
+        public Texture customReflection;
+        public float reflectionIntensity;
+        public int reflectionBounces;
+        public float haloStrength;
+        public float flareStrength;
+        public float flareFadeSpeed;
+    }
 
     /// <summary>Creates the director if it does not exist yet, and points it at the local player.</summary>
     public static void EnsureExists(Transform localPlayer)
@@ -59,10 +95,41 @@ public class ZoneCameraDirector : MonoBehaviour
         Instance.Apply(force: true);
     }
 
+    /// <summary>Applies camera and presentation immediately after a local zone move.</summary>
+    public static void RefreshNow()
+    {
+        if (Instance != null)
+            Instance.Apply(force: true);
+    }
+
     void Awake()
     {
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
+    }
+
+    void OnEnable()
+    {
+        SceneManager.sceneLoaded += OnSceneLoaded;
+        SceneManager.sceneUnloaded += OnSceneUnloaded;
+    }
+
+    void OnDisable()
+    {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+        SceneManager.sceneUnloaded -= OnSceneUnloaded;
+    }
+
+    void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        Apply(force: true);
+    }
+
+    void OnSceneUnloaded(Scene scene)
+    {
+        _zoneEnvironments.Remove(scene);
+        _pendingEnvironmentCaptures.Remove(scene);
+        Apply(force: true);
     }
 
     void OnDestroy()
@@ -90,15 +157,17 @@ public class ZoneCameraDirector : MonoBehaviour
         if (!force && zone == _appliedZone && SceneManager.sceneCount == _appliedSceneCount)
             return;
 
+        Scene previousZone = _appliedZone;
         _appliedZone = zone;
         _appliedSceneCount = SceneManager.sceneCount;
 
         int enabled = 0;
         Camera chosen = null;
 
+        // Keep the original global discovery path, with a direct scene fallback.
         foreach (Camera cam in Resources.FindObjectsOfTypeAll<Camera>())
         {
-            if (cam == null || cam.gameObject.scene.handle == 0) continue;   // prefab assets
+            if (cam == null || !cam.gameObject.scene.IsValid()) continue;   // prefab assets
             if (!cam.gameObject.activeInHierarchy) continue;
 
             bool mine = cam.gameObject.scene == zone;
@@ -110,6 +179,25 @@ public class ZoneCameraDirector : MonoBehaviour
             if (mine) { enabled++; if (chosen == null) chosen = cam; }
         }
 
+        // Unity can briefly omit a newly additively-loaded local-physics scene from
+        // Resources.FindObjectsOfTypeAll during the same frame. Read that scene's
+        // hierarchy directly so camera/movement binding never waits for a later poll.
+        if (chosen == null)
+        {
+            foreach (Camera cam in FindSceneComponents<Camera>(zone))
+            {
+                if (cam == null || !cam.gameObject.activeInHierarchy) continue;
+                cam.enabled = true;
+
+                if (cam.TryGetComponent(out AudioListener listener))
+                    listener.enabled = true;
+
+                chosen = cam;
+                enabled = 1;
+                break;
+            }
+        }
+
         if (chosen == null)
         {
             Debug.LogWarning($"[ZoneCam] No camera found in '{zone.name}' — the view will be black. " +
@@ -117,8 +205,251 @@ public class ZoneCameraDirector : MonoBehaviour
             return;
         }
 
+        // Camera-relative movement must be restored before any optional visual work.
+        // A malformed scene environment must never be able to interrupt WASD binding.
         Rebind(chosen);
+
+        // Everything below is presentation-only and intentionally runs after the
+        // original camera/movement path has completed.
+        if (previousZone.IsValid())
+        {
+            try
+            {
+                CaptureZoneState(previousZone);
+                _zoneEnvironments[previousZone] = CaptureEnvironment();
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogWarning($"[ZoneCam] Could not preserve presentation for '{previousZone.name}'.\n{ex}");
+            }
+        }
+
+        try
+        {
+            ApplyZoneEnvironment(zone);
+            ApplyZonePresentation(zone);
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogError($"[ZoneCam] Presentation setup failed for '{zone.name}', but camera and movement " +
+                           $"remain active.\n{ex}");
+        }
+
         Debug.Log($"[ZoneCam] Active zone '{zone.name}' — using '{chosen.name}', {enabled} enabled, others off.");
+    }
+
+    /// <summary>
+    /// Keeps additively-loaded server zones operational while selecting the local
+    /// player's lights, probes, volumes and audio. Renderers and Terrain are
+    /// deliberately untouched: disabling arbitrary static scene presentation can
+    /// hide a destination before its hierarchy has fully completed additive setup.
+    /// Physics, colliders, NavMesh, scripts and networking are also untouched.
+    /// </summary>
+    void ApplyZonePresentation(Scene zone)
+    {
+        Light chosenSun = null;
+
+        foreach (Light light in Resources.FindObjectsOfTypeAll<Light>())
+        {
+            if (!IsLoadedZoneComponent(light)) continue;
+            Remember(_originalEnabled, light, light.enabled);
+
+            bool active = light.gameObject.scene == zone && _originalEnabled[light];
+            light.enabled = active;
+
+            if (active && chosenSun == null && light.type == LightType.Directional)
+                chosenSun = light;
+        }
+
+        foreach (ReflectionProbe probe in Resources.FindObjectsOfTypeAll<ReflectionProbe>())
+        {
+            if (!IsLoadedZoneComponent(probe)) continue;
+            Remember(_originalEnabled, probe, probe.enabled);
+            probe.enabled = probe.gameObject.scene == zone
+                && _originalEnabled[probe];
+        }
+
+        foreach (Volume volume in Resources.FindObjectsOfTypeAll<Volume>())
+        {
+            if (!IsLoadedZoneComponent(volume)) continue;
+            Remember(_originalEnabled, volume, volume.enabled);
+            volume.enabled = volume.gameObject.scene == zone
+                && _originalEnabled[volume];
+        }
+
+        foreach (AudioSource source in Resources.FindObjectsOfTypeAll<AudioSource>())
+        {
+            if (!IsLoadedZoneComponent(source)) continue;
+            Remember(_originalAudioMute, source, source.mute);
+            source.mute = source.gameObject.scene == zone
+                ? _originalAudioMute[source]
+                : true;
+        }
+
+        // RenderSettings are global across all additively-loaded scenes.
+        RenderSettings.sun = chosenSun;
+    }
+
+    void ApplyZoneEnvironment(Scene zone)
+    {
+        if (!_zoneEnvironments.TryGetValue(zone, out EnvironmentState environment))
+        {
+            if (_pendingEnvironmentCaptures.Add(zone))
+                StartCoroutine(CaptureZoneEnvironmentAfterActivation(zone));
+            return;
+        }
+
+        ApplyEnvironmentValues(environment);
+    }
+
+    IEnumerator CaptureZoneEnvironmentAfterActivation(Scene zone)
+    {
+        // Let the additive load complete all scene activation callbacks first.
+        yield return null;
+
+        if (!zone.IsValid() || !zone.isLoaded)
+        {
+            _pendingEnvironmentCaptures.Remove(zone);
+            yield break;
+        }
+
+        Scene previousActive = SceneManager.GetActiveScene();
+        bool switched = previousActive != zone && SceneManager.SetActiveScene(zone);
+
+        // RenderSettings and URP volumes do not reliably expose a newly active
+        // additive scene's serialized environment until the following frame.
+        yield return null;
+
+        if (!zone.IsValid() || !zone.isLoaded)
+        {
+            _pendingEnvironmentCaptures.Remove(zone);
+            yield break;
+        }
+
+        EnvironmentState environment = CaptureEnvironment();
+        _zoneEnvironments[zone] = environment;
+
+        if (switched && previousActive.IsValid() && previousActive.isLoaded)
+            SceneManager.SetActiveScene(previousActive);
+
+        // Restoring the server container restores its global environment too, so
+        // immediately reapply the destination values for this local presentation.
+        ApplyEnvironmentValues(environment);
+
+        foreach (Light light in Resources.FindObjectsOfTypeAll<Light>())
+        {
+            if (light != null && light.gameObject.scene == zone
+                && light.enabled && light.type == LightType.Directional)
+            {
+                RenderSettings.sun = light;
+                break;
+            }
+        }
+
+        _pendingEnvironmentCaptures.Remove(zone);
+        LoadingScreen.NotifyEnvironmentReady();
+    }
+
+    static void ApplyEnvironmentValues(EnvironmentState environment)
+    {
+        RenderSettings.skybox = environment.skybox;
+        RenderSettings.fog = environment.fog;
+        RenderSettings.fogColor = environment.fogColor;
+        RenderSettings.fogMode = environment.fogMode;
+        RenderSettings.fogDensity = environment.fogDensity;
+        RenderSettings.fogStartDistance = environment.fogStartDistance;
+        RenderSettings.fogEndDistance = environment.fogEndDistance;
+        RenderSettings.ambientMode = environment.ambientMode;
+        RenderSettings.ambientSkyColor = environment.ambientSkyColor;
+        RenderSettings.ambientEquatorColor = environment.ambientEquatorColor;
+        RenderSettings.ambientGroundColor = environment.ambientGroundColor;
+        RenderSettings.ambientLight = environment.ambientLight;
+        RenderSettings.ambientIntensity = environment.ambientIntensity;
+        RenderSettings.subtractiveShadowColor = environment.subtractiveShadowColor;
+        RenderSettings.defaultReflectionMode = environment.defaultReflectionMode;
+        RenderSettings.defaultReflectionResolution = environment.defaultReflectionResolution;
+        if (environment.defaultReflectionMode == DefaultReflectionMode.Custom
+            && environment.customReflection != null)
+            RenderSettings.customReflectionTexture = environment.customReflection;
+        RenderSettings.reflectionIntensity = environment.reflectionIntensity;
+        RenderSettings.reflectionBounces = environment.reflectionBounces;
+        RenderSettings.haloStrength = environment.haloStrength;
+        RenderSettings.flareStrength = environment.flareStrength;
+        RenderSettings.flareFadeSpeed = environment.flareFadeSpeed;
+    }
+
+    static EnvironmentState CaptureEnvironment()
+    {
+        EnvironmentState environment = new EnvironmentState
+        {
+            skybox = RenderSettings.skybox,
+            fog = RenderSettings.fog,
+            fogColor = RenderSettings.fogColor,
+            fogMode = RenderSettings.fogMode,
+            fogDensity = RenderSettings.fogDensity,
+            fogStartDistance = RenderSettings.fogStartDistance,
+            fogEndDistance = RenderSettings.fogEndDistance,
+            ambientMode = RenderSettings.ambientMode,
+            ambientSkyColor = RenderSettings.ambientSkyColor,
+            ambientEquatorColor = RenderSettings.ambientEquatorColor,
+            ambientGroundColor = RenderSettings.ambientGroundColor,
+            ambientLight = RenderSettings.ambientLight,
+            ambientIntensity = RenderSettings.ambientIntensity,
+            subtractiveShadowColor = RenderSettings.subtractiveShadowColor,
+            defaultReflectionMode = RenderSettings.defaultReflectionMode,
+            defaultReflectionResolution = RenderSettings.defaultReflectionResolution,
+            reflectionIntensity = RenderSettings.reflectionIntensity,
+            reflectionBounces = RenderSettings.reflectionBounces,
+            haloStrength = RenderSettings.haloStrength,
+            flareStrength = RenderSettings.flareStrength,
+            flareFadeSpeed = RenderSettings.flareFadeSpeed
+        };
+
+        if (environment.defaultReflectionMode == DefaultReflectionMode.Custom)
+            environment.customReflection = RenderSettings.customReflectionTexture;
+
+        return environment;
+    }
+
+    void CaptureZoneState(Scene zone)
+    {
+        foreach (Light light in Resources.FindObjectsOfTypeAll<Light>())
+            if (light != null && light.gameObject.scene == zone)
+                _originalEnabled[light] = light.enabled;
+
+        foreach (ReflectionProbe probe in Resources.FindObjectsOfTypeAll<ReflectionProbe>())
+            if (probe != null && probe.gameObject.scene == zone)
+                _originalEnabled[probe] = probe.enabled;
+
+        foreach (Volume volume in Resources.FindObjectsOfTypeAll<Volume>())
+            if (volume != null && volume.gameObject.scene == zone)
+                _originalEnabled[volume] = volume.enabled;
+
+        foreach (AudioSource source in Resources.FindObjectsOfTypeAll<AudioSource>())
+            if (source != null && source.gameObject.scene == zone)
+                _originalAudioMute[source] = source.mute;
+    }
+
+    static void Remember<T>(Dictionary<T, bool> states, T component, bool value)
+    {
+        if (!states.ContainsKey(component))
+            states.Add(component, value);
+    }
+
+    static bool IsLoadedZoneComponent(Component component)
+    {
+        return component != null && IsZoneScene(component.gameObject.scene);
+    }
+
+    static List<T> FindSceneComponents<T>(Scene scene) where T : Component
+    {
+        var found = new List<T>();
+        if (!scene.IsValid() || !scene.isLoaded) return found;
+
+        foreach (GameObject root in scene.GetRootGameObjects())
+            root.GetComponentsInChildren(true, found);
+
+        return found;
     }
 
     /// <summary>
@@ -137,10 +468,19 @@ public class ZoneCameraDirector : MonoBehaviour
 
         follow.cameraCollision = true;
         follow.collisionMask = ~0;
-        follow.target = _localPlayer;   // setter snaps to target
+        // Reassigning the same target calls SnapToTarget and resets the player's
+        // orbit behind the character. Only snap when actually changing cameras.
+        if (follow.target != _localPlayer)
+            follow.target = _localPlayer;
 
         var movement = _localPlayer.GetComponent<PlayerMovement>();
         if (movement != null) movement.cam = cam;
+
+        // Ability targeting also caches a camera for ScreenPointToRay. Keep it on
+        // the exact same authoritative zone camera as movement so additive loading
+        // can never briefly mirror or reverse mouse targeting.
+        var abilityCaster = _localPlayer.GetComponent<AbilityCaster>();
+        if (abilityCaster != null) abilityCaster.cam = cam;
     }
 
     /// <summary>
