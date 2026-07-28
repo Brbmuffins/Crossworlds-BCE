@@ -922,6 +922,11 @@ public class EnemyController : NetworkBehaviour
 
         FaceAttackTarget();
 
+        // Heavy spells own their cast animation through the configured impact
+        // frame. Do not let the normal ranged loop restart that animation.
+        if (isRanged && _heavyAttack != null && _heavyAttack.IsAbilityInProgress)
+            return;
+
         // Tick attack cooldown (0.2s = one BehaviorLoop tick)
         _attackTimer -= 0.2f;
         if (_attackTimer > 0f) return;
@@ -1495,7 +1500,13 @@ public class EnemyController : NetworkBehaviour
     [Server]
     public float PlayCastAnimation()
     {
-        int attackVariant = SelectAttackAnimationVariant();
+        return PlayCastAnimation(out _);
+    }
+
+    [Server]
+    public float PlayCastAnimation(out int attackVariant)
+    {
+        attackVariant = SelectAttackAnimationVariant();
         _activeAttackVariant = attackVariant;
         RpcCastAnimation(attackVariant);
         return GetAttackImpactDelay(attackVariant);

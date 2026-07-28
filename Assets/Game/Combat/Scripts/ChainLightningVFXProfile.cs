@@ -35,9 +35,14 @@ public sealed class ChainLightningVFXProfile : ScriptableObject
 
     public void Present(GameObject caster, Vector3[] hitPositions)
     {
+        Present(caster, hitPositions, -1);
+    }
+
+    public void Present(GameObject caster, Vector3[] hitPositions, int attackVariant)
+    {
         if (caster == null || hitPositions == null || hitPositions.Length == 0) return;
 
-        Vector3 from = ResolveCastOrigin(caster);
+        Vector3 from = ResolveCastOrigin(caster, attackVariant);
         for (int i = 0; i < hitPositions.Length; i++)
         {
             Vector3 to = hitPositions[i];
@@ -47,11 +52,13 @@ public sealed class ChainLightningVFXProfile : ScriptableObject
         }
     }
 
-    Vector3 ResolveCastOrigin(GameObject caster)
+    Vector3 ResolveCastOrigin(GameObject caster, int attackVariant)
     {
         EnemyController enemy = caster.GetComponent<EnemyController>();
         if (enemy != null)
-            return enemy.ResolveCurrentAttackVfxOrigin();
+            return attackVariant >= 0
+                ? enemy.ResolveAttackVfxOrigin(attackVariant)
+                : enemy.ResolveCurrentAttackVfxOrigin();
 
         Animator animator = caster.GetComponentInChildren<Animator>();
         if (animator != null && animator.isHuman)

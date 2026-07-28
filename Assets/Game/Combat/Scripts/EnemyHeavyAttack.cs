@@ -80,6 +80,7 @@ public class EnemyHeavyAttack : NetworkBehaviour
     bool            _abilityInProgress;
 
     public bool IsOpeningCastInProgress => _openingCastRoutine != null;
+    public bool IsAbilityInProgress => _abilityInProgress;
 
     public bool ShouldHoldCastingPosition(Transform target)
     {
@@ -246,7 +247,7 @@ public class EnemyHeavyAttack : NetworkBehaviour
         }
         // Trigger the prefab-selected cast/attack clip on every client before
         // the telegraph and resolve damage at its configured impact point.
-        float selectedImpactDelay = _enemy.PlayCastAnimation();
+        float selectedImpactDelay = _enemy.PlayCastAnimation(out int attackVariant);
         RpcTelegraph(type, transform.position);
         float windup = Mathf.Max(0.05f, selectedImpactDelay);
         float remainingWindup = windup;
@@ -301,7 +302,7 @@ public class EnemyHeavyAttack : NetworkBehaviour
                     statusType: StatusEffectType.Weakened, statusDur: 4f, statusVal: 0f,
                     preferredFirstTarget: requiredTarget);
                 if (chainHits.Length > 0)
-                    RpcPresentChainLightning(chainHits);
+                    RpcPresentChainLightning(chainHits, attackVariant);
                 break;
 
             case HeavyAbilityType.GroundSpikes:
@@ -567,12 +568,12 @@ public class EnemyHeavyAttack : NetworkBehaviour
     }
 
     [ClientRpc]
-    void RpcPresentChainLightning(Vector3[] hitPositions)
+    void RpcPresentChainLightning(Vector3[] hitPositions, int attackVariant)
     {
 #if UNITY_EDITOR || !UNITY_SERVER
         ChainLightningVFXProfile profile = ChainLightningVFXProfile.LoadArcane();
         if (profile != null)
-            profile.Present(gameObject, hitPositions);
+            profile.Present(gameObject, hitPositions, attackVariant);
 #endif
     }
 }
