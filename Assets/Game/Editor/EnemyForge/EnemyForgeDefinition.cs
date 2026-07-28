@@ -69,6 +69,20 @@ namespace Crossworlds.EditorTools.EnemyForge
         [HideInInspector]
         public bool generateAnimatorController = true;
 
+        [Header("SFX")]
+        public AudioClip aggroSfx;
+        public AudioClip attack1Sfx;
+        public AudioClip attack2Sfx;
+        public AudioClip attack3Sfx;
+        public AudioClip attack4Sfx;
+        public AudioClip attackImpactSfx;
+        public AudioClip getHitSfx;
+        public AudioClip deathSfx;
+        [Range(0f, 1f)] public float sfxVolume = 0.8f;
+        [Range(0f, 0.35f)] public float sfxPitchVariation = 0.05f;
+        [Min(0f)] public float sfxMinDistance = 2f;
+        [Min(0.1f)] public float sfxMaxDistance = 25f;
+
         [Header("Vitals")]
         [Min(1f)] public float maxHealth = 60f;
         public bool robotic;
@@ -180,6 +194,7 @@ namespace Crossworlds.EditorTools.EnemyForge
             var agent = selected.GetComponent<NavMeshAgent>();
             var controller = selected.GetComponent<EnemyController>();
             var heavy = selected.GetComponent<EnemyHeavyAttack>();
+            var sfx = selected.GetComponent<EnemySfxProfile>();
 
             if (controller != null && controller.isRanged)
                 archetype = EnemyForgeArchetype.Ranged;
@@ -284,6 +299,22 @@ namespace Crossworlds.EditorTools.EnemyForge
                 castAttack = heavy.availableTypes != null && heavy.availableTypes.Length > 0
                     ? (EnemyForgeCastAttack)((int)heavy.availableTypes[0] + 1)
                     : EnemyForgeCastAttack.RandomAll;
+                importedComponents++;
+            }
+            if (sfx != null)
+            {
+                aggroSfx = sfx.aggro;
+                attack1Sfx = sfx.attack1;
+                attack2Sfx = sfx.attack2;
+                attack3Sfx = sfx.attack3;
+                attack4Sfx = sfx.attack4;
+                attackImpactSfx = sfx.attackImpact;
+                getHitSfx = sfx.getHit;
+                deathSfx = sfx.death;
+                sfxVolume = sfx.volume;
+                sfxPitchVariation = sfx.pitchVariation;
+                sfxMinDistance = sfx.minDistance;
+                sfxMaxDistance = sfx.maxDistance;
                 importedComponents++;
             }
 

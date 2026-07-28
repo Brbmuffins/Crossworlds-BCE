@@ -25,6 +25,7 @@ namespace Crossworlds.EditorTools.EnemyForge
         bool showRewards;
         bool showLifecycle;
         bool showAnimations;
+        bool showSfx;
         PreviewRenderUtility animationPreview;
         GameObject animationPreviewInstance;
         GameObject animationPreviewSource;
@@ -106,6 +107,10 @@ namespace Crossworlds.EditorTools.EnemyForge
             DrawPropertySection(serialized, "Rewards", ref showRewards, "dropTable", "worldItemPrefab");
             DrawPropertySection(serialized, "Lifecycle", ref showLifecycle,
                 "deadModelVisibleSeconds", "respawnAfterDeath", "respawnDelay", "corpseGroundOffset");
+            DrawPropertySection(serialized, "SFX", ref showSfx,
+                "aggroSfx", "attack1Sfx", "attack2Sfx", "attack3Sfx", "attack4Sfx",
+                "attackImpactSfx", "getHitSfx", "deathSfx", "sfxVolume",
+                "sfxPitchVariation", "sfxMinDistance", "sfxMaxDistance");
             serialized.ApplyModifiedProperties();
         }
 

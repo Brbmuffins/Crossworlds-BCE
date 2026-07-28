@@ -106,6 +106,7 @@ public class EnemyController : NetworkBehaviour
     private NetworkTransformBase _networkTransform;
     private StatusEffectManager  _status;   // may be null on basic enemies
     private EnemyHeavyAttack     _heavyAttack;
+    private EnemySfxProfile      _sfx;
     private EnemyPatrolAgent     _patrolAgent;
     private float                _baseSpeed;
     private float                _configuredStoppingDistance;
@@ -160,6 +161,7 @@ public class EnemyController : NetworkBehaviour
         _networkTransform = GetComponent<NetworkTransformBase>();
         _status    = GetComponent<StatusEffectManager>();
         _heavyAttack = GetComponent<EnemyHeavyAttack>();
+        _sfx = GetComponent<EnemySfxProfile>();
         _patrolAgent = GetComponent<EnemyPatrolAgent>();
         _baseSpeed = _agent != null ? _agent.speed : 0f;
         _configuredStoppingDistance = _agent != null ? Mathf.Max(0f, _agent.stoppingDistance) : 0f;
@@ -492,13 +494,20 @@ public class EnemyController : NetworkBehaviour
     {
 #if UNITY_EDITOR || !UNITY_SERVER
         TriggerAnimator(GetHitHash, _hasGetHitParam);
+        _sfx?.PlayGetHit();
 #endif
     }
 
     void PlayGetHitAnimation()
     {
         if (NetworkServer.active) RpcPlayGetHitAnimation();
-        else TriggerAnimator(GetHitHash, _hasGetHitParam);
+        else
+        {
+            TriggerAnimator(GetHitHash, _hasGetHitParam);
+#if UNITY_EDITOR || !UNITY_SERVER
+            _sfx?.PlayGetHit();
+#endif
+        }
     }
 
     public void SetAggroTarget(Transform target)
@@ -523,7 +532,10 @@ public class EnemyController : NetworkBehaviour
             FaceTargetImmediately();
         _attackTimer = _target != null ? EnemyCrowdUtility.FirstAttackDelay(this, attackInterval) : 0f;
         if (enteringAggro)
+        {
             _heavyAttack?.OnAggroAcquired(_target);
+            PlayAggroSfx();
+        }
     }
 
     // ─────────────────────────────────────────────────────────────────────────────
@@ -954,6 +966,7 @@ public class EnemyController : NetworkBehaviour
         if (Vector3.Distance(transform.position, intendedTarget.transform.position) > allowedRange)
             yield break;
 
+        PlayImpactSfx();
         if (!isRanged || projectilePrefab == null)
         {
             intendedTarget.TakeDamage(damage, gameObject);
@@ -1339,6 +1352,38 @@ public class EnemyController : NetworkBehaviour
     // RPCs (Week 7: wire anim + SFX)
     // ─────────────────────────────────────────────────────────────────────────────
 
+    void PlayAggroSfx()
+    {
+        if (NetworkServer.active) RpcPlayAggroSfx();
+#if UNITY_EDITOR || !UNITY_SERVER
+        else _sfx?.PlayAggro();
+#endif
+    }
+
+    [ClientRpc]
+    void RpcPlayAggroSfx()
+    {
+#if UNITY_EDITOR || !UNITY_SERVER
+        _sfx?.PlayAggro();
+#endif
+    }
+
+    void PlayImpactSfx()
+    {
+        if (NetworkServer.active) RpcPlayImpactSfx();
+#if UNITY_EDITOR || !UNITY_SERVER
+        else _sfx?.PlayImpact();
+#endif
+    }
+
+    [ClientRpc]
+    void RpcPlayImpactSfx()
+    {
+#if UNITY_EDITOR || !UNITY_SERVER
+        _sfx?.PlayImpact();
+#endif
+    }
+
     [ClientRpc]
     void RpcMeleeSwing(uint targetNetId, int attackVariant)
     {
@@ -1348,7 +1393,8 @@ public class EnemyController : NetworkBehaviour
         bool eliteImpact = IsEliteEnemy();
 
         // Sound plays for everyone (positional audio sells the hit universally)
-        CombatAudio.Instance?.PlayMeleeHit();
+        if (_sfx == null || !_sfx.PlayAttack(attackVariant))
+            CombatAudio.Instance?.PlayMeleeHit();
 
         // Hitstop and shake only on the client whose local player was hit.
         // Otherwise all 4 clients freeze every time any enemy swings at anyone.
@@ -1369,7 +1415,8 @@ public class EnemyController : NetworkBehaviour
         {
             PlayAttackAnimation(attackVariant);
 #if UNITY_EDITOR || !UNITY_SERVER
-            CombatAudio.Instance?.PlayMeleeHit();
+            if (_sfx == null || !_sfx.PlayAttack(attackVariant))
+                CombatAudio.Instance?.PlayMeleeHit();
 #endif
         }
     }
@@ -1380,7 +1427,8 @@ public class EnemyController : NetworkBehaviour
 #if UNITY_EDITOR || !UNITY_SERVER
         PlayAttackAnimation(attackVariant);
 
-        CombatAudio.Instance?.PlayRangedHit();
+        if (_sfx == null || !_sfx.PlayAttack(attackVariant))
+            CombatAudio.Instance?.PlayRangedHit();
         // Ranged: no hitstop; light shake only on the targeted player's client
         bool isLocalTarget = NetworkClient.localPlayer != null
                           && NetworkClient.localPlayer.GetComponent<NetworkIdentity>()?.netId == targetNetId;
@@ -1395,7 +1443,8 @@ public class EnemyController : NetworkBehaviour
         {
             PlayAttackAnimation(attackVariant);
 #if UNITY_EDITOR || !UNITY_SERVER
-            CombatAudio.Instance?.PlayRangedHit();
+            if (_sfx == null || !_sfx.PlayAttack(attackVariant))
+                CombatAudio.Instance?.PlayRangedHit();
 #endif
         }
     }
@@ -1457,7 +1506,8 @@ public class EnemyController : NetworkBehaviour
     {
 #if UNITY_EDITOR || !UNITY_SERVER
         PlayAttackAnimation(attackVariant);
-        CombatAudio.Instance?.PlayAbilityCast();
+        if (_sfx == null || !_sfx.PlayAttack(attackVariant))
+            CombatAudio.Instance?.PlayAbilityCast();
 #endif
     }
 
@@ -1479,7 +1529,8 @@ public class EnemyController : NetworkBehaviour
         TriggerAnimator(DeathHash, _hasDeathParam);
 
         // Layer 3 — Death sound
-        CombatAudio.Instance?.PlayDeath();
+        if (_sfx == null || !_sfx.PlayDeath())
+            CombatAudio.Instance?.PlayDeath();
 
         // Layer 4 — Spawn death VFX at position (EnemyDeathVFX handles the actual prefab)
         FloatingDamageText.Spawn(transform.position + Vector3.up * 1.5f, 0,
@@ -1501,7 +1552,8 @@ public class EnemyController : NetworkBehaviour
         {
             TriggerAnimator(DeathHash, _hasDeathParam);
 #if UNITY_EDITOR || !UNITY_SERVER
-            CombatAudio.Instance?.PlayDeath();
+            if (_sfx == null || !_sfx.PlayDeath())
+                CombatAudio.Instance?.PlayDeath();
 #endif
         }
     }

@@ -108,6 +108,19 @@ namespace Crossworlds.EditorTools.EnemyForge
             EnsureCollider(root, d);
 
             var controller = GetOrAdd<EnemyController>(root);
+            var sfx = GetOrAdd<EnemySfxProfile>(root);
+            sfx.aggro = d.aggroSfx;
+            sfx.attack1 = d.attack1Sfx;
+            sfx.attack2 = d.attack2Sfx;
+            sfx.attack3 = d.attack3Sfx;
+            sfx.attack4 = d.attack4Sfx;
+            sfx.attackImpact = d.attackImpactSfx;
+            sfx.getHit = d.getHitSfx;
+            sfx.death = d.deathSfx;
+            sfx.volume = d.sfxVolume;
+            sfx.pitchVariation = d.sfxPitchVariation;
+            sfx.minDistance = d.sfxMinDistance;
+            sfx.maxDistance = Mathf.Max(d.sfxMinDistance + 0.1f, d.sfxMaxDistance);
             controller.allowOfflineSimulation = false;
             controller.enemyForgeRuntimeProfileVersion = EnemyController.EnemyForgeRuntimeProfileVersion;
             controller.enemyTemplateId = d.templateId.Trim();
