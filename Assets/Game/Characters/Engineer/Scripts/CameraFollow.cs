@@ -206,8 +206,8 @@ public class CameraFollow : MonoBehaviour
         Vector3 dir       = toCamera / desiredDist;
         float   clearDist = desiredDist;
 
-        RaycastHit[] hits = Physics.SphereCastAll(
-            lookAt, collisionRadius, dir, desiredDist,
+        RaycastHit[] hits = ZonePhysics.SphereCastAll(
+            gameObject, lookAt, collisionRadius, dir, desiredDist,
             collisionMask, QueryTriggerInteraction.Ignore);
 
         if (hits != null && hits.Length > 0)

@@ -2797,7 +2797,7 @@ MonoBehaviour:
   minPitch: -20
   maxPitch: 70
   heightOffset: 1.6
-  cameraCollision: 0
+  cameraCollision: 1
   collisionMask:
     serializedVersion: 2
     m_Bits: 4294967295

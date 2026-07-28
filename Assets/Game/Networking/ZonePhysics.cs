@@ -117,6 +117,31 @@ public static class ZonePhysics
             origin, direction, out hit, maxDistance, layerMask, queryTriggerInteraction);
     }
 
+    public static RaycastHit[] SphereCastAll(
+        GameObject context,
+        Vector3 origin,
+        float radius,
+        Vector3 direction,
+        float maxDistance,
+        int layerMask = Physics.AllLayers,
+        QueryTriggerInteraction queryTriggerInteraction = QueryTriggerInteraction.UseGlobal)
+    {
+        PhysicsScene physicsScene = Resolve(context);
+        int capacity = InitialCapacity;
+
+        while (true)
+        {
+            var results = new RaycastHit[capacity];
+            int count = physicsScene.SphereCast(
+                origin, radius, direction, results, maxDistance,
+                layerMask, queryTriggerInteraction);
+            if (count < capacity || capacity >= MaximumCapacity)
+                return Trim(results, count);
+
+            capacity = Mathf.Min(capacity * 2, MaximumCapacity);
+        }
+    }
+
     static PhysicsScene Resolve(GameObject context)
     {
         if (context != null)
