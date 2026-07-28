@@ -20,9 +20,13 @@ public static class BrontosaurusSetupBuilder
     [InitializeOnLoadMethod]
     static void BuildOnceAfterImport()
     {
+        if (AssetDatabase.LoadAssetAtPath<GameObject>(ModelPath) == null)
+            return;
+
         var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);
         if (prefab != null &&
-            prefab.GetComponent<BrontosaurusAnimationDriver>() != null)
+            prefab.GetComponent<BrontosaurusAnimationDriver>() != null &&
+            AssetDatabase.GetDependencies(PrefabPath, false).Contains(ModelPath))
             return;
 
         EditorApplication.delayCall += Build;
