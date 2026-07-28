@@ -29,7 +29,7 @@ public sealed class EnemyPatrolRoute : MonoBehaviour
     int _formationWaypointIndex;
     int _formationDirection = 1;
     float _formationWaitUntil;
-    readonly HashSet<int> _formationArrivals = new();
+    readonly HashSet<EnemyPatrolAgent> _formationArrivals = new();
 
     public int Count => waypoints?.Count ?? 0;
 
@@ -114,7 +114,7 @@ public sealed class EnemyPatrolRoute : MonoBehaviour
     {
         GetFormationProgress(member.startingWaypoint,
             out waypointIndex, out direction, out waitUntil);
-        _formationArrivals.Add(member.GetInstanceID());
+        _formationArrivals.Add(member);
 
         int required = 0;
         foreach (GameObject patrolObject in patrolObjects)
@@ -365,10 +365,10 @@ public sealed class EnemyPatrolAgent : MonoBehaviour
         _hasDestination = false;
         if (UsesGroupFormation)
         {
-            bool routeFinished = route.Count <= 1 ||
+            bool groupRouteFinished = route.Count <= 1 ||
                 (route.mode == EnemyPatrolMode.OneWay &&
                  _waypointIndex >= route.Count - 1);
-            if (routeFinished)
+            if (groupRouteFinished)
             {
                 if (agent.hasPath) agent.ResetPath();
                 return true;
