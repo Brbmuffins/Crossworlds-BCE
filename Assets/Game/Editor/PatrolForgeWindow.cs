@@ -35,7 +35,11 @@ public sealed class PatrolForgeWindow : EditorWindow
         if (nextRoute != _route)
         {
             _route = nextRoute;
-            if (_route != null) _routeName = _route.name;
+            if (_route != null)
+            {
+                _routeName = _route.name;
+                LoadRegisteredPatrolObjects();
+            }
             SceneView.RepaintAll();
         }
 
@@ -103,10 +107,28 @@ public sealed class PatrolForgeWindow : EditorWindow
         }
         EditorGUILayout.EndScrollView();
 
-        _staggerStartingWaypoints = EditorGUILayout.Toggle(
-            new GUIContent("Stagger Starting Points",
-                "Distributes multiple models across the route instead of sending all of them to waypoint 1."),
-            _staggerStartingWaypoints);
+        bool groupFormation = _route != null && _route.groupFormationPatrol;
+        using (new EditorGUI.DisabledScope(_route == null))
+        {
+            bool nextGroupFormation = EditorGUILayout.Toggle(
+                new GUIContent("Group Formation Patrol",
+                    "Saves formation behavior on this route and keeps all assigned models together."),
+                groupFormation);
+            if (_route != null && nextGroupFormation != groupFormation)
+            {
+                Undo.RecordObject(_route, "Change Group Formation Patrol");
+                _route.groupFormationPatrol = nextGroupFormation;
+                EditorUtility.SetDirty(_route);
+                groupFormation = nextGroupFormation;
+            }
+        }
+        using (new EditorGUI.DisabledScope(groupFormation))
+        {
+            _staggerStartingWaypoints = EditorGUILayout.Toggle(
+                new GUIContent("Stagger Starting Points",
+                    "Distributes models along different waypoints. Disabled while formation is preserved."),
+                _staggerStartingWaypoints);
+        }
 
         using (new EditorGUI.DisabledScope(_route == null || _route.Count == 0 || _agents.Count == 0))
         {
@@ -130,7 +152,7 @@ public sealed class PatrolForgeWindow : EditorWindow
             if (selected == null || EditorUtility.IsPersistent(selected)) continue;
             EnemyController enemy = selected.GetComponentInParent<EnemyController>();
             GameObject target = enemy != null ? enemy.gameObject : selected;
-            if (!_agents.Contains(target)) _agents.Add(target);
+            AddPatrolTarget(target);
         }
         Selection.activeGameObject = go;
         EditorSceneManager.MarkSceneDirty(go.scene);
@@ -145,17 +167,50 @@ public sealed class PatrolForgeWindow : EditorWindow
             if (selected == null || EditorUtility.IsPersistent(selected)) continue;
             EnemyController enemy = selected.GetComponentInParent<EnemyController>();
             GameObject target = enemy != null ? enemy.gameObject : selected;
-            if (!_agents.Contains(target)) _agents.Add(target);
+            AddPatrolTarget(target);
         }
+    }
+
+    void LoadRegisteredPatrolObjects()
+    {
+        _agents.Clear();
+        if (_route == null) return;
+        foreach (GameObject target in _route.patrolObjects)
+            AddPatrolTarget(target);
+    }
+
+    void AddPatrolTarget(GameObject target)
+    {
+        if (target == null || EditorUtility.IsPersistent(target)) return;
+        if (_route != null &&
+            (target == _route.gameObject ||
+             target.transform.IsChildOf(_route.transform) ||
+             target.scene != _route.gameObject.scene))
+            return;
+        if (target.GetComponent<EnemyPatrolRoute>() != null) return;
+        if (!_agents.Contains(target)) _agents.Add(target);
     }
 
     void ApplyRoute()
     {
         int configured = 0;
+        Vector3 groupCenter = Vector3.zero;
+        int validCount = 0;
+        foreach (GameObject candidate in _agents)
+        {
+            if (!IsValidPatrolTarget(candidate)) continue;
+            groupCenter += candidate.transform.position;
+            validCount++;
+        }
+        if (validCount > 0) groupCenter /= validCount;
+        int formationStart = FindNextWaypoint(groupCenter);
+        Vector3 formationForward = _route.GetWaypointForward(formationStart);
+        Vector3 formationRight = Vector3.Cross(Vector3.up, formationForward).normalized;
+
         for (int i = 0; i < _agents.Count; i++)
         {
             GameObject target = _agents[i];
-            if (target == null || EditorUtility.IsPersistent(target)) continue;
+            if (!IsValidPatrolTarget(target)) continue;
 
             NavMeshAgent navAgent = target.GetComponent<NavMeshAgent>() ??
                                     Undo.AddComponent<NavMeshAgent>(target);
@@ -163,9 +218,22 @@ public sealed class PatrolForgeWindow : EditorWindow
                                       Undo.AddComponent<EnemyPatrolAgent>(target);
             Undo.RecordObject(patrol, "Assign Patrol Route");
             patrol.route = _route;
-            patrol.startingWaypoint = _staggerStartingWaypoints
-                ? FindNextWaypoint(target.transform.position)
-                : 0;
+            patrol.preserveFormation = _route.groupFormationPatrol;
+            if (_route.groupFormationPatrol)
+            {
+                Vector3 spacing = target.transform.position - groupCenter;
+                patrol.formationOffset = new Vector2(
+                    Vector3.Dot(spacing, formationRight),
+                    Vector3.Dot(spacing, formationForward));
+                patrol.startingWaypoint = formationStart;
+            }
+            else
+            {
+                patrol.formationOffset = Vector2.zero;
+                patrol.startingWaypoint = _staggerStartingWaypoints
+                    ? FindNextWaypoint(target.transform.position)
+                    : 0;
+            }
             EditorUtility.SetDirty(patrol);
             EditorUtility.SetDirty(navAgent);
 
@@ -186,6 +254,16 @@ public sealed class PatrolForgeWindow : EditorWindow
         }
         EditorUtility.DisplayDialog("Patrol Forge",
             $"Applied '{_route.name}' to {configured} scene object(s).", "OK");
+    }
+
+    bool IsValidPatrolTarget(GameObject target)
+    {
+        return target != null &&
+               !EditorUtility.IsPersistent(target) &&
+               target != _route.gameObject &&
+               !target.transform.IsChildOf(_route.transform) &&
+               target.scene == _route.gameObject.scene &&
+               target.GetComponent<EnemyPatrolRoute>() == null;
     }
 
     int FindNextWaypoint(Vector3 position)

@@ -64,6 +64,9 @@ public class EnemyController : NetworkBehaviour
     public float[] attackAnimationSpeeds = { 1f, 1f, 1f, 1f };
     [Range(0.25f, 3f)] public float getHitAnimationSpeed = 1f;
     [Range(0.25f, 3f)] public float deathAnimationSpeed = 1f;
+    [Tooltip("Local offsets from the right hand (or body fallback) for Attack 1-4 VFX origins.")]
+    public Vector3[] attackVfxOffsets =
+        { Vector3.zero, Vector3.zero, Vector3.zero, Vector3.zero };
 
     // ── Ranged ───────────────────────────────────────────────────────────────────
     [Header("Ranged")]
@@ -117,6 +120,7 @@ public class EnemyController : NetworkBehaviour
     private Vector3              _combatLeashOrigin;
     private Quaternion           _spawnRot;
     private float                _attackTimer;
+    private int                  _activeAttackVariant;
     private Animator             _animator;
     private bool                 _hasSpeedParam;
     private bool                 _hasAttackParam;
@@ -777,7 +781,7 @@ public class EnemyController : NetworkBehaviour
         if (_target == null || !(_target.GetComponent<Health>()?.IsAlive ?? false))
         {
             ResetToIdle();
-            ReturnToSpawnPoint();
+            ResumePatrolOrReturnHome();
             return;
         }
 
@@ -785,7 +789,7 @@ public class EnemyController : NetworkBehaviour
         if (IsOutsideCombatLeash(transform.position) || !IsTargetWithinLeash(_target))
         {
             ResetToIdle();
-            ReturnToSpawnPoint();
+            ResumePatrolOrReturnHome();
             return;
         }
 
@@ -945,6 +949,7 @@ public class EnemyController : NetworkBehaviour
         uint hitNetId = targetNetId != null ? targetNetId.netId : 0u;
 
         int attackVariant = SelectAttackAnimationVariant();
+        _activeAttackVariant = attackVariant;
         if (isRanged) PlayRangedShot(hitNetId, attackVariant);
         else PlayMeleeSwing(hitNetId, attackVariant);
 
@@ -973,7 +978,7 @@ public class EnemyController : NetworkBehaviour
             yield break;
         }
 
-        Vector3 spawnPos = transform.position + Vector3.up * 1.2f;
+        Vector3 spawnPos = ResolveAttackVfxOrigin(_activeAttackVariant);
         Quaternion spawnRot = Quaternion.LookRotation(
             (intendedTarget.transform.position + Vector3.up * 0.5f) - spawnPos);
         var proj = Instantiate(projectilePrefab, spawnPos, spawnRot);
@@ -1467,7 +1472,7 @@ public class EnemyController : NetworkBehaviour
     {
         if (_patrolAgent != null && _patrolAgent.HasUsableRoute)
         {
-            _patrolAgent.SuspendForCombat();
+            _patrolAgent.ResumeFromNearestWaypoint();
             return;
         }
         ReturnToSpawnPoint();
@@ -1491,8 +1496,53 @@ public class EnemyController : NetworkBehaviour
     public float PlayCastAnimation()
     {
         int attackVariant = SelectAttackAnimationVariant();
+        _activeAttackVariant = attackVariant;
         RpcCastAnimation(attackVariant);
         return GetAttackImpactDelay(attackVariant);
+    }
+
+    public Vector3 ResolveCurrentAttackVfxOrigin() =>
+        ResolveAttackVfxOrigin(_activeAttackVariant);
+
+    public Vector3 ResolveAttackVfxOrigin(int attackVariant)
+    {
+        Vector3 offset = attackVfxOffsets != null &&
+            attackVariant >= 0 && attackVariant < attackVfxOffsets.Length
+            ? attackVfxOffsets[attackVariant]
+            : Vector3.zero;
+        return ResolveAttackVfxOrigin(
+            transform, _animator, GetComponentsInChildren<Renderer>(true), offset);
+    }
+
+    public static Vector3 ResolveAttackVfxOrigin(
+        Transform root, Animator animator, Renderer[] renderers, Vector3 offset)
+    {
+        if (root == null) return offset;
+        if (animator != null && animator.isHuman)
+        {
+            Transform hand = animator.GetBoneTransform(HumanBodyBones.RightHand);
+            if (hand != null)
+                return hand.position + root.TransformDirection(offset);
+        }
+
+        // Generic rigs have no HumanBodyBones mapping. Derive a stable chest/cast
+        // position from visible bounds so different source-root scales match runtime.
+        if (renderers != null && renderers.Length > 0)
+        {
+            Bounds bounds = renderers[0].bounds;
+            for (int i = 1; i < renderers.Length; i++)
+                if (renderers[i] != null && renderers[i].enabled)
+                    bounds.Encapsulate(renderers[i].bounds);
+            Vector3 chest = new Vector3(
+                bounds.center.x,
+                Mathf.Lerp(bounds.min.y, bounds.max.y, 0.62f),
+                bounds.center.z);
+            chest += root.forward * Mathf.Max(0.05f, bounds.extents.z * 0.25f);
+            return chest + root.TransformDirection(offset);
+        }
+
+        return root.position + root.up * 1.2f + root.forward * 0.35f +
+            root.TransformDirection(offset);
     }
 
     [Server]

@@ -49,6 +49,10 @@ public sealed class ChainLightningVFXProfile : ScriptableObject
 
     Vector3 ResolveCastOrigin(GameObject caster)
     {
+        EnemyController enemy = caster.GetComponent<EnemyController>();
+        if (enemy != null)
+            return enemy.ResolveCurrentAttackVfxOrigin();
+
         Animator animator = caster.GetComponentInChildren<Animator>();
         if (animator != null && animator.isHuman)
         {

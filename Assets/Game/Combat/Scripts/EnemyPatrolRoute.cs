@@ -14,6 +14,8 @@ public enum EnemyPatrolMode
 public sealed class EnemyPatrolRoute : MonoBehaviour
 {
     public EnemyPatrolMode mode = EnemyPatrolMode.Loop;
+    [Tooltip("Keeps assigned mobs in their authored formation and makes the group share patrol and combat-return waypoints.")]
+    public bool groupFormationPatrol = true;
     [Min(0f)] public float waypointWaitSeconds = 1f;
     [Min(0.05f)] public float arrivalDistance = 0.35f;
     public List<Transform> waypoints = new();
@@ -21,6 +23,13 @@ public sealed class EnemyPatrolRoute : MonoBehaviour
     public List<GameObject> patrolObjects = new();
 
     bool _serverAgentsEnsured;
+    int _sharedResumeWaypoint = -1;
+    float _sharedResumeExpires;
+    bool _formationProgressInitialized;
+    int _formationWaypointIndex;
+    int _formationDirection = 1;
+    float _formationWaitUntil;
+    readonly HashSet<int> _formationArrivals = new();
 
     public int Count => waypoints?.Count ?? 0;
 
@@ -31,6 +40,121 @@ public sealed class EnemyPatrolRoute : MonoBehaviour
             waypoints[index] == null) return false;
         position = waypoints[index].position;
         return true;
+    }
+
+    public Vector3 GetWaypointForward(int index, int direction = 1)
+    {
+        if (Count <= 1) return transform.forward;
+        index = Mathf.Clamp(index, 0, Count - 1);
+        int next;
+        if (mode == EnemyPatrolMode.PingPong && direction < 0)
+            next = Mathf.Max(0, index - 1);
+        else if (mode == EnemyPatrolMode.OneWay)
+            next = index < Count - 1 ? index + 1 : index - 1;
+        else
+            next = (index + 1) % Count;
+
+        if (waypoints[index] == null || waypoints[next] == null)
+            return transform.forward;
+        Vector3 forward = waypoints[next].position - waypoints[index].position;
+        forward.y = 0f;
+        return forward.sqrMagnitude > 0.0001f
+            ? forward.normalized
+            : transform.forward;
+    }
+
+    public int GetSharedResumeWaypoint(Vector3 fallbackPosition)
+    {
+        if (Count <= 1) return 0;
+        if (_sharedResumeWaypoint >= 0 && Time.time <= _sharedResumeExpires)
+            return _sharedResumeWaypoint;
+
+        Vector3 center = Vector3.zero;
+        int memberCount = 0;
+        foreach (GameObject patrolObject in patrolObjects)
+        {
+            if (patrolObject == null || !patrolObject.activeInHierarchy) continue;
+            Health health = patrolObject.GetComponent<Health>();
+            if (health != null && !health.IsAlive) continue;
+            center += patrolObject.transform.position;
+            memberCount++;
+        }
+        if (memberCount > 0) center /= memberCount;
+        else center = fallbackPosition;
+
+        _sharedResumeWaypoint = FindNearestWaypoint(center);
+        _formationWaypointIndex = _sharedResumeWaypoint;
+        _formationProgressInitialized = true;
+        _formationWaitUntil = 0f;
+        _formationArrivals.Clear();
+        // Combat exit can occur on different AI ticks. Hold the shared choice
+        // long enough for every member of the formation to receive it.
+        _sharedResumeExpires = Time.time + 5f;
+        return _sharedResumeWaypoint;
+    }
+
+    public void GetFormationProgress(int startingWaypoint, out int waypointIndex,
+        out int direction, out float waitUntil)
+    {
+        if (!_formationProgressInitialized)
+        {
+            _formationWaypointIndex = Mathf.Clamp(
+                startingWaypoint, 0, Mathf.Max(0, Count - 1));
+            _formationDirection = 1;
+            _formationWaitUntil = 0f;
+            _formationProgressInitialized = true;
+        }
+        waypointIndex = _formationWaypointIndex;
+        direction = _formationDirection;
+        waitUntil = _formationWaitUntil;
+    }
+
+    public bool ReportFormationArrival(EnemyPatrolAgent member,
+        out int waypointIndex, out int direction, out float waitUntil)
+    {
+        GetFormationProgress(member.startingWaypoint,
+            out waypointIndex, out direction, out waitUntil);
+        _formationArrivals.Add(member.GetInstanceID());
+
+        int required = 0;
+        foreach (GameObject patrolObject in patrolObjects)
+        {
+            if (patrolObject == null || !patrolObject.activeInHierarchy) continue;
+            Health health = patrolObject.GetComponent<Health>();
+            if (health != null && !health.IsAlive) continue;
+            EnemyPatrolAgent patrol = patrolObject.GetComponent<EnemyPatrolAgent>();
+            if (patrol != null && patrol.UsesGroupFormation) required++;
+        }
+        if (required > 0 && _formationArrivals.Count < required)
+            return false;
+
+        AdvanceFormationProgress();
+        _formationArrivals.Clear();
+        _formationWaitUntil = Time.time + Mathf.Max(0f, waypointWaitSeconds);
+        waypointIndex = _formationWaypointIndex;
+        direction = _formationDirection;
+        waitUntil = _formationWaitUntil;
+        return true;
+    }
+
+    void AdvanceFormationProgress()
+    {
+        if (Count <= 1) return;
+        switch (mode)
+        {
+            case EnemyPatrolMode.Loop:
+                _formationWaypointIndex = (_formationWaypointIndex + 1) % Count;
+                break;
+            case EnemyPatrolMode.PingPong:
+                if (_formationWaypointIndex >= Count - 1) _formationDirection = -1;
+                else if (_formationWaypointIndex <= 0) _formationDirection = 1;
+                _formationWaypointIndex += _formationDirection;
+                break;
+            case EnemyPatrolMode.OneWay:
+                _formationWaypointIndex = Mathf.Min(
+                    _formationWaypointIndex + 1, Count - 1);
+                break;
+        }
     }
 
     void Update()
@@ -45,7 +169,8 @@ public sealed class EnemyPatrolRoute : MonoBehaviour
             if (patrol == null)
                 patrol = patrolObject.AddComponent<EnemyPatrolAgent>();
             patrol.route = this;
-            patrol.startingWaypoint = FindNextWaypoint(patrolObject.transform.position);
+            if (!patrol.UsesGroupFormation)
+                patrol.startingWaypoint = FindNextWaypoint(patrolObject.transform.position);
             patrol.enabled = true;
             patrol.ResetPatrol();
         }
@@ -68,6 +193,23 @@ public sealed class EnemyPatrolRoute : MonoBehaviour
             ? Mathf.Min(nearest + 1, Count - 1)
             : (nearest + 1) % Count;
     }
+
+    int FindNearestWaypoint(Vector3 position)
+    {
+        int nearest = 0;
+        float nearestDistance = float.MaxValue;
+        for (int i = 0; i < Count; i++)
+        {
+            if (!TryGetWaypoint(i, out Vector3 waypoint)) continue;
+            Vector3 delta = waypoint - position;
+            delta.y = 0f;
+            float distance = delta.sqrMagnitude;
+            if (distance >= nearestDistance) continue;
+            nearestDistance = distance;
+            nearest = i;
+        }
+        return nearest;
+    }
 }
 
 /// <summary>
@@ -78,6 +220,10 @@ public sealed class EnemyPatrolAgent : MonoBehaviour
 {
     public EnemyPatrolRoute route;
     public int startingWaypoint;
+    [Tooltip("Keeps this mob's authored spacing relative to the rest of its patrol group.")]
+    public bool preserveFormation;
+    [Tooltip("Sideways and forward spacing from the patrol route center.")]
+    public Vector2 formationOffset;
 
     EnemyController _controller;
     NavMeshAgent _agent;
@@ -159,13 +305,26 @@ public sealed class EnemyPatrolAgent : MonoBehaviour
             return false;
 
         Initialize();
+        if (UsesGroupFormation)
+        {
+            route.GetFormationProgress(startingWaypoint,
+                out int sharedWaypoint, out int sharedDirection, out float sharedWait);
+            if (_waypointIndex != sharedWaypoint || _direction != sharedDirection)
+            {
+                _waypointIndex = sharedWaypoint;
+                _direction = sharedDirection;
+                _hasDestination = false;
+                if (agent.hasPath) agent.ResetPath();
+            }
+            _waitUntil = sharedWait;
+        }
         if (Time.time < _waitUntil)
         {
             if (agent.hasPath) agent.ResetPath();
             return true;
         }
 
-        if (!route.TryGetWaypoint(_waypointIndex, out Vector3 waypoint))
+        if (!TryGetPatrolWaypoint(out Vector3 waypoint))
         {
             Advance();
             return true;
@@ -187,39 +346,110 @@ public sealed class EnemyPatrolAgent : MonoBehaviour
         arrivalDelta.y = 0f;
         if (!_hasDestination && arrivalDelta.sqrMagnitude <= arrival * arrival)
         {
-            if (agent.hasPath) agent.ResetPath();
-            _waitUntil = Time.time + Mathf.Max(0f, route.waypointWaitSeconds);
-            Advance();
-            return true;
+            return CompleteWaypoint(agent);
         }
 
         if (_hasDestination && !agent.pathPending &&
             (!agent.hasPath || agent.remainingDistance <= arrival))
         {
-            _hasDestination = false;
-            agent.ResetPath();
-            _waitUntil = Time.time + Mathf.Max(0f, route.waypointWaitSeconds);
-            Advance();
-            return true;
+            return CompleteWaypoint(agent);
         }
 
         if (!_hasDestination)
-        {
-            float sampleRadius = Mathf.Max(1.5f, agent.height);
-            if (NavMesh.SamplePosition(waypoint, out NavMeshHit hit, sampleRadius, agent.areaMask))
-            {
-                agent.isStopped = false;
-                _hasDestination = agent.SetDestination(hit.position);
-            }
-            else
-            {
-                Debug.LogWarning($"[Patrol Forge] Waypoint '{route.waypoints[_waypointIndex].name}' " +
-                                 $"is not near the NavMesh.", route.waypoints[_waypointIndex]);
-                _waitUntil = Time.time + 1f;
-                Advance();
-            }
-        }
+            BeginLeg(agent, waypoint);
         return true;
+    }
+
+    bool CompleteWaypoint(NavMeshAgent agent)
+    {
+        _hasDestination = false;
+        if (UsesGroupFormation)
+        {
+            bool routeFinished = route.Count <= 1 ||
+                (route.mode == EnemyPatrolMode.OneWay &&
+                 _waypointIndex >= route.Count - 1);
+            if (routeFinished)
+            {
+                if (agent.hasPath) agent.ResetPath();
+                return true;
+            }
+
+            bool advanced = route.ReportFormationArrival(this,
+                out _waypointIndex, out _direction, out _waitUntil);
+            if (!advanced || Time.time < _waitUntil)
+            {
+                if (agent.hasPath) agent.ResetPath();
+                return true;
+            }
+            if (TryGetPatrolWaypoint(out Vector3 groupWaypoint))
+                BeginLeg(agent, groupWaypoint);
+            return true;
+        }
+
+        float wait = Mathf.Max(0f, route.waypointWaitSeconds);
+        bool routeFinished = route.Count <= 1 ||
+            (route.mode == EnemyPatrolMode.OneWay &&
+             _waypointIndex >= route.Count - 1);
+        if (routeFinished)
+        {
+            if (agent.hasPath) agent.ResetPath();
+            return true;
+        }
+        Advance();
+        if (wait > 0f)
+        {
+            if (agent.hasPath) agent.ResetPath();
+            _waitUntil = Time.time + wait;
+            return true;
+        }
+
+        // A zero-wait patrol should flow through the waypoint. Replace the
+        // destination immediately so the agent never enters a one-tick idle state.
+        if (TryGetPatrolWaypoint(out Vector3 nextWaypoint))
+            BeginLeg(agent, nextWaypoint);
+        return true;
+    }
+
+    bool TryGetPatrolWaypoint(out Vector3 waypoint)
+    {
+        return TryGetPatrolWaypoint(_waypointIndex, _direction, out waypoint);
+    }
+
+    bool TryGetPatrolWaypoint(int waypointIndex, int direction, out Vector3 waypoint)
+    {
+        if (!route.TryGetWaypoint(waypointIndex, out waypoint))
+            return false;
+        if (!UsesGroupFormation) return true;
+
+        Vector3 forward = route.GetWaypointForward(waypointIndex, direction);
+        Vector3 right = Vector3.Cross(Vector3.up, forward).normalized;
+        waypoint += right * formationOffset.x + forward * formationOffset.y;
+        return true;
+    }
+
+    void BeginLeg(NavMeshAgent agent, Vector3 waypoint)
+    {
+        // A formation slot can sit beside a valid route waypoint on a narrow
+        // NavMesh. Search far enough to recover toward the route center instead
+        // of pausing and skipping the waypoint.
+        float formationRecovery = UsesGroupFormation
+            ? formationOffset.magnitude + agent.radius
+            : 0f;
+        float sampleRadius = Mathf.Max(
+            Mathf.Max(1.5f, agent.height), formationRecovery);
+        if (NavMesh.SamplePosition(waypoint, out NavMeshHit hit, sampleRadius, agent.areaMask))
+        {
+            agent.isStopped = false;
+            _hasDestination = agent.SetDestination(hit.position);
+            return;
+        }
+
+        string targetKind = UsesGroupFormation ? "formation position near" : "waypoint";
+        Debug.LogWarning($"[Patrol Forge] The {targetKind} " +
+                         $"'{route.waypoints[_waypointIndex].name}' is not near the NavMesh.",
+                         route.waypoints[_waypointIndex]);
+        _waitUntil = Time.time + 1f;
+        Advance();
     }
 
     public void ResetPatrol()
@@ -238,6 +468,55 @@ public sealed class EnemyPatrolAgent : MonoBehaviour
         _waitUntil = 0f;
     }
 
+    public void ResumeFromNearestWaypoint()
+    {
+        if (!HasUsableRoute) return;
+        if (_agent == null)
+            _agent = GetComponent<NavMeshAgent>();
+
+        int nearest;
+        if (UsesGroupFormation)
+        {
+            nearest = route.GetSharedResumeWaypoint(transform.position);
+        }
+        else
+        {
+            nearest = 0;
+            float nearestDistance = float.MaxValue;
+            for (int i = 0; i < route.Count; i++)
+            {
+                if (!route.TryGetWaypoint(i, out Vector3 waypoint))
+                    continue;
+                Vector3 delta = waypoint - transform.position;
+                delta.y = 0f;
+                float distance = delta.sqrMagnitude;
+                if (distance >= nearestDistance) continue;
+                nearestDistance = distance;
+                nearest = i;
+            }
+        }
+
+        _waypointIndex = nearest;
+        if (route.mode == EnemyPatrolMode.PingPong)
+        {
+            if (_waypointIndex <= 0) _direction = 1;
+            else if (_waypointIndex >= route.Count - 1) _direction = -1;
+        }
+        _initialized = true;
+        _hasDestination = false;
+        _waitUntil = 0f;
+        _navMeshRecoveryAttempted = false;
+        _reportedInvalidSetup = false;
+
+        if (_agent == null || !_agent.isActiveAndEnabled) return;
+        _agent.isStopped = false;
+        if (_agent.isOnNavMesh && _agent.hasPath)
+            _agent.ResetPath();
+        if (EnsureOnNavMesh(_agent) &&
+            TryGetPatrolWaypoint(out Vector3 nearestWaypoint))
+            BeginLeg(_agent, nearestWaypoint);
+    }
+
     void Initialize()
     {
         if (_initialized) return;
@@ -245,6 +524,9 @@ public sealed class EnemyPatrolAgent : MonoBehaviour
         _direction = 1;
         _initialized = true;
     }
+
+    public bool UsesGroupFormation =>
+        preserveFormation && route != null && route.groupFormationPatrol;
 
     void Advance()
     {

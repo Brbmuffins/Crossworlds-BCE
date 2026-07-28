@@ -113,6 +113,10 @@ namespace Crossworlds.EditorTools.EnemyForge
         [HideInInspector, Range(0f, 1f)] public float attackImpactPoint2 = 0.45f;
         [HideInInspector, Range(0f, 1f)] public float attackImpactPoint3 = 0.45f;
         [HideInInspector, Range(0f, 1f)] public float attackImpactPoint4 = 0.45f;
+        [HideInInspector] public Vector3 attackVfxOffset = Vector3.zero;
+        [HideInInspector] public Vector3 attackVfxOffset2 = Vector3.zero;
+        [HideInInspector] public Vector3 attackVfxOffset3 = Vector3.zero;
+        [HideInInspector] public Vector3 attackVfxOffset4 = Vector3.zero;
         public GameObject projectilePrefab;
         [Min(0f)] public float preferredRange = 5f;
         [Min(0f)] public float tooCloseDistance = 3f;
@@ -247,6 +251,10 @@ namespace Crossworlds.EditorTools.EnemyForge
                 attackAnimationSpeed4 = controller.attackAnimationSpeeds != null && controller.attackAnimationSpeeds.Length > 3 ? controller.attackAnimationSpeeds[3] : 1f;
                 getHitAnimationSpeed = controller.getHitAnimationSpeed;
                 deathAnimationSpeed = controller.deathAnimationSpeed;
+                attackVfxOffset = controller.attackVfxOffsets != null && controller.attackVfxOffsets.Length > 0 ? controller.attackVfxOffsets[0] : Vector3.zero;
+                attackVfxOffset2 = controller.attackVfxOffsets != null && controller.attackVfxOffsets.Length > 1 ? controller.attackVfxOffsets[1] : Vector3.zero;
+                attackVfxOffset3 = controller.attackVfxOffsets != null && controller.attackVfxOffsets.Length > 2 ? controller.attackVfxOffsets[2] : Vector3.zero;
+                attackVfxOffset4 = controller.attackVfxOffsets != null && controller.attackVfxOffsets.Length > 3 ? controller.attackVfxOffsets[3] : Vector3.zero;
                 if (attackAnimation != null && attackAnimation.length > 0.01f)
                     attackImpactPoint = Mathf.Clamp01(
                         controller.attackImpactDelay * Mathf.Max(0.25f, attackAnimationSpeed) /

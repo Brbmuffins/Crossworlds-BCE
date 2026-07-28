@@ -74,7 +74,10 @@ namespace Crossworlds.EditorTools.EnemyForge
                     SyncAnimationFolderToSource();
                     DrawConfigurationSections();
 
-                    showAnimations = DrawFoldout("Animation State Mapping", showAnimations);
+                    bool nextShowAnimations = DrawFoldout("Animation State Mapping", showAnimations);
+                    if (nextShowAnimations && !showAnimations)
+                        EnemyForgeAnimationPreviewWindow.Open(definition);
+                    showAnimations = nextShowAnimations;
                     if (showAnimations) DrawAnimationMapping();
                 }
 
@@ -517,13 +520,6 @@ namespace Crossworlds.EditorTools.EnemyForge
             Rect previewRect = GUILayoutUtility.GetRect(0f, previewHeight, GUILayout.ExpandWidth(true));
             EditorGUI.DrawRect(previewRect, new Color(0.12f, 0.12f, 0.12f, 1f));
 
-            var states = GetMappedAnimationStates();
-            if (states.Count > 0 && DrawAnimatedSourcePreview(source, previewRect, states))
-            {
-                DrawAnimationPreviewControls(states);
-                return;
-            }
-
             Texture2D preview = AssetPreview.GetAssetPreview(source);
             bool isLoading = AssetPreview.IsLoadingAssetPreview(source.GetEntityId());
             if (preview == null && !isLoading)
@@ -764,6 +760,12 @@ namespace Crossworlds.EditorTools.EnemyForge
 
         void DrawAnimationMapping()
         {
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                GUILayout.FlexibleSpace();
+                if (GUILayout.Button("Open Animation Preview", GUILayout.Width(168)))
+                    EnemyForgeAnimationPreviewWindow.Open(definition);
+            }
             bool supportsOverrides = definition.animationDriverMode != EnemyForgeAnimationDriverMode.ExistingModelDriver;
             var nextMode = (EnemyForgeAnimationDriverMode)EditorGUILayout.EnumPopup("Animation Driver Mode", definition.animationDriverMode);
             if (nextMode != definition.animationDriverMode)

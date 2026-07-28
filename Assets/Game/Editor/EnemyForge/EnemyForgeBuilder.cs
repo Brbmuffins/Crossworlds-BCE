@@ -160,6 +160,13 @@ namespace Crossworlds.EditorTools.EnemyForge
             controller.attackAnimationSpeeds = attackSpeeds;
             controller.getHitAnimationSpeed = d.getHitAnimationSpeed;
             controller.deathAnimationSpeed = d.deathAnimationSpeed;
+            controller.attackVfxOffsets = new[]
+            {
+                d.attackVfxOffset,
+                d.attackVfxOffset2,
+                d.attackVfxOffset3,
+                d.attackVfxOffset4
+            };
             controller.isRanged = d.IsRanged;
             controller.projectilePrefab = d.IsRanged
                 ? (d.projectilePrefab != null ? d.projectilePrefab : EnsureFallbackProjectilePrefab())
