@@ -126,7 +126,8 @@ namespace Crossworlds.EditorTools.EnemyForge
                 ? Mathf.Max(d.attackRange, rangedEngagementRange)
                 : d.attackRange;
             var attackClips = GetAttackClips(d);
-            float longestAttackClip = LongestClipLength(attackClips);
+            var attackSpeeds = GetAttackSpeeds(d);
+            float longestAttackClip = LongestClipLength(attackClips, attackSpeeds);
             bool hasAlternateAttacks = d.attackAnimation2 != null ||
                 d.attackAnimation3 != null || d.attackAnimation4 != null;
             // Ranged casts and randomized attack sets must complete their longest
@@ -139,8 +140,13 @@ namespace Crossworlds.EditorTools.EnemyForge
             float maximumImpactDelay = Mathf.Max(0f, controller.attackInterval - 0.05f);
             controller.attackAnimationVariantMask = BuildAttackVariantMask(attackClips);
             controller.attackAnimationImpactDelays = BuildAttackImpactDelays(
-                attackClips, GetAttackImpactPoints(d), maximumImpactDelay);
+                attackClips, GetAttackImpactPoints(d), attackSpeeds, maximumImpactDelay);
             controller.attackImpactDelay = controller.attackAnimationImpactDelays[0];
+            controller.idleAnimationSpeed = d.idleAnimationSpeed;
+            controller.chaseAnimationSpeed = d.chaseAnimationSpeed;
+            controller.attackAnimationSpeeds = attackSpeeds;
+            controller.getHitAnimationSpeed = d.getHitAnimationSpeed;
+            controller.deathAnimationSpeed = d.deathAnimationSpeed;
             controller.isRanged = d.IsRanged;
             controller.projectilePrefab = d.IsRanged
                 ? (d.projectilePrefab != null ? d.projectilePrefab : EnsureFallbackProjectilePrefab())
@@ -553,12 +559,22 @@ namespace Crossworlds.EditorTools.EnemyForge
                 d.attackImpactPoint4
             };
 
-        static float LongestClipLength(AnimationClip[] clips)
+        static float[] GetAttackSpeeds(EnemyForgeDefinition d) =>
+            new[]
+            {
+                d.attackAnimationSpeed,
+                d.attackAnimationSpeed2,
+                d.attackAnimationSpeed3,
+                d.attackAnimationSpeed4
+            };
+
+        static float LongestClipLength(AnimationClip[] clips, float[] speeds)
         {
             float longest = 0f;
-            foreach (AnimationClip clip in clips)
-                if (clip != null)
-                    longest = Mathf.Max(longest, clip.length);
+            for (int i = 0; i < clips.Length; i++)
+                if (clips[i] != null)
+                    longest = Mathf.Max(longest,
+                        clips[i].length / Mathf.Max(0.25f, speeds[i]));
             return longest;
         }
 
@@ -572,15 +588,17 @@ namespace Crossworlds.EditorTools.EnemyForge
         }
 
         static float[] BuildAttackImpactDelays(AnimationClip[] clips, float[] normalizedImpacts,
-            float maximumDelay)
+            float[] speeds, float maximumDelay)
         {
             var delays = new float[4];
             float fallback = clips[0] != null
-                ? Mathf.Clamp(clips[0].length * normalizedImpacts[0], 0f, maximumDelay)
+                ? Mathf.Clamp(clips[0].length * normalizedImpacts[0] /
+                    Mathf.Max(0.25f, speeds[0]), 0f, maximumDelay)
                 : Mathf.Min(0.35f, maximumDelay);
             for (int i = 0; i < delays.Length; i++)
                 delays[i] = clips[i] != null
-                    ? Mathf.Clamp(clips[i].length * normalizedImpacts[i], 0f, maximumDelay)
+                    ? Mathf.Clamp(clips[i].length * normalizedImpacts[i] /
+                        Mathf.Max(0.25f, speeds[i]), 0f, maximumDelay)
                     : fallback;
             return delays;
         }
@@ -839,7 +857,15 @@ namespace Crossworlds.EditorTools.EnemyForge
                 new AnimatorControllerParameter { name = "Attack", type = AnimatorControllerParameterType.Trigger },
                 new AnimatorControllerParameter { name = "AttackVariant", type = AnimatorControllerParameterType.Int },
                 new AnimatorControllerParameter { name = "GetHit", type = AnimatorControllerParameterType.Trigger },
-                new AnimatorControllerParameter { name = "Death", type = AnimatorControllerParameterType.Trigger }
+                new AnimatorControllerParameter { name = "Death", type = AnimatorControllerParameterType.Trigger },
+                FloatParameter("IdleSpeed"),
+                FloatParameter("ChaseSpeed"),
+                FloatParameter("Attack1Speed"),
+                FloatParameter("Attack2Speed"),
+                FloatParameter("Attack3Speed"),
+                FloatParameter("Attack4Speed"),
+                FloatParameter("GetHitSpeed"),
+                FloatParameter("DeathSpeed")
             };
             var machine = controller.layers[0].stateMachine;
             foreach (var transition in machine.anyStateTransitions) machine.RemoveAnyStateTransition(transition);
@@ -852,6 +878,14 @@ namespace Crossworlds.EditorTools.EnemyForge
             var attack4 = AddAnimationState(machine, "Attack 4", attackClip4, new Vector3(690f, 340f));
             var hit = AddAnimationState(machine, "GetHit", hitClip, new Vector3(600f, 80f));
             var death = AddAnimationState(machine, "Dead", deathClip, new Vector3(600f, 220f));
+            SetSpeedParameter(idle, "IdleSpeed");
+            SetSpeedParameter(chase, "ChaseSpeed");
+            SetSpeedParameter(attack, "Attack1Speed");
+            SetSpeedParameter(attack2, "Attack2Speed");
+            SetSpeedParameter(attack3, "Attack3Speed");
+            SetSpeedParameter(attack4, "Attack4Speed");
+            SetSpeedParameter(hit, "GetHitSpeed");
+            SetSpeedParameter(death, "DeathSpeed");
             machine.defaultState = idle;
             AddFloatTransition(idle, chase, "Speed", AnimatorConditionMode.Greater, 0.1f, 0.15f);
             AddFloatTransition(chase, idle, "Speed", AnimatorConditionMode.Less, 0.05f, 0.05f);
@@ -886,6 +920,20 @@ namespace Crossworlds.EditorTools.EnemyForge
             state.motion = clip;
             state.writeDefaultValues = false;
             return state;
+        }
+
+        static AnimatorControllerParameter FloatParameter(string name) =>
+            new AnimatorControllerParameter
+            {
+                name = name,
+                type = AnimatorControllerParameterType.Float,
+                defaultFloat = 1f
+            };
+
+        static void SetSpeedParameter(AnimatorState state, string parameter)
+        {
+            state.speedParameterActive = true;
+            state.speedParameter = parameter;
         }
 
         static void AddFloatTransition(AnimatorState from, AnimatorState to, string parameter,

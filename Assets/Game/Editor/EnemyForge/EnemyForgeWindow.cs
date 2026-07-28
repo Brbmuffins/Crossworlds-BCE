@@ -785,21 +785,29 @@ namespace Crossworlds.EditorTools.EnemyForge
             var clips = EnemyForgeAnimationLibrary.LoadClips(folderPath);
 
             DrawAnimationChoice("Idle", clips, ref definition.idleAnimation);
+            DrawAnimationSpeedSlider("Animation Speed", definition.idleAnimation, ref definition.idleAnimationSpeed);
             DrawAnimationChoice("Chase / Movement", clips, ref definition.chaseAnimation);
+            DrawAnimationSpeedSlider("Animation Speed", definition.chaseAnimation, ref definition.chaseAnimationSpeed);
             DrawAnimationChoice("Combat Attack 1", clips, ref definition.attackAnimation);
+            DrawAnimationSpeedSlider("Animation Speed", definition.attackAnimation, ref definition.attackAnimationSpeed);
             DrawAttackTimingSlider("Attack 1 Hit / VFX Timing", definition.attackAnimation,
-                ref definition.attackImpactPoint);
+                definition.attackAnimationSpeed, ref definition.attackImpactPoint);
             DrawAnimationChoice("Combat Attack 2", clips, ref definition.attackAnimation2);
+            DrawAnimationSpeedSlider("Animation Speed", definition.attackAnimation2, ref definition.attackAnimationSpeed2);
             DrawAttackTimingSlider("Attack 2 Hit / VFX Timing", definition.attackAnimation2,
-                ref definition.attackImpactPoint2);
+                definition.attackAnimationSpeed2, ref definition.attackImpactPoint2);
             DrawAnimationChoice("Combat Attack 3", clips, ref definition.attackAnimation3);
+            DrawAnimationSpeedSlider("Animation Speed", definition.attackAnimation3, ref definition.attackAnimationSpeed3);
             DrawAttackTimingSlider("Attack 3 Hit / VFX Timing", definition.attackAnimation3,
-                ref definition.attackImpactPoint3);
+                definition.attackAnimationSpeed3, ref definition.attackImpactPoint3);
             DrawAnimationChoice("Combat Attack 4", clips, ref definition.attackAnimation4);
+            DrawAnimationSpeedSlider("Animation Speed", definition.attackAnimation4, ref definition.attackAnimationSpeed4);
             DrawAttackTimingSlider("Attack 4 Hit / VFX Timing", definition.attackAnimation4,
-                ref definition.attackImpactPoint4);
+                definition.attackAnimationSpeed4, ref definition.attackImpactPoint4);
             DrawAnimationChoice("Get Hit", clips, ref definition.getHitAnimation);
+            DrawAnimationSpeedSlider("Animation Speed", definition.getHitAnimation, ref definition.getHitAnimationSpeed);
             DrawAnimationChoice("Death", clips, ref definition.deathAnimation);
+            DrawAnimationSpeedSlider("Animation Speed", definition.deathAnimation, ref definition.deathAnimationSpeed);
         }
 
         void DrawAnimationChoice(string label, List<AnimationClip> clips, ref AnimationClip selected)
@@ -833,7 +841,8 @@ namespace Crossworlds.EditorTools.EnemyForge
             }
         }
 
-        void DrawAttackTimingSlider(string label, AnimationClip clip, ref float normalizedPoint)
+        void DrawAttackTimingSlider(string label, AnimationClip clip, float playbackSpeed,
+            ref float normalizedPoint)
         {
             using (new EditorGUI.DisabledScope(clip == null))
             {
@@ -851,11 +860,30 @@ namespace Crossworlds.EditorTools.EnemyForge
 
                 if (clip != null)
                 {
-                    float impactSeconds = clip.length * normalizedPoint;
-                    float secondsBeforeEnd = Mathf.Max(0f, clip.length - impactSeconds);
+                    float playedLength = clip.length / Mathf.Max(0.25f, playbackSpeed);
+                    float impactSeconds = playedLength * normalizedPoint;
+                    float secondsBeforeEnd = Mathf.Max(0f, playedLength - impactSeconds);
                     EditorGUILayout.LabelField(
                         $"{impactSeconds:0.00}s from start  •  {secondsBeforeEnd:0.00}s before animation end",
                         EditorStyles.miniLabel);
+                }
+                EditorGUI.indentLevel--;
+            }
+        }
+
+        void DrawAnimationSpeedSlider(string label, AnimationClip clip, ref float speed)
+        {
+            using (new EditorGUI.DisabledScope(clip == null))
+            {
+                EditorGUI.indentLevel++;
+                float next = EditorGUILayout.Slider(
+                    new GUIContent(label, "Playback multiplier. 1.0 is the animation's imported speed."),
+                    speed, 0.25f, 3f);
+                if (!Mathf.Approximately(next, speed))
+                {
+                    Undo.RecordObject(definition, "Adjust " + label);
+                    speed = next;
+                    EditorUtility.SetDirty(definition);
                 }
                 EditorGUI.indentLevel--;
             }

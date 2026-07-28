@@ -58,6 +58,14 @@ namespace Crossworlds.EditorTools.EnemyForge
         public AnimationClip getHitAnimation;
         [HideInInspector]
         public AnimationClip deathAnimation;
+        [HideInInspector, Range(0.25f, 3f)] public float idleAnimationSpeed = 1f;
+        [HideInInspector, Range(0.25f, 3f)] public float chaseAnimationSpeed = 1f;
+        [HideInInspector, Range(0.25f, 3f)] public float attackAnimationSpeed = 1f;
+        [HideInInspector, Range(0.25f, 3f)] public float attackAnimationSpeed2 = 1f;
+        [HideInInspector, Range(0.25f, 3f)] public float attackAnimationSpeed3 = 1f;
+        [HideInInspector, Range(0.25f, 3f)] public float attackAnimationSpeed4 = 1f;
+        [HideInInspector, Range(0.25f, 3f)] public float getHitAnimationSpeed = 1f;
+        [HideInInspector, Range(0.25f, 3f)] public float deathAnimationSpeed = 1f;
         [HideInInspector]
         public bool generateAnimatorController = true;
 
@@ -216,22 +224,35 @@ namespace Crossworlds.EditorTools.EnemyForge
                 attackInterval = controller.attackInterval;
                 damage = controller.damage;
                 combatTurnSpeed = controller.combatTurnSpeed;
+                idleAnimationSpeed = controller.idleAnimationSpeed;
+                chaseAnimationSpeed = controller.chaseAnimationSpeed;
+                attackAnimationSpeed = controller.attackAnimationSpeeds != null && controller.attackAnimationSpeeds.Length > 0 ? controller.attackAnimationSpeeds[0] : 1f;
+                attackAnimationSpeed2 = controller.attackAnimationSpeeds != null && controller.attackAnimationSpeeds.Length > 1 ? controller.attackAnimationSpeeds[1] : 1f;
+                attackAnimationSpeed3 = controller.attackAnimationSpeeds != null && controller.attackAnimationSpeeds.Length > 2 ? controller.attackAnimationSpeeds[2] : 1f;
+                attackAnimationSpeed4 = controller.attackAnimationSpeeds != null && controller.attackAnimationSpeeds.Length > 3 ? controller.attackAnimationSpeeds[3] : 1f;
+                getHitAnimationSpeed = controller.getHitAnimationSpeed;
+                deathAnimationSpeed = controller.deathAnimationSpeed;
                 if (attackAnimation != null && attackAnimation.length > 0.01f)
-                    attackImpactPoint = Mathf.Clamp01(controller.attackImpactDelay / attackAnimation.length);
+                    attackImpactPoint = Mathf.Clamp01(
+                        controller.attackImpactDelay * Mathf.Max(0.25f, attackAnimationSpeed) /
+                        attackAnimation.length);
                 if (controller.attackAnimationImpactDelays != null)
                 {
                     if (attackAnimation2 != null && attackAnimation2.length > 0.01f &&
                         controller.attackAnimationImpactDelays.Length > 1)
                         attackImpactPoint2 = Mathf.Clamp01(
-                            controller.attackAnimationImpactDelays[1] / attackAnimation2.length);
+                            controller.attackAnimationImpactDelays[1] * Mathf.Max(0.25f, attackAnimationSpeed2) /
+                            attackAnimation2.length);
                     if (attackAnimation3 != null && attackAnimation3.length > 0.01f &&
                         controller.attackAnimationImpactDelays.Length > 2)
                         attackImpactPoint3 = Mathf.Clamp01(
-                            controller.attackAnimationImpactDelays[2] / attackAnimation3.length);
+                            controller.attackAnimationImpactDelays[2] * Mathf.Max(0.25f, attackAnimationSpeed3) /
+                            attackAnimation3.length);
                     if (attackAnimation4 != null && attackAnimation4.length > 0.01f &&
                         controller.attackAnimationImpactDelays.Length > 3)
                         attackImpactPoint4 = Mathf.Clamp01(
-                            controller.attackAnimationImpactDelays[3] / attackAnimation4.length);
+                            controller.attackAnimationImpactDelays[3] * Mathf.Max(0.25f, attackAnimationSpeed4) /
+                            attackAnimation4.length);
                 }
                 projectilePrefab = controller.projectilePrefab;
                 preferredRange = controller.preferredRange;

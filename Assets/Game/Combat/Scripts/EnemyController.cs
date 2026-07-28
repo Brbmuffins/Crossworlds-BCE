@@ -58,6 +58,12 @@ public class EnemyController : NetworkBehaviour
     public int attackAnimationVariantMask = 1;
     [Tooltip("Impact delay for each Enemy Forge attack animation slot.")]
     public float[] attackAnimationImpactDelays = { 0.35f, 0.35f, 0.35f, 0.35f };
+    [Header("Animation Playback")]
+    [Range(0.25f, 3f)] public float idleAnimationSpeed = 1f;
+    [Range(0.25f, 3f)] public float chaseAnimationSpeed = 1f;
+    public float[] attackAnimationSpeeds = { 1f, 1f, 1f, 1f };
+    [Range(0.25f, 3f)] public float getHitAnimationSpeed = 1f;
+    [Range(0.25f, 3f)] public float deathAnimationSpeed = 1f;
 
     // ── Ranged ───────────────────────────────────────────────────────────────────
     [Header("Ranged")]
@@ -159,6 +165,7 @@ public class EnemyController : NetworkBehaviour
         _configuredStoppingDistance = _agent != null ? Mathf.Max(0f, _agent.stoppingDistance) : 0f;
         _animator  = GetComponentInChildren<Animator>();
         CacheAnimatorParameters();
+        ApplyAnimationPlaybackSpeeds();
     }
 
     void Start()
@@ -175,6 +182,32 @@ public class EnemyController : NetworkBehaviour
         _patrolAgent = GetComponent<EnemyPatrolAgent>();
         QuestEnemyTarget.EnsureAttached(gameObject);
         InitializeSimulation();
+    }
+
+    void ApplyAnimationPlaybackSpeeds()
+    {
+        if (_animator == null) return;
+        SetAnimatorFloatIfPresent("IdleSpeed", idleAnimationSpeed);
+        SetAnimatorFloatIfPresent("ChaseSpeed", chaseAnimationSpeed);
+        for (int i = 0; i < 4; i++)
+        {
+            float speed = attackAnimationSpeeds != null && i < attackAnimationSpeeds.Length
+                ? attackAnimationSpeeds[i] : 1f;
+            SetAnimatorFloatIfPresent($"Attack{i + 1}Speed", speed);
+        }
+        SetAnimatorFloatIfPresent("GetHitSpeed", getHitAnimationSpeed);
+        SetAnimatorFloatIfPresent("DeathSpeed", deathAnimationSpeed);
+    }
+
+    void SetAnimatorFloatIfPresent(string parameterName, float value)
+    {
+        foreach (AnimatorControllerParameter parameter in _animator.parameters)
+        {
+            if (parameter.type != AnimatorControllerParameterType.Float ||
+                parameter.name != parameterName) continue;
+            _animator.SetFloat(parameterName, Mathf.Clamp(value, 0.25f, 3f));
+            return;
+        }
     }
 
     public override void OnStopServer()
