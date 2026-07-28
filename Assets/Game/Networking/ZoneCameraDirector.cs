@@ -314,11 +314,6 @@ public class ZoneCameraDirector : MonoBehaviour
             trigger.ActivateForLocalZone();
             return;
         }
-
-        // A zone without authored music should be quiet, not inherit whichever
-        // track happened to be selected by the zone the player just left.
-        if (MusicController.Instance != null)
-            MusicController.Instance.Stop();
     }
 
     void ApplyZoneEnvironment(Scene zone)

@@ -2671,9 +2671,6 @@ public class AbilityCaster : NetworkBehaviour
 
     Vector3 ProjectToGround(Vector3 point, out Vector3 normal)
     {
-        if (TryProjectToTerrain(point, out Vector3 terrainPoint, out normal))
-            return terrainPoint;
-
         Vector3 origin = point + Vector3.up * indicatorRaycastHeight;
         RaycastHit[] hits = ZonePhysics.RaycastAll(gameObject,
             origin,
@@ -2683,17 +2680,23 @@ public class AbilityCaster : NetworkBehaviour
             QueryTriggerInteraction.Ignore);
 
         normal = Vector3.up;
-        if (hits.Length == 0)
-            return point + Vector3.up * indicatorGroundOffset;
-
-        System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
-        foreach (RaycastHit hit in hits)
+        if (hits.Length > 0)
         {
-            if (ShouldIgnoreIndicatorHit(hit)) continue;
+            System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+            foreach (RaycastHit hit in hits)
+            {
+                if (ShouldIgnoreIndicatorHit(hit)) continue;
 
-            normal = hit.normal;
-            return hit.point + hit.normal * indicatorGroundOffset;
+                normal = hit.normal;
+                return hit.point + hit.normal * indicatorGroundOffset;
+            }
         }
+
+        // Mesh floors and platforms must take precedence over any Terrain beneath
+        // them. Terrain sampling remains the fallback for terrain without a usable
+        // physics hit, preserving the existing terrain-normal behaviour.
+        if (TryProjectToTerrain(point, out Vector3 terrainPoint, out normal))
+            return terrainPoint;
 
         return point + Vector3.up * indicatorGroundOffset;
     }
