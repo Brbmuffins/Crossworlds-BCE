@@ -116,6 +116,7 @@ Material:
     - _Dissolve_Invert_Direction: 0
     - _Dissolve_Scale: 70
     - _DstBlend: 10
+    - _DstBlendAlpha: 10
     - _ENUM: 0
     - _FOAM_DISTORTION: 1
     - _FRESNEL: 1
@@ -133,6 +134,7 @@ Material:
     - _Shadow_Opacity: 0.78
     - _Shadows_Opacity: 0.78
     - _SrcBlend: 5
+    - _SrcBlendAlpha: 1
     - _Surface: 1
     - _Trail_Mode: 0
     - _VERTEX_ANIMATION: 1
@@ -145,6 +147,7 @@ Material:
     - _ZWriteControl: 0
     m_Colors:
     - _Color: {r: 23.96863, g: 23.96863, b: 23.96863, a: 1}
+    - _DIssolve_Speed: {r: 0, g: 0, b: 0, a: 0}
     - _Dissolve_Color: {r: 0.9079327, g: 1.1944071, b: 1.7169816, a: 1}
     - _Dissolve_Range: {r: 1.91, g: 4.26, b: 0, a: 0}
     - _Fluid_Color_A: {r: 0.35377356, g: 0.8051816, b: 1, a: 1}
