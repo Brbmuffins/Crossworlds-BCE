@@ -6828,6 +6828,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyPatrolRoute
   mode: 0
+  groupFormationPatrol: 1
   waypointWaitSeconds: 0
   arrivalDistance: 0.35
   waypoints:
@@ -8168,6 +8169,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyPatrolRoute
   mode: 0
+  groupFormationPatrol: 1
   waypointWaitSeconds: 0
   arrivalDistance: 0.35
   waypoints:
@@ -19505,6 +19507,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyPatrolRoute
   mode: 0
+  groupFormationPatrol: 1
   waypointWaitSeconds: 1
   arrivalDistance: 0.35
   waypoints:
