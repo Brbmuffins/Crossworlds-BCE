@@ -1,3 +1,17 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:ef63388a506b94dee4d8bb46110b55f1831f59e1f4dea6362ce1cd3ce1279e33
-size 658
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c3dc905b15374d744a5a3c81d8a63ce8, type: 3}
+  m_Name: Marauder_Pool
+  m_EditorClassIdentifier: Assembly-CSharp::ClassAbilityPool
+  className: Marauder
+  availableIndices: 000000000100000002000000030000000400000005000000060000000700000008000000090000000a0000000b0000000c0000002c0000002d0000002e000000
+  defaultEquipped: 00000000010000000200000003000000

@@ -1,3 +1,147 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:30ab13f8ab16d22472e37f5bef8a92c48dd5d361ef1c939eac7c7f4f56d73eb0
-size 5700
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1001 &1831428019765497622
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 9662113200000001, guid: 085be80bf778dbb4ca4eb9574b31874c, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4576553034309821294, guid: 085be80bf778dbb4ca4eb9574b31874c, type: 3}
+      propertyPath: m_Controller
+      value: 
+      objectReference: {fileID: 22100000, guid: 5f934585544d1f74ab1f3c472e355dfc, type: 2}
+    - target: {fileID: 5304148109465354002, guid: 085be80bf778dbb4ca4eb9574b31874c, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5372095157039620911, guid: 085be80bf778dbb4ca4eb9574b31874c, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5372095157039620911, guid: 085be80bf778dbb4ca4eb9574b31874c, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5372095157039620911, guid: 085be80bf778dbb4ca4eb9574b31874c, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5372095157039620911, guid: 085be80bf778dbb4ca4eb9574b31874c, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5372095157039620911, guid: 085be80bf778dbb4ca4eb9574b31874c, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5372095157039620911, guid: 085be80bf778dbb4ca4eb9574b31874c, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5372095157039620911, guid: 085be80bf778dbb4ca4eb9574b31874c, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5372095157039620911, guid: 085be80bf778dbb4ca4eb9574b31874c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5372095157039620911, guid: 085be80bf778dbb4ca4eb9574b31874c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: -137.298
+      objectReference: {fileID: 0}
+    - target: {fileID: 5372095157039620911, guid: 085be80bf778dbb4ca4eb9574b31874c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6837718781093106849, guid: 085be80bf778dbb4ca4eb9574b31874c, type: 3}
+      propertyPath: syncDirection
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7079637686858145184, guid: 085be80bf778dbb4ca4eb9574b31874c, type: 3}
+      propertyPath: sceneId
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7079637686858145184, guid: 085be80bf778dbb4ca4eb9574b31874c, type: 3}
+      propertyPath: _assetId
+      value: 1096444360
+      objectReference: {fileID: 0}
+    - target: {fileID: 8447798417058239152, guid: 085be80bf778dbb4ca4eb9574b31874c, type: 3}
+      propertyPath: m_Name
+      value: forged_aw_pummeler_3D_rigged (1) 1_Enemy
+      objectReference: {fileID: 0}
+    - target: {fileID: 8447798417058239152, guid: 085be80bf778dbb4ca4eb9574b31874c, type: 3}
+      propertyPath: m_TagString
+      value: Enemy
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 8447798417058239152, guid: 085be80bf778dbb4ca4eb9574b31874c, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2029869154457814526}
+  m_SourcePrefab: {fileID: 100100000, guid: 085be80bf778dbb4ca4eb9574b31874c, type: 3}
+--- !u!137 &2467626122932290749 stripped
+SkinnedMeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 4275128768408538027, guid: 085be80bf778dbb4ca4eb9574b31874c, type: 3}
+  m_PrefabInstance: {fileID: 1831428019765497622}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &7806446736298007974 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8447798417058239152, guid: 085be80bf778dbb4ca4eb9574b31874c, type: 3}
+  m_PrefabInstance: {fileID: 1831428019765497622}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &2029869154457814526
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7806446736298007974}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 335a5f32da690b2409342b5fa87062bb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyController
+  syncDirection: 0
+  syncMode: 0
+  syncInterval: 0
+  state: 0
+  allowOfflineSimulation: 0
+  enemyForgeRuntimeProfileVersion: 19
+  aggroRadius: 8
+  leashRadius: 20
+  aggroWhenDamaged: 1
+  retaliationRadius: 20
+  enableRoaming: 1
+  roamingRadius: 8
+  roamingMinWait: 2
+  roamingMaxWait: 5
+  isElite: 0
+  attackRange: 1.5
+  attackInterval: 1.5
+  damage: 12
+  combatTurnSpeed: 1080
+  attackImpactDelay: 1.0200001
+  lockFacingOnAggro: 0
+  isRanged: 0
+  projectilePrefab: {fileID: 0}
+  preferredRange: 5
+  tooCloseDistance: 3
+  dropTable: {fileID: 0}
+  worldItemPrefab: {fileID: 0}
+  enemyTemplateId: prefab_aw_pummeler_3d_rigged__1__1_basic
+  deadModelVisibleSeconds: 15
+  respawnAfterDeath: 1
+  respawnDelay: 30
+  respawnProtectionSeconds: 2
+  keepCorpseGrounded: 1
+  corpseGroundingRenderer: {fileID: 2467626122932290749}
+  corpseGroundOffset: -0.15263635
