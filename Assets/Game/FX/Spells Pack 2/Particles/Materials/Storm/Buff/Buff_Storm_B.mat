@@ -95,6 +95,7 @@ Material:
     - _Custom_Data_Mode: 0
     - _DISTORTION: 0
     - _DstBlend: 10
+    - _DstBlendAlpha: 10
     - _Manual_Mode: 0
     - _Mix: 0.54
     - _Noise_1_Length_Scale: 1
@@ -114,6 +115,7 @@ Material:
     - _Soft_Particle: 1
     - _Speed: 2
     - _SrcBlend: 5
+    - _SrcBlendAlpha: 1
     - _Surface: 1
     - _Time_Mode: 1
     - _Trail_Mode: 0
