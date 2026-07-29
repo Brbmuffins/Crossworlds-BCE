@@ -1,3 +1,34 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:4db04a9236633f50cfb44f61459391f16d3f864f404c2620f16d1deb6513bd2b
-size 770
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3162877f5bc75d84aa38252453bae97c, type: 3}
+  m_Name: Elite_DropTable
+  m_EditorClassIdentifier: Assembly-CSharp::DropTable
+  minGold: 10
+  maxGold: 25
+  nothingWeight: 2
+  drops:
+  - itemId: material_copper_bar
+    weight: 4
+    minQty: 1
+    maxQty: 2
+  - itemId: material_copper_shard
+    weight: 3
+    minQty: 2
+    maxQty: 4
+  - itemId: sword_copper
+    weight: 1
+    minQty: 1
+    maxQty: 1
+  - itemId: plate_copper
+    weight: 1
+    minQty: 1
+    maxQty: 1

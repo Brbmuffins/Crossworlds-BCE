@@ -1,3 +1,71 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:56ce2357920e865011c4d80e053926b664a3958fd186a4b07e89ee176d78b6db
-size 3098
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1001 &7586404908315127823
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: -8679921383154817045, guid: 2ca12a2e9eab60041a392cc7f2b475ad, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 1.8081336
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 2ca12a2e9eab60041a392cc7f2b475ad, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 1.823141
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 2ca12a2e9eab60041a392cc7f2b475ad, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 1.8081336
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 2ca12a2e9eab60041a392cc7f2b475ad, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 144.5205
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 2ca12a2e9eab60041a392cc7f2b475ad, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 61.0706
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 2ca12a2e9eab60041a392cc7f2b475ad, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -1065.819
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 2ca12a2e9eab60041a392cc7f2b475ad, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.6779958
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 2ca12a2e9eab60041a392cc7f2b475ad, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0.6710366
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 2ca12a2e9eab60041a392cc7f2b475ad, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0.18386368
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 2ca12a2e9eab60041a392cc7f2b475ad, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0.23711978
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 2ca12a2e9eab60041a392cc7f2b475ad, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: -85.647
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 2ca12a2e9eab60041a392cc7f2b475ad, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: -65.224
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 2ca12a2e9eab60041a392cc7f2b475ad, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 99.886
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 2ca12a2e9eab60041a392cc7f2b475ad, type: 3}
+      propertyPath: m_Name
+      value: prefab_winged_star_staff
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 2ca12a2e9eab60041a392cc7f2b475ad, type: 3}

@@ -1,3 +1,58 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:af1c6dead1d8787e75557f7dcd295cf712f37ce9995ab1a00c9870ae5bbb9fc3
-size 2191
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ebe6620c8ce8e174e839cee638bcd648, type: 3}
+  m_Name: Marauder
+  m_EditorClassIdentifier: Assembly-CSharp::CharacterData
+  className: Marauder
+  roleTagline: 'Burst DPS - Bruiser '
+  loreDescription: 'A warrior exiled from his tribe now seeks death in combat from
+    a worthy foe. '
+  classColor: {r: 0.88, g: 0.58, b: 0.18, a: 1}
+  classColorDark: {r: 0.3, g: 0.18, b: 0.05, a: 1}
+  portrait: {fileID: 21300000, guid: d4d2a70b9ca172b46b668af42ce73111, type: 3}
+  prefab: {fileID: 5942873300349862976, guid: f5061a9f1946be54ab16f2bcc12bc500, type: 3}
+  previewPrefab: {fileID: 5942873300349862976, guid: f5061a9f1946be54ab16f2bcc12bc500, type: 3}
+  traits:
+  - icon: {fileID: 0}
+    label: Turret Tactician
+  - icon: {fileID: 0}
+    label: Rune Forger
+  - icon: {fileID: 0}
+    label: Area Denial
+  - icon: {fileID: 0}
+    label: Field Commander
+  stats:
+  - label: Damage
+    value: 5
+  - label: Control
+    value: 3
+  - label: Mobility
+    value: 3
+  - label: Survivability
+    value: 4
+  - label: Utility
+    value: 3
+  coreAbilities:
+  - icon: {fileID: 21300000, guid: a659b39e757c5094895ec3f466d054f5, type: 3}
+    abilityName: Runic Sentinel
+    description: Deploy an automated turret that fires at nearby enemies until destroyed.
+  - icon: {fileID: 21300000, guid: b9d4c25872e49214fa0715ee2b02d140, type: 3}
+    abilityName: Runic Snare
+    description: Lay a rune trap that roots the first enemy to cross it.
+  - icon: {fileID: 21300000, guid: ee9efa1234a31aa4491e5c07f5d3965f, type: 3}
+    abilityName: Rune Chain
+    description: "Link two runes \u2014 enemies passing the beam take damage and
+      are slowed."
+  deployableName: Runic Sentinel
+  deployableDescription: "Places an automated turret. Marauder's signature \u2014
+    persists between waves and scales with tech upgrades."
+  deployableIcon: {fileID: 21300000, guid: a659b39e757c5094895ec3f466d054f5, type: 3}

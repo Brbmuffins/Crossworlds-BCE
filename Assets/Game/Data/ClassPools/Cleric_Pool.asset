@@ -1,3 +1,17 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:fccb85dda4fe822ae45a32df0d27c71c1fcfe8467913e05d890f0af7c86e8c9a
-size 680
+﻿%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c3dc905b15374d744a5a3c81d8a63ce8, type: 3}
+  m_Name: Cleric_Pool
+  m_EditorClassIdentifier: Assembly-CSharp::ClassAbilityPool
+  className: Cleric
+  availableIndices: 00000000010000000200000003000000040000000500000006000000070000001700000018000000190000001a0000001b0000001c0000002300000024000000350000003600000037000000
+  defaultEquipped: 23000000240000001a0000001c000000

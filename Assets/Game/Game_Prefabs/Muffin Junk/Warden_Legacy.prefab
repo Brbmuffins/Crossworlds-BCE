@@ -1,3 +1,6094 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:7243c8075fb65795ebb5e4d4f36c0ca4fc28ec5bb9a16b3dcbd189c2fb2591c9
-size 154987
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &2247696185094625769
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4380736623570682}
+  - component: {fileID: 3365971458364579483}
+  - component: {fileID: 6277329859122692248}
+  - component: {fileID: 1906696710388887325}
+  - component: {fileID: 7995507754606366838}
+  - component: {fileID: 7882962342818871434}
+  - component: {fileID: 6226072917087391124}
+  - component: {fileID: 7302377130195555581}
+  - component: {fileID: 6202183427749217}
+  - component: {fileID: 254623348494757862}
+  - component: {fileID: 5358142499249907903}
+  - component: {fileID: 362966492792788329}
+  m_Layer: 0
+  m_Name: Warden
+  m_TagString: Player
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4380736623570682
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2247696185094625769}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 2057927190753848465}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &3365971458364579483
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2247696185094625769}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9b91ecbcc199f4492b9a91e820070131, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Mirror::Mirror.NetworkIdentity
+  sceneId: 0
+  _assetId: 0
+  serverOnly: 0
+  visibility: 0
+  hasSpawned: 0
+--- !u!114 &6277329859122692248
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2247696185094625769}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 125492436b0ac9744afb7626ae9d8fb4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerIdentity
+  syncDirection: 0
+  syncMode: 0
+  syncInterval: 0
+  playerName: Player
+  classIndex: 0
+  characterId: -1
+--- !u!54 &1906696710388887325
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2247696185094625769}
+  serializedVersion: 5
+  m_Mass: 80
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 0
+  m_Interpolate: 1
+  m_Constraints: 112
+  m_CollisionDetection: 0
+--- !u!136 &7995507754606366838
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2247696185094625769}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.35
+  m_Height: 1.8
+  m_Direction: 1
+  m_Center: {x: 0, y: 0.9, z: 0}
+--- !u!114 &7882962342818871434
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2247696185094625769}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 932cce511b66cb3489da31f0adac5688, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement
+  syncDirection: 0
+  syncMode: 0
+  syncInterval: 0
+  moveSpeed: 5
+  sprintSpeed: 9
+  jumpForce: 6
+  rotationSpeed: 12
+  cam: {fileID: 0}
+  useBackwardMovementAnimation: 1
+  lockCharacterRotation: 0
+  captureStartRotationAsLock: 1
+  lockedRotationEuler: {x: 0, y: 0, z: 0}
+  keepUpright: 1
+  movementLocked: 0
+  dodgeForce: 14
+  dodgeDuration: 0.35
+  dodgeMaxCharges: 2
+  dodgeRecharge: 5
+  dodgeVFX: {fileID: 0}
+--- !u!114 &6226072917087391124
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2247696185094625769}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6b52a347fbbeb824b977decb57a69f81, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Health
+  syncDirection: 0
+  syncMode: 0
+  syncInterval: 0
+  maxHealth: 150
+  currentHealth: 0
+  isPlayer: 1
+  isRobotic: 0
+  showEnemyHealthBar: 1
+  showFloatingNumbers: 1
+  enemyHealthBarHeightOffset: 0.25
+  enemyHealthBarFixedHeight: -1
+  showEnemyHoverInfo: 1
+  enemyDisplayName: 
+  enemyLevel: 0
+  autoRespawnPlayers: 1
+  playerRespawnDelay: 10
+  playerRespawnHealthPercent: 1
+  respawnAtStartPosition: 0
+  respawnInvulnerabilitySeconds: 2
+  manageSimpleEnemyDeathLifecycle: 1
+  simpleEnemyDeadModelSeconds: 3
+  simpleEnemyRespawns: 1
+  simpleEnemyRespawnDelay: 30
+  destroySimpleEnemyIfRespawnDisabled: 1
+  disableEnemyBodyCollision: 1
+  relaxEnemyAgentAvoidance: 1
+  desyncEnemyAnimators: 1
+  onHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  onDeath:
+    m_PersistentCalls:
+      m_Calls: []
+  onDamageTaken:
+    m_PersistentCalls:
+      m_Calls: []
+  onDamagedBy:
+    m_PersistentCalls:
+      m_Calls: []
+  onHealApplied:
+    m_PersistentCalls:
+      m_Calls: []
+  onDownedChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  onKilledBy:
+    m_PersistentCalls:
+      m_Calls: []
+  isInvulnerable: 0
+--- !u!114 &7302377130195555581
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2247696185094625769}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 97ddc4b0f30335c489bff19a29403a09, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CharacterStats
+  baseMaxHealthBonus: 0
+  baseDamageBonusPct: 0
+  baseCriticalStrikeChance: 0
+  baseCriticalStrikeDamageMultiplier: 1.5
+  baseDamageReduction: 0
+  baseMoveSpeedBonusPct: 0
+  baseCooldownReduction: 0
+  baseHealBonusPct: 0
+  effectiveMaxHealthBonus: 0
+  effectiveDamageMultiplier: 1
+  effectiveCriticalStrikeChance: 0
+  effectiveCriticalStrikeDamageMultiplier: 1.5
+  effectiveDamageReduction: 0
+  effectiveMoveSpeedMultiplier: 1
+  effectiveCooldownReduction: 0
+  effectiveHealMultiplier: 1
+--- !u!114 &6202183427749217
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2247696185094625769}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f31fa88ea071f714f8ec8e803a2a2888, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AbilityCaster
+  syncDirection: 0
+  syncMode: 0
+  syncInterval: 0
+  cam: {fileID: 0}
+  castAnimator: {fileID: 0}
+  castMoveInterruptDistance: 0.5
+  commitMovementLockDuration: 0.08
+  classPool: {fileID: 11400000, guid: ad2c550996c41ae4db0085fd8187f91e, type: 2}
+  kineticReversalHandler: {fileID: 0}
+  siegeModeHandler: {fileID: 0}
+  dashHandler: {fileID: 0}
+  stealthHandler: {fileID: 0}
+  transferProtocolHandler: {fileID: 0}
+  ironTetherHandler: {fileID: 0}
+  shockMinePrefab: {fileID: 0}
+  naniteSwarmPrefab: {fileID: 0}
+  singularityPrefab: {fileID: 0}
+  eventHorizonPrefab: {fileID: 0}
+  lastBastionPrefab: {fileID: 0}
+  nullFieldPrefab: {fileID: 0}
+  healVFX: {fileID: 0}
+  beaconPrefab: {fileID: 0}
+  phaseRelayPrefab: {fileID: 0}
+  shadowRelayPrefab: {fileID: 0}
+  minimumAimDistance: 1
+  useScrollWheelVariants: 0
+  indicatorGroundOffset: 0.02
+  indicatorRaycastHeight: 12
+  indicatorRaycastDistance: 40
+  indicatorDecalProjectionDepth: 8
+  indicatorDecalMaterial: {fileID: 0}
+  indicatorTextureDamage: {fileID: 0}
+  indicatorTextureHeal: {fileID: 0}
+  indicatorTextureSupport: {fileID: 0}
+  spellbook:
+  - abilityName: Runic Sentinel
+    variantOnly: 0
+    variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
+    shape: 0
+    category: 2
+    range: 10
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 1.5
+    spawnTurret: 1
+    turretPrefab: {fileID: 832449836960929029, guid: aeeec77a192ced14c801c8c8521f793e, type: 3}
+    cooldown: 6
+    icon: {fileID: 21300000, guid: a659b39e757c5094895ec3f466d054f5, type: 3}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 10
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 1151652431613522, guid: dc081e8ab4711ba478a129a906452987, type: 3}
+    hitVFX: {fileID: 2965222256817593503, guid: a164e676dbbd6e54587237e619372c98, type: 3}
+    shieldAbsorb: 0
+    shieldDuration: 0
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 1151652431613522, guid: dc081e8ab4711ba478a129a906452987, type: 3}
+    variants: []
+  - abilityName: Void Bolt
+    variantOnly: 0
+    variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
+    shape: 1
+    category: 0
+    range: 8
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 1.5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 3
+    icon: {fileID: 21300000, guid: 1bc21f5844138bf44a721e5d99408301, type: 3}
+    castTime: 0.6
+    chargeable: 1
+    maxChargeTime: 1.5
+    damage: 10
+    maxChargeDamage: 30
+    maxChargeSizeMultiplier: 1.6
+    targetTag: Enemy
+    chargedTint: {r: 0.4, g: 0.1, b: 0.8, a: 0.9}
+    fireVisual: 0
+    castVFX: {fileID: 1741568361362846, guid: 4db85d1e064bd874cbfb92849ed76f3e, type: 3}
+    hitVFX: {fileID: 8974203713140315807, guid: 709b0bd6b0b625249a98409dd7a87343, type: 3}
+    shieldAbsorb: 0
+    shieldDuration: 0
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Mending Circle
+    variantOnly: 0
+    variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
+    shape: 0
+    category: 1
+    range: 6
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 3
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 5
+    icon: {fileID: 21300000, guid: 0447f6905ac34da468f2c78fd2db538c, type: 3}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 10
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 6226639424814228509, guid: aa77297fca95b7346a94d76cf84fe635, type: 3}
+    hitVFX: {fileID: 7986504087968017091, guid: 12a56ee4630040c4eb17ae9707ed4cef, type: 3}
+    shieldAbsorb: 0
+    shieldDuration: 0
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 7986504087968017091, guid: 12a56ee4630040c4eb17ae9707ed4cef, type: 3}
+    variants: []
+  - abilityName: Storm Lash
+    variantOnly: 0
+    variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
+    shape: 2
+    category: 0
+    range: 10
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 1.5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 4
+    icon: {fileID: 21300000, guid: 5c8b181005162704fbad039dcfa0f7ee, type: 3}
+    castTime: 0.6
+    chargeable: 1
+    maxChargeTime: 1.5
+    damage: 15
+    maxChargeDamage: 50
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 4533992852024952465, guid: 5ebefd38fe1dbce4990790a0add9f65a, type: 3}
+    hitVFX: {fileID: 1171201465392465800, guid: 4aa9f30a28a77224ba84b2a2c334c71b, type: 3}
+    shieldAbsorb: 0
+    shieldDuration: 0
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Ember Surge
+    variantOnly: 0
+    variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
+    shape: 0
+    category: 0
+    range: 12
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 2
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 4
+    icon: {fileID: 21300000, guid: bdaa746a3e0ae6e47b308084df58536b, type: 3}
+    castTime: 0.6
+    chargeable: 1
+    maxChargeTime: 1.5
+    damage: 20
+    maxChargeDamage: 45
+    maxChargeSizeMultiplier: 2
+    targetTag: Enemy
+    chargedTint: {r: 1, g: 0.4, b: 0.05, a: 0.9}
+    fireVisual: 0
+    castVFX: {fileID: 8149814289637279443, guid: 03ad2654f9e07194188f6a63eff8b2e0, type: 3}
+    hitVFX: {fileID: 7606620699271223679, guid: 5aa2236667d208e41a28e0f79695320a, type: 3}
+    shieldAbsorb: 0
+    shieldDuration: 0
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Mind Spike
+    variantOnly: 0
+    variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
+    shape: 0
+    category: 0
+    range: 10
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 2.5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 5
+    icon: {fileID: 21300000, guid: 9e0cdc8655bcbfe44a803d3561354d21, type: 3}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 35
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 1105111623985532, guid: d03268a4406450646bbcdef70ee8ea3d, type: 3}
+    hitVFX: {fileID: 2965222256817593503, guid: a164e676dbbd6e54587237e619372c98, type: 3}
+    shieldAbsorb: 0
+    shieldDuration: 0
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Binding Wave
+    variantOnly: 0
+    variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
+    shape: 0
+    category: 0
+    range: 5
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 6
+    icon: {fileID: 21300000, guid: eb12275a82162b04d9fbafbad85b32c9, type: 3}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 15
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 1151652431613522, guid: dc081e8ab4711ba478a129a906452987, type: 3}
+    hitVFX: {fileID: 8378648546881499446, guid: 867c572a5be680d42a042d2349f10143, type: 3}
+    shieldAbsorb: 0
+    shieldDuration: 0
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 1151652431613522, guid: dc081e8ab4711ba478a129a906452987, type: 3}
+    variants: []
+  - abilityName: Arcane Ward
+    variantOnly: 0
+    variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
+    shape: 0
+    category: 2
+    range: 0
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 1
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 8
+    icon: {fileID: 21300000, guid: 03039b5586a71704caf94fc89011ec86, type: 3}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 10
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 2309628055276507911, guid: 5dc06ed64db520147912484d5ba21615, type: 3}
+    hitVFX: {fileID: 0}
+    shieldAbsorb: 50
+    shieldDuration: 5
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Runic Snare
+    variantOnly: 0
+    variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
+    shape: 0
+    category: 0
+    range: 8
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 1
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 5
+    icon: {fileID: 21300000, guid: b9d4c25872e49214fa0715ee2b02d140, type: 3}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 40
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 1151652431613522, guid: dc081e8ab4711ba478a129a906452987, type: 3}
+    hitVFX: {fileID: 4994997792314849709, guid: 3dd50886582244645be87adb42aa8528, type: 3}
+    shieldAbsorb: 0
+    shieldDuration: 0
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 1151652431613522, guid: dc081e8ab4711ba478a129a906452987, type: 3}
+    variants: []
+  - abilityName: Battle Hymn
+    variantOnly: 0
+    variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
+    shape: 0
+    category: 2
+    range: 0
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 6
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 12
+    icon: {fileID: 21300000, guid: 9a902d6d8a232b949b6d31337fd2ad9b, type: 3}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 10
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 6226639424814228509, guid: aa77297fca95b7346a94d76cf84fe635, type: 3}
+    hitVFX: {fileID: 0}
+    shieldAbsorb: 0
+    shieldDuration: 0
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 7986504087968017091, guid: 12a56ee4630040c4eb17ae9707ed4cef, type: 3}
+    variants: []
+  - abilityName: Spirit Redirect
+    variantOnly: 0
+    variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
+    shape: 0
+    category: 2
+    range: 12
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 1
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 8
+    icon: {fileID: 21300000, guid: cd12915e1056a6a4ab9ba8447b620a6c, type: 3}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 10
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 1664554866138106, guid: cdf5105e83ab35f4e929972c34b34ed3, type: 3}
+    hitVFX: {fileID: 6226639424814228509, guid: aa77297fca95b7346a94d76cf84fe635, type: 3}
+    shieldAbsorb: 0
+    shieldDuration: 0
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Mend
+    variantOnly: 0
+    variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
+    shape: 0
+    category: 1
+    range: 6
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 1
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 6
+    icon: {fileID: 21300000, guid: efabe7993ebd4654c9e1e22b0a082e65, type: 3}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 10
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 6226639424814228509, guid: aa77297fca95b7346a94d76cf84fe635, type: 3}
+    hitVFX: {fileID: 8550103265853490525, guid: 10f20a501ddb3db4db094749bb054e68, type: 3}
+    shieldAbsorb: 0
+    shieldDuration: 0
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Conjurer's Surge
+    variantOnly: 0
+    variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
+    shape: 0
+    category: 2
+    range: 0
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 1
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 45
+    icon: {fileID: 21300000, guid: 0ebf1c5c7d608714992ac370f9bf838c, type: 3}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 10
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 4533992852024952465, guid: 5ebefd38fe1dbce4990790a0add9f65a, type: 3}
+    hitVFX: {fileID: 5263261513851132598, guid: 870a10c1f420abb4598b34344a9e7823, type: 3}
+    shieldAbsorb: 0
+    shieldDuration: 0
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Counter Blow
+    variantOnly: 0
+    variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
+    shape: 1
+    category: 2
+    range: 8
+    coneAngle: 70
+    rectWidth: 1.5
+    indicatorSize: 1.5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 10
+    icon: {fileID: 21300000, guid: 36e551932b9b53f4096cfb9c59e3a7f6, type: 3}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 60
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 8145502431507700120, guid: 000832214335ffd4782827d2a4510f4a, type: 3}
+    hitVFX: {fileID: 689667626583958020, guid: 1336648bc1d8baf46a4515860950c9d4, type: 3}
+    shieldAbsorb: 0
+    shieldDuration: 0
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Gravity Slam
+    variantOnly: 0
+    variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
+    shape: 0
+    category: 2
+    range: 10
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 4
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 7
+    icon: {fileID: 21300000, guid: 14a88f3e3f428af40b93964d8ac43178, type: 3}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 10
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 8644861730782453898, guid: b64478a730dfa2341bc02911953ad4e9, type: 3}
+    hitVFX: {fileID: 4994997792314849709, guid: 3dd50886582244645be87adb42aa8528, type: 3}
+    shieldAbsorb: 0
+    shieldDuration: 0
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 1051704587376508, guid: fffb77091d2311b4bb70c69cbd77ef57, type: 3}
+    variants: []
+  - abilityName: Shieldwall Charge
+    variantOnly: 0
+    variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
+    shape: 2
+    category: 0
+    range: 6
+    coneAngle: 60
+    rectWidth: 2
+    indicatorSize: 1.5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 6
+    icon: {fileID: 21300000, guid: 347fe67c793bf0d429cc313d0c38ab82, type: 3}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 25
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 3367314013316085171, guid: 8b20002c2b69a9d44ab5bae8e1d923cd, type: 3}
+    hitVFX: {fileID: 358637981425055526, guid: 8eb503696b886e04faff8fc0f480d473, type: 3}
+    shieldAbsorb: 0
+    shieldDuration: 0
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Stalwart Stance
+    variantOnly: 0
+    variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
+    shape: 0
+    category: 2
+    range: 0
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 1
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 14
+    icon: {fileID: 21300000, guid: cc749c34f176e6848813e7cddab4d3e0, type: 3}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 10
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 2309628055276507911, guid: 5dc06ed64db520147912484d5ba21615, type: 3}
+    hitVFX: {fileID: 0}
+    shieldAbsorb: 0
+    shieldDuration: 0
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Rune Chain
+    variantOnly: 0
+    variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
+    shape: 0
+    category: 2
+    range: 8
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 1
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 9
+    icon: {fileID: 21300000, guid: ee9efa1234a31aa4491e5c07f5d3965f, type: 3}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 10
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 1949376974578768, guid: d49e8961a0a059b4ab38a07daef04519, type: 3}
+    hitVFX: {fileID: 1171201465392465800, guid: 4aa9f30a28a77224ba84b2a2c334c71b, type: 3}
+    shieldAbsorb: 0
+    shieldDuration: 0
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Iron Rampart
+    variantOnly: 0
+    variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
+    shape: 2
+    category: 2
+    range: 8
+    coneAngle: 60
+    rectWidth: 8
+    indicatorSize: 1.5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 50
+    icon: {fileID: 21300000, guid: fbd705b814f5c6448ba80b3e46505a5c, type: 3}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 10
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 1777011822275602, guid: 1fc25210aae1ece4b9dcb815d505301d, type: 3}
+    hitVFX: {fileID: 0}
+    shieldAbsorb: 0
+    shieldDuration: 0
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 1777011822275602, guid: 1fc25210aae1ece4b9dcb815d505301d, type: 3}
+    variants: []
+  - abilityName: Arcane Step
+    variantOnly: 0
+    variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
+    shape: 0
+    category: 2
+    range: 10
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 3.5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 4
+    icon: {fileID: 21300000, guid: 2047668376e469a43970217c1f3b10f4, type: 3}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 10
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 7761031033666763820, guid: 1eb833340b41fb444b576c4dced8d4dc, type: 3}
+    hitVFX: {fileID: 1427244075889090, guid: 5ada718ad8eefc341a11217c754bc91a, type: 3}
+    shieldAbsorb: 0
+    shieldDuration: 0
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 4
+    pulseInterval: 1
+    pulseRadius: 0
+    pulseDamage: 10
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Void Maw
+    variantOnly: 0
+    variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
+    shape: 0
+    category: 0
+    range: 10
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 8
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 9
+    icon: {fileID: 21300000, guid: 8bd1e081148c0f642a307bafee93747b, type: 3}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 20
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 1901902437216624, guid: 3bdca15d736d48f409ccf70e68bf79de, type: 3}
+    hitVFX: {fileID: 8974203713140315807, guid: 709b0bd6b0b625249a98409dd7a87343, type: 3}
+    shieldAbsorb: 0
+    shieldDuration: 0
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 4
+    pulseInterval: 1
+    pulseRadius: 0
+    pulseDamage: 20
+    pulseVFXLifetime: 1
+    deployablePrefab: {fileID: 1901902437216624, guid: 3bdca15d736d48f409ccf70e68bf79de, type: 3}
+    variants: []
+  - abilityName: Forked Lightning
+    variantOnly: 0
+    variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
+    shape: 0
+    category: 0
+    range: 10
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 1.5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 7
+    icon: {fileID: 21300000, guid: 54cf769da85c9bc42a22be7b8f285eda, type: 3}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 30
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 4533992852024952465, guid: 5ebefd38fe1dbce4990790a0add9f65a, type: 3}
+    hitVFX: {fileID: 1914988783019038, guid: bf79162d73e16994d8b477d54f0b0f21, type: 3}
+    shieldAbsorb: 0
+    shieldDuration: 0
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Collapsing Void
+    variantOnly: 0
+    variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
+    shape: 0
+    category: 0
+    range: 14
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 12
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 50
+    icon: {fileID: 21300000, guid: c02f03c383a15344c82f557c9fd617d8, type: 3}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 60
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 1901902437216624, guid: 3bdca15d736d48f409ccf70e68bf79de, type: 3}
+    hitVFX: {fileID: 358637981425055526, guid: 8eb503696b886e04faff8fc0f480d473, type: 3}
+    shieldAbsorb: 0
+    shieldDuration: 0
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 1901902437216624, guid: 3bdca15d736d48f409ccf70e68bf79de, type: 3}
+    variants: []
+  - abilityName: Soul Bond
+    variantOnly: 0
+    variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
+    shape: 0
+    category: 2
+    range: 8
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 1
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 9
+    icon: {fileID: 21300000, guid: 12a95c21e3b8fac4e92765352314da2d, type: 3}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 10
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 6226639424814228509, guid: aa77297fca95b7346a94d76cf84fe635, type: 3}
+    hitVFX: {fileID: 0}
+    shieldAbsorb: 0
+    shieldDuration: 0
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 1151652431613522, guid: dc081e8ab4711ba478a129a906452987, type: 3}
+    variants: []
+  - abilityName: Spirit Wisps
+    variantOnly: 0
+    variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
+    shape: 0
+    category: 1
+    range: 10
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 2
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 7
+    icon: {fileID: 21300000, guid: af77a197be810d346b6e6c6ce8cec822, type: 3}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 10
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 6226639424814228509, guid: aa77297fca95b7346a94d76cf84fe635, type: 3}
+    hitVFX: {fileID: 8550103265853490525, guid: 10f20a501ddb3db4db094749bb054e68, type: 3}
+    shieldAbsorb: 0
+    shieldDuration: 0
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Divine Spark
+    variantOnly: 0
+    variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
+    shape: 0
+    category: 1
+    range: 6
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 1.5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 14
+    icon: {fileID: 21300000, guid: a9f31fa68537daf4799d1038b8f9fc6d, type: 3}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 60
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 6226639424814228509, guid: aa77297fca95b7346a94d76cf84fe635, type: 3}
+    hitVFX: {fileID: 8550103265853490525, guid: 10f20a501ddb3db4db094749bb054e68, type: 3}
+    shieldAbsorb: 0
+    shieldDuration: 0
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Sacred Aegis
+    variantOnly: 0
+    variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
+    shape: 0
+    category: 2
+    range: 8
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 1
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 10
+    icon: {fileID: 21300000, guid: b72c4a41ffe083b4883670d8c473c505, type: 3}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 10
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 2309628055276507911, guid: 5dc06ed64db520147912484d5ba21615, type: 3}
+    hitVFX: {fileID: 0}
+    shieldAbsorb: 20
+    shieldDuration: 8
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Dispel
+    variantOnly: 0
+    variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
+    shape: 0
+    category: 2
+    range: 8
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 1
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 7
+    icon: {fileID: 21300000, guid: b3b2da867e64b5e479f78345e0ace3b8, type: 3}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 10
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 1151652431613522, guid: dc081e8ab4711ba478a129a906452987, type: 3}
+    hitVFX: {fileID: 2965222256817593503, guid: a164e676dbbd6e54587237e619372c98, type: 3}
+    shieldAbsorb: 0
+    shieldDuration: 0
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Temporal Grace
+    variantOnly: 0
+    variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
+    shape: 0
+    category: 1
+    range: 0
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 1
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 60
+    icon: {fileID: 21300000, guid: e56e96cba6fd4ef46ae9357bb6e1e9b5, type: 3}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 10
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 1377279482138388, guid: 653866134638b354ca265558d783dd1d, type: 3}
+    hitVFX: {fileID: 7865134773366943936, guid: ca9ff8d9a7cfbd24a9968357a2fb9b59, type: 3}
+    shieldAbsorb: 0
+    shieldDuration: 0
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 4932088507883938021, guid: 0e5709a7ddb77924090c112cf73bb98a, type: 3}
+    variants: []
+  - abilityName: Shadow Veil
+    variantOnly: 0
+    variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
+    shape: 0
+    category: 2
+    range: 0
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 1
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 10
+    icon: {fileID: 21300000, guid: b023415befb254b41930350875ae5562, type: 3}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 10
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 6526302276393259002, guid: f9d9793366789ae48a7e1b0692763acc, type: 3}
+    hitVFX: {fileID: 0}
+    shieldAbsorb: 0
+    shieldDuration: 0
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Silence Ward
+    variantOnly: 0
+    variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
+    shape: 0
+    category: 2
+    range: 10
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 12
+    icon: {fileID: 21300000, guid: 6ee3fd0c156222f4196d8db74f57e0b7, type: 3}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 10
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 1777011822275602, guid: 1fc25210aae1ece4b9dcb815d505301d, type: 3}
+    hitVFX: {fileID: 4932088507883938021, guid: 0e5709a7ddb77924090c112cf73bb98a, type: 3}
+    shieldAbsorb: 0
+    shieldDuration: 0
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 4932088507883938021, guid: 0e5709a7ddb77924090c112cf73bb98a, type: 3}
+    variants: []
+  - abilityName: Dark Harvest
+    variantOnly: 0
+    variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
+    shape: 0
+    category: 0
+    range: 8
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 8
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 40
+    icon: {fileID: 21300000, guid: f1a75d68d54e56142a61fba20e111f81, type: 3}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 20
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 1901902437216624, guid: 3bdca15d736d48f409ccf70e68bf79de, type: 3}
+    hitVFX: {fileID: 5034656251238326012, guid: 9de2fa19f0390d44491264d9cab8cec5, type: 3}
+    shieldAbsorb: 0
+    shieldDuration: 0
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 1901902437216624, guid: 3bdca15d736d48f409ccf70e68bf79de, type: 3}
+    variants: []
+  - abilityName: Ability
+    variantOnly: 0
+    variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
+    shape: 0
+    category: 0
+    range: 4
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 1.5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 3
+    icon: {fileID: 0}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 10
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 0}
+    hitVFX: {fileID: 0}
+    shieldAbsorb: 0
+    shieldDuration: 0
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Ability
+    variantOnly: 0
+    variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
+    shape: 0
+    category: 0
+    range: 4
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 1.5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 3
+    icon: {fileID: 0}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 10
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 0}
+    hitVFX: {fileID: 0}
+    shieldAbsorb: 0
+    shieldDuration: 0
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Ability
+    variantOnly: 0
+    variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
+    shape: 0
+    category: 0
+    range: 4
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 1.5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 3
+    icon: {fileID: 0}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 10
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 0}
+    hitVFX: {fileID: 0}
+    shieldAbsorb: 0
+    shieldDuration: 0
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Healing Cone
+    variantOnly: 0
+    variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
+    shape: 1
+    category: 1
+    range: 10
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 1.5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 5
+    icon: {fileID: 21300000, guid: 0447f6905ac34da468f2c78fd2db538c, type: 3}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 10
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Player
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 0}
+    hitVFX: {fileID: 0}
+    shieldAbsorb: 30
+    shieldDuration: 0
+    healAmount: 25
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Mending Beam
+    variantOnly: 0
+    variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
+    shape: 2
+    category: 1
+    range: 12
+    coneAngle: 60
+    rectWidth: 2
+    indicatorSize: 1.5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 6
+    icon: {fileID: 21300000, guid: 12a95c21e3b8fac4e92765352314da2d, type: 3}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 10
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Player
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 0}
+    hitVFX: {fileID: 0}
+    shieldAbsorb: 30
+    shieldDuration: 0
+    healAmount: 25
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Conflagration Cone
+    variantOnly: 0
+    variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
+    shape: 1
+    category: 0
+    range: 10
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 1.5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 5
+    icon: {fileID: 21300000, guid: bdaa746a3e0ae6e47b308084df58536b, type: 3}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 20
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 0}
+    hitVFX: {fileID: 0}
+    shieldAbsorb: 0
+    shieldDuration: 0
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Ember Beam
+    variantOnly: 0
+    variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
+    shape: 2
+    category: 0
+    range: 12
+    coneAngle: 60
+    rectWidth: 2
+    indicatorSize: 1.5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 6
+    icon: {fileID: 21300000, guid: bdaa746a3e0ae6e47b308084df58536b, type: 3}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 25
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 0}
+    hitVFX: {fileID: 0}
+    shieldAbsorb: 0
+    shieldDuration: 0
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Ice Spikes
+    variantOnly: 0
+    variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
+    shape: 1
+    category: 0
+    range: 10
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 1.5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 5
+    icon: {fileID: 21300000, guid: b0b4b45b2cc99554eb06793c34d87efd, type: 3}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 20
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 0}
+    hitVFX: {fileID: 0}
+    shieldAbsorb: 0
+    shieldDuration: 0
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Meteor Shower
+    variantOnly: 0
+    variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
+    shape: 0
+    category: 0
+    range: 14
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 8
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 30
+    icon: {fileID: 21300000, guid: c02f03c383a15344c82f557c9fd617d8, type: 3}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 30
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 0}
+    hitVFX: {fileID: 0}
+    shieldAbsorb: 0
+    shieldDuration: 0
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Fireball
+    variantOnly: 0
+    variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
+    shape: 1
+    category: 0
+    range: 10
+    coneAngle: 55
+    rectWidth: 1.5
+    indicatorSize: 1.5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 4
+    icon: {fileID: 21300000, guid: bdaa746a3e0ae6e47b308084df58536b, type: 3}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 25
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 0}
+    hitVFX: {fileID: 0}
+    shieldAbsorb: 0
+    shieldDuration: 0
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants:
+    - variantName: 
+      useSpellbookAbilityIndex: 0
+      spellbookAbilityIndex: -1
+      spellbookAbilityName: Fireball Quick Shot
+      indicatorTint: {r: 0, g: 0, b: 0, a: 0}
+      healAmount: 0
+      hotTickAmount: 0
+      hotTicks: 0
+      hotInterval: 1
+      shieldAbsorb: 0
+      shieldDuration: 0
+      damage: 0
+      statusEffect: 0
+      statusDuration: 0
+      statusValue: 0
+      targetTag: 
+      castVFX: {fileID: 0}
+      hitVFX: {fileID: 0}
+    - variantName: 
+      useSpellbookAbilityIndex: 0
+      spellbookAbilityIndex: -1
+      spellbookAbilityName: Fireball Triple Burst
+      indicatorTint: {r: 0, g: 0, b: 0, a: 0}
+      healAmount: 0
+      hotTickAmount: 0
+      hotTicks: 0
+      hotInterval: 1
+      shieldAbsorb: 0
+      shieldDuration: 0
+      damage: 0
+      statusEffect: 0
+      statusDuration: 0
+      statusValue: 0
+      targetTag: 
+      castVFX: {fileID: 0}
+      hitVFX: {fileID: 0}
+    - variantName: 
+      useSpellbookAbilityIndex: 0
+      spellbookAbilityIndex: -1
+      spellbookAbilityName: Fireball Inferno Nova
+      indicatorTint: {r: 0, g: 0, b: 0, a: 0}
+      healAmount: 0
+      hotTickAmount: 0
+      hotTicks: 0
+      hotInterval: 1
+      shieldAbsorb: 0
+      shieldDuration: 0
+      damage: 0
+      statusEffect: 0
+      statusDuration: 0
+      statusValue: 0
+      targetTag: 
+      castVFX: {fileID: 0}
+      hitVFX: {fileID: 0}
+  - abilityName: Chain Lightning
+    variantOnly: 0
+    variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
+    shape: 0
+    category: 0
+    range: 10
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 3
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 5
+    icon: {fileID: 21300000, guid: 5c8b181005162704fbad039dcfa0f7ee, type: 3}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 30
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 0}
+    hitVFX: {fileID: 0}
+    shieldAbsorb: 0
+    shieldDuration: 0
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants:
+    - variantName: 
+      useSpellbookAbilityIndex: 0
+      spellbookAbilityIndex: -1
+      spellbookAbilityName: Chain Lightning Arc
+      indicatorTint: {r: 0, g: 0, b: 0, a: 0}
+      healAmount: 0
+      hotTickAmount: 0
+      hotTicks: 0
+      hotInterval: 1
+      shieldAbsorb: 0
+      shieldDuration: 0
+      damage: 0
+      statusEffect: 0
+      statusDuration: 0
+      statusValue: 0
+      targetTag: 
+      castVFX: {fileID: 0}
+      hitVFX: {fileID: 0}
+    - variantName: 
+      useSpellbookAbilityIndex: 0
+      spellbookAbilityIndex: -1
+      spellbookAbilityName: Chain Lightning Chain
+      indicatorTint: {r: 0, g: 0, b: 0, a: 0}
+      healAmount: 0
+      hotTickAmount: 0
+      hotTicks: 0
+      hotInterval: 1
+      shieldAbsorb: 0
+      shieldDuration: 0
+      damage: 0
+      statusEffect: 0
+      statusDuration: 0
+      statusValue: 0
+      targetTag: 
+      castVFX: {fileID: 0}
+      hitVFX: {fileID: 0}
+    - variantName: 
+      useSpellbookAbilityIndex: 0
+      spellbookAbilityIndex: -1
+      spellbookAbilityName: Chain Lightning Thunderstorm
+      indicatorTint: {r: 0, g: 0, b: 0, a: 0}
+      healAmount: 0
+      hotTickAmount: 0
+      hotTicks: 0
+      hotInterval: 1
+      shieldAbsorb: 0
+      shieldDuration: 0
+      damage: 0
+      statusEffect: 0
+      statusDuration: 0
+      statusValue: 0
+      targetTag: 
+      castVFX: {fileID: 0}
+      hitVFX: {fileID: 0}
+  - abilityName: Frost Nova
+    variantOnly: 0
+    variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
+    shape: 0
+    category: 0
+    range: 8
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 4
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 6
+    icon: {fileID: 21300000, guid: 5b198ae69b05c7348b86060367dbe9f0, type: 3}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 15
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 0}
+    hitVFX: {fileID: 0}
+    shieldAbsorb: 0
+    shieldDuration: 0
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants:
+    - variantName: 
+      useSpellbookAbilityIndex: 0
+      spellbookAbilityIndex: -1
+      spellbookAbilityName: Frost Nova Chill
+      indicatorTint: {r: 0, g: 0, b: 0, a: 0}
+      healAmount: 0
+      hotTickAmount: 0
+      hotTicks: 0
+      hotInterval: 1
+      shieldAbsorb: 0
+      shieldDuration: 0
+      damage: 0
+      statusEffect: 0
+      statusDuration: 0
+      statusValue: 0
+      targetTag: 
+      castVFX: {fileID: 0}
+      hitVFX: {fileID: 0}
+    - variantName: 
+      useSpellbookAbilityIndex: 0
+      spellbookAbilityIndex: -1
+      spellbookAbilityName: Frost Nova Freeze
+      indicatorTint: {r: 0, g: 0, b: 0, a: 0}
+      healAmount: 0
+      hotTickAmount: 0
+      hotTicks: 0
+      hotInterval: 1
+      shieldAbsorb: 0
+      shieldDuration: 0
+      damage: 0
+      statusEffect: 0
+      statusDuration: 0
+      statusValue: 0
+      targetTag: 
+      castVFX: {fileID: 0}
+      hitVFX: {fileID: 0}
+    - variantName: 
+      useSpellbookAbilityIndex: 0
+      spellbookAbilityIndex: -1
+      spellbookAbilityName: Frost Nova Blizzard
+      indicatorTint: {r: 0, g: 0, b: 0, a: 0}
+      healAmount: 0
+      hotTickAmount: 0
+      hotTicks: 0
+      hotInterval: 1
+      shieldAbsorb: 0
+      shieldDuration: 0
+      damage: 0
+      statusEffect: 0
+      statusDuration: 0
+      statusValue: 0
+      targetTag: 
+      castVFX: {fileID: 0}
+      hitVFX: {fileID: 0}
+  - abilityName: Thorn Volley
+    variantOnly: 0
+    variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
+    shape: 1
+    category: 0
+    range: 9
+    coneAngle: 50
+    rectWidth: 1.5
+    indicatorSize: 1.5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 4
+    icon: {fileID: 21300000, guid: f1a75d68d54e56142a61fba20e111f81, type: 3}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 20
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 0}
+    hitVFX: {fileID: 0}
+    shieldAbsorb: 0
+    shieldDuration: 0
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants:
+    - variantName: 
+      useSpellbookAbilityIndex: 0
+      spellbookAbilityIndex: -1
+      spellbookAbilityName: Thorn Volley Spine
+      indicatorTint: {r: 0, g: 0, b: 0, a: 0}
+      healAmount: 0
+      hotTickAmount: 0
+      hotTicks: 0
+      hotInterval: 1
+      shieldAbsorb: 0
+      shieldDuration: 0
+      damage: 0
+      statusEffect: 0
+      statusDuration: 0
+      statusValue: 0
+      targetTag: 
+      castVFX: {fileID: 0}
+      hitVFX: {fileID: 0}
+    - variantName: 
+      useSpellbookAbilityIndex: 0
+      spellbookAbilityIndex: -1
+      spellbookAbilityName: Thorn Volley Volley
+      indicatorTint: {r: 0, g: 0, b: 0, a: 0}
+      healAmount: 0
+      hotTickAmount: 0
+      hotTicks: 0
+      hotInterval: 1
+      shieldAbsorb: 0
+      shieldDuration: 0
+      damage: 0
+      statusEffect: 0
+      statusDuration: 0
+      statusValue: 0
+      targetTag: 
+      castVFX: {fileID: 0}
+      hitVFX: {fileID: 0}
+    - variantName: 
+      useSpellbookAbilityIndex: 0
+      spellbookAbilityIndex: -1
+      spellbookAbilityName: Thorn Volley Briar Storm
+      indicatorTint: {r: 0, g: 0, b: 0, a: 0}
+      healAmount: 0
+      hotTickAmount: 0
+      hotTicks: 0
+      hotInterval: 1
+      shieldAbsorb: 0
+      shieldDuration: 0
+      damage: 0
+      statusEffect: 0
+      statusDuration: 0
+      statusValue: 0
+      targetTag: 
+      castVFX: {fileID: 0}
+      hitVFX: {fileID: 0}
+  - abilityName: Earth Surge
+    variantOnly: 0
+    variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
+    shape: 0
+    category: 0
+    range: 8
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 3
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 5
+    icon: {fileID: 0}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 20
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 0}
+    hitVFX: {fileID: 0}
+    shieldAbsorb: 0
+    shieldDuration: 0
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants:
+    - variantName: 
+      useSpellbookAbilityIndex: 0
+      spellbookAbilityIndex: -1
+      spellbookAbilityName: Earth Surge Tremor
+      indicatorTint: {r: 0, g: 0, b: 0, a: 0}
+      healAmount: 0
+      hotTickAmount: 0
+      hotTicks: 0
+      hotInterval: 1
+      shieldAbsorb: 0
+      shieldDuration: 0
+      damage: 0
+      statusEffect: 0
+      statusDuration: 0
+      statusValue: 0
+      targetTag: 
+      castVFX: {fileID: 0}
+      hitVFX: {fileID: 0}
+    - variantName: 
+      useSpellbookAbilityIndex: 0
+      spellbookAbilityIndex: -1
+      spellbookAbilityName: Earth Surge Quake
+      indicatorTint: {r: 0, g: 0, b: 0, a: 0}
+      healAmount: 0
+      hotTickAmount: 0
+      hotTicks: 0
+      hotInterval: 1
+      shieldAbsorb: 0
+      shieldDuration: 0
+      damage: 0
+      statusEffect: 0
+      statusDuration: 0
+      statusValue: 0
+      targetTag: 
+      castVFX: {fileID: 0}
+      hitVFX: {fileID: 0}
+    - variantName: 
+      useSpellbookAbilityIndex: 0
+      spellbookAbilityIndex: -1
+      spellbookAbilityName: Earth Surge Fissure
+      indicatorTint: {r: 0, g: 0, b: 0, a: 0}
+      healAmount: 0
+      hotTickAmount: 0
+      hotTicks: 0
+      hotInterval: 1
+      shieldAbsorb: 0
+      shieldDuration: 0
+      damage: 0
+      statusEffect: 0
+      statusDuration: 0
+      statusValue: 0
+      targetTag: 
+      castVFX: {fileID: 0}
+      hitVFX: {fileID: 0}
+  - abilityName: Vine Grasp
+    variantOnly: 0
+    variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
+    shape: 0
+    category: 0
+    range: 9
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 2
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 7
+    icon: {fileID: 21300000, guid: 6ee3fd0c156222f4196d8db74f57e0b7, type: 3}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 10
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 0}
+    hitVFX: {fileID: 0}
+    shieldAbsorb: 0
+    shieldDuration: 0
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants:
+    - variantName: 
+      useSpellbookAbilityIndex: 0
+      spellbookAbilityIndex: -1
+      spellbookAbilityName: Vine Grasp Root
+      indicatorTint: {r: 0, g: 0, b: 0, a: 0}
+      healAmount: 0
+      hotTickAmount: 0
+      hotTicks: 0
+      hotInterval: 1
+      shieldAbsorb: 0
+      shieldDuration: 0
+      damage: 0
+      statusEffect: 0
+      statusDuration: 0
+      statusValue: 0
+      targetTag: 
+      castVFX: {fileID: 0}
+      hitVFX: {fileID: 0}
+    - variantName: 
+      useSpellbookAbilityIndex: 0
+      spellbookAbilityIndex: -1
+      spellbookAbilityName: Vine Grasp Stranglehold
+      indicatorTint: {r: 0, g: 0, b: 0, a: 0}
+      healAmount: 0
+      hotTickAmount: 0
+      hotTicks: 0
+      hotInterval: 1
+      shieldAbsorb: 0
+      shieldDuration: 0
+      damage: 0
+      statusEffect: 0
+      statusDuration: 0
+      statusValue: 0
+      targetTag: 
+      castVFX: {fileID: 0}
+      hitVFX: {fileID: 0}
+    - variantName: 
+      useSpellbookAbilityIndex: 0
+      spellbookAbilityIndex: -1
+      spellbookAbilityName: Vine Grasp Forest Prison
+      indicatorTint: {r: 0, g: 0, b: 0, a: 0}
+      healAmount: 0
+      hotTickAmount: 0
+      hotTicks: 0
+      hotInterval: 1
+      shieldAbsorb: 0
+      shieldDuration: 0
+      damage: 0
+      statusEffect: 0
+      statusDuration: 0
+      statusValue: 0
+      targetTag: 
+      castVFX: {fileID: 0}
+      hitVFX: {fileID: 0}
+  - abilityName: Hammer Strike
+    variantOnly: 0
+    variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
+    shape: 2
+    category: 0
+    range: 5
+    coneAngle: 60
+    rectWidth: 2.5
+    indicatorSize: 1.5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 4
+    icon: {fileID: 0}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 30
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 0}
+    hitVFX: {fileID: 0}
+    shieldAbsorb: 0
+    shieldDuration: 0
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants:
+    - variantName: 
+      useSpellbookAbilityIndex: 0
+      spellbookAbilityIndex: -1
+      spellbookAbilityName: Hammer Strike Quick Blow
+      indicatorTint: {r: 0, g: 0, b: 0, a: 0}
+      healAmount: 0
+      hotTickAmount: 0
+      hotTicks: 0
+      hotInterval: 1
+      shieldAbsorb: 0
+      shieldDuration: 0
+      damage: 0
+      statusEffect: 0
+      statusDuration: 0
+      statusValue: 0
+      targetTag: 
+      castVFX: {fileID: 0}
+      hitVFX: {fileID: 0}
+    - variantName: 
+      useSpellbookAbilityIndex: 0
+      spellbookAbilityIndex: -1
+      spellbookAbilityName: Hammer Strike Heavy Slam
+      indicatorTint: {r: 0, g: 0, b: 0, a: 0}
+      healAmount: 0
+      hotTickAmount: 0
+      hotTicks: 0
+      hotInterval: 1
+      shieldAbsorb: 0
+      shieldDuration: 0
+      damage: 0
+      statusEffect: 0
+      statusDuration: 0
+      statusValue: 0
+      targetTag: 
+      castVFX: {fileID: 0}
+      hitVFX: {fileID: 0}
+    - variantName: 
+      useSpellbookAbilityIndex: 0
+      spellbookAbilityIndex: -1
+      spellbookAbilityName: Hammer Strike Seismic Slam
+      indicatorTint: {r: 0, g: 0, b: 0, a: 0}
+      healAmount: 0
+      hotTickAmount: 0
+      hotTicks: 0
+      hotInterval: 1
+      shieldAbsorb: 0
+      shieldDuration: 0
+      damage: 0
+      statusEffect: 0
+      statusDuration: 0
+      statusValue: 0
+      targetTag: 
+      castVFX: {fileID: 0}
+      hitVFX: {fileID: 0}
+  - abilityName: War Cry
+    variantOnly: 0
+    variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
+    shape: 0
+    category: 2
+    range: 0
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 6
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 10
+    icon: {fileID: 21300000, guid: 0447f6905ac34da468f2c78fd2db538c, type: 3}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 10
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Player
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 0}
+    hitVFX: {fileID: 0}
+    shieldAbsorb: 0
+    shieldDuration: 0
+    healAmount: 30
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants:
+    - variantName: 
+      useSpellbookAbilityIndex: 0
+      spellbookAbilityIndex: -1
+      spellbookAbilityName: War Cry Battle Shout
+      indicatorTint: {r: 0, g: 0, b: 0, a: 0}
+      healAmount: 0
+      hotTickAmount: 0
+      hotTicks: 0
+      hotInterval: 1
+      shieldAbsorb: 0
+      shieldDuration: 0
+      damage: 0
+      statusEffect: 0
+      statusDuration: 0
+      statusValue: 0
+      targetTag: 
+      castVFX: {fileID: 0}
+      hitVFX: {fileID: 0}
+    - variantName: 
+      useSpellbookAbilityIndex: 0
+      spellbookAbilityIndex: -1
+      spellbookAbilityName: War Cry Rally Cry
+      indicatorTint: {r: 0, g: 0, b: 0, a: 0}
+      healAmount: 0
+      hotTickAmount: 0
+      hotTicks: 0
+      hotInterval: 1
+      shieldAbsorb: 0
+      shieldDuration: 0
+      damage: 0
+      statusEffect: 0
+      statusDuration: 0
+      statusValue: 0
+      targetTag: 
+      castVFX: {fileID: 0}
+      hitVFX: {fileID: 0}
+    - variantName: 
+      useSpellbookAbilityIndex: 0
+      spellbookAbilityIndex: -1
+      spellbookAbilityName: War Cry Primal Roar
+      indicatorTint: {r: 0, g: 0, b: 0, a: 0}
+      healAmount: 0
+      hotTickAmount: 0
+      hotTicks: 0
+      hotInterval: 1
+      shieldAbsorb: 0
+      shieldDuration: 0
+      damage: 0
+      statusEffect: 0
+      statusDuration: 0
+      statusValue: 0
+      targetTag: 
+      castVFX: {fileID: 0}
+      hitVFX: {fileID: 0}
+  - abilityName: Juggernaut Rush
+    variantOnly: 0
+    variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
+    shape: 2
+    category: 0
+    range: 7
+    coneAngle: 60
+    rectWidth: 2
+    indicatorSize: 1.5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 6
+    icon: {fileID: 21300000, guid: bdaa746a3e0ae6e47b308084df58536b, type: 3}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 25
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 0}
+    hitVFX: {fileID: 0}
+    shieldAbsorb: 0
+    shieldDuration: 0
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants:
+    - variantName: 
+      useSpellbookAbilityIndex: 0
+      spellbookAbilityIndex: -1
+      spellbookAbilityName: Juggernaut Rush Charge
+      indicatorTint: {r: 0, g: 0, b: 0, a: 0}
+      healAmount: 0
+      hotTickAmount: 0
+      hotTicks: 0
+      hotInterval: 1
+      shieldAbsorb: 0
+      shieldDuration: 0
+      damage: 0
+      statusEffect: 0
+      statusDuration: 0
+      statusValue: 0
+      targetTag: 
+      castVFX: {fileID: 0}
+      hitVFX: {fileID: 0}
+    - variantName: 
+      useSpellbookAbilityIndex: 0
+      spellbookAbilityIndex: -1
+      spellbookAbilityName: Juggernaut Rush Bull Rush
+      indicatorTint: {r: 0, g: 0, b: 0, a: 0}
+      healAmount: 0
+      hotTickAmount: 0
+      hotTicks: 0
+      hotInterval: 1
+      shieldAbsorb: 0
+      shieldDuration: 0
+      damage: 0
+      statusEffect: 0
+      statusDuration: 0
+      statusValue: 0
+      targetTag: 
+      castVFX: {fileID: 0}
+      hitVFX: {fileID: 0}
+    - variantName: 
+      useSpellbookAbilityIndex: 0
+      spellbookAbilityIndex: -1
+      spellbookAbilityName: Juggernaut Rush Wrecking Ball
+      indicatorTint: {r: 0, g: 0, b: 0, a: 0}
+      healAmount: 0
+      hotTickAmount: 0
+      hotTicks: 0
+      hotInterval: 1
+      shieldAbsorb: 0
+      shieldDuration: 0
+      damage: 0
+      statusEffect: 0
+      statusDuration: 0
+      statusValue: 0
+      targetTag: 
+      castVFX: {fileID: 0}
+      hitVFX: {fileID: 0}
+  - abilityName: Blade Flurry
+    variantOnly: 0
+    variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
+    shape: 1
+    category: 0
+    range: 6
+    coneAngle: 65
+    rectWidth: 1.5
+    indicatorSize: 1.5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 4
+    icon: {fileID: 21300000, guid: f1a75d68d54e56142a61fba20e111f81, type: 3}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 25
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 0}
+    hitVFX: {fileID: 0}
+    shieldAbsorb: 0
+    shieldDuration: 0
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants:
+    - variantName: 
+      useSpellbookAbilityIndex: 0
+      spellbookAbilityIndex: -1
+      spellbookAbilityName: Blade Flurry Slash
+      indicatorTint: {r: 0, g: 0, b: 0, a: 0}
+      healAmount: 0
+      hotTickAmount: 0
+      hotTicks: 0
+      hotInterval: 1
+      shieldAbsorb: 0
+      shieldDuration: 0
+      damage: 0
+      statusEffect: 0
+      statusDuration: 0
+      statusValue: 0
+      targetTag: 
+      castVFX: {fileID: 0}
+      hitVFX: {fileID: 0}
+    - variantName: 
+      useSpellbookAbilityIndex: 0
+      spellbookAbilityIndex: -1
+      spellbookAbilityName: Blade Flurry Flurry
+      indicatorTint: {r: 0, g: 0, b: 0, a: 0}
+      healAmount: 0
+      hotTickAmount: 0
+      hotTicks: 0
+      hotInterval: 1
+      shieldAbsorb: 0
+      shieldDuration: 0
+      damage: 0
+      statusEffect: 0
+      statusDuration: 0
+      statusValue: 0
+      targetTag: 
+      castVFX: {fileID: 0}
+      hitVFX: {fileID: 0}
+    - variantName: 
+      useSpellbookAbilityIndex: 0
+      spellbookAbilityIndex: -1
+      spellbookAbilityName: Blade Flurry Maelstrom
+      indicatorTint: {r: 0, g: 0, b: 0, a: 0}
+      healAmount: 0
+      hotTickAmount: 0
+      hotTicks: 0
+      hotInterval: 1
+      shieldAbsorb: 0
+      shieldDuration: 0
+      damage: 0
+      statusEffect: 0
+      statusDuration: 0
+      statusValue: 0
+      targetTag: 
+      castVFX: {fileID: 0}
+      hitVFX: {fileID: 0}
+  - abilityName: Poison Cloud
+    variantOnly: 0
+    variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
+    shape: 0
+    category: 0
+    range: 8
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 3
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 6
+    icon: {fileID: 21300000, guid: 1bc21f5844138bf44a721e5d99408301, type: 3}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 10
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 0}
+    hitVFX: {fileID: 0}
+    shieldAbsorb: 0
+    shieldDuration: 0
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants:
+    - variantName: 
+      useSpellbookAbilityIndex: 0
+      spellbookAbilityIndex: -1
+      spellbookAbilityName: Poison Cloud Mist
+      indicatorTint: {r: 0, g: 0, b: 0, a: 0}
+      healAmount: 0
+      hotTickAmount: 0
+      hotTicks: 0
+      hotInterval: 1
+      shieldAbsorb: 0
+      shieldDuration: 0
+      damage: 0
+      statusEffect: 0
+      statusDuration: 0
+      statusValue: 0
+      targetTag: 
+      castVFX: {fileID: 0}
+      hitVFX: {fileID: 0}
+    - variantName: 
+      useSpellbookAbilityIndex: 0
+      spellbookAbilityIndex: -1
+      spellbookAbilityName: Poison Cloud Miasma
+      indicatorTint: {r: 0, g: 0, b: 0, a: 0}
+      healAmount: 0
+      hotTickAmount: 0
+      hotTicks: 0
+      hotInterval: 1
+      shieldAbsorb: 0
+      shieldDuration: 0
+      damage: 0
+      statusEffect: 0
+      statusDuration: 0
+      statusValue: 0
+      targetTag: 
+      castVFX: {fileID: 0}
+      hitVFX: {fileID: 0}
+    - variantName: 
+      useSpellbookAbilityIndex: 0
+      spellbookAbilityIndex: -1
+      spellbookAbilityName: Poison Cloud Death Fog
+      indicatorTint: {r: 0, g: 0, b: 0, a: 0}
+      healAmount: 0
+      hotTickAmount: 0
+      hotTicks: 0
+      hotInterval: 1
+      shieldAbsorb: 0
+      shieldDuration: 0
+      damage: 0
+      statusEffect: 0
+      statusDuration: 0
+      statusValue: 0
+      targetTag: 
+      castVFX: {fileID: 0}
+      hitVFX: {fileID: 0}
+  - abilityName: Death Strike
+    variantOnly: 0
+    variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
+    shape: 0
+    category: 0
+    range: 7
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 1.2
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 7
+    icon: {fileID: 21300000, guid: c02f03c383a15344c82f557c9fd617d8, type: 3}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 40
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 0}
+    hitVFX: {fileID: 0}
+    shieldAbsorb: 0
+    shieldDuration: 0
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants:
+    - variantName: 
+      useSpellbookAbilityIndex: 0
+      spellbookAbilityIndex: -1
+      spellbookAbilityName: Death Strike Stab
+      indicatorTint: {r: 0, g: 0, b: 0, a: 0}
+      healAmount: 0
+      hotTickAmount: 0
+      hotTicks: 0
+      hotInterval: 1
+      shieldAbsorb: 0
+      shieldDuration: 0
+      damage: 0
+      statusEffect: 0
+      statusDuration: 0
+      statusValue: 0
+      targetTag: 
+      castVFX: {fileID: 0}
+      hitVFX: {fileID: 0}
+    - variantName: 
+      useSpellbookAbilityIndex: 0
+      spellbookAbilityIndex: -1
+      spellbookAbilityName: Death Strike Deep Cut
+      indicatorTint: {r: 0, g: 0, b: 0, a: 0}
+      healAmount: 0
+      hotTickAmount: 0
+      hotTicks: 0
+      hotInterval: 1
+      shieldAbsorb: 0
+      shieldDuration: 0
+      damage: 0
+      statusEffect: 0
+      statusDuration: 0
+      statusValue: 0
+      targetTag: 
+      castVFX: {fileID: 0}
+      hitVFX: {fileID: 0}
+    - variantName: 
+      useSpellbookAbilityIndex: 0
+      spellbookAbilityIndex: -1
+      spellbookAbilityName: Death Strike Assassination
+      indicatorTint: {r: 0, g: 0, b: 0, a: 0}
+      healAmount: 0
+      hotTickAmount: 0
+      hotTicks: 0
+      hotInterval: 1
+      shieldAbsorb: 0
+      shieldDuration: 0
+      damage: 0
+      statusEffect: 0
+      statusDuration: 0
+      statusValue: 0
+      targetTag: 
+      castVFX: {fileID: 0}
+      hitVFX: {fileID: 0}
+  - abilityName: Holy Bolt
+    variantOnly: 0
+    variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
+    shape: 1
+    category: 1
+    range: 10
+    coneAngle: 55
+    rectWidth: 1.5
+    indicatorSize: 1.5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 4
+    icon: {fileID: 21300000, guid: 12a95c21e3b8fac4e92765352314da2d, type: 3}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 10
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Player
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 0}
+    hitVFX: {fileID: 0}
+    shieldAbsorb: 0
+    shieldDuration: 0
+    healAmount: 30
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants:
+    - variantName: 
+      useSpellbookAbilityIndex: 0
+      spellbookAbilityIndex: -1
+      spellbookAbilityName: Holy Bolt Flash
+      indicatorTint: {r: 0, g: 0, b: 0, a: 0}
+      healAmount: 0
+      hotTickAmount: 0
+      hotTicks: 0
+      hotInterval: 1
+      shieldAbsorb: 0
+      shieldDuration: 0
+      damage: 0
+      statusEffect: 0
+      statusDuration: 0
+      statusValue: 0
+      targetTag: 
+      castVFX: {fileID: 0}
+      hitVFX: {fileID: 0}
+    - variantName: 
+      useSpellbookAbilityIndex: 0
+      spellbookAbilityIndex: -1
+      spellbookAbilityName: Holy Bolt Radiance
+      indicatorTint: {r: 0, g: 0, b: 0, a: 0}
+      healAmount: 0
+      hotTickAmount: 0
+      hotTicks: 0
+      hotInterval: 1
+      shieldAbsorb: 0
+      shieldDuration: 0
+      damage: 0
+      statusEffect: 0
+      statusDuration: 0
+      statusValue: 0
+      targetTag: 
+      castVFX: {fileID: 0}
+      hitVFX: {fileID: 0}
+    - variantName: 
+      useSpellbookAbilityIndex: 0
+      spellbookAbilityIndex: -1
+      spellbookAbilityName: Holy Bolt Divine Ray
+      indicatorTint: {r: 0, g: 0, b: 0, a: 0}
+      healAmount: 0
+      hotTickAmount: 0
+      hotTicks: 0
+      hotInterval: 1
+      shieldAbsorb: 0
+      shieldDuration: 0
+      damage: 0
+      statusEffect: 0
+      statusDuration: 0
+      statusValue: 0
+      targetTag: 
+      castVFX: {fileID: 0}
+      hitVFX: {fileID: 0}
+  - abilityName: Divine Shield
+    variantOnly: 0
+    variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
+    shape: 0
+    category: 2
+    range: 0
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 12
+    icon: {fileID: 21300000, guid: 0447f6905ac34da468f2c78fd2db538c, type: 3}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 10
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Player
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 0}
+    hitVFX: {fileID: 0}
+    shieldAbsorb: 40
+    shieldDuration: 5
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants:
+    - variantName: 
+      useSpellbookAbilityIndex: 0
+      spellbookAbilityIndex: -1
+      spellbookAbilityName: Divine Shield Shelter
+      indicatorTint: {r: 0, g: 0, b: 0, a: 0}
+      healAmount: 0
+      hotTickAmount: 0
+      hotTicks: 0
+      hotInterval: 1
+      shieldAbsorb: 0
+      shieldDuration: 0
+      damage: 0
+      statusEffect: 0
+      statusDuration: 0
+      statusValue: 0
+      targetTag: 
+      castVFX: {fileID: 0}
+      hitVFX: {fileID: 0}
+    - variantName: 
+      useSpellbookAbilityIndex: 0
+      spellbookAbilityIndex: -1
+      spellbookAbilityName: Divine Shield Bastion
+      indicatorTint: {r: 0, g: 0, b: 0, a: 0}
+      healAmount: 0
+      hotTickAmount: 0
+      hotTicks: 0
+      hotInterval: 1
+      shieldAbsorb: 0
+      shieldDuration: 0
+      damage: 0
+      statusEffect: 0
+      statusDuration: 0
+      statusValue: 0
+      targetTag: 
+      castVFX: {fileID: 0}
+      hitVFX: {fileID: 0}
+    - variantName: 
+      useSpellbookAbilityIndex: 0
+      spellbookAbilityIndex: -1
+      spellbookAbilityName: Divine Shield Cathedral
+      indicatorTint: {r: 0, g: 0, b: 0, a: 0}
+      healAmount: 0
+      hotTickAmount: 0
+      hotTicks: 0
+      hotInterval: 1
+      shieldAbsorb: 0
+      shieldDuration: 0
+      damage: 0
+      statusEffect: 0
+      statusDuration: 0
+      statusValue: 0
+      targetTag: 
+      castVFX: {fileID: 0}
+      hitVFX: {fileID: 0}
+  - abilityName: Smite
+    variantOnly: 0
+    variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
+    shape: 1
+    category: 0
+    range: 9
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 1.5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 5
+    icon: {fileID: 21300000, guid: 12a95c21e3b8fac4e92765352314da2d, type: 3}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 35
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 0}
+    hitVFX: {fileID: 0}
+    shieldAbsorb: 0
+    shieldDuration: 0
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants:
+    - variantName: 
+      useSpellbookAbilityIndex: 0
+      spellbookAbilityIndex: -1
+      spellbookAbilityName: Smite Strike
+      indicatorTint: {r: 0, g: 0, b: 0, a: 0}
+      healAmount: 0
+      hotTickAmount: 0
+      hotTicks: 0
+      hotInterval: 1
+      shieldAbsorb: 0
+      shieldDuration: 0
+      damage: 0
+      statusEffect: 0
+      statusDuration: 0
+      statusValue: 0
+      targetTag: 
+      castVFX: {fileID: 0}
+      hitVFX: {fileID: 0}
+    - variantName: 
+      useSpellbookAbilityIndex: 0
+      spellbookAbilityIndex: -1
+      spellbookAbilityName: Smite Judgement
+      indicatorTint: {r: 0, g: 0, b: 0, a: 0}
+      healAmount: 0
+      hotTickAmount: 0
+      hotTicks: 0
+      hotInterval: 1
+      shieldAbsorb: 0
+      shieldDuration: 0
+      damage: 0
+      statusEffect: 0
+      statusDuration: 0
+      statusValue: 0
+      targetTag: 
+      castVFX: {fileID: 0}
+      hitVFX: {fileID: 0}
+    - variantName: 
+      useSpellbookAbilityIndex: 0
+      spellbookAbilityIndex: -1
+      spellbookAbilityName: Smite Wrath
+      indicatorTint: {r: 0, g: 0, b: 0, a: 0}
+      healAmount: 0
+      hotTickAmount: 0
+      hotTicks: 0
+      hotInterval: 1
+      shieldAbsorb: 0
+      shieldDuration: 0
+      damage: 0
+      statusEffect: 0
+      statusDuration: 0
+      statusValue: 0
+      targetTag: 
+      castVFX: {fileID: 0}
+      hitVFX: {fileID: 0}
+  - abilityName: Fireball Quick Shot
+    variantOnly: 1
+    variantIndicatorTint: {r: 1, g: 0.5, b: 0.1, a: 0.75}
+    shape: 1
+    category: 0
+    range: 10
+    coneAngle: 55
+    rectWidth: 1.5
+    indicatorSize: 1.5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 4
+    icon: {fileID: 0}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 25
+    maxChargeDamage: 25
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 7606620699271223679, guid: 5aa2236667d208e41a28e0f79695320a, type: 3}
+    hitVFX: {fileID: 1828176872806910, guid: 64891a0eb28db934898420d80ca07cb3, type: 3}
+    shieldAbsorb: 0
+    shieldDuration: 5
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 1
+    statusDuration: 0.5
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Fireball Triple Burst
+    variantOnly: 1
+    variantIndicatorTint: {r: 1, g: 0.35, b: 0, a: 0.75}
+    shape: 1
+    category: 0
+    range: 10
+    coneAngle: 55
+    rectWidth: 1.5
+    indicatorSize: 1.5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 4
+    icon: {fileID: 0}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 18
+    maxChargeDamage: 18
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 7606620699271223679, guid: a482790e02aaa7949919e907d04061b0, type: 3}
+    hitVFX: {fileID: 1947871717301538, guid: a990e3ac1318b834488c784d851f42a9, type: 3}
+    shieldAbsorb: 0
+    shieldDuration: 5
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 3
+    statusDuration: 4
+    statusValue: 4
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Fireball Inferno Nova
+    variantOnly: 1
+    variantIndicatorTint: {r: 0.9, g: 0.15, b: 0, a: 0.75}
+    shape: 1
+    category: 0
+    range: 10
+    coneAngle: 55
+    rectWidth: 1.5
+    indicatorSize: 1.5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 4
+    icon: {fileID: 0}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 45
+    maxChargeDamage: 45
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 1956197547661106, guid: f293a2dcc753a4a489fefe7f8f312d69, type: 3}
+    hitVFX: {fileID: 1121192042590650, guid: e1b08032bec16ba4eb1ae23cbd572664, type: 3}
+    shieldAbsorb: 0
+    shieldDuration: 5
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 4
+    statusDuration: 3
+    statusValue: 0.25
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Chain Lightning Arc
+    variantOnly: 1
+    variantIndicatorTint: {r: 0.9, g: 0.9, b: 0.3, a: 0.75}
+    shape: 0
+    category: 0
+    range: 10
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 3
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 5
+    icon: {fileID: 0}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 30
+    maxChargeDamage: 30
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 4533992852024952465, guid: 5ebefd38fe1dbce4990790a0add9f65a, type: 3}
+    hitVFX: {fileID: 3266835628973167763, guid: 99c92a1b2b2906945bf3b9abc6590151, type: 3}
+    shieldAbsorb: 0
+    shieldDuration: 5
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 1
+    statusDuration: 0.7
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Chain Lightning Chain
+    variantOnly: 1
+    variantIndicatorTint: {r: 0.5, g: 0.8, b: 0.2, a: 0.75}
+    shape: 0
+    category: 0
+    range: 10
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 3
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 5
+    icon: {fileID: 0}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 20
+    maxChargeDamage: 20
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 2707303645313174804, guid: 3ac741c58ee37a941b5408ec58f21743, type: 3}
+    hitVFX: {fileID: 1277326047212212, guid: 34cd452c8ebeb7e42830ade065f09ee6, type: 3}
+    shieldAbsorb: 0
+    shieldDuration: 5
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 3
+    statusDuration: 4
+    statusValue: 4
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Chain Lightning Thunderstorm
+    variantOnly: 1
+    variantIndicatorTint: {r: 0.3, g: 0.6, b: 1, a: 0.75}
+    shape: 0
+    category: 0
+    range: 10
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 3
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 5
+    icon: {fileID: 0}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 40
+    maxChargeDamage: 40
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 3266835628973167763, guid: 99c92a1b2b2906945bf3b9abc6590151, type: 3}
+    hitVFX: {fileID: 4749980201479958301, guid: a4cbca814b838a5458720cd2f8d6a501, type: 3}
+    shieldAbsorb: 0
+    shieldDuration: 5
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 4
+    statusDuration: 3
+    statusValue: 0.25
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Frost Nova Chill
+    variantOnly: 1
+    variantIndicatorTint: {r: 0.5, g: 0.85, b: 1, a: 0.75}
+    shape: 0
+    category: 0
+    range: 8
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 4
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 6
+    icon: {fileID: 0}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 15
+    maxChargeDamage: 15
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 1538599107982412, guid: 37ab7e60d7b792c4ead4feb01381c6cc, type: 3}
+    hitVFX: {fileID: 1538599107982412, guid: 37ab7e60d7b792c4ead4feb01381c6cc, type: 3}
+    shieldAbsorb: 0
+    shieldDuration: 5
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 3
+    statusValue: 0.35
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Frost Nova Freeze
+    variantOnly: 1
+    variantIndicatorTint: {r: 0.3, g: 0.7, b: 1, a: 0.75}
+    shape: 0
+    category: 0
+    range: 8
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 4
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 6
+    icon: {fileID: 0}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 20
+    maxChargeDamage: 20
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 1377279482138388, guid: 653866134638b354ca265558d783dd1d, type: 3}
+    hitVFX: {fileID: 1820680284854294, guid: 1a1c02facd51d87458dcaa3a761e2c03, type: 3}
+    shieldAbsorb: 0
+    shieldDuration: 5
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 5
+    statusDuration: 2.5
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Frost Nova Blizzard
+    variantOnly: 1
+    variantIndicatorTint: {r: 0.1, g: 0.5, b: 0.9, a: 0.75}
+    shape: 0
+    category: 0
+    range: 8
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 4
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 6
+    icon: {fileID: 0}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 25
+    maxChargeDamage: 25
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 1749743417103026, guid: 023252a6b6c5a214b97b148758506fd2, type: 3}
+    hitVFX: {fileID: 7843366240102593674, guid: bfed7a9fe64f03f4ab32c9a946a4f647, type: 3}
+    shieldAbsorb: 0
+    shieldDuration: 5
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 5
+    statusValue: 0.5
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Thorn Volley Spine
+    variantOnly: 1
+    variantIndicatorTint: {r: 0.2, g: 0.8, b: 0.2, a: 0.75}
+    shape: 1
+    category: 0
+    range: 9
+    coneAngle: 50
+    rectWidth: 1.5
+    indicatorSize: 1.5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 4
+    icon: {fileID: 0}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 20
+    maxChargeDamage: 20
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 1051704587376508, guid: fffb77091d2311b4bb70c69cbd77ef57, type: 3}
+    hitVFX: {fileID: 1341869769842038, guid: 8b7a1ffda5bb7474b8fae646c45ce7b4, type: 3}
+    shieldAbsorb: 0
+    shieldDuration: 5
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 1
+    statusDuration: 0.5
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Thorn Volley Volley
+    variantOnly: 1
+    variantIndicatorTint: {r: 0.1, g: 0.6, b: 0.1, a: 0.75}
+    shape: 1
+    category: 0
+    range: 9
+    coneAngle: 50
+    rectWidth: 1.5
+    indicatorSize: 1.5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 4
+    icon: {fileID: 0}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 15
+    maxChargeDamage: 15
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 1626987590987328, guid: a0db8e7ecdf01174db2270f85ec0a739, type: 3}
+    hitVFX: {fileID: 1240250018707908, guid: 5656e7ea1f1a75d4c895547ec2b824b3, type: 3}
+    shieldAbsorb: 0
+    shieldDuration: 5
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 3
+    statusValue: 0.3
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Thorn Volley Briar Storm
+    variantOnly: 1
+    variantIndicatorTint: {r: 0, g: 0.4, b: 0, a: 0.75}
+    shape: 1
+    category: 0
+    range: 9
+    coneAngle: 50
+    rectWidth: 1.5
+    indicatorSize: 1.5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 4
+    icon: {fileID: 0}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 12
+    maxChargeDamage: 12
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 1547757601392324, guid: 6f672a31584a6a748912a49c1dce2f0c, type: 3}
+    hitVFX: {fileID: 1000012909287652, guid: abb9f519b142e304d9c45b56afa768bc, type: 3}
+    shieldAbsorb: 0
+    shieldDuration: 5
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 3
+    statusDuration: 5
+    statusValue: 4
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Earth Surge Tremor
+    variantOnly: 1
+    variantIndicatorTint: {r: 0.6, g: 0.4, b: 0.1, a: 0.75}
+    shape: 0
+    category: 0
+    range: 8
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 3
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 5
+    icon: {fileID: 0}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 20
+    maxChargeDamage: 20
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 1314945738539566, guid: 32c9fd11a72259d45aa26ae41c34c5aa, type: 3}
+    hitVFX: {fileID: 1341869769842038, guid: 8b7a1ffda5bb7474b8fae646c45ce7b4, type: 3}
+    shieldAbsorb: 0
+    shieldDuration: 5
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 1
+    statusDuration: 0.8
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Earth Surge Quake
+    variantOnly: 1
+    variantIndicatorTint: {r: 0.5, g: 0.3, b: 0, a: 0.75}
+    shape: 0
+    category: 0
+    range: 8
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 3
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 5
+    icon: {fileID: 0}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 30
+    maxChargeDamage: 30
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 1314945738539566, guid: 32c9fd11a72259d45aa26ae41c34c5aa, type: 3}
+    hitVFX: {fileID: 1344314377593938, guid: 9e03786a9517b604d8e930182607a128, type: 3}
+    shieldAbsorb: 0
+    shieldDuration: 5
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 4
+    statusValue: 0.35
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Earth Surge Fissure
+    variantOnly: 1
+    variantIndicatorTint: {r: 0.4, g: 0.2, b: 0, a: 0.75}
+    shape: 0
+    category: 0
+    range: 8
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 3
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 5
+    icon: {fileID: 0}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 45
+    maxChargeDamage: 45
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 1314945738539566, guid: 32c9fd11a72259d45aa26ae41c34c5aa, type: 3}
+    hitVFX: {fileID: 1314945738539566, guid: 32c9fd11a72259d45aa26ae41c34c5aa, type: 3}
+    shieldAbsorb: 0
+    shieldDuration: 5
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 4
+    statusDuration: 4
+    statusValue: 0.3
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Vine Grasp Root
+    variantOnly: 1
+    variantIndicatorTint: {r: 0.2, g: 0.7, b: 0.1, a: 0.75}
+    shape: 0
+    category: 0
+    range: 9
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 2
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 7
+    icon: {fileID: 0}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 10
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 1626987590987328, guid: a0db8e7ecdf01174db2270f85ec0a739, type: 3}
+    hitVFX: {fileID: 1051704587376508, guid: fffb77091d2311b4bb70c69cbd77ef57, type: 3}
+    shieldAbsorb: 0
+    shieldDuration: 5
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 5
+    statusDuration: 2
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Vine Grasp Stranglehold
+    variantOnly: 1
+    variantIndicatorTint: {r: 0.1, g: 0.5, b: 0.1, a: 0.75}
+    shape: 0
+    category: 0
+    range: 9
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 2
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 7
+    icon: {fileID: 0}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 20
+    maxChargeDamage: 20
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 1547757601392324, guid: 6f672a31584a6a748912a49c1dce2f0c, type: 3}
+    hitVFX: {fileID: 1000010675638318, guid: a3768c8a9d1b90d4bb0eb0e4bdbe730c, type: 3}
+    shieldAbsorb: 0
+    shieldDuration: 5
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 5
+    statusDuration: 3
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Vine Grasp Forest Prison
+    variantOnly: 1
+    variantIndicatorTint: {r: 0, g: 0.35, b: 0, a: 0.75}
+    shape: 0
+    category: 0
+    range: 9
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 2
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 7
+    icon: {fileID: 0}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 30
+    maxChargeDamage: 30
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 1626987590987328, guid: a0db8e7ecdf01174db2270f85ec0a739, type: 3}
+    hitVFX: {fileID: 1240250018707908, guid: 5656e7ea1f1a75d4c895547ec2b824b3, type: 3}
+    shieldAbsorb: 0
+    shieldDuration: 5
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 5
+    statusDuration: 4
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Hammer Strike Quick Blow
+    variantOnly: 1
+    variantIndicatorTint: {r: 1, g: 0.6, b: 0.1, a: 0.75}
+    shape: 2
+    category: 0
+    range: 5
+    coneAngle: 60
+    rectWidth: 2.5
+    indicatorSize: 1.5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 4
+    icon: {fileID: 0}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 30
+    maxChargeDamage: 30
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 1314945738539566, guid: 32c9fd11a72259d45aa26ae41c34c5aa, type: 3}
+    hitVFX: {fileID: 1892351807075712, guid: 44be68b4fc4366142a9cd1ae1f761ea4, type: 3}
+    shieldAbsorb: 0
+    shieldDuration: 5
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 1
+    statusDuration: 0.7
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Hammer Strike Heavy Slam
+    variantOnly: 1
+    variantIndicatorTint: {r: 1, g: 0.45, b: 0, a: 0.75}
+    shape: 2
+    category: 0
+    range: 5
+    coneAngle: 60
+    rectWidth: 2.5
+    indicatorSize: 1.5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 4
+    icon: {fileID: 0}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 50
+    maxChargeDamage: 50
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 8661651070266030821, guid: bae3e9361960e3147818c0da5e584df3, type: 3}
+    hitVFX: {fileID: 1341869769842038, guid: 8b7a1ffda5bb7474b8fae646c45ce7b4, type: 3}
+    shieldAbsorb: 0
+    shieldDuration: 5
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 4
+    statusDuration: 3
+    statusValue: 0.25
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Hammer Strike Seismic Slam
+    variantOnly: 1
+    variantIndicatorTint: {r: 0.9, g: 0.25, b: 0, a: 0.75}
+    shape: 2
+    category: 0
+    range: 5
+    coneAngle: 60
+    rectWidth: 2.5
+    indicatorSize: 1.5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 4
+    icon: {fileID: 0}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 70
+    maxChargeDamage: 70
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 5263261513851132598, guid: 870a10c1f420abb4598b34344a9e7823, type: 3}
+    hitVFX: {fileID: 1314945738539566, guid: 32c9fd11a72259d45aa26ae41c34c5aa, type: 3}
+    shieldAbsorb: 0
+    shieldDuration: 5
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 4
+    statusValue: 0.4
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: War Cry Battle Shout
+    variantOnly: 1
+    variantIndicatorTint: {r: 1, g: 0.65, b: 0.15, a: 0.75}
+    shape: 0
+    category: 1
+    range: 0
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 6
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 10
+    icon: {fileID: 0}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 0
+    maxChargeDamage: 0
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Player
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 1951465474858694, guid: f61a463d2bbcb974cbc52cc78089f173, type: 3}
+    hitVFX: {fileID: 8550103265853490525, guid: 10f20a501ddb3db4db094749bb054e68, type: 3}
+    shieldAbsorb: 0
+    shieldDuration: 5
+    healAmount: 30
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: War Cry Rally Cry
+    variantOnly: 1
+    variantIndicatorTint: {r: 1, g: 0.5, b: 0.05, a: 0.75}
+    shape: 0
+    category: 1
+    range: 0
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 6
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 10
+    icon: {fileID: 0}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 0
+    maxChargeDamage: 0
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Player
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 1361995951083618, guid: acd1463ce2d63c34daa4daaaaab28fe4, type: 3}
+    hitVFX: {fileID: 6226639424814228509, guid: aa77297fca95b7346a94d76cf84fe635, type: 3}
+    shieldAbsorb: 25
+    shieldDuration: 4
+    healAmount: 15
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: War Cry Primal Roar
+    variantOnly: 1
+    variantIndicatorTint: {r: 0.9, g: 0.35, b: 0, a: 0.75}
+    shape: 0
+    category: 2
+    range: 0
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 6
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 10
+    icon: {fileID: 0}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 20
+    maxChargeDamage: 20
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 5263261513851132598, guid: 870a10c1f420abb4598b34344a9e7823, type: 3}
+    hitVFX: {fileID: 1892351807075712, guid: 44be68b4fc4366142a9cd1ae1f761ea4, type: 3}
+    shieldAbsorb: 0
+    shieldDuration: 5
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 1
+    statusDuration: 1
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Juggernaut Rush Charge
+    variantOnly: 1
+    variantIndicatorTint: {r: 1, g: 0.6, b: 0.1, a: 0.75}
+    shape: 2
+    category: 0
+    range: 7
+    coneAngle: 60
+    rectWidth: 2
+    indicatorSize: 1.5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 6
+    icon: {fileID: 0}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 25
+    maxChargeDamage: 25
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 8661651070266030821, guid: bae3e9361960e3147818c0da5e584df3, type: 3}
+    hitVFX: {fileID: 1892351807075712, guid: 44be68b4fc4366142a9cd1ae1f761ea4, type: 3}
+    shieldAbsorb: 0
+    shieldDuration: 5
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 1
+    statusDuration: 0.8
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Juggernaut Rush Bull Rush
+    variantOnly: 1
+    variantIndicatorTint: {r: 1, g: 0.45, b: 0, a: 0.75}
+    shape: 2
+    category: 0
+    range: 7
+    coneAngle: 60
+    rectWidth: 2
+    indicatorSize: 1.5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 6
+    icon: {fileID: 0}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 35
+    maxChargeDamage: 35
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 5263261513851132598, guid: 870a10c1f420abb4598b34344a9e7823, type: 3}
+    hitVFX: {fileID: 1341869769842038, guid: 8b7a1ffda5bb7474b8fae646c45ce7b4, type: 3}
+    shieldAbsorb: 0
+    shieldDuration: 5
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 3
+    statusValue: 0.35
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Juggernaut Rush Wrecking Ball
+    variantOnly: 1
+    variantIndicatorTint: {r: 0.9, g: 0.25, b: 0, a: 0.75}
+    shape: 2
+    category: 0
+    range: 7
+    coneAngle: 60
+    rectWidth: 2
+    indicatorSize: 1.5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 6
+    icon: {fileID: 0}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 60
+    maxChargeDamage: 60
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 1121192042590650, guid: e1b08032bec16ba4eb1ae23cbd572664, type: 3}
+    hitVFX: {fileID: 5263261513851132598, guid: 870a10c1f420abb4598b34344a9e7823, type: 3}
+    shieldAbsorb: 0
+    shieldDuration: 5
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 4
+    statusDuration: 4
+    statusValue: 0.3
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Blade Flurry Slash
+    variantOnly: 1
+    variantIndicatorTint: {r: 0.7, g: 0, b: 1, a: 0.75}
+    shape: 1
+    category: 0
+    range: 6
+    coneAngle: 65
+    rectWidth: 1.5
+    indicatorSize: 1.5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 4
+    icon: {fileID: 0}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 25
+    maxChargeDamage: 25
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 1105111623985532, guid: d03268a4406450646bbcdef70ee8ea3d, type: 3}
+    hitVFX: {fileID: 1892351807075712, guid: 44be68b4fc4366142a9cd1ae1f761ea4, type: 3}
+    shieldAbsorb: 0
+    shieldDuration: 5
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 1
+    statusDuration: 0.6
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Blade Flurry Flurry
+    variantOnly: 1
+    variantIndicatorTint: {r: 0.5, g: 0, b: 0.8, a: 0.75}
+    shape: 1
+    category: 0
+    range: 6
+    coneAngle: 65
+    rectWidth: 1.5
+    indicatorSize: 1.5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 4
+    icon: {fileID: 0}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 15
+    maxChargeDamage: 15
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 1664554866138106, guid: cdf5105e83ab35f4e929972c34b34ed3, type: 3}
+    hitVFX: {fileID: 1000011945391522, guid: 78b71003e8b357d4bbf89c8b5e5e4f0e, type: 3}
+    shieldAbsorb: 0
+    shieldDuration: 5
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 3
+    statusDuration: 4
+    statusValue: 4
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Blade Flurry Maelstrom
+    variantOnly: 1
+    variantIndicatorTint: {r: 0.3, g: 0, b: 0.6, a: 0.75}
+    shape: 1
+    category: 0
+    range: 6
+    coneAngle: 65
+    rectWidth: 1.5
+    indicatorSize: 1.5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 4
+    icon: {fileID: 0}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 10
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 1684764806622204, guid: 3822f73d30b33274cbe39de907c35d29, type: 3}
+    hitVFX: {fileID: 1051704587376508, guid: fffb77091d2311b4bb70c69cbd77ef57, type: 3}
+    shieldAbsorb: 0
+    shieldDuration: 5
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 4
+    statusDuration: 4
+    statusValue: 0.25
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Poison Cloud Mist
+    variantOnly: 1
+    variantIndicatorTint: {r: 0.4, g: 0.7, b: 0.1, a: 0.75}
+    shape: 0
+    category: 0
+    range: 8
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 3
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 6
+    icon: {fileID: 0}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 10
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 1547757601392324, guid: 6f672a31584a6a748912a49c1dce2f0c, type: 3}
+    hitVFX: {fileID: 1547757601392324, guid: 6f672a31584a6a748912a49c1dce2f0c, type: 3}
+    shieldAbsorb: 0
+    shieldDuration: 5
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 3
+    statusDuration: 4
+    statusValue: 3
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Poison Cloud Miasma
+    variantOnly: 1
+    variantIndicatorTint: {r: 0.2, g: 0.5, b: 0, a: 0.75}
+    shape: 0
+    category: 0
+    range: 8
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 3
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 6
+    icon: {fileID: 0}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 15
+    maxChargeDamage: 15
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 1269120730060968, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
+    hitVFX: {fileID: 1547757601392324, guid: 6f672a31584a6a748912a49c1dce2f0c, type: 3}
+    shieldAbsorb: 0
+    shieldDuration: 5
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 3
+    statusDuration: 6
+    statusValue: 5
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Poison Cloud Death Fog
+    variantOnly: 1
+    variantIndicatorTint: {r: 0.1, g: 0.3, b: 0, a: 0.75}
+    shape: 0
+    category: 0
+    range: 8
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 3
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 6
+    icon: {fileID: 0}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 20
+    maxChargeDamage: 20
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 1901902437216624, guid: 3bdca15d736d48f409ccf70e68bf79de, type: 3}
+    hitVFX: {fileID: 1547757601392324, guid: 6f672a31584a6a748912a49c1dce2f0c, type: 3}
+    shieldAbsorb: 0
+    shieldDuration: 5
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 4
+    statusValue: 0.4
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Death Strike Stab
+    variantOnly: 1
+    variantIndicatorTint: {r: 0.6, g: 0, b: 0.8, a: 0.75}
+    shape: 0
+    category: 0
+    range: 7
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 1.2
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 7
+    icon: {fileID: 0}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 40
+    maxChargeDamage: 40
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 1105111623985532, guid: d03268a4406450646bbcdef70ee8ea3d, type: 3}
+    hitVFX: {fileID: 1901902437216624, guid: 3bdca15d736d48f409ccf70e68bf79de, type: 3}
+    shieldAbsorb: 0
+    shieldDuration: 5
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 1
+    statusDuration: 0.8
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Death Strike Deep Cut
+    variantOnly: 1
+    variantIndicatorTint: {r: 0.4, g: 0, b: 0.6, a: 0.75}
+    shape: 0
+    category: 0
+    range: 7
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 1.2
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 7
+    icon: {fileID: 0}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 35
+    maxChargeDamage: 35
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 1664554866138106, guid: cdf5105e83ab35f4e929972c34b34ed3, type: 3}
+    hitVFX: {fileID: 1235240895896398, guid: 3fdbf782d6900074fb425dbc4c92ba9c, type: 3}
+    shieldAbsorb: 0
+    shieldDuration: 5
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 4
+    statusDuration: 4
+    statusValue: 0.3
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Death Strike Assassination
+    variantOnly: 1
+    variantIndicatorTint: {r: 0.2, g: 0, b: 0.4, a: 0.75}
+    shape: 0
+    category: 0
+    range: 7
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 1.2
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 7
+    icon: {fileID: 0}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 75
+    maxChargeDamage: 75
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 1741568361362846, guid: 4db85d1e064bd874cbfb92849ed76f3e, type: 3}
+    hitVFX: {fileID: 1235240895896398, guid: 3fdbf782d6900074fb425dbc4c92ba9c, type: 3}
+    shieldAbsorb: 0
+    shieldDuration: 5
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Holy Bolt Flash
+    variantOnly: 1
+    variantIndicatorTint: {r: 1, g: 0.95, b: 0.4, a: 0.75}
+    shape: 1
+    category: 1
+    range: 10
+    coneAngle: 55
+    rectWidth: 1.5
+    indicatorSize: 1.5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 4
+    icon: {fileID: 0}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 0
+    maxChargeDamage: 0
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Player
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 6226639424814228509, guid: aa77297fca95b7346a94d76cf84fe635, type: 3}
+    hitVFX: {fileID: 8550103265853490525, guid: 10f20a501ddb3db4db094749bb054e68, type: 3}
+    shieldAbsorb: 0
+    shieldDuration: 5
+    healAmount: 30
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Holy Bolt Radiance
+    variantOnly: 1
+    variantIndicatorTint: {r: 1, g: 0.85, b: 0.2, a: 0.75}
+    shape: 1
+    category: 1
+    range: 10
+    coneAngle: 55
+    rectWidth: 1.5
+    indicatorSize: 1.5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 4
+    icon: {fileID: 0}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 0
+    maxChargeDamage: 0
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Player
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 1374770465800164, guid: d0e33492ce1ba064291b3ff95ce32e4e, type: 3}
+    hitVFX: {fileID: 1775406099119076, guid: 379785de5e39005469c875710d3cc5a7, type: 3}
+    shieldAbsorb: 0
+    shieldDuration: 5
+    healAmount: 45
+    hotTickAmount: 5
+    hotTicks: 3
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Holy Bolt Divine Ray
+    variantOnly: 1
+    variantIndicatorTint: {r: 0.9, g: 0.75, b: 0.1, a: 0.75}
+    shape: 1
+    category: 1
+    range: 10
+    coneAngle: 55
+    rectWidth: 1.5
+    indicatorSize: 1.5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 4
+    icon: {fileID: 0}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 0
+    maxChargeDamage: 0
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Player
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 2309628055276507911, guid: 5dc06ed64db520147912484d5ba21615, type: 3}
+    hitVFX: {fileID: 6226639424814228509, guid: aa77297fca95b7346a94d76cf84fe635, type: 3}
+    shieldAbsorb: 20
+    shieldDuration: 4
+    healAmount: 70
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Divine Shield Shelter
+    variantOnly: 1
+    variantIndicatorTint: {r: 1, g: 0.95, b: 0.4, a: 0.75}
+    shape: 0
+    category: 2
+    range: 0
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 12
+    icon: {fileID: 0}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 0
+    maxChargeDamage: 0
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Player
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 2309628055276507911, guid: 5dc06ed64db520147912484d5ba21615, type: 3}
+    hitVFX: {fileID: 1361995951083618, guid: acd1463ce2d63c34daa4daaaaab28fe4, type: 3}
+    shieldAbsorb: 40
+    shieldDuration: 5
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Divine Shield Bastion
+    variantOnly: 1
+    variantIndicatorTint: {r: 0.9, g: 0.85, b: 0.2, a: 0.75}
+    shape: 0
+    category: 1
+    range: 0
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 12
+    icon: {fileID: 0}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 0
+    maxChargeDamage: 0
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Player
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 1361995951083618, guid: acd1463ce2d63c34daa4daaaaab28fe4, type: 3}
+    hitVFX: {fileID: 6226639424814228509, guid: aa77297fca95b7346a94d76cf84fe635, type: 3}
+    shieldAbsorb: 70
+    shieldDuration: 6
+    healAmount: 20
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Divine Shield Cathedral
+    variantOnly: 1
+    variantIndicatorTint: {r: 0.8, g: 0.7, b: 0.1, a: 0.75}
+    shape: 0
+    category: 1
+    range: 0
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 12
+    icon: {fileID: 0}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 0
+    maxChargeDamage: 0
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Player
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 1951465474858694, guid: f61a463d2bbcb974cbc52cc78089f173, type: 3}
+    hitVFX: {fileID: 2309628055276507911, guid: 5dc06ed64db520147912484d5ba21615, type: 3}
+    shieldAbsorb: 120
+    shieldDuration: 8
+    healAmount: 0
+    hotTickAmount: 10
+    hotTicks: 5
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Smite Strike
+    variantOnly: 1
+    variantIndicatorTint: {r: 1, g: 0.95, b: 0.4, a: 0.75}
+    shape: 1
+    category: 0
+    range: 9
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 1.5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 5
+    icon: {fileID: 0}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 35
+    maxChargeDamage: 35
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 3281665843732006339, guid: bd2fe1eb2e3ba454088c57397144535f, type: 3}
+    hitVFX: {fileID: 8550103265853490525, guid: 10f20a501ddb3db4db094749bb054e68, type: 3}
+    shieldAbsorb: 0
+    shieldDuration: 5
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 1
+    statusDuration: 0.8
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Smite Judgement
+    variantOnly: 1
+    variantIndicatorTint: {r: 1, g: 0.7, b: 0.1, a: 0.75}
+    shape: 1
+    category: 0
+    range: 9
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 1.5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 5
+    icon: {fileID: 0}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 50
+    maxChargeDamage: 50
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 3281665843732006339, guid: bd2fe1eb2e3ba454088c57397144535f, type: 3}
+    hitVFX: {fileID: 1901245927194888, guid: bb98861c48ad2024ca93498c7dd93a6c, type: 3}
+    shieldAbsorb: 0
+    shieldDuration: 5
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 3
+    statusValue: 0.35
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Smite Wrath
+    variantOnly: 1
+    variantIndicatorTint: {r: 0.9, g: 0.5, b: 0, a: 0.75}
+    shape: 1
+    category: 0
+    range: 9
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 1.5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 5
+    icon: {fileID: 0}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 75
+    maxChargeDamage: 75
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 1329845292236604, guid: 9bba9cf244c53c5439505dfc96fdd11c, type: 3}
+    hitVFX: {fileID: 1121192042590650, guid: e1b08032bec16ba4eb1ae23cbd572664, type: 3}
+    shieldAbsorb: 0
+    shieldDuration: 5
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 4
+    statusDuration: 4
+    statusValue: 0.3
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  equippedIndices: 00000000010000000200000003000000
+  _equippedAbilities:
+  - abilityName: Ability
+    variantOnly: 0
+    variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
+    shape: 0
+    category: 0
+    range: 4
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 1.5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 3
+    icon: {fileID: 0}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 10
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 0}
+    hitVFX: {fileID: 0}
+    shieldAbsorb: 0
+    shieldDuration: 0
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Ability
+    variantOnly: 0
+    variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
+    shape: 0
+    category: 0
+    range: 4
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 1.5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 3
+    icon: {fileID: 0}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 10
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 0}
+    hitVFX: {fileID: 0}
+    shieldAbsorb: 0
+    shieldDuration: 0
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Ability
+    variantOnly: 0
+    variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
+    shape: 0
+    category: 0
+    range: 4
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 1.5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 3
+    icon: {fileID: 0}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 10
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 0}
+    hitVFX: {fileID: 0}
+    shieldAbsorb: 0
+    shieldDuration: 0
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Ability
+    variantOnly: 0
+    variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
+    shape: 0
+    category: 0
+    range: 4
+    coneAngle: 60
+    rectWidth: 1.5
+    indicatorSize: 1.5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 3
+    icon: {fileID: 0}
+    castTime: 0.6
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 10
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 0}
+    hitVFX: {fileID: 0}
+    shieldAbsorb: 0
+    shieldDuration: 0
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+--- !u!114 &254623348494757862
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2247696185094625769}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3ca93769a4cf1824696ebd38dfb364db, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CastAnimator
+--- !u!114 &5358142499249907903
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2247696185094625769}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a553cb17010b2403e8523b558bffbc14, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Mirror.Components::Mirror.NetworkTransformUnreliable
+  syncDirection: 1
+  syncMode: 0
+  syncInterval: 0
+  target: {fileID: 4380736623570682}
+  syncPosition: 1
+  syncRotation: 1
+  syncScale: 0
+  onlySyncOnChange: 1
+  compressRotation: 1
+  interpolatePosition: 1
+  interpolateRotation: 1
+  interpolateScale: 1
+  coordinateSpace: 0
+  timelineOffset: 1
+  showGizmos: 0
+  showOverlay: 0
+  overlayColor: {r: 0, g: 0, b: 0, a: 0.5}
+  bufferResetMultiplier: 3
+  useFixedUpdate: 0
+  positionSensitivity: 0.01
+  rotationSensitivity: 0.01
+  scaleSensitivity: 0.01
+--- !u!114 &362966492792788329
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2247696185094625769}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7f6f3bf89aa97405989c802ba270f815, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Mirror.Components::Mirror.NetworkAnimator
+  syncDirection: 1
+  syncMode: 0
+  syncInterval: 0
+  clientAuthority: 1
+  animator: {fileID: 1192910662360674664}
+--- !u!1001 &1947103826045389690
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 4380736623570682}
+    m_Modifications:
+    - target: {fileID: -8679921383154817045, guid: edb8f77f938cec04cb49be6a3b9a4702, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: edb8f77f938cec04cb49be6a3b9a4702, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: edb8f77f938cec04cb49be6a3b9a4702, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: edb8f77f938cec04cb49be6a3b9a4702, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: edb8f77f938cec04cb49be6a3b9a4702, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: edb8f77f938cec04cb49be6a3b9a4702, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: edb8f77f938cec04cb49be6a3b9a4702, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: edb8f77f938cec04cb49be6a3b9a4702, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: edb8f77f938cec04cb49be6a3b9a4702, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: edb8f77f938cec04cb49be6a3b9a4702, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: edb8f77f938cec04cb49be6a3b9a4702, type: 3}
+      propertyPath: m_Name
+      value: Model
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: edb8f77f938cec04cb49be6a3b9a4702, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1192910662360674664}
+  m_SourcePrefab: {fileID: 100100000, guid: edb8f77f938cec04cb49be6a3b9a4702, type: 3}
+--- !u!1 &1712750274964125227 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: edb8f77f938cec04cb49be6a3b9a4702, type: 3}
+  m_PrefabInstance: {fileID: 1947103826045389690}
+  m_PrefabAsset: {fileID: 0}
+--- !u!95 &1192910662360674664
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1712750274964125227}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 218529b102eab3c44847c505d2cfd011, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
+--- !u!4 &2057927190753848465 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: edb8f77f938cec04cb49be6a3b9a4702, type: 3}
+  m_PrefabInstance: {fileID: 1947103826045389690}
+  m_PrefabAsset: {fileID: 0}
