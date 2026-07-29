@@ -18,6 +18,14 @@ namespace Crossworlds.EditorTools.EnemyForge
         const string BackupManifestPath = BackupFolder + "/manifest.json";
         const string FallbackProjectilePath =
             "Assets/Game/Prefabs/EnemyForge/EnemyForge_RangedTestProjectile.prefab";
+        const string ElementalLightningProfilePath =
+            "Assets/Game/Resources/EnemyAbilities/ElementalLightning.asset";
+        const string LightningAuraPath =
+            "Assets/Game/FX/brbmuffins Studio/brbmuffins Magic Pack/Prefabs/Character auras/Lightning aura.prefab";
+        const string LightningProjectorPath =
+            "Assets/Game/FX/dark magic/SubEffects/LightningStrikeProjector.prefab";
+        const string ElectroHitPath =
+            "Assets/Game/FX/brbmuffins Studio/brbmuffins Magic Pack/Prefabs/Hits and explosions/Electro hit.prefab";
 
         [InitializeOnLoadMethod]
         static void ScheduleGeneratedAnimationRepair()
@@ -208,6 +216,10 @@ namespace Crossworlds.EditorTools.EnemyForge
                     {
                         (EnemyHeavyAttack.HeavyAbilityType)((int)d.castAttack - 1)
                     };
+                heavy.elementalLightningVfxProfile =
+                    d.elementalLightningVfxProfile != null
+                        ? d.elementalLightningVfxProfile
+                        : EnsureElementalLightningProfile();
             }
             else
             {
@@ -221,6 +233,25 @@ namespace Crossworlds.EditorTools.EnemyForge
                 }
             }
             EditorUtility.SetDirty(root);
+        }
+
+        static ElementalLightningVFXProfile EnsureElementalLightningProfile()
+        {
+            var profile = AssetDatabase.LoadAssetAtPath<ElementalLightningVFXProfile>(
+                ElementalLightningProfilePath);
+            if (profile == null)
+            {
+                EnsureFolder("Assets/Game/Resources/EnemyAbilities");
+                profile = ScriptableObject.CreateInstance<ElementalLightningVFXProfile>();
+                AssetDatabase.CreateAsset(profile, ElementalLightningProfilePath);
+            }
+
+            profile.handEffect = AssetDatabase.LoadAssetAtPath<GameObject>(LightningAuraPath);
+            profile.spellEffect = AssetDatabase.LoadAssetAtPath<GameObject>(LightningProjectorPath);
+            profile.hitEffect = AssetDatabase.LoadAssetAtPath<GameObject>(ElectroHitPath);
+            EditorUtility.SetDirty(profile);
+            AssetDatabase.SaveAssets();
+            return profile;
         }
 
         static GameObject EnsureFallbackProjectilePrefab()

@@ -32,7 +32,8 @@ public class EnemyHeavyAttack : NetworkBehaviour
         VoidBurst,       // AOE at target position, slow + DoT
         ChainLightning,  // chain to 3 players, weakened
         GroundSpikes,    // cone toward target, slow
-        HexBlast         // single target, heavy damage, weakened + DoT
+        HexBlast,        // single target, heavy damage, weakened + DoT
+        ElementalLightning // composite lightning cast + single-target impact
     }
 
     // ── Config ────────────────────────────────────────────────────────────────────
@@ -68,8 +69,10 @@ public class EnemyHeavyAttack : NetworkBehaviour
     public bool cancelOpeningCastIfTargetInvalid = true;
 
     [Header("Available Abilities")]
-    [Tooltip("Which heavy types this enemy can roll. Leave empty to allow all 5.")]
+    [Tooltip("Which heavy types this enemy can roll. Leave empty to allow all configured types.")]
     public HeavyAbilityType[] availableTypes;
+    [Tooltip("Reusable visual profile used by the Elemental Lightning spell.")]
+    public ElementalLightningVFXProfile elementalLightningVfxProfile;
 
     // ── State ─────────────────────────────────────────────────────────────────────
 
@@ -231,10 +234,15 @@ public class EnemyHeavyAttack : NetworkBehaviour
     [Server]
     HeavyAbilityType PickAbility()
     {
-        var pool = (availableTypes != null && availableTypes.Length > 0)
-            ? availableTypes
-            : _allTypes;
-        return pool[Random.Range(0, pool.Length)];
+        if (availableTypes != null && availableTypes.Length > 0)
+            return availableTypes[Random.Range(0, availableTypes.Length)];
+
+        // Existing enemies created before Elemental Lightning have no profile.
+        // Preserve their previous Random All pool until the new spell is assigned.
+        int count = elementalLightningVfxProfile != null
+            ? _allTypes.Length
+            : _allTypes.Length - 1;
+        return _allTypes[Random.Range(0, Mathf.Max(1, count))];
     }
 
     [Server]
@@ -248,6 +256,9 @@ public class EnemyHeavyAttack : NetworkBehaviour
         // Trigger the prefab-selected cast/attack clip on every client before
         // the telegraph and resolve damage at its configured impact point.
         float selectedImpactDelay = _enemy.PlayCastAnimation(out int attackVariant);
+        if (type == HeavyAbilityType.ElementalLightning)
+            RpcPresentElementalLightningCast(
+                GetTargetOrSelf(), attackVariant, selectedImpactDelay);
         RpcTelegraph(type, transform.position);
         float windup = Mathf.Max(0.05f, selectedImpactDelay);
         float remainingWindup = windup;
@@ -316,6 +327,11 @@ public class EnemyHeavyAttack : NetworkBehaviour
                 HitNearestPlayer(dmg * 1.8f,
                     StatusEffectType.Weakened, 5f, 0f,
                     StatusEffectType.Cursed,   5f, dmg * 0.12f);
+                break;
+
+            case HeavyAbilityType.ElementalLightning:
+                if (HitElementalLightning(requiredTarget, dmg, out Vector3 lightningHit))
+                    RpcPresentElementalLightningHit(lightningHit);
                 break;
         }
 
@@ -489,6 +505,23 @@ public class EnemyHeavyAttack : NetworkBehaviour
     }
 
     [Server]
+    bool HitElementalLightning(Transform preferredTarget, float dmg,
+        out Vector3 hitPosition)
+    {
+        hitPosition = default;
+        Health targetHealth = preferredTarget != null
+            ? preferredTarget.GetComponentInParent<Health>()
+            : null;
+        if (targetHealth == null || !targetHealth.isPlayer || !targetHealth.IsAlive)
+            return false;
+
+        ApplyHit(targetHealth.gameObject, dmg,
+            StatusEffectType.Weakened, 4f, 0f);
+        hitPosition = targetHealth.transform.position;
+        return true;
+    }
+
+    [Server]
     void ApplyHit(GameObject target, float dmg, StatusEffectType status,
         float statusDur, float statusVal)
     {
@@ -545,6 +578,7 @@ public class EnemyHeavyAttack : NetworkBehaviour
             HeavyAbilityType.ChainLightning  => "⚡CHAIN",
             HeavyAbilityType.GroundSpikes    => "▲SPIKES",
             HeavyAbilityType.HexBlast        => "☠HEX",
+            HeavyAbilityType.ElementalLightning => "ELEMENTAL LIGHTNING",
             _                                => "!!",
         };
 
@@ -574,6 +608,24 @@ public class EnemyHeavyAttack : NetworkBehaviour
         ChainLightningVFXProfile profile = ChainLightningVFXProfile.LoadArcane();
         if (profile != null)
             profile.Present(gameObject, hitPositions, attackVariant);
+#endif
+    }
+
+    [ClientRpc]
+    void RpcPresentElementalLightningCast(
+        Vector3 targetPosition, int attackVariant, float castDuration)
+    {
+#if UNITY_EDITOR || !UNITY_SERVER
+        elementalLightningVfxProfile?.PresentCast(
+            gameObject, targetPosition, attackVariant, castDuration);
+#endif
+    }
+
+    [ClientRpc]
+    void RpcPresentElementalLightningHit(Vector3 hitPosition)
+    {
+#if UNITY_EDITOR || !UNITY_SERVER
+        elementalLightningVfxProfile?.PresentHit(hitPosition);
 #endif
     }
 }

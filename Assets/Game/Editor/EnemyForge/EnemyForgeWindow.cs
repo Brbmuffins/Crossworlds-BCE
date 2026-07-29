@@ -147,6 +147,24 @@ namespace Crossworlds.EditorTools.EnemyForge
                 ranged ? "Enable Ranged Attack" : "Enable Heavy Attack");
             DrawLabeledProperty(serialized, "castAttack",
                 ranged ? "Ranged Attack Selection" : "Heavy Attack Selection");
+            bool usesElementalLightning =
+                definition.castAttack == EnemyForgeCastAttack.ElementalLightning ||
+                definition.openingCast == EnemyForgeCastAttack.ElementalLightning;
+            if (usesElementalLightning)
+            {
+                SerializedProperty profileProperty =
+                    serialized.FindProperty("elementalLightningVfxProfile");
+                if (profileProperty != null && profileProperty.objectReferenceValue == null)
+                {
+                    profileProperty.objectReferenceValue =
+                        AssetDatabase.LoadAssetAtPath<ElementalLightningVFXProfile>(
+                            "Assets/Game/Resources/EnemyAbilities/ElementalLightning.asset");
+                }
+                DrawLabeledProperty(serialized, "elementalLightningVfxProfile",
+                    "Elemental Lightning VFX");
+                DrawElementalLightningVfx(
+                    profileProperty?.objectReferenceValue as ElementalLightningVFXProfile);
+            }
             DrawLabeledProperty(serialized, "heavyMinCooldown", "Minimum Cooldown");
             DrawLabeledProperty(serialized, "heavyMaxCooldown", "Maximum Cooldown");
             DrawLabeledProperty(serialized, "heavyDamageMultiplier", "Damage Multiplier");
@@ -162,6 +180,47 @@ namespace Crossworlds.EditorTools.EnemyForge
             }
             EditorGUI.indentLevel--;
             EditorGUILayout.Space(3);
+        }
+
+        static void DrawElementalLightningVfx(ElementalLightningVFXProfile profile)
+        {
+            if (profile == null)
+            {
+                EditorGUILayout.HelpBox(
+                    "Forge once to create the reusable Elemental Lightning profile.",
+                    MessageType.Info);
+                return;
+            }
+
+            var effect = new SerializedObject(profile);
+            effect.Update();
+            EditorGUILayout.Space(3f);
+            EditorGUILayout.LabelField("Elemental Lightning Effects", EditorStyles.boldLabel);
+            DrawLabeledProperty(effect, "handEffect", "Hand Effect");
+            DrawFloatSlider(effect, "handScale", "Hand Scale", 0.05f, 3f);
+            DrawFloatSlider(effect, "handThickness", "Hand Thickness", 0.1f, 5f);
+            DrawFloatSlider(effect, "handLifetime", "Hand Lifetime (0 = Impact)", 0f, 8f);
+            EditorGUILayout.Space(2f);
+            DrawLabeledProperty(effect, "spellEffect", "Spell Effect");
+            DrawFloatSlider(effect, "spellScale", "Spell Scale", 0.05f, 3f);
+            DrawFloatSlider(effect, "spellThickness", "Bolt Thickness", 0.1f, 5f);
+            DrawFloatSlider(effect, "spellLifetime", "Bolt Lifetime (0 = 0.75s)", 0f, 8f);
+            EditorGUILayout.Space(2f);
+            DrawLabeledProperty(effect, "hitEffect", "Hit Effect");
+            DrawFloatSlider(effect, "hitScale", "Hit Scale", 0.05f, 3f);
+            DrawFloatSlider(effect, "hitThickness", "Hit Thickness", 0.1f, 5f);
+            DrawFloatSlider(effect, "hitLifetime", "Hit Lifetime", 0.05f, 8f);
+            if (effect.ApplyModifiedProperties())
+                EditorUtility.SetDirty(profile);
+        }
+
+        static void DrawFloatSlider(SerializedObject serialized, string propertyName,
+            string label, float minimum, float maximum)
+        {
+            SerializedProperty property = serialized.FindProperty(propertyName);
+            if (property != null)
+                property.floatValue = EditorGUILayout.Slider(
+                    label, property.floatValue, minimum, maximum);
         }
 
         static void DrawLabeledProperty(SerializedObject serialized, string propertyName, string label)
@@ -699,6 +758,7 @@ namespace Crossworlds.EditorTools.EnemyForge
                 definition.animationFolder = AssetDatabase.LoadAssetAtPath<DefaultAsset>(folder);
             PopulateAnimationMappingsFromSourceOverride();
             EditorUtility.SetDirty(definition);
+            OpenAnimationPreviewOnNextEditorUpdate(definition);
         }
 
         void PopulateAnimationMappingsFromSourceOverride()
@@ -833,6 +893,8 @@ namespace Crossworlds.EditorTools.EnemyForge
                     Undo.RecordObject(definition, "Assign " + label + " animation");
                     selected = next == 0 ? null : available[next - 1];
                     EditorUtility.SetDirty(definition);
+                    if (selected != null)
+                        OpenAnimationPreviewOnNextEditorUpdate(definition);
                 }
                 if (GUILayout.Button("Find File", GUILayout.Width(75)))
                 {
@@ -842,10 +904,34 @@ namespace Crossworlds.EditorTools.EnemyForge
                         Undo.RecordObject(definition, "Assign " + label + " animation");
                         selected = clip;
                         EditorUtility.SetDirty(definition);
+                        OpenAnimationPreviewOnNextEditorUpdate(definition);
                         Repaint();
                     }
                 }
             }
+        }
+
+        static void OpenAnimationPreviewOnNextEditorUpdate(EnemyForgeDefinition target)
+        {
+            if (target == null || !HasAssignedAnimation(target)) return;
+            EditorApplication.delayCall += () =>
+            {
+                if (target != null)
+                    EnemyForgeAnimationPreviewWindow.Open(target);
+            };
+        }
+
+        static bool HasAssignedAnimation(EnemyForgeDefinition target)
+        {
+            return target != null &&
+                (target.idleAnimation != null ||
+                 target.chaseAnimation != null ||
+                 target.attackAnimation != null ||
+                 target.attackAnimation2 != null ||
+                 target.attackAnimation3 != null ||
+                 target.attackAnimation4 != null ||
+                 target.getHitAnimation != null ||
+                 target.deathAnimation != null);
         }
 
         void DrawAttackTimingSlider(string label, AnimationClip clip, float playbackSpeed,
@@ -925,6 +1011,7 @@ namespace Crossworlds.EditorTools.EnemyForge
             validatedConfigurationHash = 0;
             validatedDeploymentTarget = null;
             CaptureDefinitionBaseline();
+            OpenAnimationPreviewOnNextEditorUpdate(definition);
         }
 
         static bool IsEnemyForgePrefab(GameObject candidate)
