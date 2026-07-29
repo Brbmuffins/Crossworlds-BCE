@@ -887,19 +887,14 @@ public class AbilityCaster : NetworkBehaviour
         if (slot < 0 || slot >= 4) return;
         if (spellbookIndex < 0 || spellbookIndex >= spellbook.Length) return;
         if (!IsAllowedByClass(spellbookIndex)) return;
+        if (Application.isPlaying &&
+            !SpellLoadoutShrine.ServerCanEditLoadout(netIdentity))
+            return;
 
         if (ShouldRouteCastToServer())
             CmdEquipSpell(spellbookIndex, slot);
 
-        if (committedCastSlot == slot)
-            CancelCommittedCast();
-
-        if (heldAbilityIndex == slot)
-            CancelAim();
-
-        equippedIndices[slot] = spellbookIndex;
-        _equippedAbilities[slot] = spellbook[spellbookIndex];
-        cooldownTimers[slot] = 0f;
+        ApplyEquippedSpell(spellbookIndex, slot);
     }
 
     [Command]
@@ -908,10 +903,63 @@ public class AbilityCaster : NetworkBehaviour
         if (slot < 0 || slot >= 4) return;
         if (spellbookIndex < 0 || spellbookIndex >= spellbook.Length) return;
         if (!IsAllowedByClass(spellbookIndex)) return;
+        if (!SpellLoadoutShrine.ServerCanEditLoadout(netIdentity)) return;
+
+        ApplyEquippedSpell(spellbookIndex, slot);
+    }
+
+    void ApplyEquippedSpell(int spellbookIndex, int slot)
+    {
+        int previousSlot = -1;
+        for (int i = 0;
+             equippedIndices != null && i < equippedIndices.Length;
+             i++)
+        {
+            if (equippedIndices[i] == spellbookIndex)
+            {
+                previousSlot = i;
+                break;
+            }
+        }
+
+        if (previousSlot == slot)
+            return;
+
+        if (committedCastSlot == slot ||
+            committedCastSlot == previousSlot)
+            CancelCommittedCast();
+
+        if (heldAbilityIndex == slot ||
+            heldAbilityIndex == previousSlot)
+            CancelAim();
+
+        int displacedIndex =
+            equippedIndices != null && slot < equippedIndices.Length
+                ? equippedIndices[slot]
+                : -1;
+
+        if (previousSlot >= 0 && previousSlot < 4)
+        {
+            equippedIndices[previousSlot] = displacedIndex;
+            _equippedAbilities[previousSlot] =
+                IsUsableSpellbookIndex(displacedIndex)
+                    ? spellbook[displacedIndex]
+                    : null;
+            cooldownTimers[previousSlot] = 0f;
+        }
 
         equippedIndices[slot] = spellbookIndex;
         _equippedAbilities[slot] = spellbook[spellbookIndex];
         cooldownTimers[slot] = 0f;
+    }
+
+    bool IsUsableSpellbookIndex(int spellbookIndex)
+    {
+        return spellbook != null &&
+               spellbookIndex >= 0 &&
+               spellbookIndex < spellbook.Length &&
+               spellbook[spellbookIndex] != null &&
+               !spellbook[spellbookIndex].variantOnly;
     }
 
     // Returns true if this spellbook index is permitted for the current class.
@@ -929,9 +977,11 @@ public class AbilityCaster : NetworkBehaviour
                 || ContainsAbilityName(classAbilityNames, abilityName))
                 return true;
 
-            // Known spells are resolved by name to protect stale prefab order. Brand-new
-            // custom names can still be enabled through the class pool's index list.
-            return !IsKnownAbilityName(abilityName) && PoolContainsIndex(classPool, spellbookIndex);
+            // A recognized spell owned by another class stays unavailable.
+            // Any new custom spell authored directly in this class prefab belongs
+            // to that class automatically; Spellbook should never require a second
+            // manual class-pool edit before the new spell appears in game.
+            return !IsKnownAbilityName(abilityName);
         }
 
         return PoolContainsIndex(classPool, spellbookIndex);
@@ -1131,6 +1181,13 @@ public class AbilityCaster : NetworkBehaviour
 
         if (!ShouldProcessLocalInput())
             return;
+
+        if (PlayerHUD.IsSpellLoadoutOpen)
+        {
+            if (heldAbilityIndex != -1)
+                CancelAim();
+            return;
+        }
 
         if (IsDowned())
         {

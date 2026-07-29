@@ -44,6 +44,14 @@ namespace Crossworlds.EditorTools
             "VFX & Preview"
         };
 
+        enum MovementType
+        {
+            None,
+            Dash,
+            Leap,
+            Teleport
+        }
+
         readonly HashSet<string> expandedAbilities = new();
         readonly Dictionary<string, int> abilityTabs = new();
         readonly List<int> visibleAbilityIndices = new();
@@ -60,6 +68,8 @@ namespace Crossworlds.EditorTools
         bool pendingSave;
         string lastSaveMessage = "";
         string activePreviewAbility;
+        string activeIconPropertyPath;
+        int activeIconPickerControlId;
         SpellVFXPreviewPanel spellPreview;
 
         [MenuItem("BCE/Spell Forge/Spellbook", priority = 38)]
@@ -122,20 +132,24 @@ namespace Crossworlds.EditorTools
                 return;
             }
 
-            if (!EditorGUIUtility.editingTextField)
+            if (!pendingSave &&
+                !EditorGUIUtility.editingTextField)
                 serializedCaster.UpdateIfRequiredOrScript();
+            HandleIconPickerEvent();
             DrawSpellbookToolbar();
 
+            bool guiChanged = false;
             using (var changeCheck =
                 new EditorGUI.ChangeCheckScope())
             {
                 DrawAbilities();
-                if (changeCheck.changed)
-                {
-                    serializedCaster.ApplyModifiedProperties();
-                    MarkChanged();
-                }
+                guiChanged = changeCheck.changed;
             }
+
+            bool propertiesApplied =
+                serializedCaster.ApplyModifiedProperties();
+            if (guiChanged || propertiesApplied)
+                MarkChanged();
         }
 
         void DrawHeader()
@@ -524,7 +538,7 @@ namespace Crossworlds.EditorTools
             }
         }
 
-        static void DrawLogisticsTab(SerializedProperty ability)
+        void DrawLogisticsTab(SerializedProperty ability)
         {
             DrawFieldGroup(
                 "IDENTITY & TARGETING", ability,
@@ -538,6 +552,8 @@ namespace Crossworlds.EditorTools
                 "rectWidth",
                 "indicatorSize",
                 "targetTag");
+
+            DrawMovementLogistics(ability);
 
             DrawFieldGroup(
                 "TIMING & COST", ability,
@@ -582,23 +598,123 @@ namespace Crossworlds.EditorTools
                 "variants");
         }
 
-        static void DrawAnimationTab(SerializedProperty ability)
+        void DrawAnimationTab(SerializedProperty ability)
         {
             DrawFieldGroup(
                 "CAST", ability,
                 "castTime",
                 "marauderCastAnimation");
+        }
 
-            DrawFieldGroup(
-                "CASTER MOVEMENT", ability,
-                "moveCasterToTarget",
-                "instantMovement",
-                "movementTiming",
-                "moveToSpeed",
-                "fixedMovementDuration",
-                "movementArcHeight",
-                "resolveEffectsOnLanding",
-                "animationLandingPoint");
+        void DrawMovementLogistics(SerializedProperty ability)
+        {
+            SerializedProperty movesCaster =
+                ability.FindPropertyRelative("moveCasterToTarget");
+            SerializedProperty instantMovement =
+                ability.FindPropertyRelative("instantMovement");
+            SerializedProperty movementTiming =
+                ability.FindPropertyRelative("movementTiming");
+            SerializedProperty moveToSpeed =
+                ability.FindPropertyRelative("moveToSpeed");
+            SerializedProperty fixedMovementDuration =
+                ability.FindPropertyRelative("fixedMovementDuration");
+            SerializedProperty movementArcHeight =
+                ability.FindPropertyRelative("movementArcHeight");
+            SerializedProperty resolveEffectsOnLanding =
+                ability.FindPropertyRelative("resolveEffectsOnLanding");
+            SerializedProperty animationLandingPoint =
+                ability.FindPropertyRelative("animationLandingPoint");
+
+            using (new EditorGUILayout.VerticalScope(
+                EditorStyles.helpBox))
+            {
+                EditorGUILayout.LabelField(
+                    "MOVEMENT", EyebrowStyle());
+
+                MovementType movementType = GetMovementType(
+                    movesCaster,
+                    instantMovement,
+                    movementArcHeight);
+                MovementType nextMovementType =
+                    (MovementType)EditorGUILayout.EnumPopup(
+                        new GUIContent(
+                            "Movement Type",
+                            "How casting this spell moves its caster."),
+                        movementType);
+                if (nextMovementType != movementType)
+                {
+                    SetMovementType(
+                        nextMovementType,
+                        movesCaster,
+                        instantMovement,
+                        movementArcHeight);
+                    movementType = nextMovementType;
+                }
+
+                if (movementType == MovementType.None)
+                    return;
+
+                if (movementType != MovementType.Teleport)
+                {
+                    EditorGUILayout.PropertyField(movementTiming);
+                    if (movementTiming.enumValueIndex ==
+                        (int)AbilityMovementTiming.FixedDuration)
+                    {
+                        EditorGUILayout.PropertyField(
+                            fixedMovementDuration);
+                    }
+                    else
+                    {
+                        EditorGUILayout.PropertyField(moveToSpeed);
+                    }
+
+                    if (movementType == MovementType.Leap)
+                        EditorGUILayout.PropertyField(
+                            movementArcHeight);
+
+                    EditorGUILayout.PropertyField(
+                        resolveEffectsOnLanding);
+                    EditorGUILayout.PropertyField(
+                        animationLandingPoint);
+                }
+            }
+        }
+
+        static MovementType GetMovementType(
+            SerializedProperty movesCaster,
+            SerializedProperty instantMovement,
+            SerializedProperty movementArcHeight)
+        {
+            if (movesCaster == null || !movesCaster.boolValue)
+                return MovementType.None;
+            if (instantMovement?.boolValue == true)
+                return MovementType.Teleport;
+            return (movementArcHeight?.floatValue ?? 0f) > 0.01f
+                ? MovementType.Leap
+                : MovementType.Dash;
+        }
+
+        static void SetMovementType(
+            MovementType movementType,
+            SerializedProperty movesCaster,
+            SerializedProperty instantMovement,
+            SerializedProperty movementArcHeight)
+        {
+            if (movesCaster == null ||
+                instantMovement == null ||
+                movementArcHeight == null)
+                return;
+
+            movesCaster.boolValue =
+                movementType != MovementType.None;
+            instantMovement.boolValue =
+                movementType == MovementType.Teleport;
+
+            if (movementType == MovementType.Dash)
+                movementArcHeight.floatValue = 0f;
+            else if (movementType == MovementType.Leap &&
+                movementArcHeight.floatValue <= 0.01f)
+                movementArcHeight.floatValue = 3f;
         }
 
         void DrawVFXTab(
@@ -727,7 +843,7 @@ namespace Crossworlds.EditorTools
             }
         }
 
-        static void DrawFieldGroup(
+        void DrawFieldGroup(
             string title,
             SerializedProperty ability,
             params string[] propertyNames)
@@ -747,6 +863,12 @@ namespace Crossworlds.EditorTools
                     {
                         DrawStringProperty(property);
                     }
+                    else if (propertyName == "icon" &&
+                        property.propertyType ==
+                        SerializedPropertyType.ObjectReference)
+                    {
+                        DrawIconProperty(property);
+                    }
                     else
                     {
                         EditorGUILayout.PropertyField(
@@ -754,6 +876,93 @@ namespace Crossworlds.EditorTools
                     }
                 }
             }
+        }
+
+        void DrawIconProperty(SerializedProperty property)
+        {
+            Rect rowRect = EditorGUILayout.GetControlRect();
+            Rect fieldRect = EditorGUI.PrefixLabel(
+                rowRect,
+                new GUIContent(
+                    property.displayName,
+                    property.tooltip));
+            Rect pickerRect = new Rect(
+                fieldRect.xMax - 19f,
+                fieldRect.y,
+                19f,
+                fieldRect.height);
+            Rect valueRect = new Rect(
+                fieldRect.x,
+                fieldRect.y,
+                fieldRect.width - pickerRect.width,
+                fieldRect.height);
+
+            Sprite current =
+                property.objectReferenceValue as Sprite;
+            GUI.Label(
+                valueRect,
+                current != null
+                    ? current.name
+                    : "None (Sprite)",
+                EditorStyles.objectField);
+
+            int controlId = GUIUtility.GetControlID(
+                property.propertyPath.GetHashCode(),
+                FocusType.Passive,
+                pickerRect);
+            if (GUI.Button(
+                pickerRect,
+                EditorGUIUtility.IconContent("d_pick"),
+                EditorStyles.miniButton))
+            {
+                activeIconPropertyPath = property.propertyPath;
+                activeIconPickerControlId = controlId;
+                EditorGUIUtility.ShowObjectPicker<Sprite>(
+                    current,
+                    false,
+                    "t:Sprite",
+                    controlId);
+            }
+        }
+
+        void HandleIconPickerEvent()
+        {
+            Event currentEvent = Event.current;
+            if (currentEvent == null ||
+                currentEvent.type != EventType.ExecuteCommand ||
+                string.IsNullOrEmpty(activeIconPropertyPath))
+                return;
+
+            bool updated =
+                currentEvent.commandName == "ObjectSelectorUpdated";
+            bool closed =
+                currentEvent.commandName == "ObjectSelectorClosed";
+            if (!updated && !closed) return;
+
+            int pickerControlId =
+                EditorGUIUtility.GetObjectPickerControlID();
+            if (pickerControlId != activeIconPickerControlId)
+                return;
+
+            SerializedProperty iconProperty =
+                serializedCaster.FindProperty(
+                    activeIconPropertyPath);
+            if (iconProperty != null)
+            {
+                UnityEngine.Object picked =
+                    EditorGUIUtility.GetObjectPickerObject();
+                if (iconProperty.objectReferenceValue != picked)
+                {
+                    iconProperty.objectReferenceValue = picked;
+                    serializedCaster.ApplyModifiedProperties();
+                    MarkChanged();
+                }
+            }
+
+            if (closed)
+                activeIconPropertyPath = null;
+
+            Repaint();
         }
 
         static void DrawStringProperty(
@@ -790,6 +999,12 @@ namespace Crossworlds.EditorTools
                 ability.FindPropertyRelative("cooldown");
             SerializedProperty mana =
                 ability.FindPropertyRelative("manaCost");
+            SerializedProperty movesCaster =
+                ability.FindPropertyRelative("moveCasterToTarget");
+            SerializedProperty instantMovement =
+                ability.FindPropertyRelative("instantMovement");
+            SerializedProperty movementArcHeight =
+                ability.FindPropertyRelative("movementArcHeight");
 
             string categoryName = category != null
                 ? category.enumDisplayNames[
@@ -798,9 +1013,22 @@ namespace Crossworlds.EditorTools
                 : "Ability";
             float cooldownValue = cooldown?.floatValue ?? 0f;
             float manaValue = mana?.floatValue ?? 0f;
+            string movementLabel = "";
+            if (movesCaster?.boolValue == true)
+            {
+                movementLabel = instantMovement?.boolValue == true
+                    ? "Teleport"
+                    : (movementArcHeight?.floatValue ?? 0f) > 0.01f
+                        ? "Leap"
+                        : "Dash";
+            }
 
             return
-                $"{categoryName}  •  {cooldownValue:0.#}s  •  " +
+                $"{categoryName}" +
+                (string.IsNullOrEmpty(movementLabel)
+                    ? ""
+                    : $"  •  {movementLabel}") +
+                $"  •  {cooldownValue:0.#}s  •  " +
                 $"{manaValue:0.#} MP";
         }
 
