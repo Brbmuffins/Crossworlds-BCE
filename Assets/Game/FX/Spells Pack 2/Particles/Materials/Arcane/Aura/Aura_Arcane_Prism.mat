@@ -110,6 +110,7 @@ Material:
     - _Custom_Data_Mode: 0
     - _Distortion_Alpha: 5
     - _DstBlend: 10
+    - _DstBlendAlpha: 10
     - _Emission: 0
     - _Fresnel: 0
     - _Fresnel_Power: 1
@@ -133,6 +134,7 @@ Material:
     - _Soft_Particle: 0
     - _Speed: 1.5
     - _SrcBlend: 5
+    - _SrcBlendAlpha: 1
     - _Surface: 1
     - _Time_Mode: 1
     - _Trail_Mode: 0
