@@ -14,7 +14,8 @@ namespace Crossworlds.EditorTools.EnemyForge
         VoidBurst,
         ChainLightning,
         GroundSpikes,
-        HexBlast
+        HexBlast,
+        ElementalLightning
     }
     internal enum EnemyForgeAnimationDriverMode
     {
@@ -127,6 +128,7 @@ namespace Crossworlds.EditorTools.EnemyForge
         [InspectorName("Cast Attack Spell")]
         [Tooltip("Choose one spell for this enemy, or Random All to rotate among every available enemy spell.")]
         public EnemyForgeCastAttack castAttack = EnemyForgeCastAttack.RandomAll;
+        public ElementalLightningVFXProfile elementalLightningVfxProfile;
         [Min(0f)] public float heavyMinCooldown = 12f;
         [Min(0f)] public float heavyMaxCooldown = 20f;
         [Min(0f)] public float heavyDamageMultiplier = 2f;
@@ -304,6 +306,7 @@ namespace Crossworlds.EditorTools.EnemyForge
                 openingCastOncePerAggro = heavy.openingCastOncePerAggro;
                 openingCastRequiresLineOfSight = heavy.openingCastRequiresLineOfSight;
                 cancelOpeningCastIfTargetInvalid = heavy.cancelOpeningCastIfTargetInvalid;
+                elementalLightningVfxProfile = heavy.elementalLightningVfxProfile;
                 castAttack = heavy.availableTypes != null && heavy.availableTypes.Length > 0
                     ? (EnemyForgeCastAttack)((int)heavy.availableTypes[0] + 1)
                     : EnemyForgeCastAttack.RandomAll;

@@ -24,6 +24,16 @@ namespace Crossworlds.EditorTools.EnemyForge
         GameObject source;
         GameObject vfxMarker;
         GameObject groundReference;
+        GameObject elementalHandEffect;
+        GameObject elementalSpellEffect;
+        GameObject elementalHitEffect;
+        GameObject elementalHandSource;
+        GameObject elementalSpellSource;
+        GameObject elementalHitSource;
+        Vector3 elementalHandBaseScale;
+        Vector3 elementalSpellBaseScale;
+        Vector3 elementalHitBaseScale;
+        ElementalLightningVFXProfile elementalProfile;
         int stateIndex;
         bool playing = true;
         float playTime;
@@ -73,7 +83,7 @@ namespace Crossworlds.EditorTools.EnemyForge
             }
 
             stateIndex = Mathf.Clamp(stateIndex, 0, states.Count - 1);
-            EnsurePreview(definition.source);
+            EnsurePreview(definition.source, definition.elementalLightningVfxProfile);
             PreviewState state = states[stateIndex];
             Rect previewRect = GUILayoutUtility.GetRect(
                 100f, Mathf.Max(260f, position.height - 170f), GUILayout.ExpandWidth(true));
@@ -143,6 +153,7 @@ namespace Crossworlds.EditorTools.EnemyForge
 
             Bounds bounds = BoundsFor(instance);
             UpdateVfxMarker(state, bounds, normalized);
+            UpdateElementalLightningEffects(state, bounds, duration);
             Vector3 center = bounds.center;
             float radius = Mathf.Max(bounds.extents.magnitude, 0.5f);
             Quaternion orbit = Quaternion.Euler(cameraPitch, cameraYaw, 0f);
@@ -253,9 +264,17 @@ namespace Crossworlds.EditorTools.EnemyForge
                 "Hit/VFX", EditorStyles.centeredGreyMiniLabel);
         }
 
-        void EnsurePreview(GameObject nextSource)
+        void EnsurePreview(GameObject nextSource, ElementalLightningVFXProfile nextProfile)
         {
-            if (preview != null && instance != null && source == nextSource) return;
+            GameObject nextHand = nextProfile != null ? nextProfile.handEffect : null;
+            GameObject nextSpell = nextProfile != null ? nextProfile.spellEffect : null;
+            GameObject nextHit = nextProfile != null ? nextProfile.hitEffect : null;
+            if (preview != null && instance != null && source == nextSource &&
+                elementalProfile == nextProfile &&
+                elementalHandSource == nextHand &&
+                elementalSpellSource == nextSpell &&
+                elementalHitSource == nextHit)
+                return;
             Cleanup();
             preview = new PreviewRenderUtility();
             preview.camera.fieldOfView = 30f;
@@ -295,6 +314,13 @@ namespace Crossworlds.EditorTools.EnemyForge
                 groundRenderer.sharedMaterial = groundMaterial;
             }
             preview.AddSingleGO(groundReference);
+            elementalProfile = nextProfile;
+            elementalHandSource = nextHand;
+            elementalSpellSource = nextSpell;
+            elementalHitSource = nextHit;
+            elementalHandEffect = CreatePreviewEffect(nextHand, out elementalHandBaseScale);
+            elementalSpellEffect = CreatePreviewEffect(nextSpell, out elementalSpellBaseScale);
+            elementalHitEffect = CreatePreviewEffect(nextHit, out elementalHitBaseScale);
             source = nextSource;
             playTime = 0f;
             previousNormalized = 0f;
@@ -308,8 +334,29 @@ namespace Crossworlds.EditorTools.EnemyForge
             instance = null;
             vfxMarker = null;
             groundReference = null;
+            elementalHandEffect = null;
+            elementalSpellEffect = null;
+            elementalHitEffect = null;
+            elementalHandSource = null;
+            elementalSpellSource = null;
+            elementalHitSource = null;
+            elementalProfile = null;
             source = null;
             lastUpdate = 0d;
+        }
+
+        GameObject CreatePreviewEffect(GameObject prefab, out Vector3 baseScale)
+        {
+            baseScale = Vector3.one;
+            if (prefab == null) return null;
+            GameObject effect = Instantiate(prefab);
+            effect.name = prefab.name + "_EnemyForgePreview";
+            baseScale = effect.transform.localScale;
+            foreach (MonoBehaviour behaviour in effect.GetComponentsInChildren<MonoBehaviour>(true))
+                if (behaviour != null) behaviour.enabled = false;
+            preview.AddSingleGO(effect);
+            effect.SetActive(false);
+            return effect;
         }
 
         static List<PreviewState> BuildStates(EnemyForgeDefinition d)
@@ -395,6 +442,96 @@ namespace Crossworlds.EditorTools.EnemyForge
             groundReference.transform.position =
                 new Vector3(bounds.center.x, bounds.min.y - 0.025f, bounds.center.z);
             groundReference.transform.localScale = new Vector3(width, 0.05f, depth);
+        }
+
+        void UpdateElementalLightningEffects(
+            PreviewState state, Bounds bounds, float duration)
+        {
+            bool elementalSelected = definition != null &&
+                (definition.castAttack == EnemyForgeCastAttack.ElementalLightning ||
+                 definition.openingCast == EnemyForgeCastAttack.ElementalLightning);
+            bool validAttack = elementalSelected && elementalProfile != null &&
+                state.attackIndex >= 0;
+            if (!validAttack)
+            {
+                SetEffectVisible(elementalHandEffect, false, 0f);
+                SetEffectVisible(elementalSpellEffect, false, 0f);
+                SetEffectVisible(elementalHitEffect, false, 0f);
+                return;
+            }
+
+            float impactTime = state.hasImpact
+                ? Mathf.Clamp01(state.impact) * duration
+                : duration;
+            float handEnd = elementalProfile.handLifetime > 0f
+                ? elementalProfile.handLifetime
+                : impactTime;
+            float hitElapsed = playTime - impactTime;
+            float spellDuration = elementalProfile.spellLifetime > 0f
+                ? elementalProfile.spellLifetime
+                : 0.75f;
+
+            Animator currentAnimator = instance.GetComponentInChildren<Animator>();
+            Vector3 castOrigin = EnemyController.ResolveAttackVfxOrigin(
+                instance.transform, currentAnimator,
+                instance.GetComponentsInChildren<Renderer>(true), state.vfxOffset);
+            Vector3 targetGround = bounds.center +
+                instance.transform.forward * Mathf.Max(2f, bounds.extents.z * 3f);
+            targetGround.y = bounds.min.y;
+
+            if (elementalHandEffect != null)
+            {
+                elementalHandEffect.transform.position = castOrigin;
+                elementalHandEffect.transform.rotation = instance.transform.rotation;
+                elementalHandEffect.transform.localScale = ApplyThickness(
+                    elementalHandBaseScale, elementalProfile.handScale,
+                    elementalProfile.handThickness);
+            }
+            if (elementalSpellEffect != null)
+            {
+                elementalSpellEffect.transform.position =
+                    targetGround;
+                elementalSpellEffect.transform.rotation = Quaternion.identity;
+                elementalSpellEffect.transform.localScale = ApplyThickness(
+                    elementalSpellBaseScale, elementalProfile.spellScale,
+                    elementalProfile.spellThickness);
+            }
+            if (elementalHitEffect != null)
+            {
+                elementalHitEffect.transform.position =
+                    targetGround;
+                elementalHitEffect.transform.rotation = Quaternion.identity;
+                elementalHitEffect.transform.localScale = ApplyThickness(
+                    elementalHitBaseScale, elementalProfile.hitScale,
+                    elementalProfile.hitThickness);
+            }
+
+            SetEffectVisible(elementalHandEffect,
+                playTime <= handEnd, playTime);
+            SetEffectVisible(elementalSpellEffect,
+                hitElapsed >= 0f && hitElapsed <= spellDuration,
+                Mathf.Max(0f, hitElapsed));
+            SetEffectVisible(elementalHitEffect,
+                hitElapsed >= 0f && hitElapsed <= elementalProfile.hitLifetime,
+                Mathf.Max(0f, hitElapsed));
+        }
+
+        static void SetEffectVisible(GameObject effect, bool visible, float simulationTime)
+        {
+            if (effect == null) return;
+            if (effect.activeSelf != visible) effect.SetActive(visible);
+            if (!visible) return;
+            foreach (ParticleSystem particles in effect.GetComponentsInChildren<ParticleSystem>(true))
+                particles.Simulate(Mathf.Max(0f, simulationTime), true, true, true);
+        }
+
+        static Vector3 ApplyThickness(Vector3 baseScale, float scale, float thickness)
+        {
+            Vector3 sized = baseScale * Mathf.Max(0.01f, scale);
+            float width = Mathf.Max(0.01f, thickness);
+            sized.x *= width;
+            sized.z *= width;
+            return sized;
         }
 
         void DrawVfxStartOverlay(Rect previewRect)
