@@ -74,8 +74,11 @@ public class MusicZoneTrigger : MonoBehaviour
             return;
         }
 
-        // Avoid re-triggering if the correct track is already playing
-        if (!stopMusicInstead && controller.CurrentTrack == zoneTrack && !restartIfAlreadyPlaying)
+        // Avoid re-triggering only when the correct track is genuinely playing.
+        // A stopped AudioSource still retains its clip, so comparing CurrentTrack
+        // alone prevented Hub music from restarting after another zone stopped it.
+        if (!stopMusicInstead && controller.CurrentTrack == zoneTrack &&
+            controller.IsPlaying && !restartIfAlreadyPlaying)
             return;
 
         if (!stopMusicInstead && zoneTrack == null)

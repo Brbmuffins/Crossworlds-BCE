@@ -13,6 +13,7 @@ public sealed class QuestLocalDialogue : MonoBehaviour
     bool _requestPending;
     float _requestStartedAt;
     string _feedback;
+    bool _zoneTravelPending;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     static void Bootstrap()
@@ -26,6 +27,7 @@ public sealed class QuestLocalDialogue : MonoBehaviour
     public static void Show(QuestDefinition quest)
     {
         if (_instance == null) Bootstrap();
+        if (_instance._zoneTravelPending) return;
         _instance._quest = quest;
         _instance._requestPending = false;
         _instance._feedback = "";
@@ -40,6 +42,20 @@ public sealed class QuestLocalDialogue : MonoBehaviour
         _instance._quest = null;
         _instance._requestPending = false;
         _instance.RestoreCursor();
+    }
+
+    public static void BeginZoneTravel()
+    {
+        if (_instance == null) Bootstrap();
+        _instance._zoneTravelPending = true;
+        Hide();
+    }
+
+    public static void CompleteZoneTravel()
+    {
+        if (_instance == null) return;
+        _instance._zoneTravelPending = false;
+        Hide();
     }
 
     void OnEnable() => QuestLocalRuntime.StateChanged += OnQuestStateChanged;

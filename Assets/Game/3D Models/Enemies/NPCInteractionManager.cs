@@ -37,6 +37,7 @@ public class NPCInteractionManager : MonoBehaviour
     GameObject       _promptGO;
     TextMeshProUGUI  _promptLabel;
     Image            _promptBg;
+    bool             _zoneTravelPending;
 
     static readonly Color ColText = new Color(1.00f, 0.95f, 0.60f, 1f);
     static readonly Color ColBg   = new Color(0.00f, 0.00f, 0.00f, 0.55f);
@@ -76,6 +77,9 @@ public class NPCInteractionManager : MonoBehaviour
     /// <summary>Register an NPC as the one nearest the local player.</summary>
     public void RegisterNearby(INPCInteractable npc)
     {
+        if (_zoneTravelPending)
+            return;
+
         _currentNPC = npc;
         if (_promptLabel != null)
             _promptLabel.text = npc.PromptText;
@@ -86,6 +90,25 @@ public class NPCInteractionManager : MonoBehaviour
     public void UnregisterNearby(INPCInteractable npc)
     {
         if (_currentNPC != npc) return;
+        _currentNPC = null;
+        SetVisible(false);
+    }
+
+    /// <summary>
+    /// Clears scene-owned interaction state before additive travel. The manager is
+    /// persistent, while the NPC or quest giver it references belongs to a zone.
+    /// </summary>
+    public void BeginZoneTravel()
+    {
+        _zoneTravelPending = true;
+        _currentNPC = null;
+        SetVisible(false);
+    }
+
+    /// <summary>Allows destination-scene NPCs to register after travel completes.</summary>
+    public void CompleteZoneTravel()
+    {
+        _zoneTravelPending = false;
         _currentNPC = null;
         SetVisible(false);
     }

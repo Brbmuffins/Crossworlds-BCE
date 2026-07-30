@@ -45,6 +45,7 @@ public class ZoneCameraDirector : MonoBehaviour
 
     Transform _localPlayer;
     Scene _appliedZone;
+    string _requestedZoneName;
     int _appliedSceneCount = -1;
     float _nextPoll;
 
@@ -100,6 +101,29 @@ public class ZoneCameraDirector : MonoBehaviour
     {
         if (Instance != null)
             Instance.Apply(force: true);
+    }
+
+    /// <summary>
+    /// Records the server-authoritative destination before additive loading begins.
+    /// This prevents sceneLoaded from briefly reapplying the previous zone's
+    /// presentation while both source and destination scenes are present.
+    /// </summary>
+    public static void BeginTravel(string zoneName)
+    {
+        if (Instance == null) return;
+        Instance._requestedZoneName = SceneNames.NormalizeZone(zoneName);
+    }
+
+    /// <summary>
+    /// Applies presentation for an explicitly confirmed server destination. Remote
+    /// clients briefly contain both source and destination additive scenes, so scene
+    /// count alone cannot identify the correct one during that overlap.
+    /// </summary>
+    public static void RefreshNow(string zoneName)
+    {
+        if (Instance == null) return;
+        Instance._requestedZoneName = SceneNames.NormalizeZone(zoneName);
+        Instance.Apply(force: true);
     }
 
     /// <summary>
@@ -314,6 +338,11 @@ public class ZoneCameraDirector : MonoBehaviour
             trigger.ActivateForLocalZone();
             return;
         }
+
+        // The music controller is intentionally persistent. Without a destination
+        // trigger its previous clip would otherwise follow the player forever and
+        // overlap any ordinary AudioSources authored in this zone.
+        MusicController.Instance?.Stop();
     }
 
     void ApplyZoneEnvironment(Scene zone)
@@ -524,6 +553,18 @@ public class ZoneCameraDirector : MonoBehaviour
         Scene playerScene = _localPlayer.gameObject.scene;
         if (playerScene.IsValid() && IsZoneScene(playerScene))
             return playerScene;
+
+        if (!string.IsNullOrWhiteSpace(_requestedZoneName))
+        {
+            for (int i = 0; i < SceneManager.sceneCount; i++)
+            {
+                Scene requested = SceneManager.GetSceneAt(i);
+                if (requested.isLoaded && IsZoneScene(requested) &&
+                    string.Equals(requested.name, _requestedZoneName,
+                        System.StringComparison.OrdinalIgnoreCase))
+                    return requested;
+            }
+        }
 
         Scene found = default;
         int count = 0;

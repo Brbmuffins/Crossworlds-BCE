@@ -13,6 +13,7 @@ public class MusicController : MonoBehaviour
 {
     public const string VolumePrefKey = "music_volume";
     public const string MutedPrefKey = "music_muted";
+    public const float TravelFadeOutSeconds = 0.75f;
 
     public static MusicController Instance { get; private set; }
 

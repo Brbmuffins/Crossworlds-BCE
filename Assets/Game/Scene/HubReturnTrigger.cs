@@ -143,6 +143,9 @@ public class HubReturnTrigger : NetworkBehaviour
 
         if (NetworkClient.active || NetworkServer.active)
         {
+#if UNITY_EDITOR || !UNITY_SERVER
+            LoadingScreen.Show(hubSceneName);
+#endif
             CmdRequestReturnToHub(hubSceneName);
             return;
         }

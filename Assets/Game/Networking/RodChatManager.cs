@@ -395,6 +395,32 @@ public class RodChatManager : NetworkBehaviour
         ZoneManager.Instance.MovePlayerToZone(sender, sceneName, arrivalSpawnId);
     }
 
+    [TargetRpc]
+    public void TargetBeginZoneTravel(
+        NetworkConnectionToClient target, string destinationLabel)
+    {
+#if UNITY_EDITOR || !UNITY_SERVER
+        ZoneCameraDirector.BeginTravel(destinationLabel);
+        LoadingScreen.Show(destinationLabel);
+#endif
+    }
+
+    [TargetRpc]
+    public void TargetCompleteZoneTravel(
+        NetworkConnectionToClient target, string destinationScene)
+    {
+#if UNITY_EDITOR || !UNITY_SERVER
+        // This completion signal also covers same-zone travel and server-cached
+        // additive zones, neither of which is guaranteed to raise sceneLoaded.
+        ZoneCameraDirector.RefreshNow(destinationScene);
+        WaypointMapTrigger.NotifyTravelComplete();
+        NPCInteractionManager.Instance?.CompleteZoneTravel();
+        QuestLocalDialogue.CompleteZoneTravel();
+        LoadingScreen.NotifyEnvironmentReady();
+#endif
+        _gmMapTravelPending = false;
+    }
+
     // ── Client-side receive ───────────────────────────────────────────────
 
     [ClientRpc]
@@ -473,6 +499,9 @@ public class RodChatManager : NetworkBehaviour
         AddSystemMessage(message);
 #if UNITY_EDITOR || !UNITY_SERVER
         WaypointMapUI.SetStatus(message);
+        NPCInteractionManager.Instance?.CompleteZoneTravel();
+        QuestLocalDialogue.CompleteZoneTravel();
+        LoadingScreen.Hide();
 #endif
     }
 
@@ -502,6 +531,7 @@ public class RodChatManager : NetworkBehaviour
 
         _gmMapTravelPending = true;
         WaypointMapUI.SetStatus($"GM traveling to {node.displayName}...");
+        LoadingScreen.Show(node.displayName);
         CmdRequestGmMapTravel(node.sceneName, node.arrivalSpawnId);
         WaypointMapUI.Hide();
     }

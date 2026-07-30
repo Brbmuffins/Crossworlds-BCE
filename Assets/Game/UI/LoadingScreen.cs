@@ -91,7 +91,21 @@ public sealed class LoadingScreen : MonoBehaviour
 
     void DoShow(string label)
     {
+        bool wasVisible = _visible;
         if (_autoHideCo != null) { StopCoroutine(_autoHideCo); _autoHideCo = null; }
+
+        // Scene-context windows must not survive a zone change merely because their
+        // bootstrap object is persistent. Closing them here covers portals, map
+        // travel, GM travel, and any future caller that uses the loading overlay.
+        QuestLocalDialogue.BeginZoneTravel();
+        NPCInteractionManager.Instance?.BeginZoneTravel();
+        HangmanDialogueUI.Instance?.Hide();
+        WaypointMapUI.Hide();
+
+        // Keep the source-zone music audible beneath the newly visible overlay,
+        // then fade it to silence before the server begins loading the destination.
+        if (!wasVisible)
+            MusicController.Instance?.Stop(MusicController.TravelFadeOutSeconds);
 
         _pendingLabel = label;
         if (_sceneLabel != null)

@@ -240,6 +240,29 @@ public sealed class WaypointMapTrigger : NetworkBehaviour
         return null;
     }
 
+    /// <summary>
+    /// Re-arms cached waypoint objects after a successful additive zone move.
+    /// Empty shared zones remain loaded briefly, so returning to Hub can reuse the
+    /// same trigger instance that initiated the previous trip.
+    /// </summary>
+    public static void NotifyTravelComplete()
+    {
+        for (int i = ActiveTriggers.Count - 1; i >= 0; i--)
+        {
+            WaypointMapTrigger trigger = ActiveTriggers[i];
+            if (trigger == null)
+            {
+                ActiveTriggers.RemoveAt(i);
+                continue;
+            }
+
+            trigger._loading = false;
+            trigger._localPlayer = null;
+            trigger._playerNear = false;
+            trigger.SetPromptVisible(false);
+        }
+    }
+
     static WaypointMapNode[] AddGmDestinations(WaypointMapNode[] source)
     {
         var result = new List<WaypointMapNode>(source ?? Array.Empty<WaypointMapNode>());
@@ -346,6 +369,8 @@ public sealed class WaypointMapTrigger : NetworkBehaviour
         _loading = false;
 #if UNITY_EDITOR || !UNITY_SERVER
         WaypointMapUI.SetStatus(message);
+        NPCInteractionManager.Instance?.CompleteZoneTravel();
+        QuestLocalDialogue.CompleteZoneTravel();
         LoadingScreen.Hide();
 #endif
     }
