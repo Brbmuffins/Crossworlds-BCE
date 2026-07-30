@@ -16,6 +16,7 @@ using TMPro;
 //    • Full-screen canvas with dark vignette overlay
 //    • Top: animated game title + subtitle
 //    • Center: dark glassmorphism login panel with glowing border
+//    • Lower-left: closed-alpha announcement artwork
 //    • Bottom: server status pill + version label
 //
 //  Scene Setup:
@@ -30,6 +31,8 @@ using TMPro;
 
 public class LoginManager : MonoBehaviour
 {
+    const string ClosedAlphaPromoResource = "UI/ClosedAlphaTest";
+
     [Header("Server")]
     public string authServerURL  = "http://15.204.243.36:3000";
     public string gameScene      = "GameWorld"; // fallback only — Mirror loads this via NetworkManager.Online Scene
@@ -167,6 +170,9 @@ public class LoginManager : MonoBehaviour
 
         // ── Bottom: Status bar ──
         BuildBottomBar(root);
+
+        // ── Lower-left: Closed Alpha announcement card ──
+        BuildClosedAlphaPromo(root);
 
         // Force canvas to fully initialize all TMP_InputField components.
         // Without this, fields built in code may silently fail to register clicks.
@@ -373,6 +379,48 @@ public class LoginManager : MonoBehaviour
         ver.rectTransform.anchorMax = new Vector2(0.98f, 0.06f);
         ver.rectTransform.offsetMin = ver.rectTransform.offsetMax = Vector2.zero;
         ver.alignment = TextAlignmentOptions.MidlineRight;
+    }
+
+    void BuildClosedAlphaPromo(RectTransform root)
+    {
+        Texture2D artwork =
+            Resources.Load<Texture2D>(ClosedAlphaPromoResource);
+        if (artwork == null)
+        {
+            Debug.LogWarning(
+                $"[LoginManager] Closed Alpha artwork was not found at " +
+                $"Resources/{ClosedAlphaPromoResource}.");
+            return;
+        }
+
+        GameObject promo = new GameObject(
+            "ClosedAlphaAnnouncement",
+            typeof(RectTransform),
+            typeof(RawImage),
+            typeof(Shadow));
+        promo.transform.SetParent(root, false);
+
+        RawImage image = promo.GetComponent<RawImage>();
+        image.texture = artwork;
+        image.color = Color.white;
+        image.raycastTarget = false;
+
+        RectTransform rt = promo.GetComponent<RectTransform>();
+        rt.anchorMin = Vector2.zero;
+        rt.anchorMax = Vector2.zero;
+        rt.pivot = Vector2.zero;
+        rt.anchoredPosition = new Vector2(32f, 86f);
+
+        const float promoWidth = 520f;
+        float aspect = artwork.width > 0 && artwork.height > 0
+            ? (float)artwork.width / artwork.height
+            : 2f;
+        rt.sizeDelta = new Vector2(promoWidth, promoWidth / aspect);
+
+        Shadow shadow = promo.GetComponent<Shadow>();
+        shadow.effectColor = new Color(0f, 0f, 0f, 0.75f);
+        shadow.effectDistance = new Vector2(7f, -7f);
+        shadow.useGraphicAlpha = true;
     }
 
     // ── Input fields ───────────────────────────────────────────────────────
