@@ -13,7 +13,7 @@ using TMPro;
 ///   • HP bar (bottom-left) with shield glow + damage flash
 ///   • 4-slot ability bar (bottom-centre) with icon, keybind, cooldown sweep
 ///   • Active-slot gold ring indicator
-///   • Spellbook overlay (Tab) — grid of all class abilities with icons
+///   • Shrine-driven spell loadout — grid of all class abilities with icons
 ///   • Floating damage/heal numbers at world position
 ///
 /// Zero Inspector wiring required. Add this script to any persistent
@@ -122,6 +122,20 @@ public class PlayerHUD : MonoBehaviour
     // Spellbook
     GameObject          _spellbookPanel;
     bool                _spellbookOpen = false;
+    SpellLoadoutShrine  _activeLoadoutShrine;
+    Transform           _spellbookGridParent;
+    ScrollRect          _spellScroll;
+    TextMeshProUGUI     _spellbookInstructions;
+    readonly Image[]    _loadoutSlotBg = new Image[Slots];
+    readonly Image[]    _loadoutSlotIcon = new Image[Slots];
+    readonly TextMeshProUGUI[] _loadoutSlotName =
+        new TextMeshProUGUI[Slots];
+    readonly Dictionary<int, Image> _spellCardBackgrounds = new();
+    int                 _pendingSpellIdx = -1;
+    int                 _pendingLoadoutSlot = -1;
+
+    public static bool IsSpellLoadoutOpen =>
+        Instance != null && Instance._spellbookOpen;
 
     // Floating numbers
     Canvas      _floatCanvas;
@@ -160,11 +174,7 @@ public class PlayerHUD : MonoBehaviour
         if (_floatCanvas != null && _floatCanvas.gameObject.activeSelf != show) _floatCanvas.gameObject.SetActive(show);
         if (!show)
         {
-            if (_spellbookOpen && _spellbookCanvas != null)
-            {
-                _spellbookOpen = false;
-                _spellbookCanvas.gameObject.SetActive(false);
-            }
+            CloseSpellLoadout();
             return;
         }
 
@@ -752,21 +762,41 @@ public class PlayerHUD : MonoBehaviour
         Stretch(backdrop.rectTransform);
 
         // Header
-        var header = Lbl(root, "Header", "SPELLBOOK", 22f);
+        var header = Lbl(root, "Header", "SPELL LOADOUT", 22f);
         header.fontStyle = FontStyles.Bold;
         header.color     = new Color(0.95f, 0.80f, 0.15f, 1f);
-        header.rectTransform.anchorMin = new Vector2(0f, 0.88f);
+        header.rectTransform.anchorMin = new Vector2(0f, 0.91f);
         header.rectTransform.anchorMax = new Vector2(1f, 1.00f);
         header.rectTransform.offsetMin = header.rectTransform.offsetMax = Vector2.zero;
         header.alignment = TextAlignmentOptions.Center;
 
+        var close = Img(root, "Close", new Color(0.18f, 0.12f, 0.13f, 0.95f));
+        close.rectTransform.anchorMin = new Vector2(0.955f, 0.935f);
+        close.rectTransform.anchorMax = new Vector2(0.985f, 0.985f);
+        close.rectTransform.offsetMin = close.rectTransform.offsetMax = Vector2.zero;
+        var closeButton = close.gameObject.AddComponent<Button>();
+        closeButton.onClick.AddListener(CloseSpellLoadout);
+        var closeLabel = Lbl(close.rectTransform, "Label", "×", 20f);
+        closeLabel.alignment = TextAlignmentOptions.Center;
+        Stretch(closeLabel.rectTransform);
+
         // Sub-header
-        var sub = Lbl(root, "Sub", "Click a spell · Press 1-4 to equip · Tab to close", 11f);
-        sub.color     = TextDim;
-        sub.rectTransform.anchorMin = new Vector2(0f, 0.82f);
-        sub.rectTransform.anchorMax = new Vector2(1f, 0.89f);
-        sub.rectTransform.offsetMin = sub.rectTransform.offsetMax = Vector2.zero;
-        sub.alignment = TextAlignmentOptions.Center;
+        _spellbookInstructions = Lbl(
+            root,
+            "Sub",
+            "Choose a spell, then choose one of your four equipped slots",
+            11f);
+        _spellbookInstructions.color = TextDim;
+        _spellbookInstructions.rectTransform.anchorMin =
+            new Vector2(0f, 0.865f);
+        _spellbookInstructions.rectTransform.anchorMax =
+            new Vector2(1f, 0.92f);
+        _spellbookInstructions.rectTransform.offsetMin =
+            _spellbookInstructions.rectTransform.offsetMax = Vector2.zero;
+        _spellbookInstructions.alignment =
+            TextAlignmentOptions.Center;
+
+        BuildLoadoutSlots(root);
 
         // ── Scrollable card grid ──────────────────────────────────────────────
         // The class pool can be up to 32 cards; a fixed grid overflowed the panel
@@ -776,7 +806,7 @@ public class PlayerHUD : MonoBehaviour
         scrollGO.transform.SetParent(root, false);
         var scrollRt = scrollGO.GetComponent<RectTransform>();
         scrollRt.anchorMin = new Vector2(0.02f, 0.04f);
-        scrollRt.anchorMax = new Vector2(0.98f, 0.82f);
+        scrollRt.anchorMax = new Vector2(0.98f, 0.70f);
         scrollRt.offsetMin = scrollRt.offsetMax = Vector2.zero;
 
         // Viewport clips overflow (needs a graphic for the mask to work).
@@ -824,16 +854,87 @@ public class PlayerHUD : MonoBehaviour
         return root.gameObject;
     }
 
-    Transform _spellbookGridParent;
-    ScrollRect _spellScroll;
+    void BuildLoadoutSlots(RectTransform parent)
+    {
+        var slotsRoot = Rt(parent, "EquippedSlots");
+        slotsRoot.anchorMin = new Vector2(0.16f, 0.72f);
+        slotsRoot.anchorMax = new Vector2(0.84f, 0.855f);
+        slotsRoot.offsetMin = slotsRoot.offsetMax = Vector2.zero;
+
+        for (int slot = 0; slot < Slots; slot++)
+        {
+            int capturedSlot = slot;
+            var slotRoot = Rt(slotsRoot, $"Equipped_{slot + 1}");
+            float minX = slot / (float)Slots;
+            float maxX = (slot + 1) / (float)Slots;
+            slotRoot.anchorMin = new Vector2(minX, 0f);
+            slotRoot.anchorMax = new Vector2(maxX, 1f);
+            slotRoot.offsetMin = new Vector2(5f, 3f);
+            slotRoot.offsetMax = new Vector2(-5f, -3f);
+
+            _loadoutSlotBg[slot] =
+                Img(slotRoot, "Background", SlotNormal);
+            Stretch(_loadoutSlotBg[slot].rectTransform);
+            var button =
+                _loadoutSlotBg[slot].gameObject.AddComponent<Button>();
+            button.onClick.AddListener(
+                () => OnLoadoutSlotClick(capturedSlot));
+
+            _loadoutSlotIcon[slot] =
+                Img(slotRoot, "Icon", Transparent);
+            _loadoutSlotIcon[slot].preserveAspect = true;
+            _loadoutSlotIcon[slot].raycastTarget = false;
+            _loadoutSlotIcon[slot].rectTransform.anchorMin =
+                new Vector2(0.03f, 0.12f);
+            _loadoutSlotIcon[slot].rectTransform.anchorMax =
+                new Vector2(0.34f, 0.88f);
+            _loadoutSlotIcon[slot].rectTransform.offsetMin =
+                _loadoutSlotIcon[slot].rectTransform.offsetMax =
+                    Vector2.zero;
+
+            var key = Lbl(
+                slotRoot,
+                "SlotNumber",
+                $"SLOT {slot + 1}",
+                10f);
+            key.fontStyle = FontStyles.Bold;
+            key.color = SlotActive;
+            key.raycastTarget = false;
+            key.rectTransform.anchorMin = new Vector2(0.37f, 0.54f);
+            key.rectTransform.anchorMax = new Vector2(0.96f, 0.91f);
+            key.rectTransform.offsetMin =
+                key.rectTransform.offsetMax = Vector2.zero;
+            key.alignment = TextAlignmentOptions.BottomLeft;
+
+            _loadoutSlotName[slot] =
+                Lbl(slotRoot, "SpellName", "EMPTY", 11f);
+            _loadoutSlotName[slot].fontStyle = FontStyles.Bold;
+            _loadoutSlotName[slot].enableAutoSizing = true;
+            _loadoutSlotName[slot].fontSizeMin = 7f;
+            _loadoutSlotName[slot].fontSizeMax = 11f;
+            _loadoutSlotName[slot].raycastTarget = false;
+            _loadoutSlotName[slot].rectTransform.anchorMin =
+                new Vector2(0.37f, 0.10f);
+            _loadoutSlotName[slot].rectTransform.anchorMax =
+                new Vector2(0.96f, 0.56f);
+            _loadoutSlotName[slot].rectTransform.offsetMin =
+                _loadoutSlotName[slot].rectTransform.offsetMax =
+                    Vector2.zero;
+            _loadoutSlotName[slot].alignment =
+                TextAlignmentOptions.TopLeft;
+        }
+    }
 
     void RebuildSpellbook()
     {
         if (_spellbookGridParent == null) return;
 
         // Clear old cards
+        _spellCardBackgrounds.Clear();
         for (int i = _spellbookGridParent.childCount - 1; i >= 0; i--)
             Destroy(_spellbookGridParent.GetChild(i).gameObject);
+
+        RefreshLoadoutSlots();
 
         bool usingSpellbook = _caster != null && _caster.spellbook != null && _caster.spellbook.Length > 0;
         AbilityDef[] pool = usingSpellbook
@@ -862,7 +963,7 @@ public class PlayerHUD : MonoBehaviour
         var cardRt = card.AddComponent<RectTransform>();
 
         var bg = card.AddComponent<Image>();
-        bg.color = BgMid;
+        _spellCardBackgrounds[idx] = bg;
 
         var btn = card.AddComponent<Button>();
         btn.onClick.AddListener(() => OnSpellCardClick(idx));
@@ -960,6 +1061,27 @@ public class PlayerHUD : MonoBehaviour
         cdLabel.fontStyle = FontStyles.Bold;
         Stretch(cdLabel.rectTransform);
         cdLabel.alignment = TextAlignmentOptions.Center;
+
+        if (_caster != null &&
+            _caster.IsEquipped(idx, out int equippedSlot))
+        {
+            var equipped = Lbl(
+                cardRt,
+                "Equipped",
+                $"SLOT {equippedSlot + 1}",
+                9f);
+            equipped.color = new Color(0.50f, 1.00f, 0.65f, 1f);
+            equipped.fontStyle = FontStyles.Bold;
+            equipped.rectTransform.anchorMin =
+                new Vector2(0.68f, 0.02f);
+            equipped.rectTransform.anchorMax =
+                new Vector2(0.97f, 0.16f);
+            equipped.rectTransform.offsetMin =
+                equipped.rectTransform.offsetMax = Vector2.zero;
+            equipped.alignment = TextAlignmentOptions.BottomRight;
+        }
+
+        RefreshSpellbookSelectionVisuals();
     }
 
     static bool HasVariants(AbilityDef ab)
@@ -1114,32 +1236,185 @@ public class PlayerHUD : MonoBehaviour
         return $"{min:0}-{max:0}";
     }
 
-    int _pendingSpellIdx = -1;
-
     void OnSpellCardClick(int idx)
     {
+        if (_pendingLoadoutSlot >= 0)
+        {
+            EquipSpellIntoSlot(idx, _pendingLoadoutSlot);
+            return;
+        }
+
         _pendingSpellIdx = idx;
-        // Highlight pending — player presses 1-4 to equip in TickSpellbook
+        RefreshSpellbookSelectionVisuals();
+        RefreshLoadoutSlots();
+        SetSpellbookInstructions(
+            "Choose an equipped slot, or press 1–4");
+    }
+
+    void OnLoadoutSlotClick(int slot)
+    {
+        if (_pendingSpellIdx >= 0)
+        {
+            EquipSpellIntoSlot(_pendingSpellIdx, slot);
+            return;
+        }
+
+        _pendingLoadoutSlot =
+            _pendingLoadoutSlot == slot ? -1 : slot;
+        RefreshLoadoutSlots();
+        RefreshSpellbookSelectionVisuals();
+        SetSpellbookInstructions(
+            _pendingLoadoutSlot >= 0
+                ? $"Choose a spell for Slot {_pendingLoadoutSlot + 1}"
+                : "Choose a spell, then choose one of your four equipped slots");
+    }
+
+    void EquipSpellIntoSlot(int spellbookIndex, int slot)
+    {
+        if (_caster == null) return;
+
+        _caster.EquipSpell(spellbookIndex, slot);
+        _pendingSpellIdx = -1;
+        _pendingLoadoutSlot = -1;
+        RebuildAbilitySlots();
+        RebuildSpellbook();
+        SetSpellbookInstructions(
+            "Loadout updated — choose another spell or press Escape to finish");
+    }
+
+    void RefreshLoadoutSlots()
+    {
+        for (int slot = 0; slot < Slots; slot++)
+        {
+            AbilityDef ability =
+                _caster != null &&
+                _caster.abilities != null &&
+                slot < _caster.abilities.Length
+                    ? _caster.abilities[slot]
+                    : null;
+
+            if (_loadoutSlotIcon[slot] != null)
+            {
+                _loadoutSlotIcon[slot].sprite =
+                    ability?.icon;
+                _loadoutSlotIcon[slot].color =
+                    ability == null
+                        ? new Color(0.25f, 0.25f, 0.30f, 0.6f)
+                        : ability.icon != null
+                            ? Color.white
+                            : CategoryTint(ability.category);
+            }
+
+            if (_loadoutSlotName[slot] != null)
+                _loadoutSlotName[slot].text =
+                    ability?.abilityName?.ToUpperInvariant() ??
+                    "EMPTY";
+
+            if (_loadoutSlotBg[slot] != null)
+            {
+                bool targetSlot =
+                    _pendingLoadoutSlot == slot ||
+                    (_pendingSpellIdx >= 0 &&
+                     _caster != null &&
+                     _caster.IsEquipped(
+                         _pendingSpellIdx,
+                         out int equippedSlot) &&
+                     equippedSlot == slot);
+                _loadoutSlotBg[slot].color = targetSlot
+                    ? new Color(0.32f, 0.26f, 0.07f, 0.98f)
+                    : SlotNormal;
+            }
+        }
+    }
+
+    void RefreshSpellbookSelectionVisuals()
+    {
+        foreach (KeyValuePair<int, Image> entry in
+                 _spellCardBackgrounds)
+        {
+            if (entry.Value == null) continue;
+
+            bool selected = entry.Key == _pendingSpellIdx;
+            bool equipped =
+                _caster != null &&
+                _caster.IsEquipped(entry.Key, out _);
+            entry.Value.color = selected
+                ? new Color(0.33f, 0.26f, 0.06f, 0.98f)
+                : equipped
+                    ? new Color(0.08f, 0.22f, 0.15f, 0.95f)
+                    : BgMid;
+        }
+    }
+
+    void SetSpellbookInstructions(string message)
+    {
+        if (_spellbookInstructions != null)
+            _spellbookInstructions.text = message;
+    }
+
+    public void OpenSpellLoadout(SpellLoadoutShrine shrine)
+    {
+        if (_caster == null || _spellbookCanvas == null)
+        {
+            Debug.LogWarning(
+                "[SpellLoadout] Cannot open before the local player " +
+                "and AbilityCaster are available.");
+            return;
+        }
+
+        _activeLoadoutShrine = shrine;
+        _spellbookOpen = true;
+        _pendingSpellIdx = -1;
+        _pendingLoadoutSlot = -1;
+        RebuildSpellbook();
+        SetSpellbookInstructions(
+            "Choose a spell, then choose one of your four equipped slots");
+        _spellbookCanvas.gameObject.SetActive(true);
+        if (_spellScroll != null)
+            _spellScroll.verticalNormalizedPosition = 1f;
+
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+    }
+
+    public void CloseSpellLoadout()
+    {
+        _spellbookOpen = false;
+        _activeLoadoutShrine = null;
+        _pendingSpellIdx = -1;
+        _pendingLoadoutSlot = -1;
+        if (_spellbookCanvas != null)
+            _spellbookCanvas.gameObject.SetActive(false);
+    }
+
+    public void CloseSpellLoadout(SpellLoadoutShrine shrine)
+    {
+        if (_activeLoadoutShrine != shrine) return;
+        CloseSpellLoadout();
+    }
+
+    public bool IsEditingAt(SpellLoadoutShrine shrine)
+    {
+        return _spellbookOpen &&
+               _activeLoadoutShrine == shrine;
     }
 
     void TickSpellbook()
     {
-        if (UnityEngine.InputSystem.Keyboard.current == null) return;
+        if (!_spellbookOpen ||
+            UnityEngine.InputSystem.Keyboard.current == null)
+            return;
+
         var kb = UnityEngine.InputSystem.Keyboard.current;
 
-        if (kb.tabKey.wasPressedThisFrame)
+        if (kb.escapeKey.wasPressedThisFrame)
         {
-            _spellbookOpen = !_spellbookOpen;
-            _spellbookCanvas.gameObject.SetActive(_spellbookOpen);
-            if (!_spellbookOpen) _pendingSpellIdx = -1;
-            else if (_spellScroll != null) _spellScroll.verticalNormalizedPosition = 1f; // open at top
-            // Cursor is always free in MOBA mode; just ensure visible when spellbook is open.
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible   = true;
+            CloseSpellLoadout();
+            return;
         }
 
         // Equip pending spell into selected slot
-        if (_spellbookOpen && _pendingSpellIdx >= 0)
+        if (_pendingSpellIdx >= 0)
         {
             int equip = -1;
             if (kb.digit1Key.wasPressedThisFrame) equip = 0;
@@ -1147,12 +1422,8 @@ public class PlayerHUD : MonoBehaviour
             if (kb.digit3Key.wasPressedThisFrame) equip = 2;
             if (kb.digit4Key.wasPressedThisFrame) equip = 3;
 
-            if (equip >= 0 && _caster != null)
-            {
-                _caster.EquipSpell(_pendingSpellIdx, equip);
-                _pendingSpellIdx = -1;
-                RebuildAbilitySlots();
-            }
+            if (equip >= 0)
+                EquipSpellIntoSlot(_pendingSpellIdx, equip);
         }
     }
 

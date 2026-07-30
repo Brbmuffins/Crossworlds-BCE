@@ -1,10 +1,10 @@
-using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
 /// Arcanist-specific caster that uses the shared AbilityCaster combat behavior,
-/// but keeps the visible spellbook limited to the four Arcanist core slots.
-/// Spellbook-backed variant payloads are kept as hidden variantOnly entries.
+/// while preserving the original four Arcanist core slots.
+/// Additional visible spells and hidden variant payloads are authored in the
+/// Spellbook and must survive editor validation.
 /// </summary>
 public class ArcanistAbilityCaster : AbilityCaster
 {
@@ -26,42 +26,24 @@ public class ArcanistAbilityCaster : AbilityCaster
 
     void EnsureArcanistSpellbook()
     {
-        if (!HasArcanistCoreSpellbook(spellbook))
+        // Seed a brand-new caster, but never replace an authored spellbook during
+        // OnValidate. Unity can expose a partially-applied serialized array while
+        // an individual field is being edited; treating that transient state as a
+        // missing core spellbook previously erased every custom spell and icon.
+        if (spellbook == null || spellbook.Length == 0)
         {
+            // OnValidate can run while Unity is rebuilding a serialized array.
+            // Leave editor-time initialization alone; Awake will still seed a
+            // genuinely empty runtime caster.
+            if (!Application.isPlaying)
+                return;
+
             spellbook = CreateDefaultArcanistSpellbook();
             return;
         }
 
-        NormalizeCoreVariantReferencesByName();
-
-        List<AbilityDef> compact = null;
-        int count = spellbook.Length;
-        for (int i = 4; i < count; i++)
-        {
-            AbilityDef entry = spellbook[i];
-            if (entry == null)
-            {
-                if (compact == null)
-                    compact = NewCoreList();
-                continue;
-            }
-
-            if (entry.variantOnly || IsReferencedByCoreVariant(entry, i))
-            {
-                if (!entry.variantOnly)
-                    entry.variantOnly = true;
-
-                if (compact != null)
-                    compact.Add(entry);
-                continue;
-            }
-
-            if (compact == null)
-                compact = CopyEntriesBefore(i);
-        }
-
-        if (compact != null)
-            spellbook = compact.ToArray();
+        if (HasArcanistCoreSpellbook(spellbook))
+            NormalizeCoreVariantReferencesByName();
     }
 
     void EnsureArcanistEquippedIndices()
@@ -103,31 +85,6 @@ public class ArcanistAbilityCaster : AbilityCaster
         }
     }
 
-    bool IsReferencedByCoreVariant(AbilityDef candidate, int spellbookIndex)
-    {
-        if (candidate == null) return false;
-
-        for (int i = 0; i < 4; i++)
-        {
-            AbilityDef owner = spellbook[i];
-            if (owner?.variants == null) continue;
-
-            foreach (AbilityVariant variant in owner.variants)
-            {
-                if (variant == null) continue;
-
-                if (!string.IsNullOrEmpty(variant.spellbookAbilityName)
-                    && string.Equals(variant.spellbookAbilityName, candidate.abilityName, System.StringComparison.OrdinalIgnoreCase))
-                    return true;
-
-                if (variant.useSpellbookAbilityIndex && variant.spellbookAbilityIndex == spellbookIndex)
-                    return true;
-            }
-        }
-
-        return false;
-    }
-
     static bool HasArcanistCoreSpellbook(AbilityDef[] source)
     {
         if (source == null || source.Length < 4) return false;
@@ -139,22 +96,6 @@ public class ArcanistAbilityCaster : AbilityCaster
         }
 
         return true;
-    }
-
-    List<AbilityDef> NewCoreList()
-    {
-        var compact = new List<AbilityDef>(spellbook.Length);
-        for (int i = 0; i < 4; i++)
-            compact.Add(spellbook[i]);
-        return compact;
-    }
-
-    List<AbilityDef> CopyEntriesBefore(int stopIndex)
-    {
-        var compact = new List<AbilityDef>(spellbook.Length);
-        for (int i = 0; i < stopIndex; i++)
-            compact.Add(spellbook[i]);
-        return compact;
     }
 
     static AbilityDef[] CreateDefaultArcanistSpellbook()

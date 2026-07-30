@@ -1,3 +1,71 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:790f91ba94bb5e121b15baa154cd6434b560bfb6ec7a7f2013efedd1b1707f8c
-size 3102
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1001 &8088929369899509838
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: -8679921383154817045, guid: c889e415fb0df334f85749e304465a31, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.8211466
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: c889e415fb0df334f85749e304465a31, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.73123026
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: c889e415fb0df334f85749e304465a31, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.8305957
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: c889e415fb0df334f85749e304465a31, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 148.007
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: c889e415fb0df334f85749e304465a31, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 61.227
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: c889e415fb0df334f85749e304465a31, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -1070.463
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: c889e415fb0df334f85749e304465a31, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.73044795
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: c889e415fb0df334f85749e304465a31, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0.34854746
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: c889e415fb0df334f85749e304465a31, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0.058470007
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: c889e415fb0df334f85749e304465a31, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0.5844158
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: c889e415fb0df334f85749e304465a31, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: -35.277
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: c889e415fb0df334f85749e304465a31, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: -23.229
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: c889e415fb0df334f85749e304465a31, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 84.803
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: c889e415fb0df334f85749e304465a31, type: 3}
+      propertyPath: m_Name
+      value: prefab_aw_zombiiefoot_mace
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c889e415fb0df334f85749e304465a31, type: 3}

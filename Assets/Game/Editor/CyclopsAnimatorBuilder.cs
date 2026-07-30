@@ -20,7 +20,6 @@ public static class CyclopsAnimatorBuilder
     const string RunPath = Root + "/Run.fbx";
     const string AttackPath = Root + "/Attack.fbx";
 
-    [MenuItem("Rate of Decay/Enemies/Cyclops/Create Animator Controller")]
     public static void CreateAnimatorController()
     {
         ConfigureModelImport(IdlePath, "Idle", loop: true);
@@ -81,7 +80,6 @@ public static class CyclopsAnimatorBuilder
         Debug.Log($"[CyclopsAnimatorBuilder] Created {ControllerPath}");
     }
 
-    [MenuItem("Rate of Decay/Enemies/Cyclops/Create Or Update Enemy Prefab")]
     public static void CreateOrUpdateEnemyPrefab()
     {
         CreateAnimatorController();
@@ -162,7 +160,6 @@ public static class CyclopsAnimatorBuilder
             Debug.LogError("[CyclopsAnimatorBuilder] Failed to save Cyclops_Mob.prefab.");
     }
 
-    [MenuItem("Rate of Decay/Enemies/Cyclops/Assign Controller To Selection")]
     public static void AssignControllerToSelection()
     {
         AnimatorController controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(ControllerPath);
@@ -204,7 +201,6 @@ public static class CyclopsAnimatorBuilder
         Debug.Log($"[CyclopsAnimatorBuilder] Assigned Cyclops controller to {assigned} selected object(s).");
     }
 
-    [MenuItem("Rate of Decay/Enemies/Cyclops/Add NPC Components To Selection")]
     public static void AddNpcComponentsToSelection()
     {
         int updated = 0;
@@ -222,7 +218,6 @@ public static class CyclopsAnimatorBuilder
         Debug.Log($"[CyclopsAnimatorBuilder] Added Cyclops NPC components to {updated} selected object(s).");
     }
 
-    [MenuItem("Rate of Decay/Enemies/Cyclops/Assign Controller To All Cyclops In Open Scene")]
     public static void AssignControllerToAllCyclopsInOpenScene()
     {
         AnimatorController controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(ControllerPath);
@@ -274,7 +269,6 @@ public static class CyclopsAnimatorBuilder
         Debug.Log($"[CyclopsAnimatorBuilder] Assigned Cyclops controller to {assigned} Cyclops object(s) in the open scene.");
     }
 
-    [MenuItem("Rate of Decay/Enemies/Cyclops/Add NPC Components To All Cyclops In Open Scene")]
     public static void AddNpcComponentsToAllCyclopsInOpenScene()
     {
         int updated = 0;

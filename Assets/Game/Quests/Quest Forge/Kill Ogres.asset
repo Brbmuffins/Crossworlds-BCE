@@ -1,3 +1,33 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:e87e248ba5385f3d40eb9b261819b4f3cd058d40f334267f07d18d6156a39c85
-size 971
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4d960b9672ac30048a5f23f6ebc02031, type: 3}
+  m_Name: Kill Ogres
+  m_EditorClassIdentifier: Assembly-CSharp::QuestDefinition
+  questId: kill_ogres
+  title: Kill Ogres
+  description: 
+  objectivesMustBeCompletedInOrder: 0
+  offerText: I have a task for you.
+  activeText: How goes the task?
+  completionText: Well done.
+  questGiverPrefab: {fileID: 0}
+  turnInPrefab: {fileID: 0}
+  objectives:
+  - type: 0
+    targetId: prefab_ogrebrute
+    description: Kill 10 Ogre
+    requiredAmount: 10
+    targetPrefab: {fileID: 1881574980918108593, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+  goldReward: 0
+  experienceReward: 0
+  itemRewardId: 
+  itemRewardQuantity: 0

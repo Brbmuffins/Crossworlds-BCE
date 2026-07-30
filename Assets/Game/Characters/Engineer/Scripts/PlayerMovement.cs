@@ -311,7 +311,8 @@ public class PlayerMovement : NetworkBehaviour
         }
 
         // Yield all keyboard input to UI while player is typing
-        if (IsTypingInUI())
+        if (IsTypingInUI() ||
+            PlayerHUD.IsSpellLoadoutOpen)
         {
             ClearMovementIntent();
             return;

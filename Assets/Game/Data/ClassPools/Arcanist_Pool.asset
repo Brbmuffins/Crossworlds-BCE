@@ -1,3 +1,17 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:9add70354c9dbdad6609b0c897eb8299f59baa06a09ef0f1530bd2916dbda047
-size 690
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c3dc905b15374d744a5a3c81d8a63ce8, type: 3}
+  m_Name: Arcanist_Pool
+  m_EditorClassIdentifier: Assembly-CSharp::ClassAbilityPool
+  className: Arcanist
+  availableIndices: 0000000001000000020000000300000004000000050000000600000007000000130000001400000015000000160000002200000025000000260000002700000028000000290000002a0000002b000000
+  defaultEquipped: 00000000010000000200000003000000

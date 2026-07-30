@@ -1,3 +1,24 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:1460db2804b96515413d8a64d68f8b7eebbe73f7c6954a7a74b219416117edb2
-size 705
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 73140b30df3b4666a97e88001da7cb57, type: 3}
+  m_Name: ChainLightning_Arcane
+  m_EditorClassIdentifier: Assembly-CSharp::ChainLightningVFXProfile
+  impactVFXPath: FX/dark magic/Lightning attack
+  arcColor: {r: 0.35, g: 0.8, b: 1, a: 1}
+  startWidth: 0.09
+  endWidth: 0.025
+  segments: 8
+  jitter: 0.18
+  lifetime: 0.22
+  casterHeightFallback: 1.35
+  castOriginForwardOffset: 0.35
+  impactScale: 0.65

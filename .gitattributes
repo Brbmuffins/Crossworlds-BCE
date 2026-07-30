@@ -41,8 +41,12 @@
 
 # Unity binary assets (Unity always writes these lowercase)
 *.unitypackage filter=lfs diff=lfs merge=lfs -text
-*.asset filter=lfs diff=lfs merge=lfs -text
-*.prefab filter=lfs diff=lfs merge=lfs -text
+# Prefabs are YAML, while .asset files may be YAML or Unity binary data.
+# Keep both in regular Git to avoid repeated LFS uploads. Mark .asset as -text so
+# Git never changes bytes in TerrainData, NavMeshData, LightingData, or similar.
+# Real binary media (png/fbx/glb/wav/psd/...) stays in LFS above.
+*.asset -filter -diff -merge -text
+*.prefab -filter -diff -merge text
 
 # Compiled / native
 *.dll filter=lfs diff=lfs merge=lfs -text

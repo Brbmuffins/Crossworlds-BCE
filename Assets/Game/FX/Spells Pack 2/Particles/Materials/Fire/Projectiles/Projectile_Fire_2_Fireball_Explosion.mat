@@ -176,7 +176,7 @@ Material:
     - _Dissolve_Scale: 100
     - _Distortion_Alpha: 2
     - _DstBlend: 10
-    - _DstBlendAlpha: 0
+    - _DstBlendAlpha: 10
     - _Edge_Range: 0.78
     - _Emission: 0
     - _EnvironmentReflections: 1

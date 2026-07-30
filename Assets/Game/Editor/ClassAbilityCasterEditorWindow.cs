@@ -13,9 +13,10 @@ namespace Crossworlds.EditorTools
     public sealed class ClassAbilityCasterEditorWindow : EditorWindow
     {
         const string ClassPreference = "BCE.SpellForge.SelectedClass";
+        const string AbilityFilterPreference =
+            "BCE.SpellForge.AbilityFilter";
         const string ClassPortraitFolder =
             "Assets/Game/Art/Class Portraits";
-        const double AutoSaveDelay = 0.75d;
         const float ClassPreviewSize = 120f;
         const float VFXPreviewSize = 68f;
         const float AbilityIconSize = 30f;
@@ -45,8 +46,24 @@ namespace Crossworlds.EditorTools
             "VFX & Preview"
         };
 
+        enum MovementType
+        {
+            None,
+            Dash,
+            Leap,
+            Teleport
+        }
+
+        enum AbilityListFilter
+        {
+            Core,
+            Variants,
+            All
+        }
+
         readonly HashSet<string> expandedAbilities = new();
         readonly Dictionary<string, int> abilityTabs = new();
+        readonly List<int> visibleAbilityIndices = new();
 
         GameObject prefabAsset;
         Texture2D classPortrait;
@@ -55,11 +72,18 @@ namespace Crossworlds.EditorTools
         SerializedProperty spellbook;
         Vector2 scroll;
         string search = "";
+        string appliedSearch = "";
         int classIndex;
+        AbilityListFilter abilityListFilter = AbilityListFilter.Core;
+        int coreAbilityCount;
+        int variantAbilityCount;
+        int visibleCoreCount;
+        int visibleVariantCount;
         bool pendingSave;
-        double lastChangeTime;
         string lastSaveMessage = "";
         string activePreviewAbility;
+        string activeIconPropertyPath;
+        int activeIconPickerControlId;
         SpellVFXPreviewPanel spellPreview;
 
         [MenuItem("BCE/Spell Forge/Spellbook", priority = 38)]
@@ -80,6 +104,11 @@ namespace Crossworlds.EditorTools
             classIndex = Mathf.Clamp(
                 EditorPrefs.GetInt(ClassPreference, 0),
                 0, ClassNames.Length - 1);
+            abilityListFilter = (AbilityListFilter)Mathf.Clamp(
+                EditorPrefs.GetInt(
+                    AbilityFilterPreference,
+                    (int)AbilityListFilter.Core),
+                0, (int)AbilityListFilter.All);
             LoadClass();
             Undo.undoRedoPerformed += OnUndoRedo;
             SpellVFXBrowserWindow.SpellForgeSelectionChanged += Repaint;
@@ -96,18 +125,13 @@ namespace Crossworlds.EditorTools
 
         void Update()
         {
+            if (EditorGUIUtility.editingTextField) return;
+
             RepaintWhilePreviewLoads(classPortrait);
             RepaintWhilePreviewLoads(
                 SpellVFXBrowserWindow.SpellForgeSelection);
             if (spellPreview != null && spellPreview.Tick())
                 Repaint();
-
-            if (!pendingSave) return;
-            if (EditorApplication.timeSinceStartup - lastChangeTime <
-                AutoSaveDelay)
-                return;
-            if (GUIUtility.hotControl != 0) return;
-            SaveCurrent();
         }
 
         void OnGUI()
@@ -127,16 +151,24 @@ namespace Crossworlds.EditorTools
                 return;
             }
 
-            serializedCaster.UpdateIfRequiredOrScript();
+            if (!pendingSave &&
+                !EditorGUIUtility.editingTextField)
+                serializedCaster.UpdateIfRequiredOrScript();
+            HandleIconPickerEvent();
             DrawSpellbookToolbar();
 
-            EditorGUI.BeginChangeCheck();
-            DrawAbilities();
-            if (EditorGUI.EndChangeCheck())
+            bool guiChanged = false;
+            using (var changeCheck =
+                new EditorGUI.ChangeCheckScope())
             {
-                serializedCaster.ApplyModifiedProperties();
-                MarkChanged();
+                DrawAbilities();
+                guiChanged = changeCheck.changed;
             }
+
+            bool propertiesApplied =
+                serializedCaster.ApplyModifiedProperties();
+            if (guiChanged || propertiesApplied)
+                MarkChanged();
         }
 
         void DrawHeader()
@@ -166,6 +198,7 @@ namespace Crossworlds.EditorTools
                             EditorPrefs.SetInt(
                                 ClassPreference, classIndex);
                             LoadClass();
+                            GUIUtility.ExitGUI();
                         }
 
                         string casterName = abilityCaster != null
@@ -299,10 +332,10 @@ namespace Crossworlds.EditorTools
                     SectionTitleStyle());
                 GUILayout.FlexibleSpace();
                 EditorGUILayout.LabelField(
-                    $"{spellbook.arraySize} " +
-                    (spellbook.arraySize == 1 ? "spell" : "spells"),
+                    $"{coreAbilityCount} core  |  " +
+                    $"{variantAbilityCount} variants",
                     EditorStyles.miniLabel,
-                    GUILayout.Width(58f));
+                    GUILayout.Width(132f));
             }
 
             using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar))
@@ -316,50 +349,183 @@ namespace Crossworlds.EditorTools
                     Repaint();
                 }
 
+                GUILayout.Space(8f);
+                GUILayout.Label("View", GUILayout.Width(29f));
+                string[] filterLabels =
+                {
+                    $"Core ({coreAbilityCount})",
+                    $"Variants ({variantAbilityCount})",
+                    "All"
+                };
+                AbilityListFilter nextFilter =
+                    (AbilityListFilter)GUILayout.Toolbar(
+                        (int)abilityListFilter,
+                        filterLabels,
+                        EditorStyles.toolbarButton,
+                        GUILayout.Width(244f));
+                if (nextFilter != abilityListFilter)
+                {
+                    abilityListFilter = nextFilter;
+                    EditorPrefs.SetInt(
+                        AbilityFilterPreference,
+                        (int)abilityListFilter);
+                    GUI.FocusControl(null);
+                    Repaint();
+                    GUIUtility.ExitGUI();
+                }
+
                 if (GUILayout.Button("Collapse All",
                     EditorStyles.toolbarButton, GUILayout.Width(78f)))
                 {
                     expandedAbilities.Clear();
                     GUI.FocusControl(null);
+                    GUIUtility.ExitGUI();
                 }
             }
         }
 
         void DrawAbilities()
         {
-            string searchTerm = search.Trim();
-            scroll = EditorGUILayout.BeginScrollView(scroll);
+            using (var scrollView =
+                new EditorGUILayout.ScrollViewScope(scroll))
+            {
+                scroll = scrollView.scrollPosition;
 
-            int visibleCount = 0;
+                if (Event.current.type == EventType.Layout)
+                    RebuildVisibleAbilityIndices();
+
+                bool? drawingVariants = null;
+                foreach (int index in visibleAbilityIndices)
+                {
+                    if (index < 0 || index >= spellbook.arraySize)
+                        continue;
+                    SerializedProperty ability =
+                        spellbook.GetArrayElementAtIndex(index);
+                    bool isVariant = IsVariantAbility(ability);
+                    if (!drawingVariants.HasValue ||
+                        drawingVariants.Value != isVariant)
+                    {
+                        drawingVariants = isVariant;
+                        DrawAbilityGroupHeader(
+                            isVariant ? "VARIANT ABILITIES" :
+                                "CORE ABILITIES",
+                            isVariant ? visibleVariantCount :
+                                visibleCoreCount);
+                    }
+
+                    SerializedProperty nameProperty =
+                        ability.FindPropertyRelative("abilityName");
+                    string abilityName =
+                        nameProperty?.stringValue ??
+                        $"Ability {index + 1}";
+
+                    DrawAbility(index, ability, abilityName);
+                    EditorGUILayout.Space(3f);
+                }
+
+                if (visibleAbilityIndices.Count == 0)
+                    EditorGUILayout.HelpBox(
+                        BuildEmptyListMessage(),
+                        MessageType.Info);
+
+                EditorGUILayout.Space(5f);
+                bool addAsVariant =
+                    abilityListFilter == AbilityListFilter.Variants;
+                string addLabel = addAsVariant
+                    ? "+ Add Variant Ability"
+                    : "+ Add Core Ability";
+                if (GUILayout.Button(
+                    addLabel, GUILayout.Height(25f)))
+                {
+                    AddAbility(addAsVariant);
+                    GUIUtility.ExitGUI();
+                }
+            }
+        }
+
+        void RebuildVisibleAbilityIndices()
+        {
+            appliedSearch = search.Trim();
+            visibleAbilityIndices.Clear();
+            coreAbilityCount = 0;
+            variantAbilityCount = 0;
+            visibleCoreCount = 0;
+            visibleVariantCount = 0;
+
             for (int index = 0; index < spellbook.arraySize; index++)
             {
                 SerializedProperty ability =
                     spellbook.GetArrayElementAtIndex(index);
-                SerializedProperty nameProperty =
-                    ability.FindPropertyRelative("abilityName");
-                string abilityName =
-                    nameProperty?.stringValue ?? $"Ability {index + 1}";
-
-                if (!string.IsNullOrEmpty(searchTerm) &&
-                    abilityName.IndexOf(
-                        searchTerm, StringComparison.OrdinalIgnoreCase) < 0)
-                    continue;
-
-                visibleCount++;
-                DrawAbility(index, ability, abilityName);
-                EditorGUILayout.Space(3f);
+                if (IsVariantAbility(ability))
+                    variantAbilityCount++;
+                else
+                    coreAbilityCount++;
             }
 
-            if (visibleCount == 0)
-                EditorGUILayout.HelpBox(
-                    $"No abilities match “{searchTerm}”.",
-                    MessageType.Info);
+            if (abilityListFilter != AbilityListFilter.Variants)
+                AppendVisibleAbilities(variantOnly: false);
+            if (abilityListFilter != AbilityListFilter.Core)
+                AppendVisibleAbilities(variantOnly: true);
+        }
 
-            EditorGUILayout.Space(5f);
-            if (GUILayout.Button("+ Add Ability", GUILayout.Height(25f)))
-                AddAbility();
+        void AppendVisibleAbilities(bool variantOnly)
+        {
+            for (int index = 0; index < spellbook.arraySize; index++)
+            {
+                SerializedProperty ability =
+                    spellbook.GetArrayElementAtIndex(index);
+                if (IsVariantAbility(ability) != variantOnly)
+                    continue;
 
-            EditorGUILayout.EndScrollView();
+                string abilityName = ability
+                    .FindPropertyRelative("abilityName")
+                    ?.stringValue ?? $"Ability {index + 1}";
+                if (!string.IsNullOrEmpty(appliedSearch) &&
+                    abilityName.IndexOf(
+                        appliedSearch,
+                        StringComparison.OrdinalIgnoreCase) < 0)
+                    continue;
+
+                visibleAbilityIndices.Add(index);
+                if (variantOnly)
+                    visibleVariantCount++;
+                else
+                    visibleCoreCount++;
+            }
+        }
+
+        static bool IsVariantAbility(SerializedProperty ability)
+        {
+            return ability?.FindPropertyRelative("variantOnly")
+                ?.boolValue == true;
+        }
+
+        string BuildEmptyListMessage()
+        {
+            string viewName = abilityListFilter switch
+            {
+                AbilityListFilter.Variants => "variant abilities",
+                AbilityListFilter.All => "abilities",
+                _ => "core abilities"
+            };
+
+            return string.IsNullOrEmpty(appliedSearch)
+                ? $"No {viewName} are currently available."
+                : $"No {viewName} match \"{appliedSearch}\".";
+        }
+
+        static void DrawAbilityGroupHeader(string title, int count)
+        {
+            EditorGUILayout.Space(4f);
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                GUILayout.Label(title, EyebrowStyle());
+                GUILayout.FlexibleSpace();
+                GUILayout.Label(
+                    $"{count} shown",
+                    EditorStyles.miniLabel);
+            }
+            EditorGUILayout.Space(1f);
         }
 
         void DrawAbility(
@@ -371,49 +537,75 @@ namespace Crossworlds.EditorTools
             using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
             {
                 bool nextExpanded = expanded;
-                using (new EditorGUILayout.HorizontalScope())
+                Sprite abilityIcon = ability
+                    .FindPropertyRelative("icon")
+                    ?.objectReferenceValue as Sprite;
+                RepaintWhilePreviewLoads(abilityIcon);
+
+                bool toggleRequested = false;
+                using (new EditorGUILayout.HorizontalScope(
+                    GUILayout.Height(AbilityIconSize)))
                 {
-                    Sprite abilityIcon = ability
-                        .FindPropertyRelative("icon")
-                        ?.objectReferenceValue as Sprite;
-                    Rect foldoutRect = GUILayoutUtility.GetRect(
-                        14f, AbilityIconSize,
-                        GUILayout.Width(14f),
-                        GUILayout.Height(AbilityIconSize));
-                    nextExpanded = EditorGUI.Foldout(
+                    Rect foldoutRect =
+                        GUILayoutUtility.GetRect(
+                            GUIContent.none,
+                            GUIStyle.none,
+                            GUILayout.Width(16f),
+                            GUILayout.Height(AbilityIconSize));
+                    toggleRequested = EditorGUI.DropdownButton(
                         foldoutRect,
-                        nextExpanded,
-                        GUIContent.none,
-                        false,
-                        EditorStyles.foldout);
+                        new GUIContent(expanded ? "▼" : "▶"),
+                        FocusType.Passive,
+                        FoldoutGlyphStyle());
 
-                    RepaintWhilePreviewLoads(abilityIcon);
-                    if (DrawAbilityIcon(abilityIcon))
-                        nextExpanded = !nextExpanded;
+                    Rect iconRect =
+                        GUILayoutUtility.GetRect(
+                            GUIContent.none,
+                            GUIStyle.none,
+                            GUILayout.Width(AbilityIconSize),
+                            GUILayout.Height(AbilityIconSize));
+                    DrawAbilityIcon(iconRect, abilityIcon);
 
-                    var abilityLabel = new GUIContent(
-                        $"{index + 1}. {abilityName}",
-                        abilityIcon != null
-                            ? $"Icon: {abilityIcon.name}"
-                            : "No spell icon assigned");
-                    if (GUILayout.Button(
-                        abilityLabel,
+                    GUILayout.Label(
+                        new GUIContent(
+                            $"{index + 1}. {abilityName}",
+                            abilityIcon != null
+                                ? $"Icon: {abilityIcon.name}"
+                                : "No spell icon assigned"),
                         AbilityNameStyle(),
-                        GUILayout.Height(AbilityIconSize)))
-                        nextExpanded = !nextExpanded;
-
-                    if (nextExpanded != expanded)
+                        GUILayout.Height(AbilityIconSize),
+                        GUILayout.MinWidth(80f));
+                    if (IsVariantAbility(ability))
                     {
-                        if (nextExpanded) expandedAbilities.Add(key);
-                        else
-                        {
-                            expandedAbilities.Remove(key);
-                            StopPreviewIfActive(key);
-                        }
+                        GUILayout.Label(
+                            new GUIContent(
+                                "VARIANT",
+                                "Referenced by a core ability and hidden " +
+                                "from the player loadout."),
+                            VariantBadgeStyle(),
+                            GUILayout.Width(58f),
+                            GUILayout.Height(18f));
                     }
-
                     GUILayout.FlexibleSpace();
-                    DrawAbilitySummary(ability);
+                    GUILayout.Label(
+                        AbilitySummaryText(ability),
+                        AbilitySummaryStyle(),
+                        GUILayout.Width(210f),
+                        GUILayout.Height(AbilityIconSize));
+                }
+
+                if (toggleRequested)
+                {
+                    nextExpanded = !expanded;
+                    if (nextExpanded)
+                        expandedAbilities.Add(key);
+                    else
+                    {
+                        expandedAbilities.Remove(key);
+                        StopPreviewIfActive(key);
+                    }
+                    Repaint();
+                    GUIUtility.ExitGUI();
                 }
 
                 DrawVFXSummary(ability);
@@ -465,6 +657,7 @@ namespace Crossworlds.EditorTools
                 else
                     StopPreviewIfActive(key);
                 GUI.FocusControl(null);
+                GUIUtility.ExitGUI();
             }
 
             EditorGUILayout.Space(4f);
@@ -482,7 +675,7 @@ namespace Crossworlds.EditorTools
             }
         }
 
-        static void DrawLogisticsTab(SerializedProperty ability)
+        void DrawLogisticsTab(SerializedProperty ability)
         {
             DrawFieldGroup(
                 "IDENTITY & TARGETING", ability,
@@ -496,6 +689,8 @@ namespace Crossworlds.EditorTools
                 "rectWidth",
                 "indicatorSize",
                 "targetTag");
+
+            DrawMovementLogistics(ability);
 
             DrawFieldGroup(
                 "TIMING & COST", ability,
@@ -540,23 +735,123 @@ namespace Crossworlds.EditorTools
                 "variants");
         }
 
-        static void DrawAnimationTab(SerializedProperty ability)
+        void DrawAnimationTab(SerializedProperty ability)
         {
             DrawFieldGroup(
                 "CAST", ability,
                 "castTime",
                 "marauderCastAnimation");
+        }
 
-            DrawFieldGroup(
-                "CASTER MOVEMENT", ability,
-                "moveCasterToTarget",
-                "instantMovement",
-                "movementTiming",
-                "moveToSpeed",
-                "fixedMovementDuration",
-                "movementArcHeight",
-                "resolveEffectsOnLanding",
-                "animationLandingPoint");
+        void DrawMovementLogistics(SerializedProperty ability)
+        {
+            SerializedProperty movesCaster =
+                ability.FindPropertyRelative("moveCasterToTarget");
+            SerializedProperty instantMovement =
+                ability.FindPropertyRelative("instantMovement");
+            SerializedProperty movementTiming =
+                ability.FindPropertyRelative("movementTiming");
+            SerializedProperty moveToSpeed =
+                ability.FindPropertyRelative("moveToSpeed");
+            SerializedProperty fixedMovementDuration =
+                ability.FindPropertyRelative("fixedMovementDuration");
+            SerializedProperty movementArcHeight =
+                ability.FindPropertyRelative("movementArcHeight");
+            SerializedProperty resolveEffectsOnLanding =
+                ability.FindPropertyRelative("resolveEffectsOnLanding");
+            SerializedProperty animationLandingPoint =
+                ability.FindPropertyRelative("animationLandingPoint");
+
+            using (new EditorGUILayout.VerticalScope(
+                EditorStyles.helpBox))
+            {
+                EditorGUILayout.LabelField(
+                    "MOVEMENT", EyebrowStyle());
+
+                MovementType movementType = GetMovementType(
+                    movesCaster,
+                    instantMovement,
+                    movementArcHeight);
+                MovementType nextMovementType =
+                    (MovementType)EditorGUILayout.EnumPopup(
+                        new GUIContent(
+                            "Movement Type",
+                            "How casting this spell moves its caster."),
+                        movementType);
+                if (nextMovementType != movementType)
+                {
+                    SetMovementType(
+                        nextMovementType,
+                        movesCaster,
+                        instantMovement,
+                        movementArcHeight);
+                    movementType = nextMovementType;
+                }
+
+                if (movementType == MovementType.None)
+                    return;
+
+                if (movementType != MovementType.Teleport)
+                {
+                    EditorGUILayout.PropertyField(movementTiming);
+                    if (movementTiming.enumValueIndex ==
+                        (int)AbilityMovementTiming.FixedDuration)
+                    {
+                        EditorGUILayout.PropertyField(
+                            fixedMovementDuration);
+                    }
+                    else
+                    {
+                        EditorGUILayout.PropertyField(moveToSpeed);
+                    }
+
+                    if (movementType == MovementType.Leap)
+                        EditorGUILayout.PropertyField(
+                            movementArcHeight);
+
+                    EditorGUILayout.PropertyField(
+                        resolveEffectsOnLanding);
+                    EditorGUILayout.PropertyField(
+                        animationLandingPoint);
+                }
+            }
+        }
+
+        static MovementType GetMovementType(
+            SerializedProperty movesCaster,
+            SerializedProperty instantMovement,
+            SerializedProperty movementArcHeight)
+        {
+            if (movesCaster == null || !movesCaster.boolValue)
+                return MovementType.None;
+            if (instantMovement?.boolValue == true)
+                return MovementType.Teleport;
+            return (movementArcHeight?.floatValue ?? 0f) > 0.01f
+                ? MovementType.Leap
+                : MovementType.Dash;
+        }
+
+        static void SetMovementType(
+            MovementType movementType,
+            SerializedProperty movesCaster,
+            SerializedProperty instantMovement,
+            SerializedProperty movementArcHeight)
+        {
+            if (movesCaster == null ||
+                instantMovement == null ||
+                movementArcHeight == null)
+                return;
+
+            movesCaster.boolValue =
+                movementType != MovementType.None;
+            instantMovement.boolValue =
+                movementType == MovementType.Teleport;
+
+            if (movementType == MovementType.Dash)
+                movementArcHeight.floatValue = 0f;
+            else if (movementType == MovementType.Leap &&
+                movementArcHeight.floatValue <= 0.01f)
+                movementArcHeight.floatValue = 3f;
         }
 
         void DrawVFXTab(
@@ -685,7 +980,7 @@ namespace Crossworlds.EditorTools
             }
         }
 
-        static void DrawFieldGroup(
+        void DrawFieldGroup(
             string title,
             SerializedProperty ability,
             params string[] propertyNames)
@@ -698,10 +993,131 @@ namespace Crossworlds.EditorTools
                 {
                     SerializedProperty property =
                         ability.FindPropertyRelative(propertyName);
-                    if (property != null)
-                        EditorGUILayout.PropertyField(property, true);
+                    if (property == null) continue;
+
+                    if (property.propertyType ==
+                        SerializedPropertyType.String)
+                    {
+                        DrawStringProperty(property);
+                    }
+                    else if (propertyName == "icon" &&
+                        property.propertyType ==
+                        SerializedPropertyType.ObjectReference)
+                    {
+                        DrawIconProperty(property);
+                    }
+                    else
+                    {
+                        EditorGUILayout.PropertyField(
+                            property, true);
+                    }
                 }
             }
+        }
+
+        void DrawIconProperty(SerializedProperty property)
+        {
+            Rect rowRect = EditorGUILayout.GetControlRect();
+            Rect fieldRect = EditorGUI.PrefixLabel(
+                rowRect,
+                new GUIContent(
+                    property.displayName,
+                    property.tooltip));
+            Rect pickerRect = new Rect(
+                fieldRect.xMax - 19f,
+                fieldRect.y,
+                19f,
+                fieldRect.height);
+            Rect valueRect = new Rect(
+                fieldRect.x,
+                fieldRect.y,
+                fieldRect.width - pickerRect.width,
+                fieldRect.height);
+
+            Sprite current =
+                property.objectReferenceValue as Sprite;
+            GUI.Label(
+                valueRect,
+                current != null
+                    ? current.name
+                    : "None (Sprite)",
+                EditorStyles.objectField);
+
+            int controlId = GUIUtility.GetControlID(
+                property.propertyPath.GetHashCode(),
+                FocusType.Passive,
+                pickerRect);
+            if (GUI.Button(
+                pickerRect,
+                EditorGUIUtility.IconContent("d_pick"),
+                EditorStyles.miniButton))
+            {
+                activeIconPropertyPath = property.propertyPath;
+                activeIconPickerControlId = controlId;
+                EditorGUIUtility.ShowObjectPicker<Sprite>(
+                    current,
+                    false,
+                    "t:Sprite",
+                    controlId);
+            }
+        }
+
+        void HandleIconPickerEvent()
+        {
+            Event currentEvent = Event.current;
+            if (currentEvent == null ||
+                currentEvent.type != EventType.ExecuteCommand ||
+                string.IsNullOrEmpty(activeIconPropertyPath))
+                return;
+
+            bool updated =
+                currentEvent.commandName == "ObjectSelectorUpdated";
+            bool closed =
+                currentEvent.commandName == "ObjectSelectorClosed";
+            if (!updated && !closed) return;
+
+            int pickerControlId =
+                EditorGUIUtility.GetObjectPickerControlID();
+            if (pickerControlId != activeIconPickerControlId)
+                return;
+
+            SerializedProperty iconProperty =
+                serializedCaster.FindProperty(
+                    activeIconPropertyPath);
+            if (iconProperty != null)
+            {
+                UnityEngine.Object picked =
+                    EditorGUIUtility.GetObjectPickerObject();
+                if (iconProperty.objectReferenceValue != picked)
+                {
+                    iconProperty.objectReferenceValue = picked;
+                    serializedCaster.ApplyModifiedProperties();
+                    MarkChanged();
+                }
+            }
+
+            if (closed)
+                activeIconPropertyPath = null;
+
+            Repaint();
+        }
+
+        static void DrawStringProperty(
+            SerializedProperty property)
+        {
+            string controlName =
+                "BCE.Spellbook." + property.propertyPath;
+            GUI.SetNextControlName(controlName);
+            string nextValue = EditorGUILayout.TextField(
+                new GUIContent(
+                    property.displayName,
+                    property.tooltip),
+                property.stringValue);
+            if (nextValue != property.stringValue)
+                property.stringValue = nextValue;
+
+            if (GUI.GetNameOfFocusedControl() == controlName)
+                EditorGUIUtility.editingTextField = true;
         }
 
         void StopPreviewIfActive(string key)
@@ -711,7 +1127,8 @@ namespace Crossworlds.EditorTools
             spellPreview?.Clear();
         }
 
-        static void DrawAbilitySummary(SerializedProperty ability)
+        static string AbilitySummaryText(
+            SerializedProperty ability)
         {
             SerializedProperty category =
                 ability.FindPropertyRelative("category");
@@ -719,6 +1136,12 @@ namespace Crossworlds.EditorTools
                 ability.FindPropertyRelative("cooldown");
             SerializedProperty mana =
                 ability.FindPropertyRelative("manaCost");
+            SerializedProperty movesCaster =
+                ability.FindPropertyRelative("moveCasterToTarget");
+            SerializedProperty instantMovement =
+                ability.FindPropertyRelative("instantMovement");
+            SerializedProperty movementArcHeight =
+                ability.FindPropertyRelative("movementArcHeight");
 
             string categoryName = category != null
                 ? category.enumDisplayNames[
@@ -727,11 +1150,23 @@ namespace Crossworlds.EditorTools
                 : "Ability";
             float cooldownValue = cooldown?.floatValue ?? 0f;
             float manaValue = mana?.floatValue ?? 0f;
+            string movementLabel = "";
+            if (movesCaster?.boolValue == true)
+            {
+                movementLabel = instantMovement?.boolValue == true
+                    ? "Teleport"
+                    : (movementArcHeight?.floatValue ?? 0f) > 0.01f
+                        ? "Leap"
+                        : "Dash";
+            }
 
-            GUILayout.Label(
-                $"{categoryName}  •  {cooldownValue:0.#}s  •  " +
-                $"{manaValue:0.#} MP",
-                EditorStyles.miniLabel);
+            return
+                $"{categoryName}" +
+                (string.IsNullOrEmpty(movementLabel)
+                    ? ""
+                    : $"  •  {movementLabel}") +
+                $"  •  {cooldownValue:0.#}s  •  " +
+                $"{manaValue:0.#} MP";
         }
 
         static void DrawVFXSummary(SerializedProperty ability)
@@ -786,7 +1221,7 @@ namespace Crossworlds.EditorTools
             MarkChanged();
         }
 
-        void AddAbility()
+        void AddAbility(bool variantOnly)
         {
             serializedCaster.ApplyModifiedProperties();
             Undo.RecordObject(abilityCaster, "Add Spell Forge ability");
@@ -797,7 +1232,10 @@ namespace Crossworlds.EditorTools
             Array.Copy(current, next, current.Length);
             next[current.Length] = new AbilityDef
             {
-                abilityName = $"New {ClassNames[classIndex]} Ability"
+                abilityName = variantOnly
+                    ? $"New {ClassNames[classIndex]} Variant"
+                    : $"New {ClassNames[classIndex]} Ability",
+                variantOnly = variantOnly
             };
             abilityCaster.spellbook = next;
             serializedCaster.Update();
@@ -857,6 +1295,8 @@ namespace Crossworlds.EditorTools
             pendingSave = false;
             lastSaveMessage = "";
             scroll = Vector2.zero;
+            if (spellbook != null)
+                RebuildVisibleAbilityIndices();
             Repaint();
         }
 
@@ -891,12 +1331,8 @@ namespace Crossworlds.EditorTools
         void MarkChanged()
         {
             if (abilityCaster == null) return;
-            EditorUtility.SetDirty(abilityCaster);
-            EditorUtility.SetDirty(prefabAsset);
             pendingSave = true;
-            lastChangeTime = EditorApplication.timeSinceStartup;
             lastSaveMessage = "Unsaved changes";
-            Repaint();
         }
 
         void SaveCurrent()
@@ -905,6 +1341,8 @@ namespace Crossworlds.EditorTools
             if (serializedCaster != null)
                 serializedCaster.ApplyModifiedProperties();
 
+            EditorUtility.SetDirty(abilityCaster);
+            EditorUtility.SetDirty(prefabAsset);
             PrefabUtility.SavePrefabAsset(
                 prefabAsset, out bool success);
             if (success)
@@ -996,26 +1434,14 @@ namespace Crossworlds.EditorTools
                 CenteredMiniLabelStyle());
         }
 
-        static bool DrawAbilityIcon(Sprite icon)
+        static void DrawAbilityIcon(
+            Rect iconRect, Sprite icon)
         {
-            Rect iconRect = GUILayoutUtility.GetRect(
-                AbilityIconSize, AbilityIconSize,
-                GUILayout.Width(AbilityIconSize),
-                GUILayout.Height(AbilityIconSize));
             EditorGUI.DrawRect(
                 iconRect,
                 EditorGUIUtility.isProSkin
                     ? new Color(0.08f, 0.08f, 0.10f)
                     : new Color(0.70f, 0.70f, 0.72f));
-
-            bool clicked = GUI.Button(
-                iconRect,
-                new GUIContent(
-                    "",
-                    icon != null
-                        ? $"Icon: {icon.name}"
-                        : "No spell icon assigned"),
-                GUIStyle.none);
 
             Texture preview = GetAssetPreview(icon);
             Rect contentRect = new Rect(
@@ -1029,8 +1455,6 @@ namespace Crossworlds.EditorTools
                 GUI.Label(
                     contentRect, "—",
                     CenteredMiniLabelStyle());
-
-            return clicked;
         }
 
         static Texture GetAssetPreview(UnityEngine.Object asset)
@@ -1106,6 +1530,36 @@ namespace Crossworlds.EditorTools
             {
                 fontSize = 12,
                 alignment = TextAnchor.MiddleLeft
+            };
+        }
+
+        static GUIStyle AbilitySummaryStyle()
+        {
+            return new GUIStyle(EditorStyles.miniLabel)
+            {
+                alignment = TextAnchor.MiddleRight
+            };
+        }
+
+        static GUIStyle VariantBadgeStyle()
+        {
+            var style = new GUIStyle(EditorStyles.miniBoldLabel)
+            {
+                alignment = TextAnchor.MiddleCenter,
+                fontSize = 9
+            };
+            style.normal.textColor = EditorGUIUtility.isProSkin
+                ? new Color(0.82f, 0.66f, 1f)
+                : new Color(0.42f, 0.18f, 0.62f);
+            return style;
+        }
+
+        static GUIStyle FoldoutGlyphStyle()
+        {
+            return new GUIStyle(EditorStyles.miniLabel)
+            {
+                alignment = TextAnchor.MiddleCenter,
+                fontSize = 10
             };
         }
 
