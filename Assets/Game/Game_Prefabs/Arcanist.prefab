@@ -447,7 +447,7 @@ MonoBehaviour:
       targetTag: 
       castVFX: {fileID: 0}
       hitVFX: {fileID: 0}
-  - abilityName: Ember Beam
+  - abilityName: Heat Death
     variantOnly: 0
     variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
     shape: 1
@@ -460,7 +460,7 @@ MonoBehaviour:
     turretPrefab: {fileID: 0}
     cooldown: 6
     manaCost: 0
-    icon: {fileID: 21300000, guid: bdaa746a3e0ae6e47b308084df58536b, type: 3}
+    icon: {fileID: 21300000, guid: 39435ebd679e43743b34150e62b3d185, type: 3}
     castTime: 0.6
     marauderCastAnimation: {fileID: 0}
     moveCasterToTarget: 0
@@ -552,7 +552,7 @@ MonoBehaviour:
     turretPrefab: {fileID: 6540632024305697650, guid: 7a4c75eb4a855da42ab1a4619502d4a7, type: 3}
     cooldown: 30
     manaCost: 0
-    icon: {fileID: 21300000, guid: a659b39e757c5094895ec3f466d054f5, type: 3}
+    icon: {fileID: 21300000, guid: 17951649342328b44a00606416d2b440, type: 3}
     castTime: 0.6
     marauderCastAnimation: {fileID: 0}
     moveCasterToTarget: 0
@@ -608,7 +608,7 @@ MonoBehaviour:
     turretPrefab: {fileID: 0}
     cooldown: 0
     manaCost: 10
-    icon: {fileID: 21300000, guid: c02f03c383a15344c82f557c9fd617d8, type: 3}
+    icon: {fileID: 21300000, guid: 70fb95ee0dff6ea44a4f6561c4d87cda, type: 3}
     castTime: 0.6
     marauderCastAnimation: {fileID: 0}
     moveCasterToTarget: 0
