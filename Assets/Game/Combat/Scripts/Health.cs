@@ -225,13 +225,14 @@ public class Health : NetworkBehaviour
     // ── Invulnerability (Dodge Roll i-frames) ────────────────────
     // Set to true by PlayerMovement during a dodge. While true, all damage is ignored.
     [HideInInspector] public bool isInvulnerable = false;
+    [HideInInspector] public bool zoneTransitionProtected = false;
 
     public void TakeDamage(float amount, GameObject source = null, bool isCritical = false)
     {
         if (!CanMutateCombatState()) return;
         if (_isDowned) return;
         if (currentHealth <= 0f) return;
-        if (isInvulnerable) return;   // dodge roll i-frames
+        if (isInvulnerable || zoneTransitionProtected) return;
 
         // Weakened: +25% incoming (Collapsing Void)
         if (_statusEffects != null && _statusEffects.IsWeakened)

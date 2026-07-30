@@ -542,7 +542,9 @@ public class EnemyHeavyAttack : NetworkBehaviour
         if (currentTarget != null)
         {
             var currentHealth = currentTarget.GetComponent<Health>();
-            if (currentHealth != null && currentHealth.IsAlive)
+            var currentIdentity = currentTarget.GetComponent<PlayerIdentity>();
+            if (currentHealth != null && currentHealth.IsAlive &&
+                (currentIdentity == null || currentIdentity.zoneVisualsReady))
                 return currentTarget.position;
         }
         // Try to read the enemy's current target via reflection — it's private,
@@ -557,6 +559,8 @@ public class EnemyHeavyAttack : NetworkBehaviour
             if (p.scene != gameObject.scene) continue;
             var h = p.GetComponent<Health>();
             if (h == null || !h.IsAlive) continue;
+            var identity = p.GetComponent<PlayerIdentity>();
+            if (identity != null && !identity.zoneVisualsReady) continue;
             float sqr = (p.transform.position - transform.position).sqrMagnitude;
             if (sqr < best) { best = sqr; pos = p.transform.position; }
         }
