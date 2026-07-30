@@ -94,6 +94,46 @@ namespace Crossworlds.EditorTools.EnemyForge
             return prefab;
         }
 
+        public static GameObject UpdateBuiltPrefabConfiguration(
+            EnemyForgeDefinition d)
+        {
+            if (d == null || d.source == null) return null;
+
+            string folder = ResolveOutputFolder(d);
+            string path =
+                $"{folder}/{BuildForgedPrefabName(d.source.name)}.prefab";
+            GameObject prefab =
+                AssetDatabase.LoadAssetAtPath<GameObject>(path);
+            if (prefab == null) return null;
+
+            try
+            {
+                using (var scope =
+                       new PrefabUtility.EditPrefabContentsScope(path))
+                {
+                    GameObject root = scope.prefabContentsRoot;
+                    root.transform.position = Vector3.zero;
+                    root.transform.rotation = Quaternion.identity;
+                    Configure(root, d, false);
+                    ConfigureDriverMode(root, d);
+                    if (d.generateAnimatorController &&
+                        d.animationDriverMode !=
+                        EnemyForgeAnimationDriverMode.ExistingModelDriver)
+                        GenerateAnimatorOverride(root, d, path);
+                }
+
+                AssetDatabase.ImportAsset(
+                    path, ImportAssetOptions.ForceUpdate);
+                AssetDatabase.SaveAssets();
+                return AssetDatabase.LoadAssetAtPath<GameObject>(path);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
+                return null;
+            }
+        }
+
         static void Configure(GameObject root, EnemyForgeDefinition d, bool recordUndo)
         {
             if (recordUndo) Undo.RegisterFullObjectHierarchyUndo(root, "Update enemy instance");

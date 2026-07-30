@@ -193,6 +193,7 @@ namespace Crossworlds.EditorTools.EnemyForge
                 return;
             }
 
+            float previousHandTiming = profile.handAppearanceTiming;
             var effect = new SerializedObject(profile);
             effect.Update();
             EditorGUILayout.Space(3f);
@@ -205,6 +206,8 @@ namespace Crossworlds.EditorTools.EnemyForge
             DrawPrefabEffectProperty(effect, "handEffect", "Hand Effect");
             DrawFloatSlider(effect, "handScale", "Hand Scale", 0.05f, 3f);
             DrawFloatSlider(effect, "handThickness", "Hand Thickness", 0.1f, 5f);
+            DrawFloatSlider(effect, "handAppearanceTiming",
+                "Appearance Delay (-3 After / 0 Delivery / 3 Before)", -3f, 3f);
             DrawFloatSlider(effect, "handLifetime", "Hand Lifetime (0 = Impact)", 0f, 8f);
             EditorGUILayout.Space(2f);
             DrawPrefabEffectProperty(effect, "spellEffect", "Spell Effect");
@@ -217,7 +220,13 @@ namespace Crossworlds.EditorTools.EnemyForge
             DrawFloatSlider(effect, "hitThickness", "Hit Thickness", 0.1f, 5f);
             DrawFloatSlider(effect, "hitLifetime", "Hit Lifetime", 0.05f, 8f);
             if (effect.ApplyModifiedProperties())
+            {
                 EditorUtility.SetDirty(profile);
+                bool handTimingChanged =
+                    !Mathf.Approximately(previousHandTiming, profile.handAppearanceTiming);
+                EnemyForgeAnimationPreviewWindow.NotifyProfileChanged(
+                    profile, !handTimingChanged);
+            }
         }
 
         static void DrawSpellProfileActions(SerializedObject definitionObject,

@@ -48,6 +48,8 @@ namespace Crossworlds.EditorTools.EnemyForge
         float cameraPitch = 6f;
         float cameraZoom = 1f;
         bool orbiting;
+        bool restartAtImpact;
+        bool restartAtBeginning;
 
         public static void Open(EnemyForgeDefinition activeDefinition)
         {
@@ -58,6 +60,23 @@ namespace Crossworlds.EditorTools.EnemyForge
             window.Show();
             window.Focus();
             window.Repaint();
+        }
+
+        public static void NotifyProfileChanged(
+            ElementalLightningVFXProfile profile, bool startAtImpact = true)
+        {
+            if (profile == null) return;
+            foreach (EnemyForgeAnimationPreviewWindow window in
+                     Resources.FindObjectsOfTypeAll<EnemyForgeAnimationPreviewWindow>())
+            {
+                if (window == null || window.definition == null ||
+                    window.definition.elementalLightningVfxProfile != profile)
+                    continue;
+
+                window.restartAtImpact = startAtImpact;
+                window.restartAtBeginning = !startAtImpact;
+                window.Repaint();
+            }
         }
 
         void OnDisable() => Cleanup();
@@ -134,6 +153,20 @@ namespace Crossworlds.EditorTools.EnemyForge
             float speed = Mathf.Max(0.25f, state.speed);
             float duration = Mathf.Max(0.01f, state.clip.length / speed);
             double now = EditorApplication.timeSinceStartup;
+            if (restartAtBeginning)
+            {
+                playTime = 0f;
+                previousNormalized = 0f;
+                lastUpdate = now;
+                restartAtBeginning = false;
+            }
+            if (restartAtImpact && state.hasImpact)
+            {
+                playTime = Mathf.Clamp01(state.impact) * duration;
+                previousNormalized = Mathf.Clamp01(state.impact);
+                lastUpdate = now;
+                restartAtImpact = false;
+            }
             if (lastUpdate <= 0d) lastUpdate = now;
             if (playing && Event.current.type == EventType.Repaint)
             {
@@ -246,7 +279,12 @@ namespace Crossworlds.EditorTools.EnemyForge
                 if (!GUILayout.Button("Update Configuration", GUILayout.Height(26f))) return;
                 EditorUtility.SetDirty(definition);
                 AssetDatabase.SaveAssets();
-                ShowNotification(new GUIContent("Enemy Forge configuration updated"));
+                GameObject updatedPrefab =
+                    EnemyForgeBuilder.UpdateBuiltPrefabConfiguration(definition);
+                ShowNotification(new GUIContent(
+                    updatedPrefab != null
+                        ? "Preview and runtime prefab updated"
+                        : "Saved preview; no existing forged prefab was found"));
             }
             EditorGUILayout.Space(3f);
         }
@@ -473,9 +511,12 @@ namespace Crossworlds.EditorTools.EnemyForge
             float impactTime = state.hasImpact
                 ? Mathf.Clamp01(state.impact) * duration
                 : duration;
+            float handStartTime = Mathf.Max(
+                0f, impactTime - elementalProfile.handAppearanceTiming);
             float handEnd = elementalProfile.handLifetime > 0f
-                ? elementalProfile.handLifetime
+                ? handStartTime + elementalProfile.handLifetime
                 : impactTime;
+            float handPreviewTime = playTime - handStartTime;
             float hitElapsed = playTime - impactTime;
             float spellDuration = elementalProfile.spellLifetime > 0f
                 ? elementalProfile.spellLifetime
@@ -530,7 +571,8 @@ namespace Crossworlds.EditorTools.EnemyForge
             SetEffectVisible(elementalCastEffect,
                 playTime <= castEnd, playTime);
             SetEffectVisible(elementalHandEffect,
-                playTime <= handEnd, playTime);
+                handPreviewTime >= 0f && playTime <= handEnd,
+                Mathf.Max(0f, handPreviewTime));
             SetEffectVisible(elementalSpellEffect,
                 hitElapsed >= 0f && hitElapsed <= spellDuration,
                 Mathf.Max(0f, hitElapsed));
