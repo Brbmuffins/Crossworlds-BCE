@@ -26,13 +26,24 @@ public class ArcanistAbilityCaster : AbilityCaster
 
     void EnsureArcanistSpellbook()
     {
-        if (!HasArcanistCoreSpellbook(spellbook))
+        // Seed a brand-new caster, but never replace an authored spellbook during
+        // OnValidate. Unity can expose a partially-applied serialized array while
+        // an individual field is being edited; treating that transient state as a
+        // missing core spellbook previously erased every custom spell and icon.
+        if (spellbook == null || spellbook.Length == 0)
         {
+            // OnValidate can run while Unity is rebuilding a serialized array.
+            // Leave editor-time initialization alone; Awake will still seed a
+            // genuinely empty runtime caster.
+            if (!Application.isPlaying)
+                return;
+
             spellbook = CreateDefaultArcanistSpellbook();
             return;
         }
 
-        NormalizeCoreVariantReferencesByName();
+        if (HasArcanistCoreSpellbook(spellbook))
+            NormalizeCoreVariantReferencesByName();
     }
 
     void EnsureArcanistEquippedIndices()

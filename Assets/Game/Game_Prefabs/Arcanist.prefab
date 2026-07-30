@@ -450,7 +450,7 @@ MonoBehaviour:
   - abilityName: Ember Beam
     variantOnly: 0
     variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
-    shape: 2
+    shape: 1
     category: 0
     range: 12
     coneAngle: 60
@@ -1323,7 +1323,7 @@ MonoBehaviour:
     pulseVFXLifetime: 0
     deployablePrefab: {fileID: 0}
     variants: []
-  - abilityName: Phase Shift
+  - abilityName: Blink
     variantOnly: 0
     variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
     shape: 0
