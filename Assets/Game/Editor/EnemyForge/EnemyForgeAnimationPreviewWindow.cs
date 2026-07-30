@@ -24,12 +24,15 @@ namespace Crossworlds.EditorTools.EnemyForge
         GameObject source;
         GameObject vfxMarker;
         GameObject groundReference;
+        GameObject elementalCastEffect;
         GameObject elementalHandEffect;
         GameObject elementalSpellEffect;
         GameObject elementalHitEffect;
+        GameObject elementalCastSource;
         GameObject elementalHandSource;
         GameObject elementalSpellSource;
         GameObject elementalHitSource;
+        Vector3 elementalCastBaseScale;
         Vector3 elementalHandBaseScale;
         Vector3 elementalSpellBaseScale;
         Vector3 elementalHitBaseScale;
@@ -266,11 +269,13 @@ namespace Crossworlds.EditorTools.EnemyForge
 
         void EnsurePreview(GameObject nextSource, ElementalLightningVFXProfile nextProfile)
         {
+            GameObject nextCast = nextProfile != null ? nextProfile.castEffect : null;
             GameObject nextHand = nextProfile != null ? nextProfile.handEffect : null;
             GameObject nextSpell = nextProfile != null ? nextProfile.spellEffect : null;
             GameObject nextHit = nextProfile != null ? nextProfile.hitEffect : null;
             if (preview != null && instance != null && source == nextSource &&
                 elementalProfile == nextProfile &&
+                elementalCastSource == nextCast &&
                 elementalHandSource == nextHand &&
                 elementalSpellSource == nextSpell &&
                 elementalHitSource == nextHit)
@@ -315,9 +320,11 @@ namespace Crossworlds.EditorTools.EnemyForge
             }
             preview.AddSingleGO(groundReference);
             elementalProfile = nextProfile;
+            elementalCastSource = nextCast;
             elementalHandSource = nextHand;
             elementalSpellSource = nextSpell;
             elementalHitSource = nextHit;
+            elementalCastEffect = CreatePreviewEffect(nextCast, out elementalCastBaseScale);
             elementalHandEffect = CreatePreviewEffect(nextHand, out elementalHandBaseScale);
             elementalSpellEffect = CreatePreviewEffect(nextSpell, out elementalSpellBaseScale);
             elementalHitEffect = CreatePreviewEffect(nextHit, out elementalHitBaseScale);
@@ -334,9 +341,11 @@ namespace Crossworlds.EditorTools.EnemyForge
             instance = null;
             vfxMarker = null;
             groundReference = null;
+            elementalCastEffect = null;
             elementalHandEffect = null;
             elementalSpellEffect = null;
             elementalHitEffect = null;
+            elementalCastSource = null;
             elementalHandSource = null;
             elementalSpellSource = null;
             elementalHitSource = null;
@@ -454,6 +463,7 @@ namespace Crossworlds.EditorTools.EnemyForge
                 state.attackIndex >= 0;
             if (!validAttack)
             {
+                SetEffectVisible(elementalCastEffect, false, 0f);
                 SetEffectVisible(elementalHandEffect, false, 0f);
                 SetEffectVisible(elementalSpellEffect, false, 0f);
                 SetEffectVisible(elementalHitEffect, false, 0f);
@@ -479,6 +489,14 @@ namespace Crossworlds.EditorTools.EnemyForge
                 instance.transform.forward * Mathf.Max(2f, bounds.extents.z * 3f);
             targetGround.y = bounds.min.y;
 
+            if (elementalCastEffect != null)
+            {
+                elementalCastEffect.transform.position = castOrigin;
+                elementalCastEffect.transform.rotation = instance.transform.rotation;
+                elementalCastEffect.transform.localScale = ApplyThickness(
+                    elementalCastBaseScale, elementalProfile.castScale,
+                    elementalProfile.castThickness);
+            }
             if (elementalHandEffect != null)
             {
                 elementalHandEffect.transform.position = castOrigin;
@@ -506,6 +524,11 @@ namespace Crossworlds.EditorTools.EnemyForge
                     elementalProfile.hitThickness);
             }
 
+            float castEnd = elementalProfile.castLifetime > 0f
+                ? elementalProfile.castLifetime
+                : impactTime;
+            SetEffectVisible(elementalCastEffect,
+                playTime <= castEnd, playTime);
             SetEffectVisible(elementalHandEffect,
                 playTime <= handEnd, playTime);
             SetEffectVisible(elementalSpellEffect,

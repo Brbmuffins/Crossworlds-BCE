@@ -162,6 +162,7 @@ namespace Crossworlds.EditorTools.EnemyForge
                 }
                 DrawLabeledProperty(serialized, "elementalLightningVfxProfile",
                     "Elemental Lightning VFX");
+                DrawSpellProfileActions(serialized, profileProperty);
                 DrawElementalLightningVfx(
                     profileProperty?.objectReferenceValue as ElementalLightningVFXProfile);
             }
@@ -195,23 +196,85 @@ namespace Crossworlds.EditorTools.EnemyForge
             var effect = new SerializedObject(profile);
             effect.Update();
             EditorGUILayout.Space(3f);
-            EditorGUILayout.LabelField("Elemental Lightning Effects", EditorStyles.boldLabel);
-            DrawLabeledProperty(effect, "handEffect", "Hand Effect");
+            EditorGUILayout.LabelField("Spell Effects", EditorStyles.boldLabel);
+            DrawPrefabEffectProperty(effect, "castEffect", "Cast Effect");
+            DrawFloatSlider(effect, "castScale", "Cast Scale", 0.05f, 3f);
+            DrawFloatSlider(effect, "castThickness", "Cast Thickness", 0.1f, 5f);
+            DrawFloatSlider(effect, "castLifetime", "Cast Lifetime (0 = Impact)", 0f, 8f);
+            EditorGUILayout.Space(2f);
+            DrawPrefabEffectProperty(effect, "handEffect", "Hand Effect");
             DrawFloatSlider(effect, "handScale", "Hand Scale", 0.05f, 3f);
             DrawFloatSlider(effect, "handThickness", "Hand Thickness", 0.1f, 5f);
             DrawFloatSlider(effect, "handLifetime", "Hand Lifetime (0 = Impact)", 0f, 8f);
             EditorGUILayout.Space(2f);
-            DrawLabeledProperty(effect, "spellEffect", "Spell Effect");
+            DrawPrefabEffectProperty(effect, "spellEffect", "Spell Effect");
             DrawFloatSlider(effect, "spellScale", "Spell Scale", 0.05f, 3f);
             DrawFloatSlider(effect, "spellThickness", "Bolt Thickness", 0.1f, 5f);
             DrawFloatSlider(effect, "spellLifetime", "Bolt Lifetime (0 = 0.75s)", 0f, 8f);
             EditorGUILayout.Space(2f);
-            DrawLabeledProperty(effect, "hitEffect", "Hit Effect");
+            DrawPrefabEffectProperty(effect, "hitEffect", "Hit Effect");
             DrawFloatSlider(effect, "hitScale", "Hit Scale", 0.05f, 3f);
             DrawFloatSlider(effect, "hitThickness", "Hit Thickness", 0.1f, 5f);
             DrawFloatSlider(effect, "hitLifetime", "Hit Lifetime", 0.05f, 8f);
             if (effect.ApplyModifiedProperties())
                 EditorUtility.SetDirty(profile);
+        }
+
+        static void DrawSpellProfileActions(SerializedObject definitionObject,
+            SerializedProperty profileProperty)
+        {
+            if (profileProperty == null) return;
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                if (GUILayout.Button("New Spell Profile"))
+                {
+                    string path = EditorUtility.SaveFilePanelInProject(
+                        "Create Spell Profile", "NewSpell", "asset",
+                        "Choose where to save the reusable spell-effect profile.",
+                        "Assets/Game/Resources/EnemyAbilities");
+                    if (!string.IsNullOrEmpty(path))
+                    {
+                        var created =
+                            ScriptableObject.CreateInstance<ElementalLightningVFXProfile>();
+                        AssetDatabase.CreateAsset(created, path);
+                        AssetDatabase.SaveAssets();
+                        profileProperty.objectReferenceValue = created;
+                        definitionObject.ApplyModifiedProperties();
+                        Selection.activeObject = created;
+                        EditorGUIUtility.PingObject(created);
+                    }
+                }
+
+                using (new EditorGUI.DisabledScope(profileProperty.objectReferenceValue == null))
+                {
+                    if (GUILayout.Button("Duplicate Spell Profile"))
+                    {
+                        var source =
+                            profileProperty.objectReferenceValue as ElementalLightningVFXProfile;
+                        string sourcePath = AssetDatabase.GetAssetPath(source);
+                        string copyPath = AssetDatabase.GenerateUniqueAssetPath(
+                            System.IO.Path.ChangeExtension(sourcePath, null) + "_Variant.asset");
+                        var copy = UnityEngine.Object.Instantiate(source);
+                        copy.name = System.IO.Path.GetFileNameWithoutExtension(copyPath);
+                        AssetDatabase.CreateAsset(copy, copyPath);
+                        AssetDatabase.SaveAssets();
+                        profileProperty.objectReferenceValue = copy;
+                        definitionObject.ApplyModifiedProperties();
+                        Selection.activeObject = copy;
+                        EditorGUIUtility.PingObject(copy);
+                    }
+
+                    if (GUILayout.Button("Save Profile"))
+                    {
+                        EditorUtility.SetDirty(profileProperty.objectReferenceValue);
+                        AssetDatabase.SaveAssets();
+                    }
+                }
+            }
+            EditorGUILayout.HelpBox(
+                "New creates a blank spell profile. Duplicate creates an independent variant " +
+                "so changes do not affect enemies using the original profile.",
+                MessageType.None);
         }
 
         static void DrawFloatSlider(SerializedObject serialized, string propertyName,
@@ -221,6 +284,44 @@ namespace Crossworlds.EditorTools.EnemyForge
             if (property != null)
                 property.floatValue = EditorGUILayout.Slider(
                     label, property.floatValue, minimum, maximum);
+        }
+
+        static void DrawPrefabEffectProperty(SerializedObject serialized,
+            string propertyName, string label)
+        {
+            SerializedProperty property = serialized.FindProperty(propertyName);
+            if (property == null) return;
+
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                var selected = EditorGUILayout.ObjectField(
+                    new GUIContent(label, "Drag a prefab here, use the object picker, or " +
+                        "select a prefab in the Project window and click Use Selected."),
+                    property.objectReferenceValue, typeof(GameObject), false) as GameObject;
+                if (selected != property.objectReferenceValue)
+                    property.objectReferenceValue = selected;
+
+                GameObject projectSelection = Selection.activeObject as GameObject;
+                bool validSelection = projectSelection != null &&
+                    AssetDatabase.Contains(projectSelection) &&
+                    PrefabUtility.GetPrefabAssetType(projectSelection) != PrefabAssetType.NotAPrefab;
+                using (new EditorGUI.DisabledScope(!validSelection))
+                {
+                    if (GUILayout.Button("Use Selected", GUILayout.Width(92f)))
+                        property.objectReferenceValue = projectSelection;
+                }
+            }
+
+            if (property.objectReferenceValue != null)
+            {
+                string path = AssetDatabase.GetAssetPath(property.objectReferenceValue);
+                if (string.IsNullOrEmpty(path))
+                    EditorGUILayout.HelpBox(
+                        label + " must reference a prefab asset from the Project window.",
+                        MessageType.Error);
+                else
+                    EditorGUILayout.LabelField(path, EditorStyles.miniLabel);
+            }
         }
 
         static void DrawLabeledProperty(SerializedObject serialized, string propertyName, string label)

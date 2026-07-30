@@ -6,11 +6,17 @@ using UnityEngine;
 public sealed class ElementalLightningVFXProfile : ScriptableObject
 {
     [Header("Composite Effects")]
+    [Tooltip("Effect spawned at the cast origin for the full wind-up.")]
+    public GameObject castEffect;
     public GameObject handEffect;
     public GameObject spellEffect;
     public GameObject hitEffect;
 
     [Header("Presentation")]
+    [Min(0.01f)] public float castScale = 1f;
+    [Min(0.01f)] public float castThickness = 1f;
+    [Tooltip("Zero follows the configured attack impact timing.")]
+    [Min(0f)] public float castLifetime;
     [Min(0.01f)] public float handScale = 0.45f;
     [Min(0.01f)] public float handThickness = 1f;
     [Tooltip("Zero follows the configured attack impact timing.")]
@@ -33,6 +39,10 @@ public sealed class ElementalLightningVFXProfile : ScriptableObject
             ? enemy.ResolveAttackVfxOrigin(attackVariant)
             : caster.transform.position + caster.transform.up * 1.2f;
 
+        SpawnTimed(castEffect, origin, caster.transform.rotation,
+            castScale, castThickness,
+            castLifetime > 0f ? castLifetime : defaultLifetime,
+            null, false);
         SpawnTimed(handEffect, origin, caster.transform.rotation,
             handScale, handThickness,
             handLifetime > 0f ? handLifetime : defaultLifetime,
