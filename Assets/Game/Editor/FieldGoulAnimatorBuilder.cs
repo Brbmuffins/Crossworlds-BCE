@@ -11,7 +11,6 @@ public static class FieldGoulAnimatorBuilder
     const string ControllerDir = Root + "/Controller";
     const string ControllerPath = ControllerDir + "/Field_Goul.controller";
 
-    [MenuItem("Rate of Decay/Enemies/Field Goul/Create Animator Controller")]
     public static void CreateController()
     {
         EnsureDir(ControllerDir);
@@ -94,7 +93,6 @@ public static class FieldGoulAnimatorBuilder
         Debug.Log($"[FieldGoulAnimatorBuilder] Created {ControllerPath}");
     }
 
-    [MenuItem("Rate of Decay/Enemies/Field Goul/Assign Controller To Selection")]
     public static void AssignControllerToSelection()
     {
         AnimatorController controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(ControllerPath);

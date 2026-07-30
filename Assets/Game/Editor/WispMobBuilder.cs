@@ -10,7 +10,6 @@ public static class WispMobBuilder
     const string PrefabPath = PrefabDir + "/Wisp_Mob.prefab";
     static readonly Color WispColor = new Color(0.48f, 0.9f, 1f, 1f);
 
-    [MenuItem("Rate of Decay/Wisps/Create Wisp Mob Prefab")]
     public static void CreateWispPrefab()
     {
         EnsureDir(PrefabDir);
@@ -26,7 +25,6 @@ public static class WispMobBuilder
             Debug.LogError("[WispMobBuilder] Failed to save Wisp_Mob.prefab.");
     }
 
-    [MenuItem("Rate of Decay/Wisps/Add 6 Wisps To Open Scene")]
     public static void AddWispsToOpenScene()
     {
         GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);
@@ -77,7 +75,6 @@ public static class WispMobBuilder
         Debug.Log("[WispMobBuilder] Added 6 Wisp mobs to the open scene. Save the scene when the placement looks good.");
     }
 
-    [MenuItem("Rate of Decay/Wisps/Fix Existing Wisps Staying Off In Play")]
     public static void FixExistingWisps()
     {
         int fixedCount = 0;
@@ -104,7 +101,6 @@ public static class WispMobBuilder
         Debug.Log($"[WispMobBuilder] Fixed {fixedCount} wisp object(s). Save the scene after confirming they stay on in Play.");
     }
 
-    [MenuItem("Rate of Decay/Wisps/Repair Wisp Colors In Open Scene")]
     public static void RepairWispColorsInOpenScene()
     {
         FixExistingWisps();
