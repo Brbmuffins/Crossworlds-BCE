@@ -13,8 +13,9 @@ public enum AbilityCategory { Damage, Heal, Support }
 public enum AbilityMovementTiming { ConstantSpeed, FixedDuration }
 
 /// <summary>
-/// Draws an AnimationClip field as a dropdown populated from the Marauder's
-/// animation folder. The editor-only drawer lives under Assets/Game/Editor.
+/// Draws an AnimationClip field as a dropdown populated from the active
+/// player class's animation source. The editor-only drawer lives under
+/// Assets/Game/Editor.
 /// </summary>
 public sealed class MarauderAnimationClipAttribute : PropertyAttribute
 {
@@ -101,7 +102,7 @@ public class AbilityDef
 
     [Header("Cast Animation")]
     [MarauderAnimationClip]
-    [Tooltip("Marauder animation clip played when this spell is committed.")]
+    [Tooltip("Optional class-compatible animation clip played when this spell is committed.")]
     public AnimationClip marauderCastAnimation;
 
     [Header("Caster Movement")]

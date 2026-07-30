@@ -13,6 +13,8 @@ namespace Crossworlds.EditorTools
     public sealed class ClassAbilityCasterEditorWindow : EditorWindow
     {
         const string ClassPreference = "BCE.SpellForge.SelectedClass";
+        const string AbilityFilterPreference =
+            "BCE.SpellForge.AbilityFilter";
         const string ClassPortraitFolder =
             "Assets/Game/Art/Class Portraits";
         const float ClassPreviewSize = 120f;
@@ -52,6 +54,13 @@ namespace Crossworlds.EditorTools
             Teleport
         }
 
+        enum AbilityListFilter
+        {
+            Core,
+            Variants,
+            All
+        }
+
         readonly HashSet<string> expandedAbilities = new();
         readonly Dictionary<string, int> abilityTabs = new();
         readonly List<int> visibleAbilityIndices = new();
@@ -65,6 +74,11 @@ namespace Crossworlds.EditorTools
         string search = "";
         string appliedSearch = "";
         int classIndex;
+        AbilityListFilter abilityListFilter = AbilityListFilter.Core;
+        int coreAbilityCount;
+        int variantAbilityCount;
+        int visibleCoreCount;
+        int visibleVariantCount;
         bool pendingSave;
         string lastSaveMessage = "";
         string activePreviewAbility;
@@ -90,6 +104,11 @@ namespace Crossworlds.EditorTools
             classIndex = Mathf.Clamp(
                 EditorPrefs.GetInt(ClassPreference, 0),
                 0, ClassNames.Length - 1);
+            abilityListFilter = (AbilityListFilter)Mathf.Clamp(
+                EditorPrefs.GetInt(
+                    AbilityFilterPreference,
+                    (int)AbilityListFilter.Core),
+                0, (int)AbilityListFilter.All);
             LoadClass();
             Undo.undoRedoPerformed += OnUndoRedo;
             SpellVFXBrowserWindow.SpellForgeSelectionChanged += Repaint;
@@ -313,10 +332,10 @@ namespace Crossworlds.EditorTools
                     SectionTitleStyle());
                 GUILayout.FlexibleSpace();
                 EditorGUILayout.LabelField(
-                    $"{spellbook.arraySize} " +
-                    (spellbook.arraySize == 1 ? "spell" : "spells"),
+                    $"{coreAbilityCount} core  |  " +
+                    $"{variantAbilityCount} variants",
                     EditorStyles.miniLabel,
-                    GUILayout.Width(58f));
+                    GUILayout.Width(132f));
             }
 
             using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar))
@@ -328,6 +347,31 @@ namespace Crossworlds.EditorTools
                 {
                     search = nextSearch;
                     Repaint();
+                }
+
+                GUILayout.Space(8f);
+                GUILayout.Label("View", GUILayout.Width(29f));
+                string[] filterLabels =
+                {
+                    $"Core ({coreAbilityCount})",
+                    $"Variants ({variantAbilityCount})",
+                    "All"
+                };
+                AbilityListFilter nextFilter =
+                    (AbilityListFilter)GUILayout.Toolbar(
+                        (int)abilityListFilter,
+                        filterLabels,
+                        EditorStyles.toolbarButton,
+                        GUILayout.Width(244f));
+                if (nextFilter != abilityListFilter)
+                {
+                    abilityListFilter = nextFilter;
+                    EditorPrefs.SetInt(
+                        AbilityFilterPreference,
+                        (int)abilityListFilter);
+                    GUI.FocusControl(null);
+                    Repaint();
+                    GUIUtility.ExitGUI();
                 }
 
                 if (GUILayout.Button("Collapse All",
@@ -350,12 +394,25 @@ namespace Crossworlds.EditorTools
                 if (Event.current.type == EventType.Layout)
                     RebuildVisibleAbilityIndices();
 
+                bool? drawingVariants = null;
                 foreach (int index in visibleAbilityIndices)
                 {
                     if (index < 0 || index >= spellbook.arraySize)
                         continue;
                     SerializedProperty ability =
                         spellbook.GetArrayElementAtIndex(index);
+                    bool isVariant = IsVariantAbility(ability);
+                    if (!drawingVariants.HasValue ||
+                        drawingVariants.Value != isVariant)
+                    {
+                        drawingVariants = isVariant;
+                        DrawAbilityGroupHeader(
+                            isVariant ? "VARIANT ABILITIES" :
+                                "CORE ABILITIES",
+                            isVariant ? visibleVariantCount :
+                                visibleCoreCount);
+                    }
+
                     SerializedProperty nameProperty =
                         ability.FindPropertyRelative("abilityName");
                     string abilityName =
@@ -368,14 +425,19 @@ namespace Crossworlds.EditorTools
 
                 if (visibleAbilityIndices.Count == 0)
                     EditorGUILayout.HelpBox(
-                        $"No abilities match “{appliedSearch}”.",
+                        BuildEmptyListMessage(),
                         MessageType.Info);
 
                 EditorGUILayout.Space(5f);
+                bool addAsVariant =
+                    abilityListFilter == AbilityListFilter.Variants;
+                string addLabel = addAsVariant
+                    ? "+ Add Variant Ability"
+                    : "+ Add Core Ability";
                 if (GUILayout.Button(
-                    "+ Add Ability", GUILayout.Height(25f)))
+                    addLabel, GUILayout.Height(25f)))
                 {
-                    AddAbility();
+                    AddAbility(addAsVariant);
                     GUIUtility.ExitGUI();
                 }
             }
@@ -385,10 +447,36 @@ namespace Crossworlds.EditorTools
         {
             appliedSearch = search.Trim();
             visibleAbilityIndices.Clear();
+            coreAbilityCount = 0;
+            variantAbilityCount = 0;
+            visibleCoreCount = 0;
+            visibleVariantCount = 0;
+
             for (int index = 0; index < spellbook.arraySize; index++)
             {
                 SerializedProperty ability =
                     spellbook.GetArrayElementAtIndex(index);
+                if (IsVariantAbility(ability))
+                    variantAbilityCount++;
+                else
+                    coreAbilityCount++;
+            }
+
+            if (abilityListFilter != AbilityListFilter.Variants)
+                AppendVisibleAbilities(variantOnly: false);
+            if (abilityListFilter != AbilityListFilter.Core)
+                AppendVisibleAbilities(variantOnly: true);
+        }
+
+        void AppendVisibleAbilities(bool variantOnly)
+        {
+            for (int index = 0; index < spellbook.arraySize; index++)
+            {
+                SerializedProperty ability =
+                    spellbook.GetArrayElementAtIndex(index);
+                if (IsVariantAbility(ability) != variantOnly)
+                    continue;
+
                 string abilityName = ability
                     .FindPropertyRelative("abilityName")
                     ?.stringValue ?? $"Ability {index + 1}";
@@ -399,7 +487,45 @@ namespace Crossworlds.EditorTools
                     continue;
 
                 visibleAbilityIndices.Add(index);
+                if (variantOnly)
+                    visibleVariantCount++;
+                else
+                    visibleCoreCount++;
             }
+        }
+
+        static bool IsVariantAbility(SerializedProperty ability)
+        {
+            return ability?.FindPropertyRelative("variantOnly")
+                ?.boolValue == true;
+        }
+
+        string BuildEmptyListMessage()
+        {
+            string viewName = abilityListFilter switch
+            {
+                AbilityListFilter.Variants => "variant abilities",
+                AbilityListFilter.All => "abilities",
+                _ => "core abilities"
+            };
+
+            return string.IsNullOrEmpty(appliedSearch)
+                ? $"No {viewName} are currently available."
+                : $"No {viewName} match \"{appliedSearch}\".";
+        }
+
+        static void DrawAbilityGroupHeader(string title, int count)
+        {
+            EditorGUILayout.Space(4f);
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                GUILayout.Label(title, EyebrowStyle());
+                GUILayout.FlexibleSpace();
+                GUILayout.Label(
+                    $"{count} shown",
+                    EditorStyles.miniLabel);
+            }
+            EditorGUILayout.Space(1f);
         }
 
         void DrawAbility(
@@ -449,6 +575,17 @@ namespace Crossworlds.EditorTools
                         AbilityNameStyle(),
                         GUILayout.Height(AbilityIconSize),
                         GUILayout.MinWidth(80f));
+                    if (IsVariantAbility(ability))
+                    {
+                        GUILayout.Label(
+                            new GUIContent(
+                                "VARIANT",
+                                "Referenced by a core ability and hidden " +
+                                "from the player loadout."),
+                            VariantBadgeStyle(),
+                            GUILayout.Width(58f),
+                            GUILayout.Height(18f));
+                    }
                     GUILayout.FlexibleSpace();
                     GUILayout.Label(
                         AbilitySummaryText(ability),
@@ -1084,7 +1221,7 @@ namespace Crossworlds.EditorTools
             MarkChanged();
         }
 
-        void AddAbility()
+        void AddAbility(bool variantOnly)
         {
             serializedCaster.ApplyModifiedProperties();
             Undo.RecordObject(abilityCaster, "Add Spell Forge ability");
@@ -1095,7 +1232,10 @@ namespace Crossworlds.EditorTools
             Array.Copy(current, next, current.Length);
             next[current.Length] = new AbilityDef
             {
-                abilityName = $"New {ClassNames[classIndex]} Ability"
+                abilityName = variantOnly
+                    ? $"New {ClassNames[classIndex]} Variant"
+                    : $"New {ClassNames[classIndex]} Ability",
+                variantOnly = variantOnly
             };
             abilityCaster.spellbook = next;
             serializedCaster.Update();
@@ -1155,6 +1295,8 @@ namespace Crossworlds.EditorTools
             pendingSave = false;
             lastSaveMessage = "";
             scroll = Vector2.zero;
+            if (spellbook != null)
+                RebuildVisibleAbilityIndices();
             Repaint();
         }
 
@@ -1397,6 +1539,19 @@ namespace Crossworlds.EditorTools
             {
                 alignment = TextAnchor.MiddleRight
             };
+        }
+
+        static GUIStyle VariantBadgeStyle()
+        {
+            var style = new GUIStyle(EditorStyles.miniBoldLabel)
+            {
+                alignment = TextAnchor.MiddleCenter,
+                fontSize = 9
+            };
+            style.normal.textColor = EditorGUIUtility.isProSkin
+                ? new Color(0.82f, 0.66f, 1f)
+                : new Color(0.42f, 0.18f, 0.62f);
+            return style;
         }
 
         static GUIStyle FoldoutGlyphStyle()
