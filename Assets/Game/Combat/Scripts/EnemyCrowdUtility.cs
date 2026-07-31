@@ -1,9 +1,11 @@
 using UnityEngine;
 using UnityEngine.AI;
+using System.Collections.Generic;
 
 public static class EnemyCrowdUtility
 {
     const int ChaseSlotSectorCount = 12;
+    static readonly HashSet<NavMeshAgent> RegisteredAgents = new HashSet<NavMeshAgent>();
 
     public static float Stable01(Component owner, int salt = 0)
     {
@@ -104,14 +106,119 @@ public static class EnemyCrowdUtility
 
     public static void ApplyAgentCrowdSettings(NavMeshAgent agent, Component owner)
     {
+        ApplyRoamingCrowdSettings(agent, owner);
+    }
+
+    public static void ApplyRoamingCrowdSettings(NavMeshAgent agent, Component owner)
+    {
         if (agent == null)
             return;
 
-        // Low quality avoidance is sufficient for crowds and prevents agents
-        // from treating the target and one another as pass-through space.
-        // Preserve the radius configured on the prefab/Forge profile.
-        agent.obstacleAvoidanceType = ObstacleAvoidanceType.LowQualityObstacleAvoidance;
+        RegisteredAgents.Add(agent);
+        agent.obstacleAvoidanceType = ObstacleAvoidanceType.HighQualityObstacleAvoidance;
+        agent.autoBraking = true;
         agent.avoidancePriority = Mathf.RoundToInt(Mathf.Lerp(35f, 75f, Stable01(owner, 43)));
+    }
+
+    public static void ApplyCombatCrowdSettings(NavMeshAgent agent, Component owner)
+    {
+        if (agent == null)
+            return;
+
+        RegisteredAgents.Add(agent);
+        // Keep full avoidance in combat too. Chase slots already provide compact
+        // positioning, so lowering quality here only allows large animated bodies
+        // to brush through one another when several mobs converge.
+        agent.obstacleAvoidanceType = ObstacleAvoidanceType.HighQualityObstacleAvoidance;
+        agent.avoidancePriority = Mathf.RoundToInt(Mathf.Lerp(35f, 75f, Stable01(owner, 43)));
+    }
+
+    public static bool IsRoamingDestinationClear(
+        NavMeshAgent owner, Vector3 candidate, float padding = 0.25f)
+    {
+        if (owner == null)
+            return true;
+
+        RegisteredAgents.Add(owner);
+        RegisteredAgents.RemoveWhere(agent => agent == null);
+
+        foreach (NavMeshAgent other in RegisteredAgents)
+        {
+            if (other == null || other == owner || !other.enabled ||
+                !other.gameObject.activeInHierarchy || other.gameObject.scene != owner.gameObject.scene)
+                continue;
+
+            float clearance = Mathf.Max(0.1f, owner.radius + other.radius + padding);
+            float clearanceSqr = clearance * clearance;
+            Vector3 offset = other.transform.position - candidate;
+            offset.y = 0f;
+            if (offset.sqrMagnitude < clearanceSqr)
+                return false;
+
+            if (!other.isOnNavMesh || !other.hasPath)
+            {
+                if (DistancePointToSegmentXZ(
+                        other.transform.position, owner.transform.position, candidate) < clearance)
+                    return false;
+                continue;
+            }
+
+            offset = other.destination - candidate;
+            offset.y = 0f;
+            if (offset.sqrMagnitude < clearanceSqr)
+                return false;
+
+            if (DistanceBetweenSegmentsXZ(
+                    owner.transform.position, candidate,
+                    other.transform.position, other.destination) < clearance)
+                return false;
+        }
+
+        return true;
+    }
+
+    static float DistanceBetweenSegmentsXZ(Vector3 a0, Vector3 a1, Vector3 b0, Vector3 b1)
+    {
+        Vector2 av0 = new Vector2(a0.x, a0.z);
+        Vector2 av1 = new Vector2(a1.x, a1.z);
+        Vector2 bv0 = new Vector2(b0.x, b0.z);
+        Vector2 bv1 = new Vector2(b1.x, b1.z);
+        if (SegmentsIntersect(av0, av1, bv0, bv1)) return 0f;
+
+        return Mathf.Min(
+            DistancePointToSegment(av0, bv0, bv1),
+            DistancePointToSegment(av1, bv0, bv1),
+            DistancePointToSegment(bv0, av0, av1),
+            DistancePointToSegment(bv1, av0, av1));
+    }
+
+    static float DistancePointToSegmentXZ(Vector3 point, Vector3 start, Vector3 end)
+    {
+        return DistancePointToSegment(
+            new Vector2(point.x, point.z),
+            new Vector2(start.x, start.z),
+            new Vector2(end.x, end.z));
+    }
+
+    static float DistancePointToSegment(Vector2 point, Vector2 start, Vector2 end)
+    {
+        Vector2 segment = end - start;
+        float lengthSqr = segment.sqrMagnitude;
+        if (lengthSqr < 0.0001f) return Vector2.Distance(point, start);
+        float t = Mathf.Clamp01(Vector2.Dot(point - start, segment) / lengthSqr);
+        return Vector2.Distance(point, start + segment * t);
+    }
+
+    static bool SegmentsIntersect(Vector2 a, Vector2 b, Vector2 c, Vector2 d)
+    {
+        Vector2 r = b - a;
+        Vector2 s = d - c;
+        float denominator = r.x * s.y - r.y * s.x;
+        if (Mathf.Abs(denominator) < 0.0001f) return false;
+        Vector2 delta = c - a;
+        float t = (delta.x * s.y - delta.y * s.x) / denominator;
+        float u = (delta.x * r.y - delta.y * r.x) / denominator;
+        return t >= 0f && t <= 1f && u >= 0f && u <= 1f;
     }
 
     public static void DesyncAnimator(Animator animator, Component owner)
