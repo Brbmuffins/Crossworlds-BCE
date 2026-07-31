@@ -10,11 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ebe6620c8ce8e174e839cee638bcd648, type: 3}
-  m_Name: Shadowblade
+  m_Name: Night Hunter
   m_EditorClassIdentifier: Assembly-CSharp::CharacterData
-  className: Shadowblade
+  className: Night Hunter
   roleTagline: "Burst DPS  \xB7  Assassin  \xB7  Flanker"
-  loreDescription: "A phantom of the battlefield, the Shadowblade strikes from darkness
+  loreDescription: "A phantom of the battlefield, the Night Hunter strikes from darkness
     and vanishes before retaliation. High risk, devastating reward \u2014 masters
     of void-stepping and positional play who reward spatial awareness with lethal
     efficiency."
@@ -22,7 +22,7 @@ MonoBehaviour:
   classColorDark: {r: 0.18, g: 0.05, b: 0.28, a: 1}
   portrait: {fileID: 21300000, guid: 5d87425734187554992f406136bf2fed, type: 3}
   prefab: {fileID: 0}
-  previewPrefab: {fileID: 2286457734563818783, guid: d228dda3426926b41ae915d331560f12, type: 3}
+  previewPrefab: {fileID: 8845477489376249643, guid: ca24887d25fbe7449b9647f5668b10ca, type: 3}
   traits:
   - icon: {fileID: 0}
     label: Assassin
