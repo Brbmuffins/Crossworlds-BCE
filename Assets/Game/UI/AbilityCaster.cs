@@ -4690,12 +4690,13 @@ public class AbilityCaster : NetworkBehaviour
     {
         const float scanInterval = 0.1f;
         float endTime = Time.time + Mathf.Max(0.05f, duration);
-        var captured =
-            new System.Collections.Generic.HashSet<Health>();
         var wait = new WaitForSeconds(scanInterval);
+        var scannedThisTick =
+            new System.Collections.Generic.HashSet<Health>();
 
         while (Time.time <= endTime)
         {
+            scannedThisTick.Clear();
             Collider[] hits = ZonePhysics.OverlapSphere(
                 gameObject,
                 centre,
@@ -4709,7 +4710,7 @@ public class AbilityCaster : NetworkBehaviour
                         hit,
                         ability.targetTag,
                         out Health health) ||
-                    !captured.Add(health) ||
+                    !scannedThisTick.Add(health) ||
                     IsCrowdControlImmune(health))
                     continue;
 

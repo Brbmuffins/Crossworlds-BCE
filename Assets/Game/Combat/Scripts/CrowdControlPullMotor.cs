@@ -17,6 +17,10 @@ public sealed class CrowdControlPullMotor : MonoBehaviour
     bool agentWasStopped;
     bool agentUpdatedPosition;
     bool agentUpdatedRotation;
+    Vector3 pullDestination;
+    float pullEndTime;
+    float pullSpeed;
+    float pullStopDistance;
 
     public void BeginPull(
         Vector3 destination,
@@ -25,11 +29,16 @@ public sealed class CrowdControlPullMotor : MonoBehaviour
         float stopDistance,
         GameObject source)
     {
-        StopActivePull();
-
         health = GetComponent<Health>();
         if (health == null || !health.IsAlive)
             return;
+
+        pullDestination = destination;
+        pullEndTime = Mathf.Max(
+            pullEndTime,
+            Time.time + Mathf.Max(0.05f, duration));
+        pullSpeed = Mathf.Max(0.1f, speed);
+        pullStopDistance = Mathf.Max(0f, stopDistance);
 
         StatusEffectManager status =
             GetComponent<StatusEffectManager>();
@@ -39,12 +48,14 @@ public sealed class CrowdControlPullMotor : MonoBehaviour
             0f,
             source));
 
+        // A persistent vortex refreshes this call several times per second.
+        // Update the active pull in place so movement state is captured once and
+        // the enemy is not repeatedly released/restarted between scan ticks.
+        if (activePull != null)
+            return;
+
         CaptureMovementState();
-        activePull = StartCoroutine(PullRoutine(
-            destination,
-            Mathf.Max(0.05f, duration),
-            Mathf.Max(0.1f, speed),
-            Mathf.Max(0f, stopDistance)));
+        activePull = StartCoroutine(PullRoutine());
     }
 
     void CaptureMovementState()
@@ -68,38 +79,37 @@ public sealed class CrowdControlPullMotor : MonoBehaviour
         agent.updatePosition = false;
     }
 
-    IEnumerator PullRoutine(
-        Vector3 destination,
-        float duration,
-        float speed,
-        float stopDistance)
+    IEnumerator PullRoutine()
     {
-        float elapsed = 0f;
         var wait = new WaitForFixedUpdate();
 
-        while (elapsed < duration &&
+        while (Time.time < pullEndTime &&
                health != null &&
                health.IsAlive)
         {
             Vector3 current = transform.position;
-            Vector3 toDestination = destination - current;
+            Vector3 toDestination = pullDestination - current;
             toDestination.y = 0f;
             float distance = toDestination.magnitude;
-            if (distance <= stopDistance + 0.01f)
-                break;
+            if (distance > pullStopDistance + 0.01f)
+            {
+                float step = Mathf.Min(
+                    pullSpeed * Time.fixedDeltaTime,
+                    distance - pullStopDistance);
+                Vector3 desired =
+                    current + toDestination.normalized * step;
+                MoveToPulledPosition(desired, step);
+            }
+            else if (body != null)
+            {
+                body.linearVelocity = Vector3.zero;
+            }
 
-            float step = Mathf.Min(
-                speed * Time.fixedDeltaTime,
-                distance - stopDistance);
-            Vector3 desired =
-                current + toDestination.normalized * step;
-            MoveToPulledPosition(desired, step);
-
-            elapsed += Time.fixedDeltaTime;
             yield return wait;
         }
 
         activePull = null;
+        pullEndTime = 0f;
         RestoreMovementState();
     }
 
@@ -144,6 +154,7 @@ public sealed class CrowdControlPullMotor : MonoBehaviour
             activePull = null;
         }
 
+        pullEndTime = 0f;
         RestoreMovementState();
     }
 
