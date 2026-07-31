@@ -130,6 +130,13 @@ public sealed class CrowdControlPullMotor : MonoBehaviour
         activePull = null;
         pullEndTime = 0f;
         RestoreMovementState();
+
+        // The AI owns movement again after a completed forced pull. Restoring
+        // the pre-pull stopped flag can strand an enemy when the pull began
+        // during its stationary attack state: later destinations are accepted
+        // but the NavMeshAgent never moves.
+        if (agent != null && agent.enabled && agent.isOnNavMesh)
+            agent.isStopped = false;
     }
 
     IEnumerator ReleaseFromCollapse()

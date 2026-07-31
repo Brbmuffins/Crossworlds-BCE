@@ -850,7 +850,11 @@ public class EnemyController : NetworkBehaviour
 
         // Apply slow
         float slow = _status != null ? _status.GetSlowFraction() : 0f;
-        if (_agent != null) _agent.speed = _baseSpeed * (1f - slow);
+        if (_agent != null)
+        {
+            _agent.isStopped = false;
+            _agent.speed = _baseSpeed * (1f - slow);
+        }
 
         float dist = Vector3.Distance(transform.position, _target.position);
 
@@ -1376,7 +1380,11 @@ public class EnemyController : NetworkBehaviour
         _hasRoamDestination = false;
         EnemyCrowdUtility.ApplyRoamingCrowdSettings(_agent, this);
         ScheduleNextRoam();
-        if (_agent != null && _agent.isActiveAndEnabled) _agent.ResetPath();
+        if (_agent != null && _agent.isActiveAndEnabled)
+        {
+            _agent.isStopped = false;
+            _agent.ResetPath();
+        }
         // Restore full speed (slow may have been applied)
         if (_agent != null) _agent.speed = _baseSpeed;
     }
