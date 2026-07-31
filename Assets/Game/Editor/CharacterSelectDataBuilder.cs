@@ -127,7 +127,7 @@ public static class CharacterSelectDataBuilder
 
     static void CreateIronclad()
     {
-        var d = Make("Ironclad");
+        var d = Make("Templar");
         d.className       = "Templar";
         d.roleTagline     = "Tank  ·  Vanguard  ·  Frontline Fortress";
         d.loreDescription =
@@ -180,14 +180,14 @@ public static class CharacterSelectDataBuilder
         d.deployableDescription = "Deploys a destructible barrier the entire team can hide behind. Absorbs a fixed amount of damage before shattering.";
         d.deployableIcon        = LoadIcon("iron-rampart");
 
-        Save(d, "Ironclad");
+        Save(d, "Templar");
     }
 
     // ── 2 — Shadowblade ──────────────────────────────────────────────────────
 
     static void CreateShadowblade()
     {
-        var d = Make("Shadowblade");
+        var d = Make("Night Hunter");
         d.className       = "Night Hunter";
         d.roleTagline     = "Burst DPS  ·  Assassin  ·  Flanker";
         d.loreDescription =
@@ -240,7 +240,7 @@ public static class CharacterSelectDataBuilder
         d.deployableDescription = "Projects a veil over a wide area, briefly cloaking all allies inside from enemy detection.";
         d.deployableIcon        = LoadIcon("shadow-veil");
 
-        Save(d, "Shadowblade");
+        Save(d, "Night Hunter");
     }
 
     // ── 3 — Cleric ───────────────────────────────────────────────────────────

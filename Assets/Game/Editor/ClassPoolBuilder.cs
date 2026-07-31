@@ -27,10 +27,9 @@ public static class ClassPoolBuilder
             availableIndices: new[] { 0,1,2,3,4,5,6,7,8,9,10,11,12,44,45,46 },
             defaultEquipped:  new[] { 0,8,9,11 });          // Sentinel, Snare, Hymn, Mend
 
-        CreatePool("Ironclad",
+        CreatePool("Templar",
             availableIndices: new[] { 0,1,2,3,4,5,6,7,13,14,15,16,17,18,47,48,49 },
-            defaultEquipped:  new[] { 7,15,16,18 },
-            displayName: "Templar");                         // Shield, Charge, Stance, Rampart
+            defaultEquipped:  new[] { 7,15,16,18 });         // Shield, Charge, Stance, Rampart
 
         CreatePool("Arcanist",
             availableIndices: new[] { 0,1,2,3,4,5,6,7,19,20,21,22,34,37,38,39,40,41,42,43 },
@@ -40,10 +39,9 @@ public static class ClassPoolBuilder
             availableIndices: new[] { 0,1,2,3,4,5,6,7,23,24,25,26,27,28,35,36,53,54,55 },
             defaultEquipped:  new[] { 35,36,26,28 });        // Healing Cone, Mending Beam, Sacred Aegis, Temporal Grace
 
-        CreatePool("Shadowblade",
+        CreatePool("Night Hunter",
             availableIndices: new[] { 0,1,2,3,4,5,6,7,29,30,31,32,33,50,51,52 },
-            defaultEquipped:  new[] { 33,32,31,29 },
-            displayName: "Night Hunter");                   // Fan of Blades, Dark Mark, Dark Harvest, Shadow Veil
+            defaultEquipped:  new[] { 33,32,31,29 });        // Fan of Blades, Dark Mark, Dark Harvest, Shadow Veil
 
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
@@ -54,8 +52,7 @@ public static class ClassPoolBuilder
         Debug.Log("[ClassPoolBuilder] ✓ All 5 ClassAbilityPool assets created in " + OutputDir);
     }
 
-    static void CreatePool(string className, int[] availableIndices, int[] defaultEquipped,
-        string displayName = null)
+    static void CreatePool(string className, int[] availableIndices, int[] defaultEquipped)
     {
         string path = $"{OutputDir}/{className}_Pool.asset";
 
@@ -72,7 +69,7 @@ public static class ClassPoolBuilder
             AssetDatabase.CreateAsset(pool, path);
         }
 
-        pool.className        = string.IsNullOrEmpty(displayName) ? className : displayName;
+        pool.className        = className;
         pool.availableIndices = availableIndices;
         pool.defaultEquipped  = defaultEquipped;
         EditorUtility.SetDirty(pool);
@@ -82,12 +79,19 @@ public static class ClassPoolBuilder
 
     static void AssignToPrefabs()
     {
-        string[] classNames = { "Marauder", "Ironclad", "Arcanist", "Cleric", "Shadowblade" };
-
-        foreach (string cls in classNames)
+        (string poolName, string prefabName)[] classes =
         {
-            string poolPath   = $"{OutputDir}/{cls}_Pool.asset";
-            string prefabPath = $"{PrefabDir}/{cls}.prefab";
+            ("Marauder", "Marauder"),
+            ("Templar", "Ironclad"),
+            ("Arcanist", "Arcanist"),
+            ("Cleric", "Cleric"),
+            ("Night Hunter", "Shadowblade")
+        };
+
+        foreach (var entry in classes)
+        {
+            string poolPath   = $"{OutputDir}/{entry.poolName}_Pool.asset";
+            string prefabPath = $"{PrefabDir}/{entry.prefabName}.prefab";
 
             var pool = AssetDatabase.LoadAssetAtPath<ClassAbilityPool>(poolPath);
             if (pool == null) { Debug.LogWarning($"[ClassPoolBuilder] Pool not found: {poolPath}"); continue; }
@@ -95,7 +99,7 @@ public static class ClassPoolBuilder
             var prefabObj = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
             if (prefabObj == null)
             {
-                Debug.LogWarning($"[ClassPoolBuilder] Prefab not found: {prefabPath} — assign {cls}_Pool.asset manually.");
+                Debug.LogWarning($"[ClassPoolBuilder] Prefab not found: {prefabPath} — assign {entry.poolName}_Pool.asset manually.");
                 continue;
             }
 
@@ -113,7 +117,7 @@ public static class ClassPoolBuilder
                 }
 
                 caster.classPool = pool;
-                Debug.Log($"[ClassPoolBuilder] Assigned {cls}_Pool → {prefabPath}:AbilityCaster");
+                Debug.Log($"[ClassPoolBuilder] Assigned {entry.poolName}_Pool → {prefabPath}:AbilityCaster");
             }
         }
     }

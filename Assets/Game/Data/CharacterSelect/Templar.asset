@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ebe6620c8ce8e174e839cee638bcd648, type: 3}
-  m_Name: Ironclad
+  m_Name: Templar
   m_EditorClassIdentifier: Assembly-CSharp::CharacterData
   className: Templar
   roleTagline: "Tank  \xB7  Vanguard  \xB7  Frontline Fortress"

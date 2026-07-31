@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c3dc905b15374d744a5a3c81d8a63ce8, type: 3}
-  m_Name: Ironclad_Pool
+  m_Name: Templar_Pool
   m_EditorClassIdentifier: Assembly-CSharp::ClassAbilityPool
   className: Templar
   availableIndices: 00000000010000000200000003000000040000000500000006000000070000000d0000000e0000000f0000001000000011000000120000002f0000003000000031000000

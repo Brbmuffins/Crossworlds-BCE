@@ -25,8 +25,8 @@ namespace Crossworlds.EditorTools
         {
             "Arcanist",
             "Marauder",
-            "Ironclad",
-            "Shadowblade",
+            "Templar",
+            "Night Hunter",
             "Cleric"
         };
 
