@@ -164,6 +164,11 @@ public sealed class LoadingScreen : MonoBehaviour
         // exposing the destination before its intended presentation is stable.
         yield return new WaitForSecondsRealtime(EnvironmentSettleTime);
 
+        // Prepare first-use terrain/material and configured spell rendering while
+        // this client is still fully covered by the loading overlay.
+        yield return ZoneVisualPreloader.PrewarmLoadedZone();
+        PlayerIdentity.Local?.ReportZoneVisualsReady();
+
         // Re-enable physics
         if (playerRb != null)
             playerRb.isKinematic = false;

@@ -710,6 +710,8 @@ public class EnemyController : NetworkBehaviour
 
             Health playerHealth = player.GetComponent<Health>();
             if (playerHealth != null && !playerHealth.IsAlive) continue;
+            PlayerIdentity identity = player.GetComponent<PlayerIdentity>();
+            if (identity != null && !identity.zoneVisualsReady) continue;
 
             float sqrDist = (player.transform.position - transform.position).sqrMagnitude;
             if (sqrDist > radiusSqr || sqrDist >= best) continue;

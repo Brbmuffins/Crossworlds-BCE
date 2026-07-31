@@ -145,6 +145,7 @@ public class ZoneManager : MonoBehaviour
         if (conn == null) return;
 
         zoneName = SceneNames.NormalizeZone(zoneName);
+        conn.identity?.GetComponent<PlayerIdentity>()?.ServerBeginZoneVisualLoad();
         RodChatManager.Instance?.TargetBeginZoneTravel(conn, zoneName);
         StartCoroutine(MovePlayerRoutine(conn, zoneName, spawnId, instanceKey));
     }
@@ -227,6 +228,7 @@ public class ZoneManager : MonoBehaviour
         yield return PrepareZone(conn, zoneName, instanceKey, s => destination = s);
         if (!destination.IsValid())
         {
+            conn.identity?.GetComponent<PlayerIdentity>()?.ServerCompleteZoneVisualLoad();
             RodChatManager.Instance?.TargetCompleteZoneTravel(conn, zoneName);
             yield break;
         }

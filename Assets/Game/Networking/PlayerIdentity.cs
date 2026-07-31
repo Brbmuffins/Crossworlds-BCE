@@ -24,6 +24,52 @@ public class PlayerIdentity : NetworkBehaviour
     /// <summary>The local player's identity, or null before spawn.</summary>
     public static PlayerIdentity Local { get; private set; }
 
+    [SyncVar] public bool zoneVisualsReady = true;
+    uint _zoneVisualLoadGeneration;
+
+    [Server]
+    public void ServerBeginZoneVisualLoad()
+    {
+        zoneVisualsReady = false;
+        _zoneVisualLoadGeneration++;
+
+        var health = GetComponent<Health>();
+        if (health != null) health.zoneTransitionProtected = true;
+
+        StartCoroutine(ServerVisualReadyTimeout(_zoneVisualLoadGeneration));
+    }
+
+    public void ReportZoneVisualsReady()
+    {
+        if (isLocalPlayer) CmdReportZoneVisualsReady();
+    }
+
+    [Command]
+    void CmdReportZoneVisualsReady()
+    {
+        ServerCompleteZoneVisualLoad();
+    }
+
+    [Server]
+    public void ServerCompleteZoneVisualLoad()
+    {
+        zoneVisualsReady = true;
+        _zoneVisualLoadGeneration++;
+
+        var health = GetComponent<Health>();
+        if (health != null) health.zoneTransitionProtected = false;
+    }
+
+    [Server]
+    System.Collections.IEnumerator ServerVisualReadyTimeout(uint generation)
+    {
+        yield return new WaitForSeconds(15f);
+        if (generation != _zoneVisualLoadGeneration || zoneVisualsReady) yield break;
+
+        Debug.LogWarning($"[PlayerIdentity] Visual-ready timeout for {playerName}; releasing transition protection.");
+        ServerCompleteZoneVisualLoad();
+    }
+
     // ── Zone travel (ROADMAP 6.4) ─────────────────────────────────────────────
 
     /// <summary>

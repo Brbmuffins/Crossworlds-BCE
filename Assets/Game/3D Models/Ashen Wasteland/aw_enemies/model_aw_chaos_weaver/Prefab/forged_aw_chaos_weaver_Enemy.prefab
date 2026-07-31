@@ -250,24 +250,24 @@ MonoBehaviour:
   attackInterval: 3.5333335
   damage: 12
   combatTurnSpeed: 1080
-  attackImpactDelay: 2.158867
+  attackImpactDelay: 1.6305488
   attackAnimationVariantMask: 1
   attackAnimationImpactDelays:
-  - 2.158867
-  - 2.158867
-  - 2.158867
-  - 2.158867
+  - 1.6305488
+  - 1.6305488
+  - 1.6305488
+  - 1.6305488
   idleAnimationSpeed: 1
   chaseAnimationSpeed: 1
   attackAnimationSpeeds:
-  - 1
+  - 1.233
   - 1
   - 1
   - 1
   getHitAnimationSpeed: 1
   deathAnimationSpeed: 1
   attackVfxOffsets:
-  - {x: -0.06, y: -0.5, z: 0.53}
+  - {x: 0.11, y: 0.48, z: 0.46}
   - {x: 0, y: 0, z: 0}
   - {x: 0, y: 0, z: 0}
   - {x: 0, y: 0, z: 0}
