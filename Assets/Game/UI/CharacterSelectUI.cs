@@ -27,17 +27,28 @@ public class CharacterSelectUI : MonoBehaviour
     [Header("Server")]
     public string serverAddress = "15.204.243.36";
 
-    [Header("3D Preview  (leave null — auto-built at runtime)")]
+    [Header("Scene Character Stage")]
+    [Tooltip("Use the scene camera and place selected characters directly in the scene.")]
+    public bool          useSceneStage = true;
+    [Tooltip("Optional scene model used as the exact preview pose. If empty, an object named Arcanist is used.")]
+    public GameObject    sceneModelReference;
+
+    [Header("Legacy Render Texture Preview")]
     public Camera        previewCamera;
     public RenderTexture previewRenderTexture;
     public Transform     previewSpawnPoint;
     public float         rotationSpeed = 22f;
+    [Tooltip("Scene-stage height relative to Arcanist, in class-index order.")]
+    public float[]       sceneClassHeightMultipliers = { 1.22f, 1.12f, 0.96f, 1.02f, 1.00f };
 
     // ── Runtime refs ─────────────────────────────────────────────────────────
     int           _sel;
     GameObject    _previewInstance;
     GameObject    _previewRoot;
     RenderTexture _rt;
+    bool          _usingSceneStage;
+    Bounds        _sceneReferenceBounds;
+    bool          _hasSceneReferenceBounds;
 
     // UI handles set during BuildUI
     Image             _bgPanel;
@@ -109,7 +120,9 @@ public class CharacterSelectUI : MonoBehaviour
 
     void Update()
     {
-        if (_previewRoot != null)
+        // Scene-stage characters hold their authored facing. The legacy isolated
+        // preview keeps its turntable behavior.
+        if (_previewRoot != null && !_usingSceneStage)
             _previewRoot.transform.Rotate(Vector3.up, rotationSpeed * Time.deltaTime);
 
         var kb = Keyboard.current;
@@ -127,6 +140,34 @@ public class CharacterSelectUI : MonoBehaviour
 
     void BuildPreview()
     {
+        if (useSceneStage)
+        {
+            if (sceneModelReference == null)
+                sceneModelReference = FindSceneModelReference("Arcanist");
+
+            Transform stagePose = previewSpawnPoint != null
+                ? previewSpawnPoint
+                : sceneModelReference != null ? sceneModelReference.transform : null;
+
+            if (stagePose != null)
+            {
+                _usingSceneStage = true;
+                _hasSceneReferenceBounds = sceneModelReference != null
+                    && TryGetRendererBounds(sceneModelReference, out _sceneReferenceBounds);
+                var root = new GameObject("CharacterPreview_StageRoot");
+                root.transform.SetPositionAndRotation(stagePose.position, stagePose.rotation);
+                root.transform.localScale = Vector3.one;
+                _previewRoot = root;
+                previewSpawnPoint = root.transform;
+
+                if (sceneModelReference != null)
+                    sceneModelReference.SetActive(false);
+                return;
+            }
+
+            Debug.LogWarning("[CharSel] No scene preview pose found. Falling back to the render-texture preview.");
+        }
+
         if (previewCamera != null) return; // manually wired — skip
 
         _rt = new RenderTexture(512, 820, 24) { antiAliasing = 4 };
@@ -192,6 +233,20 @@ public class CharacterSelectUI : MonoBehaviour
         _previewRoot.transform.position = Vector3.zero;
     }
 
+    static GameObject FindSceneModelReference(string objectName)
+    {
+        foreach (var candidate in Resources.FindObjectsOfTypeAll<GameObject>())
+        {
+            // Unity appends " (1)", " (2)", etc. when a scene prefab is
+            // deleted and re-added while another object used the base name.
+            bool nameMatches = candidate.name == objectName
+                || candidate.name.StartsWith(objectName + " (");
+            if (candidate.scene.IsValid() && nameMatches)
+                return candidate;
+        }
+        return null;
+    }
+
     void SpawnPreviewLight(string n, Color col, float intensity, Vector3 pos, Quaternion rot)
     {
         var go = new GameObject(n); SetLayer(go, PREV_LAY);
@@ -209,7 +264,8 @@ public class CharacterSelectUI : MonoBehaviour
         CharacterData d = characters[_sel];
 
         // Background tint
-        if (_bgPanel) _bgPanel.color = Color.Lerp(BgDeep, d.classColorDark, 0.20f);
+        if (_bgPanel && !_usingSceneStage)
+            _bgPanel.color = Color.Lerp(BgDeep, d.classColorDark, 0.20f);
 
         // Header
         _className.text  = d.className.ToUpper();
@@ -286,8 +342,15 @@ public class CharacterSelectUI : MonoBehaviour
             foreach (var col in _previewInstance.GetComponentsInChildren<Collider>(true))
                 col.enabled = false;
 
-            SetLayer(_previewInstance, PREV_LAY);
-            FitPreview(_previewInstance);   // bounds-based auto-scale + ground on platform
+            if (!_usingSceneStage)
+            {
+                SetLayer(_previewInstance, PREV_LAY);
+                FitPreview(_previewInstance);   // bounds-based auto-scale + ground on platform
+            }
+            else
+            {
+                FitScenePreview(_previewInstance);
+            }
             if (_portraitOverlay) _portraitOverlay.color = Clear;
         }
         else
@@ -335,6 +398,47 @@ public class CharacterSelectUI : MonoBehaviour
         go.transform.localPosition = new Vector3(-b.center.x, -b.min.y, -b.center.z);
     }
 
+    // Match the selected prefab to the authored scene model instead of inheriting
+    // its root scale. Different class prefabs have different native mesh sizes.
+    void FitScenePreview(GameObject go)
+    {
+        if (!_hasSceneReferenceBounds || !TryGetRendererBounds(go, out Bounds bounds))
+            return;
+        if (bounds.size.y < 0.0001f)
+            return;
+
+        float classHeight = 1f;
+        if (sceneClassHeightMultipliers != null && _sel < sceneClassHeightMultipliers.Length)
+            classHeight = Mathf.Max(0.1f, sceneClassHeightMultipliers[_sel]);
+
+        float scale = (_sceneReferenceBounds.size.y * classHeight) / bounds.size.y;
+        go.transform.localScale *= scale;
+
+        if (!TryGetRendererBounds(go, out bounds))
+            return;
+
+        Vector3 offset = new Vector3(
+            _sceneReferenceBounds.center.x - bounds.center.x,
+            _sceneReferenceBounds.min.y - bounds.min.y,
+            _sceneReferenceBounds.center.z - bounds.center.z);
+        go.transform.position += offset;
+    }
+
+    static bool TryGetRendererBounds(GameObject go, out Bounds bounds)
+    {
+        var renderers = go.GetComponentsInChildren<Renderer>(true);
+        if (renderers.Length == 0)
+        {
+            bounds = default;
+            return false;
+        }
+
+        bounds = renderers[0].bounds;
+        for (int i = 1; i < renderers.Length; i++)
+            bounds.Encapsulate(renderers[i].bounds);
+        return true;
+    }
+
     void UpdateClassButtons(CharacterData d)
     {
         if (_classBtns == null) return;
@@ -362,7 +466,7 @@ public class CharacterSelectUI : MonoBehaviour
         var root = canvas.GetComponent<RectTransform>();
 
         // Full-screen background
-        _bgPanel = MkImg(root, "BG", BgDeep);
+        _bgPanel = MkImg(root, "BG", _usingSceneStage ? Clear : BgDeep);
         Stretch(_bgPanel.rectTransform);
 
         BuildClassList(root);
@@ -447,25 +551,28 @@ public class CharacterSelectUI : MonoBehaviour
 
     void BuildCenter(RectTransform root)
     {
-        var panel = MkImg(root, "Center", BgDeep);
+        var panel = MkImg(root, "Center", _usingSceneStage ? Clear : BgDeep);
         var rt    = panel.rectTransform;
         rt.anchorMin = Vector2.zero;
         rt.anchorMax = Vector2.one;
         rt.offsetMin = new Vector2(LEFT_W, 0f);
         rt.offsetMax = new Vector2(-RIGHT_W, 0f);
 
-        // RenderTexture display
-        var rawGO = new GameObject("Preview3D", typeof(RectTransform));
-        rawGO.transform.SetParent(rt, false);
-        _previewDisplay = rawGO.AddComponent<RawImage>();
-        _previewDisplay.texture = previewRenderTexture;
-        _previewDisplay.color   = Color.white;
-        var rawRt = rawGO.GetComponent<RectTransform>();
-        rawRt.anchorMin = Vector2.zero; rawRt.anchorMax = Vector2.one;
-        rawRt.offsetMin = rawRt.offsetMax = Vector2.zero;
-        var arf = rawGO.AddComponent<AspectRatioFitter>();
-        arf.aspectMode  = AspectRatioFitter.AspectMode.FitInParent;
-        arf.aspectRatio = 512f / 820f;
+        if (!_usingSceneStage)
+        {
+            // RenderTexture display (legacy fallback only).
+            var rawGO = new GameObject("Preview3D", typeof(RectTransform));
+            rawGO.transform.SetParent(rt, false);
+            _previewDisplay = rawGO.AddComponent<RawImage>();
+            _previewDisplay.texture = previewRenderTexture;
+            _previewDisplay.color   = Color.white;
+            var rawRt = rawGO.GetComponent<RectTransform>();
+            rawRt.anchorMin = Vector2.zero; rawRt.anchorMax = Vector2.one;
+            rawRt.offsetMin = rawRt.offsetMax = Vector2.zero;
+            var arf = rawGO.AddComponent<AspectRatioFitter>();
+            arf.aspectMode  = AspectRatioFitter.AspectMode.FitInParent;
+            arf.aspectRatio = 512f / 820f;
+        }
 
         // Portrait fallback (Image — shown when no 3D prefab assigned)
         var portGO = new GameObject("Portrait", typeof(RectTransform));
