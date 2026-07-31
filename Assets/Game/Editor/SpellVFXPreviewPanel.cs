@@ -18,6 +18,7 @@ namespace Crossworlds.EditorTools
 
         PreviewRenderUtility preview;
         GameObject characterInstance;
+        GameObject castingInstance;
         GameObject castInstance;
         GameObject hitInstance;
         GameObject deployableInstance;
@@ -29,6 +30,7 @@ namespace Crossworlds.EditorTools
         PlayableGraph animationGraph;
 
         GameObject characterSource;
+        GameObject castingSource;
         GameObject castSource;
         GameObject hitSource;
         GameObject deployableSource;
@@ -61,6 +63,7 @@ namespace Crossworlds.EditorTools
             AbilityCategory nextCategory,
             float nextCastTime,
             float nextRange,
+            GameObject nextCastingVFX,
             GameObject nextCastVFX,
             GameObject nextHitVFX,
             GameObject nextDeployable)
@@ -71,6 +74,7 @@ namespace Crossworlds.EditorTools
                 nextCategory,
                 nextCastTime,
                 nextRange,
+                nextCastingVFX,
                 nextCastVFX,
                 nextHitVFX,
                 nextDeployable))
@@ -81,6 +85,7 @@ namespace Crossworlds.EditorTools
             category = nextCategory;
             castTime = Mathf.Max(0f, nextCastTime);
             range = Mathf.Max(0f, nextRange);
+            castingSource = nextCastingVFX;
             castSource = nextCastVFX;
             hitSource = nextHitVFX;
             deployableSource = nextDeployable;
@@ -103,6 +108,7 @@ namespace Crossworlds.EditorTools
             AdvanceCharacter(delta);
             previewTime += delta;
             ActivateDueEffects();
+            AdvanceEffect(castingInstance, delta);
             AdvanceEffect(castInstance, delta);
             AdvanceEffect(hitInstance, delta);
             AdvanceEffect(deployableInstance, delta);
@@ -179,13 +185,16 @@ namespace Crossworlds.EditorTools
             castTriggered = false;
             hitTriggered = false;
             deployableTriggered = false;
+            DeactivateEffect(castingInstance);
             DeactivateEffect(castInstance);
             DeactivateEffect(hitInstance);
             DeactivateEffect(deployableInstance);
             StartCharacterAnimation();
+            ActivateEffect(castingInstance);
             ActivateDueEffects();
             if (!playing)
             {
+                SetEffectPause(castingInstance, true);
                 SetEffectPause(castInstance, true);
                 SetEffectPause(hitInstance, true);
                 SetEffectPause(deployableInstance, true);
@@ -196,6 +205,7 @@ namespace Crossworlds.EditorTools
         public void TogglePlayback()
         {
             playing = !playing;
+            SetEffectPause(castingInstance, !playing);
             SetEffectPause(castInstance, !playing);
             SetEffectPause(hitInstance, !playing);
             SetEffectPause(deployableInstance, !playing);
@@ -214,6 +224,7 @@ namespace Crossworlds.EditorTools
                 preview.Cleanup();
             preview = null;
             characterInstance = null;
+            castingInstance = null;
             castInstance = null;
             hitInstance = null;
             deployableInstance = null;
@@ -221,6 +232,7 @@ namespace Crossworlds.EditorTools
             targetMarker = null;
             characterAnimator = null;
             characterSource = null;
+            castingSource = null;
             castSource = null;
             hitSource = null;
             deployableSource = null;
@@ -242,6 +254,7 @@ namespace Crossworlds.EditorTools
             AbilityCategory nextCategory,
             float nextCastTime,
             float nextRange,
+            GameObject nextCastingVFX,
             GameObject nextCastVFX,
             GameObject nextHitVFX,
             GameObject nextDeployable)
@@ -254,6 +267,7 @@ namespace Crossworlds.EditorTools
                        castTime, Mathf.Max(0f, nextCastTime)) &&
                    Mathf.Approximately(
                        range, Mathf.Max(0f, nextRange)) &&
+                   castingSource == nextCastingVFX &&
                    castSource == nextCastVFX &&
                    hitSource == nextHitVFX &&
                    deployableSource == nextDeployable;
@@ -266,6 +280,7 @@ namespace Crossworlds.EditorTools
             AbilityCategory nextCategory = category;
             float nextCastTime = castTime;
             float nextRange = range;
+            GameObject nextCasting = castingSource;
             GameObject nextCast = castSource;
             GameObject nextHit = hitSource;
             GameObject nextDeployable = deployableSource;
@@ -277,6 +292,7 @@ namespace Crossworlds.EditorTools
             category = nextCategory;
             castTime = nextCastTime;
             range = nextRange;
+            castingSource = nextCasting;
             castSource = nextCast;
             hitSource = nextHit;
             deployableSource = nextDeployable;
@@ -310,6 +326,14 @@ namespace Crossworlds.EditorTools
 
             Vector3 targetPosition =
                 Vector3.forward * PreviewDistance(range);
+            castingInstance = CreateStageObject(
+                castingSource,
+                "Spellbook_CastingVFX",
+                Vector3.zero,
+                false);
+            if (castingInstance != null)
+                castingInstance.transform.SetParent(
+                    characterInstance.transform, true);
             castInstance = CreateStageObject(
                 castSource,
                 "Spellbook_CastVFX",
@@ -495,6 +519,13 @@ namespace Crossworlds.EditorTools
 
         void ActivateDueEffects()
         {
+            if (castingInstance != null &&
+                previewTime >= castTime &&
+                castingInstance.activeSelf)
+            {
+                DeactivateEffect(castingInstance);
+            }
+
             if (!castTriggered && previewTime >= castTime)
             {
                 castTriggered = true;
