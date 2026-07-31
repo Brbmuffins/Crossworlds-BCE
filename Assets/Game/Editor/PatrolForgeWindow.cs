@@ -112,7 +112,7 @@ public sealed class PatrolForgeWindow : EditorWindow
         {
             bool nextGroupFormation = EditorGUILayout.Toggle(
                 new GUIContent("Group Formation Patrol",
-                    "Saves formation behavior on this route and keeps all assigned models together."),
+                    "Keeps assigned models in formation continuously. Members adjust speed while moving instead of waiting at waypoints."),
                 groupFormation);
             if (_route != null && nextGroupFormation != groupFormation)
             {

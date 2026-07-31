@@ -589,7 +589,8 @@ public class EnemyController : NetworkBehaviour
 
         // A destination can be inside the roaming circle while the NavMesh path
         // curves outside it. Enforce the enemy's actual idle position as well.
-        if (enableRoaming && roamingRadius > 0f &&
+        bool hasConfiguredPatrol = _patrolAgent != null && _patrolAgent.HasUsableRoute;
+        if (!hasConfiguredPatrol && enableRoaming && roamingRadius > 0f &&
             IsOutsideHomeRadius(transform.position, roamingRadius, 0.25f))
         {
             ReturnToSpawnPoint();
@@ -617,6 +618,15 @@ public class EnemyController : NetworkBehaviour
         if (found != null)
         {
             SetAggroTarget(found);
+            return;
+        }
+
+        // A configured patrol owns idle navigation. Without this early return,
+        // TickRoaming replaces the destination that EnemyPatrolAgent selected,
+        // making assigned patrol mobs wander randomly instead of following their route.
+        if (hasConfiguredPatrol)
+        {
+            _patrolAgent.TickPatrol(_agent);
             return;
         }
 

@@ -28,6 +28,7 @@ namespace Crossworlds.EditorTools.EnemyForge
                 issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Warning,
                     "Player tag selected: the prefab still uses EnemyController combat behavior, but other enemies may recognize it as a player target."));
             if (string.IsNullOrWhiteSpace(d.templateId)) issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Error, "Template ID is required."));
+            if (d.enemyLevel < 0) issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Error, "Enemy Level cannot be negative."));
             if (string.IsNullOrWhiteSpace(d.outputFolder) || !d.outputFolder.StartsWith("Assets/")) issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Error, "Output folder must be inside Assets/."));
             if (d.attackRange < d.stoppingDistance) issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Warning, "Attack range is smaller than the NavMesh stopping distance."));
             if (d.stoppingDistance < d.agentRadius)

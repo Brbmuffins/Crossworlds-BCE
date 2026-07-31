@@ -98,7 +98,8 @@ namespace Crossworlds.EditorTools.EnemyForge
             serialized.Update();
             DrawPropertySection(serialized, "Enemy Identity & Output", ref showIdentity,
                 "archetype", "rootTag", "templateId", "outputFolder");
-            DrawPropertySection(serialized, "Vitals", ref showVitals, "maxHealth", "robotic");
+            DrawPropertySection(serialized, "Vitals", ref showVitals,
+                "enemyDisplayName", "enemyLevel", "maxHealth", "robotic");
             DrawPropertySection(serialized, "Movement & Perception", ref showMovement,
                 "moveSpeed", "acceleration", "angularSpeed", "agentRadius", "agentHeight",
                 "agentBaseOffset", "stoppingDistance", "aggroRadius", "leashRadius",

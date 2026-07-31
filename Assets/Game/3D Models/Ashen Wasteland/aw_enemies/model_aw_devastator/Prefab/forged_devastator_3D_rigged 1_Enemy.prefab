@@ -28,6 +28,14 @@ PrefabInstance:
       propertyPath: _assetId
       value: 234930734
       objectReference: {fileID: 0}
+    - target: {fileID: 6618179698341175765, guid: 2b99ff6d7eb807c40b9e4495f431db40, type: 3}
+      propertyPath: enemyLevel
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6618179698341175765, guid: 2b99ff6d7eb807c40b9e4495f431db40, type: 3}
+      propertyPath: enemyDisplayName
+      value: Ashen Devastator
+      objectReference: {fileID: 0}
     - target: {fileID: 8755393445310311003, guid: 2b99ff6d7eb807c40b9e4495f431db40, type: 3}
       propertyPath: syncDirection
       value: 0
@@ -91,6 +99,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 1147374243214397070, guid: 2b99ff6d7eb807c40b9e4495f431db40, type: 3}
       insertIndex: -1
       addedObject: {fileID: 2337211875706162191}
+    - targetCorrespondingSourceObject: {fileID: 1147374243214397070, guid: 2b99ff6d7eb807c40b9e4495f431db40, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8128681912770714615}
   m_SourcePrefab: {fileID: 100100000, guid: 2b99ff6d7eb807c40b9e4495f431db40, type: 3}
 --- !u!137 &725116576933519500 stripped
 SkinnedMeshRenderer:
@@ -119,7 +130,7 @@ MonoBehaviour:
   syncInterval: 0
   state: 0
   allowOfflineSimulation: 0
-  enemyForgeRuntimeProfileVersion: 19
+  enemyForgeRuntimeProfileVersion: 27
   aggroRadius: 8
   leashRadius: 20
   aggroWhenDamaged: 1
@@ -134,7 +145,26 @@ MonoBehaviour:
   damage: 12
   combatTurnSpeed: 1080
   attackImpactDelay: 1.45
-  lockFacingOnAggro: 0
+  attackAnimationVariantMask: 1
+  attackAnimationImpactDelays:
+  - 1.45
+  - 1.45
+  - 1.45
+  - 1.45
+  idleAnimationSpeed: 1
+  chaseAnimationSpeed: 1
+  attackAnimationSpeeds:
+  - 1
+  - 1
+  - 1
+  - 1
+  getHitAnimationSpeed: 1
+  deathAnimationSpeed: 1
+  attackVfxOffsets:
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
   isRanged: 0
   projectilePrefab: {fileID: 0}
   preferredRange: 5
@@ -149,3 +179,27 @@ MonoBehaviour:
   keepCorpseGrounded: 1
   corpseGroundingRenderer: {fileID: 725116576933519500}
   corpseGroundOffset: -0.05
+--- !u!114 &8128681912770714615
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2002894649613888028}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8dc771e3e8ca44c68989bed5db340ea2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemySfxProfile
+  aggro: {fileID: 0}
+  attack1: {fileID: 0}
+  attack2: {fileID: 0}
+  attack3: {fileID: 0}
+  attack4: {fileID: 0}
+  attackImpact: {fileID: 0}
+  getHit: {fileID: 0}
+  death: {fileID: 0}
+  volume: 0.8
+  pitchVariation: 0.05
+  minDistance: 2
+  maxDistance: 25

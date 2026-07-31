@@ -222,7 +222,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2002894649613888028, guid: a9e9ba9c1d1313d498f96351399c5ee5, type: 3}
       propertyPath: m_Name
-      value: forged_devastator_3D_rigged 1_Enemy (1)
+      value: forged_devastator_3D_rigged 1_Enemy
       objectReference: {fileID: 0}
     - target: {fileID: 2332070355917871838, guid: a9e9ba9c1d1313d498f96351399c5ee5, type: 3}
       propertyPath: sceneId
@@ -230,7 +230,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2337211875706162191, guid: a9e9ba9c1d1313d498f96351399c5ee5, type: 3}
       propertyPath: enableRoaming
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7666423476850360143, guid: a9e9ba9c1d1313d498f96351399c5ee5, type: 3}
       propertyPath: m_LocalPosition.x
@@ -303,6 +303,10 @@ MonoBehaviour:
   m_Script: {fileID: 499166072}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyPatrolAgent
+  route: {fileID: 0}
+  startingWaypoint: 0
+  preserveFormation: 0
+  formationOffset: {x: 0, y: 0}
 --- !u!114 &19773244
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -315,6 +319,10 @@ MonoBehaviour:
   m_Script: {fileID: 316471949}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyPatrolAgent
+  route: {fileID: 0}
+  startingWaypoint: 0
+  preserveFormation: 0
+  formationOffset: {x: 0, y: 0}
 --- !u!114 &19773245
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -327,6 +335,10 @@ MonoBehaviour:
   m_Script: {fileID: 380164551}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyPatrolAgent
+  route: {fileID: 0}
+  startingWaypoint: 0
+  preserveFormation: 0
+  formationOffset: {x: 0, y: 0}
 --- !u!1 &20614123 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 3365739065292196122, guid: 7088a8cc314675341a5835a3d261e651, type: 3}
@@ -503,6 +515,9 @@ MonoBehaviour:
   m_Script: {fileID: 1662567566}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::QuestInteractableTarget
+  targetId: 
+  promptText: Press E to interact
+  interactionRadius: 3
 --- !u!114 &82524597
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -515,6 +530,9 @@ MonoBehaviour:
   m_Script: {fileID: 1330324987}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::QuestInteractableTarget
+  targetId: 
+  promptText: Press E to interact
+  interactionRadius: 3
 --- !u!1 &95714786
 GameObject:
   m_ObjectHideFlags: 0
@@ -769,6 +787,10 @@ MonoBehaviour:
   m_Script: {fileID: 1433669218}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyPatrolAgent
+  route: {fileID: 0}
+  startingWaypoint: 0
+  preserveFormation: 0
+  formationOffset: {x: 0, y: 0}
 --- !u!4 &112669123 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4771880119737215872, guid: 6585abe87a53190438dd45a11cb19aed, type: 3}
@@ -1395,7 +1417,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2002894649613888028, guid: a9e9ba9c1d1313d498f96351399c5ee5, type: 3}
       propertyPath: m_Name
-      value: forged_devastator_3D_rigged 1_Enemy (2)
+      value: forged_devastator_3D_rigged 1_Enemy
       objectReference: {fileID: 0}
     - target: {fileID: 2332070355917871838, guid: a9e9ba9c1d1313d498f96351399c5ee5, type: 3}
       propertyPath: sceneId
@@ -1666,6 +1688,10 @@ MonoBehaviour:
   m_Script: {fileID: 316471949}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyPatrolAgent
+  route: {fileID: 0}
+  startingWaypoint: 0
+  preserveFormation: 0
+  formationOffset: {x: 0, y: 0}
 --- !u!114 &195754440
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1678,6 +1704,10 @@ MonoBehaviour:
   m_Script: {fileID: 380164551}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyPatrolAgent
+  route: {fileID: 0}
+  startingWaypoint: 0
+  preserveFormation: 0
+  formationOffset: {x: 0, y: 0}
 --- !u!1001 &203232209
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1688,7 +1718,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2002894649613888028, guid: a9e9ba9c1d1313d498f96351399c5ee5, type: 3}
       propertyPath: m_Name
-      value: forged_devastator_3D_rigged 1_Enemy (8)
+      value: forged_devastator_3D_rigged 1_Enemy
       objectReference: {fileID: 0}
     - target: {fileID: 2332070355917871838, guid: a9e9ba9c1d1313d498f96351399c5ee5, type: 3}
       propertyPath: sceneId
@@ -2412,7 +2442,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2002894649613888028, guid: a9e9ba9c1d1313d498f96351399c5ee5, type: 3}
       propertyPath: m_Name
-      value: forged_devastator_3D_rigged 1_Enemy (7)
+      value: forged_devastator_3D_rigged 1_Enemy
       objectReference: {fileID: 0}
     - target: {fileID: 2332070355917871838, guid: a9e9ba9c1d1313d498f96351399c5ee5, type: 3}
       propertyPath: sceneId
@@ -5761,6 +5791,10 @@ MonoBehaviour:
   m_Script: {fileID: 1433669218}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyPatrolAgent
+  route: {fileID: 0}
+  startingWaypoint: 0
+  preserveFormation: 0
+  formationOffset: {x: 0, y: 0}
 --- !u!1 &726473815
 GameObject:
   m_ObjectHideFlags: 0
@@ -7020,7 +7054,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2002894649613888028, guid: a9e9ba9c1d1313d498f96351399c5ee5, type: 3}
       propertyPath: m_Name
-      value: forged_devastator_3D_rigged 1_Enemy (4)
+      value: forged_devastator_3D_rigged 1_Enemy
       objectReference: {fileID: 0}
     - target: {fileID: 2332070355917871838, guid: a9e9ba9c1d1313d498f96351399c5ee5, type: 3}
       propertyPath: sceneId
@@ -8870,7 +8904,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2002894649613888028, guid: a9e9ba9c1d1313d498f96351399c5ee5, type: 3}
       propertyPath: m_Name
-      value: forged_devastator_3D_rigged 1_Enemy (3)
+      value: forged_devastator_3D_rigged 1_Enemy
       objectReference: {fileID: 0}
     - target: {fileID: 2332070355917871838, guid: a9e9ba9c1d1313d498f96351399c5ee5, type: 3}
       propertyPath: sceneId
@@ -8878,7 +8912,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2337211875706162191, guid: a9e9ba9c1d1313d498f96351399c5ee5, type: 3}
       propertyPath: enableRoaming
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7666423476850360143, guid: a9e9ba9c1d1313d498f96351399c5ee5, type: 3}
       propertyPath: m_LocalPosition.x
@@ -11113,7 +11147,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2002894649613888028, guid: a9e9ba9c1d1313d498f96351399c5ee5, type: 3}
       propertyPath: m_Name
-      value: forged_devastator_3D_rigged 1_Enemy (5)
+      value: forged_devastator_3D_rigged 1_Enemy
       objectReference: {fileID: 0}
     - target: {fileID: 2332070355917871838, guid: a9e9ba9c1d1313d498f96351399c5ee5, type: 3}
       propertyPath: sceneId
@@ -11527,7 +11561,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2002894649613888028, guid: a9e9ba9c1d1313d498f96351399c5ee5, type: 3}
       propertyPath: m_Name
-      value: forged_devastator_3D_rigged 1_Enemy (6)
+      value: forged_devastator_3D_rigged 1_Enemy
       objectReference: {fileID: 0}
     - target: {fileID: 2332070355917871838, guid: a9e9ba9c1d1313d498f96351399c5ee5, type: 3}
       propertyPath: sceneId
