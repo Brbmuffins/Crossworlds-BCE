@@ -1109,7 +1109,8 @@ public class AbilityCaster : NetworkBehaviour
             case "Marauder":
                 abilityNames = MarauderAbilityNames;
                 return true;
-            case "Ironclad":
+            case "Ironclad": // legacy/internal name
+            case "Templar":
                 abilityNames = IroncladAbilityNames;
                 return true;
             case "Arcanist":
@@ -1118,7 +1119,8 @@ public class AbilityCaster : NetworkBehaviour
             case "Cleric":
                 abilityNames = ClericAbilityNames;
                 return true;
-            case "Shadowblade":
+            case "Shadowblade": // legacy/internal name
+            case "Night Hunter":
                 abilityNames = ShadowbladeAbilityNames;
                 return true;
             default:
@@ -1134,13 +1136,15 @@ public class AbilityCaster : NetworkBehaviour
             case "Marauder":
                 abilityNames = MarauderDefaultAbilityNames;
                 return true;
-            case "Ironclad":
+            case "Ironclad": // legacy/internal name
+            case "Templar":
                 abilityNames = IroncladDefaultAbilityNames;
                 return true;
             case "Cleric":
                 abilityNames = ClericDefaultAbilityNames;
                 return true;
-            case "Shadowblade":
+            case "Shadowblade": // legacy/internal name
+            case "Night Hunter":
                 abilityNames = ShadowbladeDefaultAbilityNames;
                 return true;
             default:

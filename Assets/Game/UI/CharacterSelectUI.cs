@@ -153,7 +153,7 @@ public class CharacterSelectUI : MonoBehaviour
             {
                 _usingSceneStage = true;
                 _hasSceneReferenceBounds = sceneModelReference != null
-                    && TryGetRendererBounds(sceneModelReference, out _sceneReferenceBounds);
+                    && TryGetBodyBounds(sceneModelReference, out _sceneReferenceBounds);
                 var root = new GameObject("CharacterPreview_StageRoot");
                 root.transform.SetPositionAndRotation(stagePose.position, stagePose.rotation);
                 root.transform.localScale = Vector3.one;
@@ -335,12 +335,16 @@ public class CharacterSelectUI : MonoBehaviour
             _previewInstance.transform.localRotation = Quaternion.identity;
             _previewInstance.transform.localScale    = Vector3.one;
 
-            // Neutralize preview physics. Animator/renderers are Behaviours rather
-            // than MonoBehaviours, so the idle pose and mesh remain intact.
-            foreach (var rb in _previewInstance.GetComponentsInChildren<Rigidbody>(true))
-                rb.isKinematic = true;
-            foreach (var col in _previewInstance.GetComponentsInChildren<Collider>(true))
-                col.enabled = false;
+            // Animator is not a MonoBehaviour, so it remains active on the visual
+            // clone. Evaluate its default state before measuring bounds; otherwise
+            // new humanoid rigs are fitted in bind pose and move after the first
+            // animated frame, which makes them appear buried in the stage.
+            foreach (var animator in _previewInstance.GetComponentsInChildren<Animator>(true))
+            {
+                animator.applyRootMotion = false;
+                animator.Rebind();
+                animator.Update(0f);
+            }
 
             if (!_usingSceneStage)
             {
@@ -350,7 +354,15 @@ public class CharacterSelectUI : MonoBehaviour
             else
             {
                 FitScenePreview(_previewInstance);
+                StartCoroutine(RefitScenePreviewAfterAnimation(_previewInstance));
             }
+
+            // Neutralize preview physics. Animator/renderers remain active so the
+            // selected character can hold its authored idle pose.
+            foreach (var rb in _previewInstance.GetComponentsInChildren<Rigidbody>(true))
+                rb.isKinematic = true;
+            foreach (var col in _previewInstance.GetComponentsInChildren<Collider>(true))
+                col.enabled = false;
             if (_portraitOverlay) _portraitOverlay.color = Clear;
         }
         else
@@ -402,7 +414,7 @@ public class CharacterSelectUI : MonoBehaviour
     // its root scale. Different class prefabs have different native mesh sizes.
     void FitScenePreview(GameObject go)
     {
-        if (!_hasSceneReferenceBounds || !TryGetRendererBounds(go, out Bounds bounds))
+        if (!_hasSceneReferenceBounds || !TryGetBodyBounds(go, out Bounds bounds))
             return;
         if (bounds.size.y < 0.0001f)
             return;
@@ -414,7 +426,7 @@ public class CharacterSelectUI : MonoBehaviour
         float scale = (_sceneReferenceBounds.size.y * classHeight) / bounds.size.y;
         go.transform.localScale *= scale;
 
-        if (!TryGetRendererBounds(go, out bounds))
+        if (!TryGetBodyBounds(go, out bounds))
             return;
 
         Vector3 offset = new Vector3(
@@ -424,18 +436,51 @@ public class CharacterSelectUI : MonoBehaviour
         go.transform.position += offset;
     }
 
-    static bool TryGetRendererBounds(GameObject go, out Bounds bounds)
+    IEnumerator RefitScenePreviewAfterAnimation(GameObject instance)
     {
-        var renderers = go.GetComponentsInChildren<Renderer>(true);
-        if (renderers.Length == 0)
+        // Let the Animator advance out of bind pose, then fit the actual rendered
+        // pose. Guard against a rapid class switch destroying this instance.
+        yield return null;
+        if (instance != null && instance == _previewInstance)
+            FitScenePreview(instance);
+    }
+
+    static bool TryGetBodyBounds(GameObject go, out Bounds bounds)
+    {
+        // Weapons and quivers can extend below the feet. Prefer the tallest
+        // skinned character mesh so those accessories do not drive grounding.
+        var skinned = go.GetComponentsInChildren<SkinnedMeshRenderer>(true);
+        Renderer body = null;
+        float tallest = 0f;
+        foreach (var renderer in skinned)
+        {
+            if (renderer.bounds.size.y > tallest)
+            {
+                body = renderer;
+                tallest = renderer.bounds.size.y;
+            }
+        }
+
+        if (body == null)
+        {
+            var renderers = go.GetComponentsInChildren<Renderer>(true);
+            foreach (var renderer in renderers)
+            {
+                if (renderer.bounds.size.y > tallest)
+                {
+                    body = renderer;
+                    tallest = renderer.bounds.size.y;
+                }
+            }
+        }
+
+        if (body == null)
         {
             bounds = default;
             return false;
         }
 
-        bounds = renderers[0].bounds;
-        for (int i = 1; i < renderers.Length; i++)
-            bounds.Encapsulate(renderers[i].bounds);
+        bounds = body.bounds;
         return true;
     }
 

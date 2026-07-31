@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System.Collections;
+using UnityEngine.SceneManagement;
 
 /// <summary>
 /// XpBar — action-bar HUD. Displays current XP progress and level.
@@ -48,6 +49,29 @@ public class XpBar : MonoBehaviour
     void Awake()
     {
         BuildUI();
+        SceneManager.sceneLoaded += OnSceneLoaded;
+        ApplySceneVisibility(SceneManager.GetActiveScene());
+    }
+
+    void OnDestroy()
+    {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+    }
+
+    void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        ApplySceneVisibility(scene);
+    }
+
+    void ApplySceneVisibility(Scene scene)
+    {
+        if (_canvas == null) return;
+        string sceneName = scene.name;
+        bool menuScene = string.IsNullOrEmpty(sceneName)
+            || sceneName == "Login"
+            || sceneName == "LoginScene"
+            || sceneName == "CharacterSelect";
+        _canvas.enabled = !menuScene;
     }
 
     void OnEnable()

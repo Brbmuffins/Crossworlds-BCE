@@ -29,7 +29,8 @@ public static class ClassPoolBuilder
 
         CreatePool("Ironclad",
             availableIndices: new[] { 0,1,2,3,4,5,6,7,13,14,15,16,17,18,47,48,49 },
-            defaultEquipped:  new[] { 7,15,16,18 });         // Shield, Charge, Stance, Rampart
+            defaultEquipped:  new[] { 7,15,16,18 },
+            displayName: "Templar");                         // Shield, Charge, Stance, Rampart
 
         CreatePool("Arcanist",
             availableIndices: new[] { 0,1,2,3,4,5,6,7,19,20,21,22,34,37,38,39,40,41,42,43 },
@@ -41,7 +42,8 @@ public static class ClassPoolBuilder
 
         CreatePool("Shadowblade",
             availableIndices: new[] { 0,1,2,3,4,5,6,7,29,30,31,32,33,50,51,52 },
-            defaultEquipped:  new[] { 33,32,31,29 });        // Fan of Blades, Dark Mark, Dark Harvest, Shadow Veil
+            defaultEquipped:  new[] { 33,32,31,29 },
+            displayName: "Night Hunter");                   // Fan of Blades, Dark Mark, Dark Harvest, Shadow Veil
 
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
@@ -52,7 +54,8 @@ public static class ClassPoolBuilder
         Debug.Log("[ClassPoolBuilder] ✓ All 5 ClassAbilityPool assets created in " + OutputDir);
     }
 
-    static void CreatePool(string className, int[] availableIndices, int[] defaultEquipped)
+    static void CreatePool(string className, int[] availableIndices, int[] defaultEquipped,
+        string displayName = null)
     {
         string path = $"{OutputDir}/{className}_Pool.asset";
 
@@ -69,7 +72,7 @@ public static class ClassPoolBuilder
             AssetDatabase.CreateAsset(pool, path);
         }
 
-        pool.className        = className;
+        pool.className        = string.IsNullOrEmpty(displayName) ? className : displayName;
         pool.availableIndices = availableIndices;
         pool.defaultEquipped  = defaultEquipped;
         EditorUtility.SetDirty(pool);

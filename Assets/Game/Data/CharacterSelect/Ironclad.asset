@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ebe6620c8ce8e174e839cee638bcd648, type: 3}
   m_Name: Ironclad
   m_EditorClassIdentifier: Assembly-CSharp::CharacterData
-  className: Ironclad
+  className: Templar
   roleTagline: "Tank  \xB7  Vanguard  \xB7  Frontline Fortress"
-  loreDescription: "An indestructible wall of armored might, the Ironclad absorbs
+  loreDescription: "An indestructible wall of armored might, the Templar absorbs
     punishment so their allies don't have to. Masters of aggro and mitigation, they
     hold the line against overwhelming odds \u2014 then punish overcommitment with
     a devastating counter-charge."
@@ -22,7 +22,7 @@ MonoBehaviour:
   classColorDark: {r: 0.08, g: 0.18, b: 0.3, a: 1}
   portrait: {fileID: 21300000, guid: b5cb4e610f7def94ea0974d921f5d17a, type: 3}
   prefab: {fileID: 0}
-  previewPrefab: {fileID: 4515746899207060477, guid: 2ab35200bba8384449966902eaed9cab, type: 3}
+  previewPrefab: {fileID: 7385457573617699392, guid: 759e90285a6f12a4a8978b77c8be4cbe, type: 3}
   traits:
   - icon: {fileID: 0}
     label: Immovable
