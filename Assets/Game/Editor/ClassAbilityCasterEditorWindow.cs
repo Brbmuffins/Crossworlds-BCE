@@ -680,12 +680,14 @@ namespace Crossworlds.EditorTools
             DrawFieldGroup(
                 "IDENTITY & TARGETING", ability,
                 "abilityName",
+                "description",
                 "variantOnly",
                 "icon",
                 "category",
                 "shape",
                 "range",
                 "coneAngle",
+                "useFixedConeRange",
                 "rectWidth",
                 "indicatorSize",
                 "targetTag");
@@ -700,10 +702,13 @@ namespace Crossworlds.EditorTools
             DrawFieldGroup(
                 "DAMAGE & CHARGE", ability,
                 "damage",
+                "damageDelay",
                 "chargeable",
                 "maxChargeTime",
                 "maxChargeDamage",
                 "maxChargeSizeMultiplier");
+
+            DrawCrowdControlGroup(ability);
 
             DrawFieldGroup(
                 "HEALING & DEFENSE", ability,
@@ -721,18 +726,74 @@ namespace Crossworlds.EditorTools
                 "statusValue",
                 "activeDuration");
 
-            DrawFieldGroup(
-                "ADVANCED EFFECTS", ability,
-                "chainTargets",
-                "chainDamageFalloff",
-                "pullRadius",
-                "pullDuration",
-                "usePulseDamage",
-                "pulseCount",
-                "pulseInterval",
-                "pulseRadius",
-                "pulseDamage",
-                "variants");
+            SerializedProperty crowdControl =
+                ability.FindPropertyRelative("crowdControlType");
+            bool usesSpellbookPull = crowdControl != null &&
+                crowdControl.enumValueIndex ==
+                (int)AbilityCrowdControlType.Pull;
+
+            if (usesSpellbookPull)
+            {
+                DrawFieldGroup(
+                    "ADVANCED EFFECTS", ability,
+                    "chainTargets",
+                    "chainDamageFalloff",
+                    "usePulseDamage",
+                    "pulseCount",
+                    "pulseInterval",
+                    "pulseRadius",
+                    "pulseDamage",
+                    "variants");
+            }
+            else
+            {
+                DrawFieldGroup(
+                    "ADVANCED EFFECTS", ability,
+                    "chainTargets",
+                    "chainDamageFalloff",
+                    "pullRadius",
+                    "pullDuration",
+                    "usePulseDamage",
+                    "pulseCount",
+                    "pulseInterval",
+                    "pulseRadius",
+                    "pulseDamage",
+                    "variants");
+            }
+        }
+
+        void DrawCrowdControlGroup(
+            SerializedProperty ability)
+        {
+            SerializedProperty controlType =
+                ability.FindPropertyRelative("crowdControlType");
+
+            EditorGUILayout.LabelField(
+                "CROWD CONTROL", EyebrowStyle());
+            using (new EditorGUILayout.VerticalScope(
+                EditorStyles.helpBox))
+            {
+                if (controlType == null)
+                    return;
+
+                EditorGUILayout.PropertyField(controlType);
+                if (controlType.enumValueIndex !=
+                    (int)AbilityCrowdControlType.Pull)
+                    return;
+
+                EditorGUILayout.PropertyField(
+                    ability.FindPropertyRelative(
+                        "pullDestination"));
+                EditorGUILayout.PropertyField(
+                    ability.FindPropertyRelative(
+                        "pullDuration"));
+                EditorGUILayout.PropertyField(
+                    ability.FindPropertyRelative(
+                        "pullSpeed"));
+                EditorGUILayout.PropertyField(
+                    ability.FindPropertyRelative(
+                        "pullStopDistance"));
+            }
         }
 
         void DrawAnimationTab(SerializedProperty ability)
@@ -863,6 +924,7 @@ namespace Crossworlds.EditorTools
 
             DrawFieldGroup(
                 "ASSIGNED PREFABS", ability,
+                "castingVFX",
                 "castVFX",
                 "hitVFX",
                 "spawnTurret",
@@ -874,6 +936,8 @@ namespace Crossworlds.EditorTools
                 "variantIndicatorTint",
                 "chargedTint",
                 "fireVisual",
+                "castVFXAtCaster",
+                "hitVFXFollowsTarget",
                 "pulseVFXLifetime");
 
             DrawSpellPreview(ability, key);
@@ -925,6 +989,9 @@ namespace Crossworlds.EditorTools
                 GameObject castVFX = ability
                     .FindPropertyRelative("castVFX")
                     ?.objectReferenceValue as GameObject;
+                GameObject castingVFX = ability
+                    .FindPropertyRelative("castingVFX")
+                    ?.objectReferenceValue as GameObject;
                 GameObject hitVFX = ability
                     .FindPropertyRelative("hitVFX")
                     ?.objectReferenceValue as GameObject;
@@ -938,6 +1005,7 @@ namespace Crossworlds.EditorTools
                     category,
                     castTime,
                     range,
+                    castingVFX,
                     castVFX,
                     hitVFX,
                     deployable);
@@ -996,6 +1064,12 @@ namespace Crossworlds.EditorTools
                     if (property == null) continue;
 
                     if (property.propertyType ==
+                        SerializedPropertyType.String &&
+                        propertyName == "description")
+                    {
+                        DrawDescriptionProperty(property);
+                    }
+                    else if (property.propertyType ==
                         SerializedPropertyType.String)
                     {
                         DrawStringProperty(property);
@@ -1120,6 +1194,26 @@ namespace Crossworlds.EditorTools
                 EditorGUIUtility.editingTextField = true;
         }
 
+        static void DrawDescriptionProperty(
+            SerializedProperty property)
+        {
+            string controlName =
+                "BCE.Spellbook." + property.propertyPath;
+            EditorGUILayout.LabelField(
+                new GUIContent(
+                    property.displayName,
+                    property.tooltip));
+            GUI.SetNextControlName(controlName);
+            string nextValue = EditorGUILayout.TextArea(
+                property.stringValue,
+                GUILayout.MinHeight(54f));
+            if (nextValue != property.stringValue)
+                property.stringValue = nextValue;
+
+            if (GUI.GetNameOfFocusedControl() == controlName)
+                EditorGUIUtility.editingTextField = true;
+        }
+
         void StopPreviewIfActive(string key)
         {
             if (activePreviewAbility != key) return;
@@ -1173,6 +1267,8 @@ namespace Crossworlds.EditorTools
         {
             GameObject cast = ability.FindPropertyRelative("castVFX")
                 ?.objectReferenceValue as GameObject;
+            GameObject casting = ability.FindPropertyRelative("castingVFX")
+                ?.objectReferenceValue as GameObject;
             GameObject hit = ability.FindPropertyRelative("hitVFX")
                 ?.objectReferenceValue as GameObject;
             GameObject deploy = ability
@@ -1180,6 +1276,7 @@ namespace Crossworlds.EditorTools
                 ?.objectReferenceValue as GameObject;
 
             string summary =
+                $"Casting: {(casting != null ? casting.name : "None")}   " +
                 $"Cast: {(cast != null ? cast.name : "None")}   " +
                 $"Hit: {(hit != null ? hit.name : "None")}   " +
                 $"Deploy: {(deploy != null ? deploy.name : "None")}";
@@ -1199,9 +1296,11 @@ namespace Crossworlds.EditorTools
                         : "Select a prefab in VFX Browser:",
                     EditorStyles.miniLabel, GUILayout.MinWidth(165f));
 
-                if (GUILayout.Button("→ Cast VFX"))
+                if (GUILayout.Button("→ Casting"))
+                    AssignVFX(ability, "castingVFX", selectedVFX);
+                if (GUILayout.Button("→ Cast"))
                     AssignVFX(ability, "castVFX", selectedVFX);
-                if (GUILayout.Button("→ Hit VFX"))
+                if (GUILayout.Button("→ Hit"))
                     AssignVFX(ability, "hitVFX", selectedVFX);
                 if (GUILayout.Button("→ Deployable"))
                     AssignVFX(ability, "deployablePrefab", selectedVFX);

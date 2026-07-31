@@ -14,7 +14,7 @@ OcclusionCullingSettings:
 RenderSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 10
-  m_Fog: 0
+  m_Fog: 1
   m_FogColor: {r: 0.058823522, g: 0.36862746, b: 0.18009263, a: 1}
   m_FogMode: 3
   m_FogDensity: 0.015
@@ -5070,6 +5070,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1131798949}
     m_Modifications:
+    - target: {fileID: 1006784356771607327, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 1249576090621623051, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
       propertyPath: m_LocalPosition.x
       value: 33.490192
@@ -7820,6 +7824,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1131798949}
     m_Modifications:
+    - target: {fileID: 1006784356771607327, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 1249576090621623051, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
       propertyPath: m_LocalPosition.x
       value: 35.29881
@@ -8359,6 +8367,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1131798949}
     m_Modifications:
+    - target: {fileID: 1006784356771607327, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 1249576090621623051, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
       propertyPath: m_LocalPosition.x
       value: 37.896236
@@ -10293,6 +10305,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1131798949}
     m_Modifications:
+    - target: {fileID: 1006784356771607327, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 1249576090621623051, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
       propertyPath: m_LocalPosition.x
       value: 36.4

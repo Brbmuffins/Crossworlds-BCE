@@ -1,6 +1,7 @@
 using Mirror;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Controls;
 using UnityEngine.Rendering.Universal;
@@ -11,6 +12,8 @@ using UnityEditor;
 public enum AbilityShape { Circle, Cone, Rectangle }
 public enum AbilityCategory { Damage, Heal, Support }
 public enum AbilityMovementTiming { ConstantSpeed, FixedDuration }
+public enum AbilityCrowdControlType { None, Pull }
+public enum AbilityPullDestination { CastPoint, ConeApex }
 
 /// <summary>
 /// Draws an AnimationClip field as a dropdown populated from the active
@@ -72,6 +75,9 @@ public class AbilityVariant
 public class AbilityDef
 {
     public string abilityName = "Ability";
+    [TextArea(2, 5)]
+    [Tooltip("Player-facing explanation shown in the Spellbook and action-bar tooltip.")]
+    public string description = "";
 
     [Header("Spellbook Visibility")]
     [Tooltip("When true, this spell can be referenced by another spell's variants but is hidden from the spellbook UI and cannot be equipped directly.")]
@@ -85,6 +91,8 @@ public class AbilityDef
     public AbilityCategory category = AbilityCategory.Damage;
     public float range = 4f;
     public float coneAngle = 60f;
+    [Tooltip("Keep a cone at its full configured range while aiming instead of resizing it to the mouse distance.")]
+    public bool useFixedConeRange = false;
     public float rectWidth = 1.5f;
     public float indicatorSize = 1.5f;
     public bool spawnTurret = false;
@@ -131,6 +139,9 @@ public class AbilityDef
     public bool chargeable = false;
     public float maxChargeTime = 1.5f;
     public float damage = 10f;
+    [Min(0f)]
+    [Tooltip("Seconds to wait after locking in a target before applying this spell's damage.")]
+    public float damageDelay = 0f;
     public float maxChargeDamage = 10f;
     public float maxChargeSizeMultiplier = 1.8f;
     public string targetTag = "Enemy";
@@ -140,7 +151,13 @@ public class AbilityDef
 
     [Header("VFX Prefabs")]
     public GameObject castVFX;
+    [Tooltip("Looping VFX attached to the caster while this spell is being aimed or charged. It is removed on release or cancellation.")]
+    public GameObject castingVFX;
     public GameObject hitVFX;
+    [Tooltip("Spawn the cast VFX at the caster instead of the spell's destination or the far edge of its cone.")]
+    public bool castVFXAtCaster = false;
+    [Tooltip("Attach the hit VFX to each affected target so the effect follows their movement.")]
+    public bool hitVFXFollowsTarget = false;
 
     [Header("Shield")]
     public float shieldAbsorb   = 0f;
@@ -169,6 +186,18 @@ public class AbilityDef
     [Header("Pull / Zone")]
     public float pullRadius   = 0f;        // Magnetize, Singularity, Event Horizon
     public float pullDuration = 0f;        // Singularity pull phase
+
+    [Header("Crowd Control")]
+    [Tooltip("Optional forced-movement effect applied to targets captured by this spell's shape.")]
+    public AbilityCrowdControlType crowdControlType = AbilityCrowdControlType.None;
+    [Tooltip("Where pulled targets gather. Cone Apex uses the narrow point of the cast cone; Cast Point uses the spell's normal effect position.")]
+    public AbilityPullDestination pullDestination = AbilityPullDestination.CastPoint;
+    [Min(0.1f)]
+    [Tooltip("Maximum movement speed, in metres per second, while a target is being pulled.")]
+    public float pullSpeed = 8f;
+    [Min(0f)]
+    [Tooltip("Targets stop this far from the pull point to prevent collider stacking and jitter.")]
+    public float pullStopDistance = 1.25f;
 
     [Header("Pulse Damage")]
     [UnityEngine.Serialization.FormerlySerializedAs("overridePulseSettings")]
@@ -261,6 +290,7 @@ public class AbilityCaster : NetworkBehaviour
         "Fireball",
         "Chain Lightning",
         "Frost Nova",
+        "Ice Vortex",
     };
     static readonly string[] ClericAbilityNames =
     {
@@ -525,6 +555,7 @@ public class AbilityCaster : NetworkBehaviour
 
     private GameObject activeShieldVFX;
     private float shieldVFXTimer = 0f;
+    private GameObject activeCastingVFX;
 
     // Variant zone selection — updated every frame while aiming, snapshotted at commit.
     private int   _activeVariantIndex = 0;
@@ -798,6 +829,7 @@ public class AbilityCaster : NetworkBehaviour
     void OnDestroy()
     {
         UnityEngine.SceneManagement.SceneManager.sceneLoaded -= OnSceneLoaded;
+        StopCastingVFX();
     }
 
     void OnSceneLoaded(UnityEngine.SceneManagement.Scene scene, UnityEngine.SceneManagement.LoadSceneMode mode)
@@ -1215,42 +1247,8 @@ public class AbilityCaster : NetworkBehaviour
             KeyControl key = GetDigitKey(i);
             if (key == null) continue;
 
-            if (key.wasPressedThisFrame && cooldownTimers[i] <= 0f)
-            {
-                bool canPickDifferentVariantCost = abilities[i].variants != null && abilities[i].variants.Length > 0;
-                if (!canPickDifferentVariantCost && !HasEnoughManaForCast(abilities[i], 0))
-                {
-                    WarnInsufficientMana(abilities[i], 0);
-                    continue;
-                }
-
-                // Self-cast shields skip aiming but still respect cast time.
-                if (abilities[i].shieldAbsorb > 0f && abilities[i].range <= 0f)
-                {
-                    if (heldAbilityIndex != -1) CancelAim();
-                    BeginCommittedCast(i, abilities[i], null, 0f, 0);
-                }
-                else if (heldAbilityIndex == i)
-                {
-                    CancelAim();
-                }
-                else
-                {
-                    if (heldAbilityIndex != -1)
-                        CancelAim();
-
-                    heldAbilityIndex = i;
-                    aimTimer = 0f;
-                    _activeVariantIndex = 0;
-                    _currentAimFraction = 0f;
-                    activeIndicator = CreateIndicator(abilities[i]);
-                    IsAimingLocally = true;
-
-                    // Force cursor free in case camera orbit had it locked
-                    Cursor.lockState = CursorLockMode.None;
-                    Cursor.visible   = true;
-                }
-            }
+            if (key.wasPressedThisFrame)
+                TryActivateSlot(i);
         }
 
         if (heldAbilityIndex != -1)
@@ -1264,9 +1262,14 @@ public class AbilityCaster : NetworkBehaviour
             {
                 CancelAim();
             }
-            else if (Mouse.current.leftButton.wasPressedThisFrame)
+            else if (Mouse.current.leftButton.wasPressedThisFrame &&
+                     (EventSystem.current == null ||
+                      !EventSystem.current.IsPointerOverGameObject()))
             {
                 // Snapshot the variant index at commit time so it survives the cast-time window.
+                AbilityDef releasedAbility = abilities[heldAbilityIndex];
+                StopCastingVFX();
+                BroadcastCastingVFXStopped(releasedAbility);
                 BeginCommittedCast(heldAbilityIndex, abilities[heldAbilityIndex], activeIndicator, aimTimer, _activeVariantIndex);
 
                 IsAimingLocally = false;
@@ -1282,10 +1285,16 @@ public class AbilityCaster : NetworkBehaviour
 
     void CancelAim()
     {
+        AbilityDef cancelledAbility =
+            heldAbilityIndex >= 0 && heldAbilityIndex < abilities.Length
+                ? abilities[heldAbilityIndex]
+                : null;
         IsAimingLocally = false;
         if (activeIndicator != null) Destroy(activeIndicator);
         activeIndicator = null;
         DestroyRangeRing();
+        StopCastingVFX();
+        BroadcastCastingVFXStopped(cancelledAbility);
         heldAbilityIndex = -1;
         _activeVariantIndex = 0;
         _currentAimFraction = 0f;
@@ -1546,6 +1555,101 @@ public class AbilityCaster : NetworkBehaviour
         if (isLocalPlayer) return;
         if (spellbookIndex < 0 || spellbookIndex >= spellbook.Length) return;
         CancelCommittedCastAnimation(spellbook[spellbookIndex], variantIndex, preferMovementState);
+    }
+
+    void StartCastingVFX(AbilityDef ability)
+    {
+        StopCastingVFX();
+        if (ability == null || ability.castingVFX == null)
+            return;
+
+        activeCastingVFX = CreateAttachedVFX(
+            ability.castingVFX,
+            transform,
+            Vector3.zero);
+    }
+
+    void StopCastingVFX()
+    {
+        if (activeCastingVFX == null)
+            return;
+
+        foreach (ParticleSystem particles in
+            activeCastingVFX.GetComponentsInChildren<ParticleSystem>(true))
+        {
+            if (particles == null) continue;
+            particles.Stop(
+                true,
+                ParticleSystemStopBehavior.StopEmittingAndClear);
+        }
+
+        Destroy(activeCastingVFX);
+        activeCastingVFX = null;
+    }
+
+    void BroadcastCastingVFXStarted(AbilityDef ability)
+    {
+        if (ability == null || ability.castingVFX == null)
+            return;
+
+        int spellbookIndex = FindSpellbookIndex(ability);
+        if (spellbookIndex < 0) return;
+
+        if (ShouldRouteCastToServer())
+            CmdCastingVFXStarted(spellbookIndex);
+        else if (NetworkServer.active)
+            RpcCastingVFXStarted(spellbookIndex);
+    }
+
+    [Command]
+    void CmdCastingVFXStarted(int spellbookIndex)
+    {
+        if (spellbookIndex < 0 || spellbookIndex >= spellbook.Length)
+            return;
+        if (FindEquippedSlotForSpellbookIndex(spellbookIndex) < 0)
+            return;
+
+        RpcCastingVFXStarted(spellbookIndex);
+    }
+
+    [ClientRpc]
+    void RpcCastingVFXStarted(int spellbookIndex)
+    {
+        if (isLocalPlayer) return;
+        if (spellbookIndex < 0 || spellbookIndex >= spellbook.Length)
+            return;
+
+        StartCastingVFX(spellbook[spellbookIndex]);
+    }
+
+    void BroadcastCastingVFXStopped(AbilityDef ability)
+    {
+        if (ability == null || ability.castingVFX == null)
+            return;
+
+        int spellbookIndex = FindSpellbookIndex(ability);
+        if (spellbookIndex < 0) return;
+
+        if (ShouldRouteCastToServer())
+            CmdCastingVFXStopped(spellbookIndex);
+        else if (NetworkServer.active)
+            RpcCastingVFXStopped(spellbookIndex);
+    }
+
+    [Command]
+    void CmdCastingVFXStopped(int spellbookIndex)
+    {
+        if (spellbookIndex < 0 || spellbookIndex >= spellbook.Length)
+            return;
+
+        RpcCastingVFXStopped(spellbookIndex);
+    }
+
+    [ClientRpc]
+    void RpcCastingVFXStopped(int spellbookIndex)
+    {
+        if (isLocalPlayer) return;
+        StopCastingVFX();
     }
 
     public float GetCooldownFraction(int slot)
@@ -2010,8 +2114,10 @@ public class AbilityCaster : NetworkBehaviour
             bool hasVariants = ability.variants != null && ability.variants.Length > 0;
 
             float chargeMul   = Mathf.Lerp(1f, ability.maxChargeSizeMultiplier, chargeFraction);
-            // Variant spells: always show at full range; cursor distance only picks zone.
-            float distanceMul = hasVariants ? 1f : (ability.range > 0f ? aimDistance / ability.range : 1f);
+            // Variant and fixed-range spells always show at full range. For variants,
+            // cursor distance only selects the active zone.
+            bool useFullRange = hasVariants || ability.useFixedConeRange;
+            float distanceMul = useFullRange ? 1f : (ability.range > 0f ? aimDistance / ability.range : 1f);
             float visualRange = ability.range * distanceMul * chargeMul;
             // Pull origin 0.5 units behind the player so the character body sits
             // inside the fan rather than at the very tip.
@@ -2832,6 +2938,40 @@ public class AbilityCaster : NetworkBehaviour
         Destroy(fx, Mathf.Max(0.05f, lifetime));
     }
 
+    void SpawnAttachedVFX(GameObject prefab, Transform target, Vector3 localOffset, float lifetime)
+    {
+        GameObject fx = CreateAttachedVFX(prefab, target, localOffset);
+        if (fx == null) return;
+
+        Destroy(fx, Mathf.Max(0.05f, lifetime));
+    }
+
+    GameObject CreateAttachedVFX(
+        GameObject prefab,
+        Transform target,
+        Vector3 localOffset)
+    {
+        if (prefab == null || target == null) return null;
+
+        Vector3 position = target.TransformPoint(localOffset);
+        GameObject fx = Instantiate(
+            prefab,
+            position,
+            GetVFXSpawnRotation(prefab, Quaternion.identity));
+        fx.transform.SetParent(target, true);
+
+        // Attached spell effects must keep already-emitted particles with their
+        // moving owner instead of leaving a trail behind in world space.
+        foreach (ParticleSystem particles in
+            fx.GetComponentsInChildren<ParticleSystem>(true))
+        {
+            ParticleSystem.MainModule main = particles.main;
+            main.simulationSpace = ParticleSystemSimulationSpace.Local;
+        }
+
+        return fx;
+    }
+
     static Quaternion GetVFXSpawnRotation(GameObject prefab, Quaternion requestedRotation)
     {
         if (prefab != null && prefab.name == "Ice freeze skill")
@@ -2880,6 +3020,101 @@ public class AbilityCaster : NetworkBehaviour
         }
     }
 
+    public bool TryActivateSlot(int slot)
+    {
+        if (!ShouldProcessLocalInput() ||
+            PlayerHUD.IsSpellLoadoutOpen ||
+            IsDowned() ||
+            committedCastRoutine != null ||
+            abilities == null ||
+            slot < 0 ||
+            slot >= abilities.Length ||
+            slot >= cooldownTimers.Length)
+            return false;
+
+        AbilityDef ability = abilities[slot];
+        if (ability == null || cooldownTimers[slot] > 0f)
+            return false;
+
+        bool canPickDifferentVariantCost =
+            ability.variants != null &&
+            ability.variants.Length > 0;
+        if (!canPickDifferentVariantCost &&
+            !HasEnoughManaForCast(ability, 0))
+        {
+            WarnInsufficientMana(ability, 0);
+            return false;
+        }
+
+        // Self-cast shields skip aiming but still respect cast time.
+        if (ability.shieldAbsorb > 0f && ability.range <= 0f)
+        {
+            if (heldAbilityIndex != -1)
+                CancelAim();
+            BeginCommittedCast(slot, ability, null, 0f, 0);
+            return true;
+        }
+
+        if (heldAbilityIndex == slot)
+        {
+            CancelAim();
+            return true;
+        }
+
+        if (heldAbilityIndex != -1)
+            CancelAim();
+
+        heldAbilityIndex = slot;
+        aimTimer = 0f;
+        _activeVariantIndex = 0;
+        _currentAimFraction = 0f;
+        activeIndicator = CreateIndicator(ability);
+        IsAimingLocally = true;
+        StartCastingVFX(ability);
+        BroadcastCastingVFXStarted(ability);
+
+        // Force cursor free in case camera orbit had it locked.
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+        return true;
+    }
+
+    void EmitAttachedHitVFX(
+        GameObject hitVFXPrefab,
+        Health target,
+        Vector3 localOffset,
+        float lifetime = 4f)
+    {
+        if (hitVFXPrefab == null || target == null) return;
+
+        if (NetworkServer.active)
+        {
+            ResolveHitVfxIndices(hitVFXPrefab, out int spellbookIndex, out int variantIndex);
+            NetworkIdentity targetIdentity = target.netIdentity;
+            if (spellbookIndex >= 0 && targetIdentity != null)
+            {
+                RpcPlayAttachedHitVFX(
+                    spellbookIndex,
+                    targetIdentity.netId,
+                    localOffset,
+                    lifetime,
+                    variantIndex);
+            }
+            else if (spellbookIndex >= 0)
+            {
+                RpcPlayHitVFX(
+                    spellbookIndex,
+                    target.transform.TransformPoint(localOffset),
+                    lifetime,
+                    variantIndex);
+            }
+        }
+        else if (!NetworkClient.active)
+        {
+            SpawnAttachedVFX(hitVFXPrefab, target.transform, localOffset, lifetime);
+        }
+    }
+
     // Resolve a hitVFX prefab to a spellbook index so it can be sent over the RPC.
     // Any index whose hitVFX matches works — the client re-looks-up the same prefab.
     void ResolveHitVfxIndices(GameObject hitVFXPrefab, out int spellbookIndex, out int variantIndex)
@@ -2908,6 +3143,29 @@ public class AbilityCaster : NetworkBehaviour
 #if UNITY_EDITOR || !UNITY_SERVER
         GameObject hitVfxPrefab = ability.hitVFX;
         SpawnVFX(hitVfxPrefab, position, Quaternion.identity, lifetime);
+#endif
+    }
+
+    [ClientRpc]
+    void RpcPlayAttachedHitVFX(
+        int spellbookIndex,
+        uint targetNetId,
+        Vector3 localOffset,
+        float lifetime,
+        int variantIndex)
+    {
+        if (spellbookIndex < 0 || spellbookIndex >= spellbook.Length) return;
+        AbilityDef ability = spellbook[spellbookIndex];
+        if (ability == null) return;
+#if UNITY_EDITOR || !UNITY_SERVER
+        if (!NetworkClient.spawned.TryGetValue(targetNetId, out NetworkIdentity targetIdentity))
+            return;
+
+        Health targetHealth = targetIdentity.GetComponentInChildren<Health>();
+        Transform target = targetHealth != null
+            ? targetHealth.transform
+            : targetIdentity.transform;
+        SpawnAttachedVFX(ability.hitVFX, target, localOffset, lifetime);
 #endif
     }
 
@@ -3132,7 +3390,10 @@ public class AbilityCaster : NetworkBehaviour
         {
             float chargeFraction = GetChargeFraction(ability, aimTime);
             float damage = Mathf.Lerp(ability.damage, ability.maxChargeDamage, chargeFraction) * damageMultiplier;
-            float coneRange = ability.range * indicator.transform.localScale.x;
+            float coneScale = ability.useFixedConeRange
+                ? Mathf.Lerp(1f, ability.maxChargeSizeMultiplier, chargeFraction)
+                : indicator.transform.localScale.x;
+            float coneRange = ability.range * coneScale;
             ApplyConeDamage(ability, indicator, damage, coneRange, castOrigin);
 
 #if UNITY_EDITOR || !UNITY_SERVER
@@ -3164,22 +3425,43 @@ public class AbilityCaster : NetworkBehaviour
             castPoint = castOrigin + indicator.transform.forward * coneRange;
         }
 
+        Vector3 pulsePoint = castPoint;
+        if (TryApplyCrowdControl(
+            ability,
+            indicator,
+            castOrigin,
+            castPoint,
+            out Vector3 crowdControlPoint))
+        {
+            pulsePoint = crowdControlPoint;
+        }
+
 #if UNITY_EDITOR || !UNITY_SERVER
         GameObject castVfxPrefab = ability.castVFX;
 
-        if (castVfxPrefab != null)
+        // Remote network casts are rendered by RpcCastConfirmed. A host's own player
+        // resolves directly on the server, so it must still render its local copy.
+        bool shouldSpawnCastVFXHere =
+            !NetworkServer.active || isLocalPlayer;
+        if (shouldSpawnCastVFXHere && castVfxPrefab != null)
         {
-            if (ability.shape == AbilityShape.Rectangle && indicator != null)
+            Vector3 castVfxPoint = ability.castVFXAtCaster
+                ? castOrigin
+                : castPoint;
+
+            if (ability.shape == AbilityShape.Rectangle &&
+                indicator != null &&
+                !ability.castVFXAtCaster)
                 StartCoroutine(TravelVFX(castVfxPrefab,
                     castOrigin + Vector3.up * 1.2f,
-                    castPoint + Vector3.up * 0.5f,
+                    castVfxPoint + Vector3.up * 0.5f,
                     castVfxRot, 0.3f));
             else
-                SpawnVFX(castVfxPrefab, castPoint + Vector3.up * 0.8f, castVfxRot);
+                SpawnVFX(castVfxPrefab, castVfxPoint + Vector3.up * 0.8f, castVfxRot);
         }
 #endif
         DispatchAbility(ability, castPoint, damageMultiplier);
-        StartPulseDamageIfNeeded(ability, castPoint, damageMultiplier);
+        StartPulseDamageIfNeeded(ability, pulsePoint, damageMultiplier);
     }
 
     [Command]
@@ -3467,14 +3749,23 @@ public class AbilityCaster : NetworkBehaviour
         if (castVfxPrefab == null) return;
 
 #if UNITY_EDITOR || !UNITY_SERVER
-        if (displayAbility.shape == AbilityShape.Rectangle)
+        if (displayAbility.shape == AbilityShape.Rectangle &&
+            !displayAbility.castVFXAtCaster)
             StartCoroutine(TravelVFX(castVfxPrefab,
                 castOrigin + Vector3.up * 1.2f,
                 position + Vector3.up * 0.5f,
                 rotation, 0.3f));
         else
 #endif
-            SpawnVFX(castVfxPrefab, position + Vector3.up, rotation);
+        {
+            Vector3 castVfxPoint = displayAbility.castVFXAtCaster
+                ? castOrigin
+                : position;
+            SpawnVFX(
+                castVfxPrefab,
+                castVfxPoint + Vector3.up * (displayAbility.castVFXAtCaster ? 0.8f : 1f),
+                rotation);
+        }
     }
 
     int FindSpellbookIndex(AbilityDef ability)
@@ -3791,6 +4082,58 @@ public class AbilityCaster : NetworkBehaviour
             : Mathf.Max(0f, damage);
 
         health.TakeDamage(finalDamage, gameObject, wasCritical);
+    }
+
+    void ResolveDirectAbilityHit(AbilityDef ability, Health health, float damage)
+    {
+        if (ability == null || health == null) return;
+
+        Vector3 hitWorldOffset = Vector3.up * 0.5f;
+        float vfxLifetime = Mathf.Max(4f, ability.damageDelay + 0.5f);
+
+        if (ability.damageDelay > 0f)
+        {
+            EmitAbilityHitVFX(ability, health, hitWorldOffset, vfxLifetime);
+            StartCoroutine(DealDelayedAbilityDamage(health, damage, ability.damageDelay));
+            return;
+        }
+
+        DealAbilityDamage(health, damage);
+        EmitAbilityHitVFX(ability, health, hitWorldOffset, vfxLifetime);
+    }
+
+    void EmitAbilityHitVFX(
+        AbilityDef ability,
+        Health health,
+        Vector3 worldOffset,
+        float lifetime)
+    {
+        if (ability.hitVFXFollowsTarget)
+        {
+            Vector3 localOffset =
+                health.transform.InverseTransformVector(worldOffset);
+            EmitAttachedHitVFX(
+                ability.hitVFX,
+                health,
+                localOffset,
+                lifetime);
+        }
+        else
+            EmitHitVFX(
+                ability.hitVFX,
+                health.transform.position + worldOffset,
+                lifetime);
+    }
+
+    System.Collections.IEnumerator DealDelayedAbilityDamage(
+        Health health,
+        float damage,
+        float delay)
+    {
+        yield return new WaitForSeconds(Mathf.Max(0f, delay));
+
+        if (health != null && health.IsAlive)
+            DealAbilityDamage(health, damage);
     }
 
     static bool AddMatchingHit(Collider hit, string targetTag, System.Collections.Generic.List<Collider> hits, System.Collections.Generic.HashSet<Health> matched)
@@ -4203,8 +4546,7 @@ public class AbilityCaster : NetworkBehaviour
             if (!TryGetMatchingHealth(hit, ability.targetTag, out Health health) || !damaged.Add(health))
                 continue;
 
-            DealAbilityDamage(health, ability.damage * damageMultiplier);
-            EmitHitVFX(ability.hitVFX, health.transform.position + Vector3.up * 0.5f);
+            ResolveDirectAbilityHit(ability, health, ability.damage * damageMultiplier);
         }
     }
 
@@ -4245,8 +4587,7 @@ public class AbilityCaster : NetworkBehaviour
             if (!TryGetMatchingHealth(hit, ability.targetTag, out Health health) || !damaged.Add(health))
                 continue;
 
-            DealAbilityDamage(health, damage);
-            EmitHitVFX(ability.hitVFX, health.transform.position + Vector3.up * 0.5f);
+            ResolveDirectAbilityHit(ability, health, damage);
         }
     }
 
@@ -4269,9 +4610,182 @@ public class AbilityCaster : NetworkBehaviour
             if (angle > ability.coneAngle / 2f) continue;
 
             damaged.Add(health);
-            DealAbilityDamage(health, damage);
-            EmitHitVFX(ability.hitVFX, health.transform.position + Vector3.up * 0.5f);
+            ResolveDirectAbilityHit(ability, health, damage);
         }
+    }
+
+    bool TryApplyCrowdControl(
+        AbilityDef ability,
+        GameObject indicator,
+        Vector3 castOrigin,
+        Vector3 castPoint,
+        out Vector3 crowdControlPoint)
+    {
+        crowdControlPoint = castPoint;
+
+        if (ability == null ||
+            ability.crowdControlType != AbilityCrowdControlType.Pull ||
+            indicator == null)
+            return false;
+
+        // Gameplay resolves on the server in networked sessions. Offline editor
+        // play has neither side active and is intentionally allowed through.
+        if (NetworkClient.active && !NetworkServer.active)
+            return false;
+
+        crowdControlPoint =
+            ability.shape == AbilityShape.Cone &&
+            ability.pullDestination == AbilityPullDestination.ConeApex
+            ? castOrigin
+            : castPoint;
+
+        float duration = Mathf.Max(0.05f, ability.pullDuration);
+        if (ShouldRunPulseDamage(ability))
+        {
+            int pulseCount = GetPulseCount(
+                ability,
+                GetDefaultPulseCount(ability));
+            float pulseInterval = GetPulseInterval(
+                ability,
+                GetDefaultPulseInterval(ability));
+            float pulseSequenceDuration =
+                Mathf.Max(0f, pulseCount - 1) *
+                Mathf.Max(0f, pulseInterval);
+            duration = Mathf.Max(duration, pulseSequenceDuration);
+        }
+        float speed = Mathf.Max(0.1f, ability.pullSpeed);
+        float stopDistance = Mathf.Max(0f, ability.pullStopDistance);
+
+        // Pulsing circle pulls are persistent zones. Re-scan the area while the
+        // pulse sequence is alive so enemies entering after the cast are caught.
+        if (ability.shape == AbilityShape.Circle &&
+            ShouldRunPulseDamage(ability))
+        {
+            float configuredPulseRadius = GetPulseRadius(
+                ability,
+                GetDefaultPulseRadius(ability));
+            float visibleCircleRadius =
+                Mathf.Max(0f, ability.indicatorSize * 0.5f);
+            float radius = Mathf.Max(
+                configuredPulseRadius,
+                visibleCircleRadius);
+            StartCoroutine(PullTargetsEnteringZone(
+                ability,
+                crowdControlPoint,
+                radius,
+                duration,
+                speed,
+                stopDistance));
+            return true;
+        }
+
+        var hits = new System.Collections.Generic.List<Collider>();
+        CollectHitsForAbilityShape(
+            ability,
+            indicator,
+            castOrigin,
+            ability.targetTag,
+            hits);
+
+        var pulled = new System.Collections.Generic.HashSet<Health>();
+        foreach (Collider hit in hits)
+        {
+            if (!TryGetMatchingHealth(
+                    hit,
+                    ability.targetTag,
+                    out Health health) ||
+                !pulled.Add(health) ||
+                IsCrowdControlImmune(health))
+                continue;
+
+            BeginPullOnTarget(
+                health,
+                crowdControlPoint,
+                duration,
+                speed,
+                stopDistance);
+        }
+
+        return true;
+    }
+
+    System.Collections.IEnumerator PullTargetsEnteringZone(
+        AbilityDef ability,
+        Vector3 centre,
+        float radius,
+        float duration,
+        float speed,
+        float stopDistance)
+    {
+        const float scanInterval = 0.1f;
+        float endTime = Time.time + Mathf.Max(0.05f, duration);
+        var wait = new WaitForSeconds(scanInterval);
+        var scannedThisTick =
+            new System.Collections.Generic.HashSet<Health>();
+
+        while (Time.time <= endTime)
+        {
+            scannedThisTick.Clear();
+            Collider[] hits = ZonePhysics.OverlapSphere(
+                gameObject,
+                centre,
+                Mathf.Max(0f, radius));
+            float remainingDuration =
+                Mathf.Max(0.05f, endTime - Time.time);
+
+            foreach (Collider hit in hits)
+            {
+                if (!TryGetMatchingHealth(
+                        hit,
+                        ability.targetTag,
+                        out Health health) ||
+                    !scannedThisTick.Add(health) ||
+                    IsCrowdControlImmune(health))
+                    continue;
+
+                BeginPullOnTarget(
+                    health,
+                    centre,
+                    remainingDuration,
+                    speed,
+                    stopDistance);
+            }
+
+            yield return wait;
+        }
+    }
+
+    void BeginPullOnTarget(
+        Health health,
+        Vector3 destination,
+        float duration,
+        float speed,
+        float stopDistance)
+    {
+        if (health == null || !health.IsAlive)
+            return;
+
+        CrowdControlPullMotor motor =
+            health.GetComponent<CrowdControlPullMotor>();
+        if (motor == null)
+            motor = health.gameObject.AddComponent<CrowdControlPullMotor>();
+
+        motor.BeginPull(
+            destination,
+            duration,
+            speed,
+            stopDistance,
+            gameObject);
+    }
+
+    static bool IsCrowdControlImmune(Health health)
+    {
+        if (health == null) return true;
+
+        // Major bosses need authored reactions rather than having their NavMesh
+        // position overridden by ordinary player crowd control.
+        return health.GetComponent<WorldBossController>() != null ||
+               health.GetComponent<IronWardenController>() != null;
     }
 
     void ApplySweetSpotEffects(AbilityDef ability, GameObject indicator, float damageMultiplier, Vector3 castOrigin)
@@ -6354,11 +6868,22 @@ public class AbilityCaster : NetworkBehaviour
         GameObject castVfxPrefab = effectAbility.castVFX != null ? effectAbility.castVFX : selectorAbility.castVFX;
         SpawnCastVFXForAbility(effectAbility, castVfxPrefab, castPoint, castRotation, castOrigin);
 
+        Vector3 pulsePoint = castPoint;
+        if (TryApplyCrowdControl(
+            effectAbility,
+            indicator,
+            castOrigin,
+            castPoint,
+            out Vector3 crowdControlPoint))
+        {
+            pulsePoint = crowdControlPoint;
+        }
+
         if (effectAbility.spawnTurret && indicator != null)
             SpawnTurret(effectAbility, indicator.transform.position);
 
         DispatchAbility(effectAbility, castPoint, damageMultiplier);
-        StartPulseDamageIfNeeded(effectAbility, castPoint, damageMultiplier);
+        StartPulseDamageIfNeeded(effectAbility, pulsePoint, damageMultiplier);
     }
 
     bool HasBrokenMigratedVariantPayloads(AbilityDef ability)
@@ -6397,6 +6922,7 @@ public class AbilityCaster : NetworkBehaviour
             || ability.chainTargets > 0
             || ability.pullRadius > 0f
             || ability.pullDuration > 0f
+            || ability.crowdControlType != AbilityCrowdControlType.None
             || ability.activeDuration > 0f;
     }
 
@@ -6535,15 +7061,23 @@ public class AbilityCaster : NetworkBehaviour
     void SpawnCastVFXForAbility(AbilityDef ability, GameObject castVfxPrefab, Vector3 castPoint, Quaternion castRotation, Vector3 castOrigin)
     {
 #if UNITY_EDITOR || !UNITY_SERVER
-        if (castVfxPrefab == null) return;
+        bool shouldSpawnCastVFXHere =
+            !NetworkServer.active || isLocalPlayer;
+        if (castVfxPrefab == null || !shouldSpawnCastVFXHere) return;
 
-        if (ability != null && ability.shape == AbilityShape.Rectangle)
+        Vector3 castVfxPoint = ability != null && ability.castVFXAtCaster
+            ? castOrigin
+            : castPoint;
+
+        if (ability != null &&
+            ability.shape == AbilityShape.Rectangle &&
+            !ability.castVFXAtCaster)
             StartCoroutine(TravelVFX(castVfxPrefab,
                 castOrigin + Vector3.up * 1.2f,
-                castPoint + Vector3.up * 0.5f,
+                castVfxPoint + Vector3.up * 0.5f,
                 castRotation, 0.3f));
         else
-            SpawnVFX(castVfxPrefab, castPoint + Vector3.up * 0.8f, castRotation);
+            SpawnVFX(castVfxPrefab, castVfxPoint + Vector3.up * 0.8f, castRotation);
 #endif
     }
 
