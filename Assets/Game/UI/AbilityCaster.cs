@@ -1,6 +1,7 @@
 using Mirror;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Controls;
 using UnityEngine.Rendering.Universal;
@@ -74,6 +75,9 @@ public class AbilityVariant
 public class AbilityDef
 {
     public string abilityName = "Ability";
+    [TextArea(2, 5)]
+    [Tooltip("Player-facing explanation shown in the Spellbook and action-bar tooltip.")]
+    public string description = "";
 
     [Header("Spellbook Visibility")]
     [Tooltip("When true, this spell can be referenced by another spell's variants but is hidden from the spellbook UI and cannot be equipped directly.")]
@@ -1243,44 +1247,8 @@ public class AbilityCaster : NetworkBehaviour
             KeyControl key = GetDigitKey(i);
             if (key == null) continue;
 
-            if (key.wasPressedThisFrame && cooldownTimers[i] <= 0f)
-            {
-                bool canPickDifferentVariantCost = abilities[i].variants != null && abilities[i].variants.Length > 0;
-                if (!canPickDifferentVariantCost && !HasEnoughManaForCast(abilities[i], 0))
-                {
-                    WarnInsufficientMana(abilities[i], 0);
-                    continue;
-                }
-
-                // Self-cast shields skip aiming but still respect cast time.
-                if (abilities[i].shieldAbsorb > 0f && abilities[i].range <= 0f)
-                {
-                    if (heldAbilityIndex != -1) CancelAim();
-                    BeginCommittedCast(i, abilities[i], null, 0f, 0);
-                }
-                else if (heldAbilityIndex == i)
-                {
-                    CancelAim();
-                }
-                else
-                {
-                    if (heldAbilityIndex != -1)
-                        CancelAim();
-
-                    heldAbilityIndex = i;
-                    aimTimer = 0f;
-                    _activeVariantIndex = 0;
-                    _currentAimFraction = 0f;
-                    activeIndicator = CreateIndicator(abilities[i]);
-                    IsAimingLocally = true;
-                    StartCastingVFX(abilities[i]);
-                    BroadcastCastingVFXStarted(abilities[i]);
-
-                    // Force cursor free in case camera orbit had it locked
-                    Cursor.lockState = CursorLockMode.None;
-                    Cursor.visible   = true;
-                }
-            }
+            if (key.wasPressedThisFrame)
+                TryActivateSlot(i);
         }
 
         if (heldAbilityIndex != -1)
@@ -1294,7 +1262,9 @@ public class AbilityCaster : NetworkBehaviour
             {
                 CancelAim();
             }
-            else if (Mouse.current.leftButton.wasPressedThisFrame)
+            else if (Mouse.current.leftButton.wasPressedThisFrame &&
+                     (EventSystem.current == null ||
+                      !EventSystem.current.IsPointerOverGameObject()))
             {
                 // Snapshot the variant index at commit time so it survives the cast-time window.
                 AbilityDef releasedAbility = abilities[heldAbilityIndex];
@@ -3048,6 +3018,65 @@ public class AbilityCaster : NetworkBehaviour
             // Offline / solo editor play — no network, spawn locally.
             SpawnVFX(hitVFXPrefab, position, Quaternion.identity, lifetime);
         }
+    }
+
+    public bool TryActivateSlot(int slot)
+    {
+        if (!ShouldProcessLocalInput() ||
+            PlayerHUD.IsSpellLoadoutOpen ||
+            IsDowned() ||
+            committedCastRoutine != null ||
+            abilities == null ||
+            slot < 0 ||
+            slot >= abilities.Length ||
+            slot >= cooldownTimers.Length)
+            return false;
+
+        AbilityDef ability = abilities[slot];
+        if (ability == null || cooldownTimers[slot] > 0f)
+            return false;
+
+        bool canPickDifferentVariantCost =
+            ability.variants != null &&
+            ability.variants.Length > 0;
+        if (!canPickDifferentVariantCost &&
+            !HasEnoughManaForCast(ability, 0))
+        {
+            WarnInsufficientMana(ability, 0);
+            return false;
+        }
+
+        // Self-cast shields skip aiming but still respect cast time.
+        if (ability.shieldAbsorb > 0f && ability.range <= 0f)
+        {
+            if (heldAbilityIndex != -1)
+                CancelAim();
+            BeginCommittedCast(slot, ability, null, 0f, 0);
+            return true;
+        }
+
+        if (heldAbilityIndex == slot)
+        {
+            CancelAim();
+            return true;
+        }
+
+        if (heldAbilityIndex != -1)
+            CancelAim();
+
+        heldAbilityIndex = slot;
+        aimTimer = 0f;
+        _activeVariantIndex = 0;
+        _currentAimFraction = 0f;
+        activeIndicator = CreateIndicator(ability);
+        IsAimingLocally = true;
+        StartCastingVFX(ability);
+        BroadcastCastingVFXStarted(ability);
+
+        // Force cursor free in case camera orbit had it locked.
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+        return true;
     }
 
     void EmitAttachedHitVFX(
