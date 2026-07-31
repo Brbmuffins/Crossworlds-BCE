@@ -53,6 +53,7 @@ public class EnemyAI : MonoBehaviour
         _baseAgentSpeed = _agent != null ? _agent.speed : moveSpeed;
         _homePosition = transform.position;
         _homeRotation = transform.rotation;
+        EnemyCrowdUtility.ApplyRoamingCrowdSettings(_agent, this);
     }
 
     void OnEnable()
@@ -139,6 +140,10 @@ public class EnemyAI : MonoBehaviour
             _searchSuppressedUntil = Time.time + stealthConfusionDuration;
 
         aggroTarget = t;
+        if (aggroTarget != null)
+            EnemyCrowdUtility.ApplyCombatCrowdSettings(_agent, this);
+        else
+            EnemyCrowdUtility.ApplyRoamingCrowdSettings(_agent, this);
         float interval = 1f / Mathf.Max(0.05f, attackRate);
         _attackTimer = aggroTarget != null ? EnemyCrowdUtility.ReadyCountUpAttackTimer(this, interval) : 0f;
         _returningHome = t == null;
@@ -292,6 +297,7 @@ public class EnemyAI : MonoBehaviour
 
     void ReturnHome()
     {
+        EnemyCrowdUtility.ApplyRoamingCrowdSettings(_agent, this);
         if (!returnHomeWhenLeashed)
         {
             _returningHome = false;

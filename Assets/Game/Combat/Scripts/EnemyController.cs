@@ -146,6 +146,7 @@ public class EnemyController : NetworkBehaviour
     private readonly List<AnimatorCullingMode> _corpseAnimatorCullingModes = new List<AnimatorCullingMode>();
     private readonly List<SkinnedMeshRenderer> _corpseRenderers = new List<SkinnedMeshRenderer>();
     private readonly List<bool> _corpseRendererUpdateModes = new List<bool>();
+    float _locomotionMovingUntil;
 
     bool HasSimulationAuthority => NetworkServer.active ||
         (allowOfflineSimulation && !NetworkClient.active && !NetworkServer.active);
@@ -240,6 +241,7 @@ public class EnemyController : NetworkBehaviour
         _spawnRot = transform.rotation;
         _hasRoamDestination = false;
         ScheduleNextRoam();
+        EnemyCrowdUtility.ApplyRoamingCrowdSettings(_agent, this);
         _health.onDeath.AddListener(OnDeath);
         _health.onDamageTaken.AddListener(OnDamageTakenServer);
         _health.onDamagedBy.AddListener(OnDamagedByServer);
@@ -294,9 +296,11 @@ public class EnemyController : NetworkBehaviour
             return;
         }
 
-        float movementSpeed = Mathf.Max(_agent.velocity.magnitude, _agent.desiredVelocity.magnitude);
+        float movementSpeed = _agent.velocity.magnitude;
         float movingThreshold = Mathf.Max(0.05f, _baseSpeed * 0.05f);
-        _targetAnimatorSpeed = movementSpeed > movingThreshold ? 1f : 0f;
+        if (movementSpeed > movingThreshold)
+            _locomotionMovingUntil = Time.time + 0.2f;
+        _targetAnimatorSpeed = Time.time < _locomotionMovingUntil ? 1f : 0f;
     }
 
     void LateUpdate()
@@ -527,6 +531,10 @@ public class EnemyController : NetworkBehaviour
             _patrolAgent?.SuspendForCombat();
         }
         _target = target;
+        if (_target != null)
+            EnemyCrowdUtility.ApplyCombatCrowdSettings(_agent, this);
+        else
+            EnemyCrowdUtility.ApplyRoamingCrowdSettings(_agent, this);
         _returningHome = false;
         _hasRoamDestination = false;
         if (_agent != null && _agent.isActiveAndEnabled && _agent.isOnNavMesh)
@@ -645,6 +653,7 @@ public class EnemyController : NetworkBehaviour
             Vector3 horizontal = hit.position - _spawnPos;
             horizontal.y = 0f;
             if (horizontal.sqrMagnitude > roamingRadius * roamingRadius) continue;
+            if (!EnemyCrowdUtility.IsRoamingDestinationClear(_agent, hit.position)) continue;
 
             _agent.isStopped = false;
             _agent.speed = _baseSpeed;
@@ -732,6 +741,7 @@ public class EnemyController : NetworkBehaviour
         _attackInProgress = false;
         _hasRoamDestination = false;
         _returningHome = true;
+        EnemyCrowdUtility.ApplyRoamingCrowdSettings(_agent, this);
         _agent.isStopped = false;
         _agent.speed = _baseSpeed;
         _agent.SetDestination(_spawnPos);
