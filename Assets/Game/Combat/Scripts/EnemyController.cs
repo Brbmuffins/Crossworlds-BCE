@@ -916,6 +916,26 @@ public class EnemyController : NetworkBehaviour
         float allowedAttackRange = isRanged ? attackRange * 1.3f : EnemyCrowdUtility.MeleeAttackReach(attackRange);
         if (dist > allowedAttackRange) { state = EnemyState.Chase; return; }
 
+        float slow = _status != null ? _status.GetSlowFraction() : 0f;
+        float normalCombatSpeed = _baseSpeed * (1f - slow);
+
+        // Vortexes and other forced movement can place several enemies at the
+        // same point. Combat avoidance stays disabled for tight surrounding,
+        // but a severe center overlap gets a brief deterministic escape burst.
+        if (_agent != null &&
+            EnemyCrowdUtility.TryGetCombatUnstackPosition(_agent, this, out Vector3 unstackPosition))
+        {
+            _agent.isStopped = false;
+            _agent.speed = normalCombatSpeed * 2.5f;
+            _agent.stoppingDistance = 0.05f;
+            _agent.SetDestination(unstackPosition);
+            return;
+        }
+
+        // Remove the temporary escape burst as soon as this enemy is clear.
+        if (_agent != null)
+            _agent.speed = normalCombatSpeed;
+
         // Stand still for melee; keep pathing for ranged backpedal
         if (!isRanged)
         {
@@ -1354,6 +1374,7 @@ public class EnemyController : NetworkBehaviour
         state        = EnemyState.Idle;
         _attackTimer = 0f;
         _hasRoamDestination = false;
+        EnemyCrowdUtility.ApplyRoamingCrowdSettings(_agent, this);
         ScheduleNextRoam();
         if (_agent != null && _agent.isActiveAndEnabled) _agent.ResetPath();
         // Restore full speed (slow may have been applied)
