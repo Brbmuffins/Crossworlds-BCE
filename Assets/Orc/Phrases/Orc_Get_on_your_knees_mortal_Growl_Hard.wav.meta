@@ -1,0 +1,29 @@
+fileFormatVersion: 2
+guid: cc7e0c260d277ca4a9a76d68620a0c67
+timeCreated: 1462587151
+licenseType: Store
+AudioImporter:
+  serializedVersion: 6
+  defaultSettings:
+    loadType: 0
+    sampleRateSetting: 0
+    sampleRateOverride: 44100
+    compressionFormat: 1
+    quality: 1
+    conversionMode: 0
+  platformSettingOverrides: {}
+  forceToMono: 0
+  normalize: 1
+  preloadAudioData: 1
+  loadInBackground: 0
+  3D: 1
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 62313
+  packageName: ORC - Voice Pack
+  packageVersion: 1.0
+  assetPath: Assets/Orc/Phrases/Orc_Get_on_your_knees_mortal_Growl_Hard.wav
+  uploadId: 116621

@@ -1,0 +1,29 @@
+fileFormatVersion: 2
+guid: f4558543620a6b34f9856f3fdd719a28
+timeCreated: 1462587165
+licenseType: Store
+AudioImporter:
+  serializedVersion: 6
+  defaultSettings:
+    loadType: 0
+    sampleRateSetting: 0
+    sampleRateOverride: 44100
+    compressionFormat: 1
+    quality: 1
+    conversionMode: 0
+  platformSettingOverrides: {}
+  forceToMono: 0
+  normalize: 1
+  preloadAudioData: 1
+  loadInBackground: 0
+  3D: 1
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 62313
+  packageName: ORC - Voice Pack
+  packageVersion: 1.0
+  assetPath: Assets/Orc/Phrases/Orc_Nothing_will_save_you_Vocalfry.wav
+  uploadId: 116621

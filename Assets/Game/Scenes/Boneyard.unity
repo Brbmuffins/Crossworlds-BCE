@@ -2910,9 +2910,9 @@ MonoBehaviour:
   syncMode: 0
   syncInterval: 0
   enemyPrefabs:
-  - {fileID: 4577330360238886047, guid: e9b165cca9a40fe47bdda9b21d407720, type: 3}
-  - {fileID: 8204671760820388417, guid: 05ca882c1b18d70449cfc3fbde6fc614, type: 3}
-  elitePrefab: {fileID: 5551267369004884409, guid: b4c4d40894b065142ac7e320545e40e6, type: 3}
+  - {fileID: 7806446736298007974, guid: ccdcc8d6f3c2d8941bffa495c7adb6c0, type: 3}
+  - {fileID: 5052242896113695516, guid: d786a7ed13322134692e23d8e3cafe8f, type: 3}
+  elitePrefab: {fileID: 8857853131041869042, guid: 7b3e4f3eaf73c0b48be4b3030db5b465, type: 3}
   wispPrefab: {fileID: 1675110105690553697, guid: c0cdc9b76b6fd4141b70007d92530e81, type: 3}
   wispEveryNWaves: 2
   wispCountPerSwarm: 3

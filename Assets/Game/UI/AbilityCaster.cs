@@ -69,6 +69,10 @@ public class AbilityVariant
     public GameObject castVFX;
     [HideInInspector]
     public GameObject hitVFX;
+    [HideInInspector]
+    public AudioClip castSFX;
+    [HideInInspector]
+    public AudioClip hitSFX;
 }
 
 [System.Serializable]
@@ -158,6 +162,15 @@ public class AbilityDef
     public bool castVFXAtCaster = false;
     [Tooltip("Attach the hit VFX to each affected target so the effect follows their movement.")]
     public bool hitVFXFollowsTarget = false;
+
+    [Header("SFX")]
+    [Tooltip("Sound played when this spell is cast. Positional — nearby players hear it at the caster/target. Leave empty for a silent spell.")]
+    public AudioClip castSFX;
+    [Tooltip("Sound played when this spell hits a target. Requires a Hit VFX prefab to be assigned (impact SFX rides the same network broadcast).")]
+    public AudioClip hitSFX;
+    [Range(0f, 1f)]
+    [Tooltip("Volume for this spell's cast and hit sounds.")]
+    public float sfxVolume = 0.85f;
 
     [Header("Shield")]
     public float shieldAbsorb   = 0f;
@@ -2984,6 +2997,35 @@ public class AbilityCaster : NetworkBehaviour
         return requestedRotation;
     }
 
+    // ── Spell SFX ─────────────────────────────────────────────────────────────
+    // Positional one-shot audio for a spell cast/impact. Mirrors EnemySfxProfile's
+    // throwaway-AudioSource pattern so every nearby player hears the sound at the
+    // world point where it happened. Self-guards: the body compiles out of the
+    // dedicated-server build, so callers need no #if wrapping of their own.
+    void PlaySpellSFX(AudioClip clip, Vector3 position, float volume)
+    {
+#if UNITY_EDITOR || !UNITY_SERVER
+        if (clip == null) return;
+
+        var go = new GameObject($"SpellSFX_{clip.name}");
+        go.transform.position = position;
+
+        var src = go.AddComponent<AudioSource>();
+        src.clip          = clip;
+        src.volume        = Mathf.Clamp01(volume);
+        float variance    = FeelConfig.Instance != null ? FeelConfig.Instance.pitchVariance : 0.07f;
+        src.pitch         = 1f + Random.Range(-variance, variance);
+        src.spatialBlend  = 1f;   // 3D — positional so it locates the caster/impact
+        src.rolloffMode   = AudioRolloffMode.Logarithmic;
+        src.minDistance   = 4f;
+        src.maxDistance   = 35f;
+        src.playOnAwake   = false;
+        src.Play();
+
+        Destroy(go, clip.length / Mathf.Max(0.01f, Mathf.Abs(src.pitch)) + 0.1f);
+#endif
+    }
+
 #if UNITY_EDITOR || !UNITY_SERVER
     System.Collections.IEnumerator TravelVFX(GameObject prefab, Vector3 from, Vector3 to,
                                              Quaternion rotation, float duration)
@@ -3021,7 +3063,17 @@ public class AbilityCaster : NetworkBehaviour
         {
             // Offline / solo editor play — no network, spawn locally.
             SpawnVFX(hitVFXPrefab, position, Quaternion.identity, lifetime);
+            PlayHitSFXFor(hitVFXPrefab, position);
         }
+    }
+
+    // Resolves the spell that owns a hit VFX prefab and plays its hit SFX. Used only
+    // on the offline path — networked hits carry the SFX inside RpcPlayHitVFX instead.
+    void PlayHitSFXFor(GameObject hitVFXPrefab, Vector3 position)
+    {
+        ResolveHitVfxIndices(hitVFXPrefab, out int idx, out _);
+        if (idx < 0 || idx >= spellbook.Length || spellbook[idx] == null) return;
+        PlaySpellSFX(spellbook[idx].hitSFX, position, spellbook[idx].sfxVolume);
     }
 
     public bool TryActivateSlot(int slot)
@@ -3116,6 +3168,7 @@ public class AbilityCaster : NetworkBehaviour
         else if (!NetworkClient.active)
         {
             SpawnAttachedVFX(hitVFXPrefab, target.transform, localOffset, lifetime);
+            PlayHitSFXFor(hitVFXPrefab, target.transform.TransformPoint(localOffset));
         }
     }
 
@@ -3147,6 +3200,7 @@ public class AbilityCaster : NetworkBehaviour
 #if UNITY_EDITOR || !UNITY_SERVER
         GameObject hitVfxPrefab = ability.hitVFX;
         SpawnVFX(hitVfxPrefab, position, Quaternion.identity, lifetime);
+        PlaySpellSFX(ability.hitSFX, position, ability.sfxVolume);
 #endif
     }
 
@@ -3170,6 +3224,7 @@ public class AbilityCaster : NetworkBehaviour
             ? targetHealth.transform
             : targetIdentity.transform;
         SpawnAttachedVFX(ability.hitVFX, target, localOffset, lifetime);
+        PlaySpellSFX(ability.hitSFX, target.position, ability.sfxVolume);
 #endif
     }
 
@@ -3463,6 +3518,15 @@ public class AbilityCaster : NetworkBehaviour
             else
                 SpawnVFX(castVfxPrefab, castVfxPoint + Vector3.up * 0.8f, castVfxRot);
         }
+
+        // Cast SFX plays independently of the cast VFX prefab so a spell can be
+        // audible without a particle. Same gate as the VFX above: this branch is
+        // the acting client (offline/solo, or the host rendering its own player).
+        if (shouldSpawnCastVFXHere && ability.castSFX != null)
+            PlaySpellSFX(
+                ability.castSFX,
+                (ability.castVFXAtCaster ? castOrigin : castPoint) + Vector3.up,
+                ability.sfxVolume);
 #endif
         DispatchAbility(ability, castPoint, damageMultiplier);
         StartPulseDamageIfNeeded(ability, pulsePoint, damageMultiplier);
@@ -3747,6 +3811,17 @@ public class AbilityCaster : NetworkBehaviour
 #if UNITY_EDITOR || !UNITY_SERVER
         if (displayAbility.category == AbilityCategory.Heal) OnHealCast?.Invoke();
 #endif
+
+        // Cast SFX (variant override falls back to the base spell). Plays before the
+        // VFX null-return so a spell can be heard even with no cast particle. This is
+        // the networked path — local caster (via FinalizeCast) and remote observers
+        // (via RpcCastConfirmed) both route here, each exactly once.
+        AudioClip castClip = displayAbility.castSFX != null ? displayAbility.castSFX : ability.castSFX;
+        if (castClip != null)
+        {
+            Vector3 sfxPoint = displayAbility.castVFXAtCaster ? castOrigin : position;
+            PlaySpellSFX(castClip, sfxPoint + Vector3.up, displayAbility.sfxVolume);
+        }
 
         GameObject castVfxPrefab = displayAbility.castVFX != null ? displayAbility.castVFX : ability.castVFX;
 
@@ -5601,6 +5676,8 @@ public class AbilityCaster : NetworkBehaviour
             || !string.IsNullOrEmpty(variant.targetTag)
             || variant.castVFX != null
             || variant.hitVFX != null
+            || variant.castSFX != null
+            || variant.hitSFX != null
             || (variant.indicatorTint.a > 0f && !IsDefaultLegacyVariantTint(variant.indicatorTint));
     }
 
@@ -5653,6 +5730,9 @@ public class AbilityCaster : NetworkBehaviour
 
         payload.castVFX = variant.castVFX;
         payload.hitVFX = variant.hitVFX;
+        payload.castSFX = variant.castSFX;
+        payload.hitSFX = variant.hitSFX;
+        payload.sfxVolume = owner.sfxVolume;
         payload.variantIndicatorTint = variant.indicatorTint.a > 0f
             ? variant.indicatorTint
             : owner.variantIndicatorTint;
@@ -5686,6 +5766,8 @@ public class AbilityCaster : NetworkBehaviour
         variant.targetTag = "";
         variant.castVFX = null;
         variant.hitVFX = null;
+        variant.castSFX = null;
+        variant.hitSFX = null;
     }
 
     void BackfillVariantDefaults()

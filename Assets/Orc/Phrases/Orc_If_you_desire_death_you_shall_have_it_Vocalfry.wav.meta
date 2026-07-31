@@ -1,0 +1,29 @@
+fileFormatVersion: 2
+guid: 00bd7db3c10ce44469959f62ec33663b
+timeCreated: 1462587084
+licenseType: Store
+AudioImporter:
+  serializedVersion: 6
+  defaultSettings:
+    loadType: 0
+    sampleRateSetting: 0
+    sampleRateOverride: 44100
+    compressionFormat: 1
+    quality: 1
+    conversionMode: 0
+  platformSettingOverrides: {}
+  forceToMono: 0
+  normalize: 1
+  preloadAudioData: 1
+  loadInBackground: 0
+  3D: 1
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 62313
+  packageName: ORC - Voice Pack
+  packageVersion: 1.0
+  assetPath: Assets/Orc/Phrases/Orc_If_you_desire_death_you_shall_have_it_Vocalfry.wav
+  uploadId: 116621
