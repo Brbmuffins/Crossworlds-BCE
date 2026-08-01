@@ -3903,7 +3903,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 719276705}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 1027480211}
+  m_Script: {fileID: 11500000, guid: b3e66fd512528a1479fe8314d9d737ea, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::QuestMarkerBillboard
 --- !u!114 &719276708
@@ -4059,7 +4059,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 719276705}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 294912350}
+  m_Script: {fileID: 11500000, guid: b3e66fd512528a1479fe8314d9d737ea, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::QuestMarkerBillboard
 --- !u!1001 &733251647
@@ -8746,7 +8746,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 1497971300}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 285089699}
+  m_Script: {fileID: 11500000, guid: a05a8e74f20d9c140a8d904075f0896b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::QuestEnemyTarget
   enemyTemplateId: prefab_ogrebrute
@@ -10751,7 +10751,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 1952934023}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 858869106}
+  m_Script: {fileID: 11500000, guid: a05a8e74f20d9c140a8d904075f0896b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::QuestEnemyTarget
   enemyTemplateId: 
@@ -10764,7 +10764,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 1952934023}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 2115384069}
+  m_Script: {fileID: 11500000, guid: 2b7a904c1cc764b4da3928375477e43d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::QuestInteractableTarget
   targetId: gunda_(4)

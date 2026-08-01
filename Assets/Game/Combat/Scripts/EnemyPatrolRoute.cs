@@ -229,7 +229,7 @@ public sealed class EnemyPatrolRoute : MonoBehaviour
 /// Server-authoritative patrol state. EnemyController calls TickPatrol only
 /// while idle, so combat and leash-return navigation always take priority.
 /// </summary>
-public sealed class EnemyPatrolAgent : MonoBehaviour
+public sealed partial class EnemyPatrolAgent : MonoBehaviour
 {
     public EnemyPatrolRoute route;
     public int startingWaypoint;

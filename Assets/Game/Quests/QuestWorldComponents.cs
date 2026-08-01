@@ -33,20 +33,26 @@ public sealed class QuestGiver : MonoBehaviour, INPCInteractable
     void OnDisable()
     {
         QuestLocalRuntime.StateChanged -= RefreshMarker;
+#if UNITY_EDITOR || !UNITY_SERVER
         NPCInteractionManager.Instance?.UnregisterNearby(this);
+#endif
     }
 
     void OnTriggerEnter(Collider other)
     {
         if (!IsLocalPlayer(other)) return;
         RefreshMarker();
+#if UNITY_EDITOR || !UNITY_SERVER
         NPCInteractionManager.Instance?.RegisterNearby(this);
+#endif
     }
 
     void OnTriggerExit(Collider other)
     {
         if (!IsLocalPlayer(other)) return;
+#if UNITY_EDITOR || !UNITY_SERVER
         NPCInteractionManager.Instance?.UnregisterNearby(this);
+#endif
         QuestLocalDialogue.Hide();
     }
 
@@ -148,7 +154,7 @@ public sealed class QuestGiver : MonoBehaviour, INPCInteractable
 }
 
 [ExecuteAlways]
-public sealed class QuestMarkerBillboard : MonoBehaviour
+public sealed partial class QuestMarkerBillboard : MonoBehaviour
 {
     void LateUpdate()
     {
@@ -222,7 +228,7 @@ public sealed class QuestObjectiveMarker : MonoBehaviour
     }
 }
 
-public sealed class QuestEnemyTarget : MonoBehaviour
+public sealed partial class QuestEnemyTarget : MonoBehaviour
 {
     public string enemyTemplateId;
     Health _health;
@@ -257,7 +263,7 @@ public sealed class QuestEnemyTarget : MonoBehaviour
     }
 }
 
-public sealed class QuestInteractableTarget : MonoBehaviour, INPCInteractable
+public sealed partial class QuestInteractableTarget : MonoBehaviour, INPCInteractable
 {
     public string targetId;
     public string promptText = "Press E to interact";
@@ -276,8 +282,18 @@ public sealed class QuestInteractableTarget : MonoBehaviour, INPCInteractable
             sphere.isTrigger = true;
         }
     }
-    void OnTriggerEnter(Collider other) { if (IsLocal(other)) NPCInteractionManager.Instance?.RegisterNearby(this); }
-    void OnTriggerExit(Collider other) { if (IsLocal(other)) NPCInteractionManager.Instance?.UnregisterNearby(this); }
+    void OnTriggerEnter(Collider other)
+    {
+#if UNITY_EDITOR || !UNITY_SERVER
+        if (IsLocal(other)) NPCInteractionManager.Instance?.RegisterNearby(this);
+#endif
+    }
+    void OnTriggerExit(Collider other)
+    {
+#if UNITY_EDITOR || !UNITY_SERVER
+        if (IsLocal(other)) NPCInteractionManager.Instance?.UnregisterNearby(this);
+#endif
+    }
     public void Interact() => QuestLocalRuntime.RequestInteraction(targetId);
     static bool IsLocal(Collider other)
     {
