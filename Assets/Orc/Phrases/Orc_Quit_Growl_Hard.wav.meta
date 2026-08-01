@@ -1,0 +1,29 @@
+fileFormatVersion: 2
+guid: 7737099578890de47aee323d25877928
+timeCreated: 1462587124
+licenseType: Store
+AudioImporter:
+  serializedVersion: 6
+  defaultSettings:
+    loadType: 0
+    sampleRateSetting: 0
+    sampleRateOverride: 44100
+    compressionFormat: 1
+    quality: 1
+    conversionMode: 0
+  platformSettingOverrides: {}
+  forceToMono: 0
+  normalize: 1
+  preloadAudioData: 1
+  loadInBackground: 0
+  3D: 1
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 62313
+  packageName: ORC - Voice Pack
+  packageVersion: 1.0
+  assetPath: Assets/Orc/Phrases/Orc_Quit_Growl_Hard.wav
+  uploadId: 116621

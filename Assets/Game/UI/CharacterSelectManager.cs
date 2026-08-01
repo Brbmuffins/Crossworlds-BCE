@@ -54,7 +54,7 @@ public class CharacterSelectManager : MonoBehaviour
         },
         new ClassDef
         {
-            idx = 1, name = "IRONCLAD", role = "Tank  ·  Crowd Control",
+            idx = 1, name = "TEMPLAR", role = "Tank  ·  Crowd Control",
             blurb = "Takes hits for the team and punishes enemies who focus them. Rune Chain locks one target for 5 full seconds. Shieldwall Charge staggers everything in its path. The anvil everything else is smashed against.",
             abilities = new[] { "Arcane Ward", "Shieldwall Charge", "Stalwart Stance", "Iron Rampart" },
             passive = "Threat Protocol — damage stacks DR bonus and redirects enemy aggro",
@@ -64,8 +64,8 @@ public class CharacterSelectManager : MonoBehaviour
         },
         new ClassDef
         {
-            idx = 2, name = "SHADOWBLADE", role = "Stealth  ·  Burst",
-            blurb = "Silence wards, shadow veils, and debuff detonations. Invisible until it's too late. A Shadowblade who knows when to harvest beats button-mashers every single time.",
+            idx = 2, name = "NIGHT HUNTER", role = "Stealth  ·  Burst",
+            blurb = "Silence wards, shadow veils, and debuff detonations. Invisible until it's too late. A Night Hunter who knows when to harvest beats button-mashers every single time.",
             abilities = new[] { "Void Bolt", "Silence Ward", "Dark Harvest", "Shadow Veil" },
             passive = "Bounty System — elite kills instantly reset all cooldowns",
             accent = new Color(0.6f, 0.1f, 1f),

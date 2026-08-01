@@ -32,7 +32,7 @@ using UnityEngine.SceneManagement;
 public class RodNetworkManager : NetworkManager
 {
     [Header("Class Prefabs")]
-    [Tooltip("0=Marauder, 1=Ironclad, 2=Shadowblade, 3=Cleric, 4=Arcanist")]
+    [Tooltip("0=Marauder, 1=Templar, 2=Night Hunter, 3=Cleric, 4=Arcanist")]
     public GameObject[] classPrefabs;
 
     [Header("World / Combat Prefabs")]

@@ -83,6 +83,7 @@ public class EnemyWanderAI : MonoBehaviour
 
         CaptureOrigin();
         _baseAgentSpeed = _agent != null ? _agent.speed : chaseSpeed;
+        EnemyCrowdUtility.ApplyRoamingCrowdSettings(_agent, this);
 
         if (_health != null)
         {
@@ -178,6 +179,10 @@ public class EnemyWanderAI : MonoBehaviour
         }
 
         _aggroTarget = target;
+        if (_aggroTarget != null)
+            EnemyCrowdUtility.ApplyCombatCrowdSettings(_agent, this);
+        else
+            EnemyCrowdUtility.ApplyRoamingCrowdSettings(_agent, this);
         float interval = 1f / Mathf.Max(0.05f, attackRate);
         _attackTimer = _aggroTarget != null ? EnemyCrowdUtility.ReadyCountUpAttackTimer(this, interval) : 0f;
         _returningToOrigin = false;
@@ -198,7 +203,8 @@ public class EnemyWanderAI : MonoBehaviour
             Vector3 dest = _origin + new Vector3(circle.x, 0f, circle.y);
 
             if (CanUseAgent()
-                && NavMesh.SamplePosition(dest, out NavMeshHit hit, wanderRadius, NavMesh.AllAreas))
+                && NavMesh.SamplePosition(dest, out NavMeshHit hit, wanderRadius, NavMesh.AllAreas)
+                && EnemyCrowdUtility.IsRoamingDestinationClear(_agent, hit.position))
             {
                 _agent.isStopped = false;
                 _agent.speed = _baseAgentSpeed > 0f ? _baseAgentSpeed : chaseSpeed;
@@ -358,6 +364,7 @@ public class EnemyWanderAI : MonoBehaviour
         _aggroTarget = null;
         _attackTimer = 0f;
         _returningToOrigin = true;
+        EnemyCrowdUtility.ApplyRoamingCrowdSettings(_agent, this);
         SetWalking(false);
         ReturnToOrigin();
     }

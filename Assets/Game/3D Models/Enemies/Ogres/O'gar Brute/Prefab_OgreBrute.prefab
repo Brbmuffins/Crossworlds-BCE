@@ -102,6 +102,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: d4b45e84343eb4444bc0a8da2f18a7eb, type: 3}
       insertIndex: -1
       addedObject: {fileID: 5167684867863830897}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: d4b45e84343eb4444bc0a8da2f18a7eb, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: -5074429013149433223}
   m_SourcePrefab: {fileID: 100100000, guid: d4b45e84343eb4444bc0a8da2f18a7eb, type: 3}
 --- !u!4 &1249576090621623051 stripped
 Transform:
@@ -222,6 +225,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   isInvulnerable: 0
+  zoneTransitionProtected: 0
 --- !u!195 &7493634873848473757
 NavMeshAgent:
   m_ObjectHideFlags: 0
@@ -231,7 +235,7 @@ NavMeshAgent:
   m_GameObject: {fileID: 1881574980918108593}
   m_Enabled: 1
   m_AgentTypeID: 0
-  m_Radius: 0.5
+  m_Radius: 0.65
   m_Speed: 2.5
   m_Acceleration: 8
   avoidancePriority: 50
@@ -282,6 +286,20 @@ MonoBehaviour:
   - 0.35
   - 0.35
   - 0.35
+  idleAnimationSpeed: 1
+  chaseAnimationSpeed: 1
+  attackAnimationSpeeds:
+  - 1
+  - 1
+  - 1
+  - 1
+  getHitAnimationSpeed: 1
+  deathAnimationSpeed: 1
+  attackVfxOffsets:
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
   isRanged: 0
   projectilePrefab: {fileID: 0}
   preferredRange: 5
@@ -409,3 +427,27 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &-5074429013149433223
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1881574980918108593}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8dc771e3e8ca44c68989bed5db340ea2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemySfxProfile
+  aggro: {fileID: 8300000, guid: 1f49fcdabd8e4f34aaf367d88684e858, type: 3}
+  attack1: {fileID: 8300000, guid: 7ed026abd5516fc40ae3cbc28427d4f1, type: 3}
+  attack2: {fileID: 8300000, guid: 32c2948186aa4ab4093dfe6eea5f8bda, type: 3}
+  attack3: {fileID: 8300000, guid: e681337bcf4f47145bbf664b67c61a78, type: 3}
+  attack4: {fileID: 8300000, guid: 4d41914acb13e8c4fb4c9c8cea94b029, type: 3}
+  attackImpact: {fileID: 8300000, guid: 22621a51acec0d64f8c8307811a77a25, type: 3}
+  getHit: {fileID: 8300000, guid: cbb18341b015d434fabd64d35e09c971, type: 3}
+  death: {fileID: 8300000, guid: 99cdbc19345a90348bf057c20c3a1342, type: 3}
+  volume: 0.85
+  pitchVariation: 0.06
+  minDistance: 2
+  maxDistance: 25

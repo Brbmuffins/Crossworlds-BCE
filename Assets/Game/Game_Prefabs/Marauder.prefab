@@ -129,6 +129,7 @@ MonoBehaviour:
   playerName: Player
   classIndex: 0
   characterId: -1
+  zoneVisualsReady: 1
 --- !u!114 &1283256432779733543
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -221,6 +222,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   isInvulnerable: 0
+  zoneTransitionProtected: 0
 --- !u!114 &6642540355542237682
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -307,12 +309,14 @@ MonoBehaviour:
   indicatorTextureSupport: {fileID: 0}
   spellbook:
   - abilityName: Crashing Leap
+    description: 
     variantOnly: 0
     variantIndicatorTint: {r: 0, g: 0, b: 0, a: 0}
     shape: 0
     category: 0
     range: 20
     coneAngle: 0
+    useFixedConeRange: 0
     rectWidth: 0
     indicatorSize: 15
     spawnTurret: 0
@@ -333,13 +337,20 @@ MonoBehaviour:
     chargeable: 0
     maxChargeTime: 0
     damage: 40
+    damageDelay: 0
     maxChargeDamage: 0
     maxChargeSizeMultiplier: 0
     targetTag: 
     chargedTint: {r: 0, g: 0, b: 0, a: 0}
     fireVisual: 0
     castVFX: {fileID: 0}
+    castingVFX: {fileID: 0}
     hitVFX: {fileID: 1751917841625684442, guid: fd473c4be118b1e45a7a4c3ae8d705d7, type: 3}
+    castVFXAtCaster: 0
+    hitVFXFollowsTarget: 0
+    castSFX: {fileID: 8300000, guid: 1d6618310a6df4cb6b8cae7a0cb06952, type: 3}
+    hitSFX: {fileID: 8300000, guid: 06f5cd224af534bc8865fcdcc2b69615, type: 3}
+    sfxVolume: 0.75
     shieldAbsorb: 0
     shieldDuration: 0
     healAmount: 0
@@ -354,6 +365,10 @@ MonoBehaviour:
     chainDamageFalloff: 0
     pullRadius: 0
     pullDuration: 0
+    crowdControlType: 0
+    pullDestination: 0
+    pullSpeed: 8
+    pullStopDistance: 1.25
     usePulseDamage: 0
     pulseCount: 0
     pulseInterval: 0
@@ -365,12 +380,14 @@ MonoBehaviour:
   equippedIndices: 00000000010000000200000003000000
   _equippedAbilities:
   - abilityName: Ability
+    description: 
     variantOnly: 0
     variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
     shape: 0
     category: 0
     range: 4
     coneAngle: 60
+    useFixedConeRange: 0
     rectWidth: 1.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -391,13 +408,20 @@ MonoBehaviour:
     chargeable: 0
     maxChargeTime: 1.5
     damage: 10
+    damageDelay: 0
     maxChargeDamage: 10
     maxChargeSizeMultiplier: 1.8
     targetTag: Enemy
     chargedTint: {r: 0, g: 0, b: 0, a: 0}
     fireVisual: 0
     castVFX: {fileID: 0}
+    castingVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    castVFXAtCaster: 0
+    hitVFXFollowsTarget: 0
+    castSFX: {fileID: 0}
+    hitSFX: {fileID: 0}
+    sfxVolume: 0.85
     shieldAbsorb: 0
     shieldDuration: 0
     healAmount: 0
@@ -412,6 +436,10 @@ MonoBehaviour:
     chainDamageFalloff: 5
     pullRadius: 0
     pullDuration: 0
+    crowdControlType: 0
+    pullDestination: 0
+    pullSpeed: 8
+    pullStopDistance: 1.25
     usePulseDamage: 0
     pulseCount: 0
     pulseInterval: 0
@@ -421,12 +449,14 @@ MonoBehaviour:
     deployablePrefab: {fileID: 0}
     variants: []
   - abilityName: Ability
+    description: 
     variantOnly: 0
     variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
     shape: 0
     category: 0
     range: 4
     coneAngle: 60
+    useFixedConeRange: 0
     rectWidth: 1.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -447,13 +477,20 @@ MonoBehaviour:
     chargeable: 0
     maxChargeTime: 1.5
     damage: 10
+    damageDelay: 0
     maxChargeDamage: 10
     maxChargeSizeMultiplier: 1.8
     targetTag: Enemy
     chargedTint: {r: 0, g: 0, b: 0, a: 0}
     fireVisual: 0
     castVFX: {fileID: 0}
+    castingVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    castVFXAtCaster: 0
+    hitVFXFollowsTarget: 0
+    castSFX: {fileID: 0}
+    hitSFX: {fileID: 0}
+    sfxVolume: 0.85
     shieldAbsorb: 0
     shieldDuration: 0
     healAmount: 0
@@ -468,6 +505,10 @@ MonoBehaviour:
     chainDamageFalloff: 5
     pullRadius: 0
     pullDuration: 0
+    crowdControlType: 0
+    pullDestination: 0
+    pullSpeed: 8
+    pullStopDistance: 1.25
     usePulseDamage: 0
     pulseCount: 0
     pulseInterval: 0
@@ -477,12 +518,14 @@ MonoBehaviour:
     deployablePrefab: {fileID: 0}
     variants: []
   - abilityName: Ability
+    description: 
     variantOnly: 0
     variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
     shape: 0
     category: 0
     range: 4
     coneAngle: 60
+    useFixedConeRange: 0
     rectWidth: 1.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -503,13 +546,20 @@ MonoBehaviour:
     chargeable: 0
     maxChargeTime: 1.5
     damage: 10
+    damageDelay: 0
     maxChargeDamage: 10
     maxChargeSizeMultiplier: 1.8
     targetTag: Enemy
     chargedTint: {r: 0, g: 0, b: 0, a: 0}
     fireVisual: 0
     castVFX: {fileID: 0}
+    castingVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    castVFXAtCaster: 0
+    hitVFXFollowsTarget: 0
+    castSFX: {fileID: 0}
+    hitSFX: {fileID: 0}
+    sfxVolume: 0.85
     shieldAbsorb: 0
     shieldDuration: 0
     healAmount: 0
@@ -524,6 +574,10 @@ MonoBehaviour:
     chainDamageFalloff: 5
     pullRadius: 0
     pullDuration: 0
+    crowdControlType: 0
+    pullDestination: 0
+    pullSpeed: 8
+    pullStopDistance: 1.25
     usePulseDamage: 0
     pulseCount: 0
     pulseInterval: 0
@@ -533,12 +587,14 @@ MonoBehaviour:
     deployablePrefab: {fileID: 0}
     variants: []
   - abilityName: Ability
+    description: 
     variantOnly: 0
     variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
     shape: 0
     category: 0
     range: 4
     coneAngle: 60
+    useFixedConeRange: 0
     rectWidth: 1.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -559,13 +615,20 @@ MonoBehaviour:
     chargeable: 0
     maxChargeTime: 1.5
     damage: 10
+    damageDelay: 0
     maxChargeDamage: 10
     maxChargeSizeMultiplier: 1.8
     targetTag: Enemy
     chargedTint: {r: 0, g: 0, b: 0, a: 0}
     fireVisual: 0
     castVFX: {fileID: 0}
+    castingVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    castVFXAtCaster: 0
+    hitVFXFollowsTarget: 0
+    castSFX: {fileID: 0}
+    hitSFX: {fileID: 0}
+    sfxVolume: 0.85
     shieldAbsorb: 0
     shieldDuration: 0
     healAmount: 0
@@ -580,6 +643,10 @@ MonoBehaviour:
     chainDamageFalloff: 5
     pullRadius: 0
     pullDuration: 0
+    crowdControlType: 0
+    pullDestination: 0
+    pullSpeed: 8
+    pullStopDistance: 1.25
     usePulseDamage: 0
     pulseCount: 0
     pulseInterval: 0

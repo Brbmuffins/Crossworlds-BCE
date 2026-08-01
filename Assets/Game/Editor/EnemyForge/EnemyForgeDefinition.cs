@@ -85,6 +85,10 @@ namespace Crossworlds.EditorTools.EnemyForge
         [Min(0.1f)] public float sfxMaxDistance = 25f;
 
         [Header("Vitals")]
+        [Tooltip("Name shown in the enemy hover display. Leave blank to format the prefab or scene object name.")]
+        public string enemyDisplayName = "";
+        [Min(0), Tooltip("Level shown in the enemy hover display. Use 0 to hide the level.")]
+        public int enemyLevel = 0;
         [Min(1f)] public float maxHealth = 60f;
         public bool robotic;
 
@@ -218,6 +222,8 @@ namespace Crossworlds.EditorTools.EnemyForge
             {
                 maxHealth = health.maxHealth;
                 robotic = health.isRobotic;
+                enemyDisplayName = health.ConfiguredEnemyDisplayName;
+                enemyLevel = health.ConfiguredEnemyLevel;
                 importedComponents++;
             }
             if (agent != null)

@@ -87,6 +87,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 8447798417058239152, guid: 085be80bf778dbb4ca4eb9574b31874c, type: 3}
       insertIndex: -1
       addedObject: {fileID: 2029869154457814526}
+    - targetCorrespondingSourceObject: {fileID: 8447798417058239152, guid: 085be80bf778dbb4ca4eb9574b31874c, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: -486203811058225373}
   m_SourcePrefab: {fileID: 100100000, guid: 085be80bf778dbb4ca4eb9574b31874c, type: 3}
 --- !u!137 &2467626122932290749 stripped
 SkinnedMeshRenderer:
@@ -130,7 +133,26 @@ MonoBehaviour:
   damage: 12
   combatTurnSpeed: 1080
   attackImpactDelay: 1.0200001
-  lockFacingOnAggro: 0
+  attackAnimationVariantMask: 1
+  attackAnimationImpactDelays:
+  - 0.35
+  - 0.35
+  - 0.35
+  - 0.35
+  idleAnimationSpeed: 1
+  chaseAnimationSpeed: 1
+  attackAnimationSpeeds:
+  - 1
+  - 1
+  - 1
+  - 1
+  getHitAnimationSpeed: 1
+  deathAnimationSpeed: 1
+  attackVfxOffsets:
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
   isRanged: 0
   projectilePrefab: {fileID: 0}
   preferredRange: 5
@@ -145,3 +167,27 @@ MonoBehaviour:
   keepCorpseGrounded: 1
   corpseGroundingRenderer: {fileID: 2467626122932290749}
   corpseGroundOffset: -0.15263635
+--- !u!114 &-486203811058225373
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7806446736298007974}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8dc771e3e8ca44c68989bed5db340ea2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemySfxProfile
+  aggro: {fileID: 8300000, guid: 1f49fcdabd8e4f34aaf367d88684e858, type: 3}
+  attack1: {fileID: 8300000, guid: 7ed026abd5516fc40ae3cbc28427d4f1, type: 3}
+  attack2: {fileID: 8300000, guid: 32c2948186aa4ab4093dfe6eea5f8bda, type: 3}
+  attack3: {fileID: 8300000, guid: e681337bcf4f47145bbf664b67c61a78, type: 3}
+  attack4: {fileID: 8300000, guid: 4d41914acb13e8c4fb4c9c8cea94b029, type: 3}
+  attackImpact: {fileID: 8300000, guid: 22621a51acec0d64f8c8307811a77a25, type: 3}
+  getHit: {fileID: 8300000, guid: cbb18341b015d434fabd64d35e09c971, type: 3}
+  death: {fileID: 8300000, guid: 99cdbc19345a90348bf057c20c3a1342, type: 3}
+  volume: 0.85
+  pitchVariation: 0.06
+  minDistance: 2
+  maxDistance: 25

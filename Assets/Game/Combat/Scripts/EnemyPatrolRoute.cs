@@ -29,7 +29,6 @@ public sealed class EnemyPatrolRoute : MonoBehaviour
     int _formationWaypointIndex;
     int _formationDirection = 1;
     float _formationWaitUntil;
-    readonly HashSet<EnemyPatrolAgent> _formationArrivals = new();
 
     public int Count => waypoints?.Count ?? 0;
 
@@ -86,7 +85,6 @@ public sealed class EnemyPatrolRoute : MonoBehaviour
         _formationWaypointIndex = _sharedResumeWaypoint;
         _formationProgressInitialized = true;
         _formationWaitUntil = 0f;
-        _formationArrivals.Clear();
         // Combat exit can occur on different AI ticks. Hold the shared choice
         // long enough for every member of the formation to receive it.
         _sharedResumeExpires = Time.time + 5f;
@@ -114,27 +112,42 @@ public sealed class EnemyPatrolRoute : MonoBehaviour
     {
         GetFormationProgress(member.startingWaypoint,
             out waypointIndex, out direction, out waitUntil);
-        _formationArrivals.Add(member);
+        // Continuous formation: the first member reaching its slot advances the
+        // shared leg. Other members retarget immediately and catch up in motion.
+        AdvanceFormationProgress();
+        _formationWaitUntil = 0f;
+        waypointIndex = _formationWaypointIndex;
+        direction = _formationDirection;
+        waitUntil = _formationWaitUntil;
+        return true;
+    }
 
-        int required = 0;
+    public float GetFormationSpeedMultiplier(EnemyPatrolAgent member, Vector3 memberSlot)
+    {
+        if (member == null) return 1f;
+
+        float totalDistance = 0f;
+        int count = 0;
         foreach (GameObject patrolObject in patrolObjects)
         {
             if (patrolObject == null || !patrolObject.activeInHierarchy) continue;
             Health health = patrolObject.GetComponent<Health>();
             if (health != null && !health.IsAlive) continue;
             EnemyPatrolAgent patrol = patrolObject.GetComponent<EnemyPatrolAgent>();
-            if (patrol != null && patrol.UsesGroupFormation) required++;
-        }
-        if (required > 0 && _formationArrivals.Count < required)
-            return false;
+            if (patrol == null || !patrol.UsesGroupFormation) continue;
+            if (!patrol.TryGetCurrentFormationSlot(out Vector3 slot)) continue;
 
-        AdvanceFormationProgress();
-        _formationArrivals.Clear();
-        _formationWaitUntil = Time.time + Mathf.Max(0f, waypointWaitSeconds);
-        waypointIndex = _formationWaypointIndex;
-        direction = _formationDirection;
-        waitUntil = _formationWaitUntil;
-        return true;
+            Vector3 delta = slot - patrolObject.transform.position;
+            delta.y = 0f;
+            totalDistance += delta.magnitude;
+            count++;
+        }
+
+        if (count <= 1) return 1f;
+        Vector3 memberDelta = memberSlot - member.transform.position;
+        memberDelta.y = 0f;
+        float difference = memberDelta.magnitude - totalDistance / count;
+        return Mathf.Clamp(1f + difference * 0.08f, 0.78f, 1.35f);
     }
 
     void AdvanceFormationProgress()
@@ -236,6 +249,7 @@ public sealed class EnemyPatrolAgent : MonoBehaviour
     bool _navMeshRecoveryAttempted;
     bool _reportedInvalidSetup;
     bool _reportedRuntimeState;
+    float _basePatrolSpeed;
 
     public bool HasUsableRoute => route != null && route.Count > 0;
 
@@ -243,6 +257,7 @@ public sealed class EnemyPatrolAgent : MonoBehaviour
     {
         _controller = GetComponent<EnemyController>();
         _agent = GetComponent<NavMeshAgent>();
+        _basePatrolSpeed = _agent != null ? _agent.speed : 0f;
     }
 
     void OnEnable()
@@ -280,6 +295,11 @@ public sealed class EnemyPatrolAgent : MonoBehaviour
             (_controller.state != EnemyController.EnemyState.Idle ||
              _controller.CurrentTarget != null ||
              _controller.IsReturningHome))
+            return;
+
+        // EnemyController owns the idle navigation tick when present. Calling
+        // from both components can complete or advance a waypoint twice.
+        if (_controller != null)
             return;
 
         TickPatrol(_agent);
@@ -330,6 +350,9 @@ public sealed class EnemyPatrolAgent : MonoBehaviour
             return true;
         }
 
+        if (UsesGroupFormation && _basePatrolSpeed > 0f)
+            agent.speed = _basePatrolSpeed * route.GetFormationSpeedMultiplier(this, waypoint);
+
         // Multiple agents can share a route. Once one occupies the exact waypoint,
         // avoidance keeps the others roughly two radii away; accept that as arrival
         // so a patrol group cannot deadlock behind its lead agent.
@@ -374,13 +397,8 @@ public sealed class EnemyPatrolAgent : MonoBehaviour
                 return true;
             }
 
-            bool advanced = route.ReportFormationArrival(this,
+            route.ReportFormationArrival(this,
                 out _waypointIndex, out _direction, out _waitUntil);
-            if (!advanced || Time.time < _waitUntil)
-            {
-                if (agent.hasPath) agent.ResetPath();
-                return true;
-            }
             if (TryGetPatrolWaypoint(out Vector3 groupWaypoint))
                 BeginLeg(agent, groupWaypoint);
             return true;
@@ -425,6 +443,15 @@ public sealed class EnemyPatrolAgent : MonoBehaviour
         Vector3 right = Vector3.Cross(Vector3.up, forward).normalized;
         waypoint += right * formationOffset.x + forward * formationOffset.y;
         return true;
+    }
+
+    public bool TryGetCurrentFormationSlot(out Vector3 waypoint)
+    {
+        waypoint = default;
+        if (!UsesGroupFormation || route == null || route.Count == 0) return false;
+        route.GetFormationProgress(startingWaypoint,
+            out int sharedWaypoint, out int sharedDirection, out _);
+        return TryGetPatrolWaypoint(sharedWaypoint, sharedDirection, out waypoint);
     }
 
     void BeginLeg(NavMeshAgent agent, Vector3 waypoint)

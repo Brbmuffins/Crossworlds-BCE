@@ -127,11 +127,11 @@ public static class CharacterSelectDataBuilder
 
     static void CreateIronclad()
     {
-        var d = Make("Ironclad");
-        d.className       = "Ironclad";
+        var d = Make("Templar");
+        d.className       = "Templar";
         d.roleTagline     = "Tank  ·  Vanguard  ·  Frontline Fortress";
         d.loreDescription =
-            "An indestructible wall of armored might, the Ironclad absorbs punishment so their allies don't have to. " +
+            "An indestructible wall of armored might, the Templar absorbs punishment so their allies don't have to. " +
             "Masters of aggro and mitigation, they hold the line against overwhelming odds — then punish overcommitment with a devastating counter-charge.";
         d.classColor     = new Color(0.42f, 0.68f, 0.88f);
         d.classColorDark = new Color(0.08f, 0.18f, 0.30f);
@@ -180,18 +180,18 @@ public static class CharacterSelectDataBuilder
         d.deployableDescription = "Deploys a destructible barrier the entire team can hide behind. Absorbs a fixed amount of damage before shattering.";
         d.deployableIcon        = LoadIcon("iron-rampart");
 
-        Save(d, "Ironclad");
+        Save(d, "Templar");
     }
 
     // ── 2 — Shadowblade ──────────────────────────────────────────────────────
 
     static void CreateShadowblade()
     {
-        var d = Make("Shadowblade");
-        d.className       = "Shadowblade";
+        var d = Make("Night Hunter");
+        d.className       = "Night Hunter";
         d.roleTagline     = "Burst DPS  ·  Assassin  ·  Flanker";
         d.loreDescription =
-            "A phantom of the battlefield, the Shadowblade strikes from darkness and vanishes before retaliation. " +
+            "A phantom of the battlefield, the Night Hunter strikes from darkness and vanishes before retaliation. " +
             "High risk, devastating reward — masters of void-stepping and positional play who reward spatial awareness with lethal efficiency.";
         d.classColor     = new Color(0.72f, 0.22f, 0.90f);
         d.classColorDark = new Color(0.18f, 0.05f, 0.28f);
@@ -240,7 +240,7 @@ public static class CharacterSelectDataBuilder
         d.deployableDescription = "Projects a veil over a wide area, briefly cloaking all allies inside from enemy detection.";
         d.deployableIcon        = LoadIcon("shadow-veil");
 
-        Save(d, "Shadowblade");
+        Save(d, "Night Hunter");
     }
 
     // ── 3 — Cleric ───────────────────────────────────────────────────────────

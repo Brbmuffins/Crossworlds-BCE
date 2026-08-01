@@ -28,12 +28,19 @@ namespace Crossworlds.EditorTools.EnemyForge
                 issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Warning,
                     "Player tag selected: the prefab still uses EnemyController combat behavior, but other enemies may recognize it as a player target."));
             if (string.IsNullOrWhiteSpace(d.templateId)) issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Error, "Template ID is required."));
+            if (d.enemyLevel < 0) issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Error, "Enemy Level cannot be negative."));
             if (string.IsNullOrWhiteSpace(d.outputFolder) || !d.outputFolder.StartsWith("Assets/")) issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Error, "Output folder must be inside Assets/."));
             if (d.attackRange < d.stoppingDistance) issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Warning, "Attack range is smaller than the NavMesh stopping distance."));
             if (d.stoppingDistance < d.agentRadius)
                 issues.Add(new EnemyForgeIssue(
                     EnemyForgeSeverity.Warning,
                     "Combat spacing is smaller than the agent radius. Increase Stopping Distance to reduce overlap or stacking on players."));
+            float sourceFootprintRadius = EstimateHorizontalFootprintRadius(d.source);
+            if (sourceFootprintRadius > 0f && d.agentRadius < sourceFootprintRadius * 0.4f)
+                issues.Add(new EnemyForgeIssue(
+                    EnemyForgeSeverity.Warning,
+                    $"NavMesh Agent Radius ({d.agentRadius:0.00}) is small for the model's approximate " +
+                    $"{sourceFootprintRadius:0.00} footprint radius. Increase it to keep roaming mobs from visually overlapping."));
             if (d.leashRadius < d.aggroRadius) issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Warning, "Leash radius is smaller than aggro radius."));
             if (d.enableRoaming && d.roamingRadius <= 0f) issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Error, "Roaming radius must be greater than zero when roaming is enabled."));
             if (d.enableRoaming && d.roamingRadius > d.leashRadius) issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Error, "Roaming radius cannot exceed the combat leash radius."));
@@ -181,8 +188,32 @@ namespace Crossworlds.EditorTools.EnemyForge
             if (agent != null && Mathf.Abs(agent.baseOffset) > agent.height)
                 issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Warning,
                     "NavMeshAgent Base Offset exceeds the agent height and is likely to make the model float or sink."));
+            float footprintRadius = EstimateHorizontalFootprintRadius(prefab);
+            if (agent != null && footprintRadius > 0f && agent.radius < footprintRadius * 0.4f)
+                issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Warning,
+                    $"NavMeshAgent Radius ({agent.radius:0.00}) is small for the model's approximate " +
+                    $"{footprintRadius:0.00} footprint radius. Roaming mobs may visually overlap."));
             if (string.IsNullOrEmpty(path)) issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Info, "This is a scene object, not a saved prefab."));
             return issues;
+        }
+
+        static float EstimateHorizontalFootprintRadius(GameObject root)
+        {
+            if (root == null) return 0f;
+
+            bool found = false;
+            Bounds combined = default;
+            foreach (Renderer renderer in root.GetComponentsInChildren<Renderer>(true))
+            {
+                if (renderer == null || renderer is ParticleSystemRenderer ||
+                    renderer is TrailRenderer || renderer is LineRenderer)
+                    continue;
+
+                if (!found) { combined = renderer.bounds; found = true; }
+                else combined.Encapsulate(renderer.bounds);
+            }
+
+            return found ? Mathf.Max(combined.extents.x, combined.extents.z) : 0f;
         }
 
         static bool HasUsableRootCombatCollider(GameObject prefab)

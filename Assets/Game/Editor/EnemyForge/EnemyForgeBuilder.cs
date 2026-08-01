@@ -143,6 +143,7 @@ namespace Crossworlds.EditorTools.EnemyForge
             health.maxHealth = d.maxHealth;
             health.isPlayer = false;
             health.isRobotic = d.robotic;
+            health.ConfigureEnemyHoverIdentity(d.enemyDisplayName, d.enemyLevel);
 
             var agent = GetOrAdd<NavMeshAgent>(root);
             agent.speed = d.moveSpeed;

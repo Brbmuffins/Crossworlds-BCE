@@ -146,6 +146,7 @@ public class EnemyController : NetworkBehaviour
     private readonly List<AnimatorCullingMode> _corpseAnimatorCullingModes = new List<AnimatorCullingMode>();
     private readonly List<SkinnedMeshRenderer> _corpseRenderers = new List<SkinnedMeshRenderer>();
     private readonly List<bool> _corpseRendererUpdateModes = new List<bool>();
+    float _locomotionMovingUntil;
 
     bool HasSimulationAuthority => NetworkServer.active ||
         (allowOfflineSimulation && !NetworkClient.active && !NetworkServer.active);
@@ -240,6 +241,7 @@ public class EnemyController : NetworkBehaviour
         _spawnRot = transform.rotation;
         _hasRoamDestination = false;
         ScheduleNextRoam();
+        EnemyCrowdUtility.ApplyRoamingCrowdSettings(_agent, this);
         _health.onDeath.AddListener(OnDeath);
         _health.onDamageTaken.AddListener(OnDamageTakenServer);
         _health.onDamagedBy.AddListener(OnDamagedByServer);
@@ -294,9 +296,11 @@ public class EnemyController : NetworkBehaviour
             return;
         }
 
-        float movementSpeed = Mathf.Max(_agent.velocity.magnitude, _agent.desiredVelocity.magnitude);
+        float movementSpeed = _agent.velocity.magnitude;
         float movingThreshold = Mathf.Max(0.05f, _baseSpeed * 0.05f);
-        _targetAnimatorSpeed = movementSpeed > movingThreshold ? 1f : 0f;
+        if (movementSpeed > movingThreshold)
+            _locomotionMovingUntil = Time.time + 0.2f;
+        _targetAnimatorSpeed = Time.time < _locomotionMovingUntil ? 1f : 0f;
     }
 
     void LateUpdate()
@@ -527,6 +531,10 @@ public class EnemyController : NetworkBehaviour
             _patrolAgent?.SuspendForCombat();
         }
         _target = target;
+        if (_target != null)
+            EnemyCrowdUtility.ApplyCombatCrowdSettings(_agent, this);
+        else
+            EnemyCrowdUtility.ApplyRoamingCrowdSettings(_agent, this);
         _returningHome = false;
         _hasRoamDestination = false;
         if (_agent != null && _agent.isActiveAndEnabled && _agent.isOnNavMesh)
@@ -581,7 +589,8 @@ public class EnemyController : NetworkBehaviour
 
         // A destination can be inside the roaming circle while the NavMesh path
         // curves outside it. Enforce the enemy's actual idle position as well.
-        if (enableRoaming && roamingRadius > 0f &&
+        bool hasConfiguredPatrol = _patrolAgent != null && _patrolAgent.HasUsableRoute;
+        if (!hasConfiguredPatrol && enableRoaming && roamingRadius > 0f &&
             IsOutsideHomeRadius(transform.position, roamingRadius, 0.25f))
         {
             ReturnToSpawnPoint();
@@ -609,6 +618,15 @@ public class EnemyController : NetworkBehaviour
         if (found != null)
         {
             SetAggroTarget(found);
+            return;
+        }
+
+        // A configured patrol owns idle navigation. Without this early return,
+        // TickRoaming replaces the destination that EnemyPatrolAgent selected,
+        // making assigned patrol mobs wander randomly instead of following their route.
+        if (hasConfiguredPatrol)
+        {
+            _patrolAgent.TickPatrol(_agent);
             return;
         }
 
@@ -645,6 +663,7 @@ public class EnemyController : NetworkBehaviour
             Vector3 horizontal = hit.position - _spawnPos;
             horizontal.y = 0f;
             if (horizontal.sqrMagnitude > roamingRadius * roamingRadius) continue;
+            if (!EnemyCrowdUtility.IsRoamingDestinationClear(_agent, hit.position)) continue;
 
             _agent.isStopped = false;
             _agent.speed = _baseSpeed;
@@ -732,6 +751,7 @@ public class EnemyController : NetworkBehaviour
         _attackInProgress = false;
         _hasRoamDestination = false;
         _returningHome = true;
+        EnemyCrowdUtility.ApplyRoamingCrowdSettings(_agent, this);
         _agent.isStopped = false;
         _agent.speed = _baseSpeed;
         _agent.SetDestination(_spawnPos);
@@ -830,7 +850,11 @@ public class EnemyController : NetworkBehaviour
 
         // Apply slow
         float slow = _status != null ? _status.GetSlowFraction() : 0f;
-        if (_agent != null) _agent.speed = _baseSpeed * (1f - slow);
+        if (_agent != null)
+        {
+            _agent.isStopped = false;
+            _agent.speed = _baseSpeed * (1f - slow);
+        }
 
         float dist = Vector3.Distance(transform.position, _target.position);
 
@@ -895,6 +919,26 @@ public class EnemyController : NetworkBehaviour
         // Target stepped out of range — re-chase
         float allowedAttackRange = isRanged ? attackRange * 1.3f : EnemyCrowdUtility.MeleeAttackReach(attackRange);
         if (dist > allowedAttackRange) { state = EnemyState.Chase; return; }
+
+        float slow = _status != null ? _status.GetSlowFraction() : 0f;
+        float normalCombatSpeed = _baseSpeed * (1f - slow);
+
+        // Vortexes and other forced movement can place several enemies at the
+        // same point. Combat avoidance stays disabled for tight surrounding,
+        // but a severe center overlap gets a brief deterministic escape burst.
+        if (_agent != null &&
+            EnemyCrowdUtility.TryGetCombatUnstackPosition(_agent, this, out Vector3 unstackPosition))
+        {
+            _agent.isStopped = false;
+            _agent.speed = normalCombatSpeed * 2.5f;
+            _agent.stoppingDistance = 0.05f;
+            _agent.SetDestination(unstackPosition);
+            return;
+        }
+
+        // Remove the temporary escape burst as soon as this enemy is clear.
+        if (_agent != null)
+            _agent.speed = normalCombatSpeed;
 
         // Stand still for melee; keep pathing for ranged backpedal
         if (!isRanged)
@@ -1334,8 +1378,13 @@ public class EnemyController : NetworkBehaviour
         state        = EnemyState.Idle;
         _attackTimer = 0f;
         _hasRoamDestination = false;
+        EnemyCrowdUtility.ApplyRoamingCrowdSettings(_agent, this);
         ScheduleNextRoam();
-        if (_agent != null && _agent.isActiveAndEnabled) _agent.ResetPath();
+        if (_agent != null && _agent.isActiveAndEnabled)
+        {
+            _agent.isStopped = false;
+            _agent.ResetPath();
+        }
         // Restore full speed (slow may have been applied)
         if (_agent != null) _agent.speed = _baseSpeed;
     }

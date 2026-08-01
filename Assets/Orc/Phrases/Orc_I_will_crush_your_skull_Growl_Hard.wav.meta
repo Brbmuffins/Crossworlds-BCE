@@ -1,0 +1,29 @@
+fileFormatVersion: 2
+guid: c259c01f237defe4584bd554a0433597
+timeCreated: 1462587147
+licenseType: Store
+AudioImporter:
+  serializedVersion: 6
+  defaultSettings:
+    loadType: 0
+    sampleRateSetting: 0
+    sampleRateOverride: 44100
+    compressionFormat: 1
+    quality: 1
+    conversionMode: 0
+  platformSettingOverrides: {}
+  forceToMono: 0
+  normalize: 1
+  preloadAudioData: 1
+  loadInBackground: 0
+  3D: 1
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 62313
+  packageName: ORC - Voice Pack
+  packageVersion: 1.0
+  assetPath: Assets/Orc/Phrases/Orc_I_will_crush_your_skull_Growl_Hard.wav
+  uploadId: 116621

@@ -1,9 +1,11 @@
 using UnityEngine;
 using UnityEngine.AI;
+using System.Collections.Generic;
 
 public static class EnemyCrowdUtility
 {
     const int ChaseSlotSectorCount = 12;
+    static readonly HashSet<NavMeshAgent> RegisteredAgents = new HashSet<NavMeshAgent>();
 
     public static float Stable01(Component owner, int salt = 0)
     {
@@ -53,7 +55,12 @@ public static class EnemyCrowdUtility
         float sectorAngle = Mathf.PI * 2f / ChaseSlotSectorCount;
         float phase = Stable01(self, 17) * sectorAngle;
         float nearestSector = Mathf.Round((approachAngle - phase) / sectorAngle);
-        float angle = phase + nearestSector * sectorAngle;
+        // Do not send every enemy that shares an approach vector down the same
+        // direct path. A stable lane offset fans a group across nearby sectors
+        // (at most 60 degrees either side), allowing them to surround closely
+        // without re-forming one overlapping column after forced movement.
+        int approachLane = Mathf.FloorToInt(Stable01(self, 71) * 5f) - 2;
+        float angle = phase + (nearestSector + approachLane) * sectorAngle;
         float radiusOffset = (Stable01(self, 29) - 0.5f) * radiusJitter;
         float radius = Mathf.Max(0.45f, slotRadius + radiusOffset);
         Vector3 offset = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * radius;
@@ -104,14 +111,198 @@ public static class EnemyCrowdUtility
 
     public static void ApplyAgentCrowdSettings(NavMeshAgent agent, Component owner)
     {
+        ApplyRoamingCrowdSettings(agent, owner);
+    }
+
+    public static void ApplyRoamingCrowdSettings(NavMeshAgent agent, Component owner)
+    {
         if (agent == null)
             return;
 
-        // Low quality avoidance is sufficient for crowds and prevents agents
-        // from treating the target and one another as pass-through space.
-        // Preserve the radius configured on the prefab/Forge profile.
-        agent.obstacleAvoidanceType = ObstacleAvoidanceType.LowQualityObstacleAvoidance;
+        RegisteredAgents.Add(agent);
+        agent.obstacleAvoidanceType = ObstacleAvoidanceType.HighQualityObstacleAvoidance;
+        agent.autoBraking = true;
         agent.avoidancePriority = Mathf.RoundToInt(Mathf.Lerp(35f, 75f, Stable01(owner, 43)));
+    }
+
+    public static void ApplyCombatCrowdSettings(NavMeshAgent agent, Component owner)
+    {
+        if (agent == null)
+            return;
+
+        RegisteredAgents.Add(agent);
+        // Combat ignores inter-agent personal space so mobs can collapse into
+        // their chase slots as tightly as possible. NavMesh pathfinding remains
+        // active; only local crowd avoidance is disabled. Roaming and patrol
+        // movement retain high-quality avoidance.
+        agent.obstacleAvoidanceType = ObstacleAvoidanceType.NoObstacleAvoidance;
+        agent.avoidancePriority = Mathf.RoundToInt(Mathf.Lerp(35f, 75f, Stable01(owner, 43)));
+    }
+
+    public static bool TryGetCombatUnstackPosition(
+        NavMeshAgent owner, Component ownerComponent, out Vector3 destination)
+    {
+        destination = owner != null ? owner.transform.position : Vector3.zero;
+        if (owner == null || !owner.enabled || !owner.gameObject.activeInHierarchy ||
+            !owner.isOnNavMesh)
+            return false;
+
+        RegisteredAgents.Add(owner);
+        RegisteredAgents.RemoveWhere(agent => agent == null);
+
+        // Combatants are intentionally allowed to pack tightly. Use their
+        // authored agent radii to distinguish tight formation from severe
+        // model overlap; a fixed center distance was too small for large mobs.
+        Vector3 separation = Vector3.zero;
+        int overlapCount = 0;
+        float largestSevereDistance = 0f;
+
+        foreach (NavMeshAgent other in RegisteredAgents)
+        {
+            if (other == null || other == owner || !other.enabled ||
+                !other.gameObject.activeInHierarchy ||
+                other.gameObject.scene != owner.gameObject.scene)
+                continue;
+
+            Vector3 away = owner.transform.position - other.transform.position;
+            away.y = 0f;
+            float distance = away.magnitude;
+            float severeOverlapDistance = Mathf.Max(
+                0.5f,
+                (owner.radius + other.radius) * 0.95f);
+            if (distance >= severeOverlapDistance)
+                continue;
+
+            float penetrationWeight = 1f +
+                (severeOverlapDistance - distance) / severeOverlapDistance;
+            largestSevereDistance = Mathf.Max(largestSevereDistance, severeOverlapDistance);
+
+            if (distance > 0.001f)
+            {
+                separation += away / distance * penetrationWeight;
+            }
+            else
+            {
+                // Give coincident agents stable, different escape headings so
+                // they do not all choose the same point every behavior tick.
+                float angle = Stable01(ownerComponent, 197) * Mathf.PI * 2f;
+                separation += new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) *
+                    penetrationWeight;
+            }
+
+            overlapCount++;
+        }
+
+        if (overlapCount == 0)
+            return false;
+
+        if (separation.sqrMagnitude < 0.0001f)
+        {
+            float angle = Stable01(ownerComponent, 211) * Mathf.PI * 2f;
+            separation = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
+        }
+
+        // Move far enough that a large model does not take many behavior ticks
+        // to escape the same cluster, while retaining unrestricted close combat
+        // once its center is outside the severe-overlap threshold.
+        float moveDistance = Mathf.Max(
+            1f,
+            Mathf.Max(owner.radius * 1.75f, largestSevereDistance * 1.1f));
+        Vector3 desired = owner.transform.position + separation.normalized * moveDistance;
+        float sampleDistance = Mathf.Max(1f, owner.radius * 2f);
+        if (!NavMesh.SamplePosition(desired, out NavMeshHit hit, sampleDistance, owner.areaMask))
+            return false;
+
+        destination = hit.position;
+        return true;
+    }
+
+    public static bool IsRoamingDestinationClear(
+        NavMeshAgent owner, Vector3 candidate, float padding = 0.25f)
+    {
+        if (owner == null)
+            return true;
+
+        RegisteredAgents.Add(owner);
+        RegisteredAgents.RemoveWhere(agent => agent == null);
+
+        foreach (NavMeshAgent other in RegisteredAgents)
+        {
+            if (other == null || other == owner || !other.enabled ||
+                !other.gameObject.activeInHierarchy || other.gameObject.scene != owner.gameObject.scene)
+                continue;
+
+            float clearance = Mathf.Max(0.1f, owner.radius + other.radius + padding);
+            float clearanceSqr = clearance * clearance;
+            Vector3 offset = other.transform.position - candidate;
+            offset.y = 0f;
+            if (offset.sqrMagnitude < clearanceSqr)
+                return false;
+
+            if (!other.isOnNavMesh || !other.hasPath)
+            {
+                if (DistancePointToSegmentXZ(
+                        other.transform.position, owner.transform.position, candidate) < clearance)
+                    return false;
+                continue;
+            }
+
+            offset = other.destination - candidate;
+            offset.y = 0f;
+            if (offset.sqrMagnitude < clearanceSqr)
+                return false;
+
+            if (DistanceBetweenSegmentsXZ(
+                    owner.transform.position, candidate,
+                    other.transform.position, other.destination) < clearance)
+                return false;
+        }
+
+        return true;
+    }
+
+    static float DistanceBetweenSegmentsXZ(Vector3 a0, Vector3 a1, Vector3 b0, Vector3 b1)
+    {
+        Vector2 av0 = new Vector2(a0.x, a0.z);
+        Vector2 av1 = new Vector2(a1.x, a1.z);
+        Vector2 bv0 = new Vector2(b0.x, b0.z);
+        Vector2 bv1 = new Vector2(b1.x, b1.z);
+        if (SegmentsIntersect(av0, av1, bv0, bv1)) return 0f;
+
+        return Mathf.Min(
+            DistancePointToSegment(av0, bv0, bv1),
+            DistancePointToSegment(av1, bv0, bv1),
+            DistancePointToSegment(bv0, av0, av1),
+            DistancePointToSegment(bv1, av0, av1));
+    }
+
+    static float DistancePointToSegmentXZ(Vector3 point, Vector3 start, Vector3 end)
+    {
+        return DistancePointToSegment(
+            new Vector2(point.x, point.z),
+            new Vector2(start.x, start.z),
+            new Vector2(end.x, end.z));
+    }
+
+    static float DistancePointToSegment(Vector2 point, Vector2 start, Vector2 end)
+    {
+        Vector2 segment = end - start;
+        float lengthSqr = segment.sqrMagnitude;
+        if (lengthSqr < 0.0001f) return Vector2.Distance(point, start);
+        float t = Mathf.Clamp01(Vector2.Dot(point - start, segment) / lengthSqr);
+        return Vector2.Distance(point, start + segment * t);
+    }
+
+    static bool SegmentsIntersect(Vector2 a, Vector2 b, Vector2 c, Vector2 d)
+    {
+        Vector2 r = b - a;
+        Vector2 s = d - c;
+        float denominator = r.x * s.y - r.y * s.x;
+        if (Mathf.Abs(denominator) < 0.0001f) return false;
+        Vector2 delta = c - a;
+        float t = (delta.x * s.y - delta.y * s.x) / denominator;
+        float u = (delta.x * r.y - delta.y * r.x) / denominator;
+        return t >= 0f && t <= 1f && u >= 0f && u <= 1f;
     }
 
     public static void DesyncAnimator(Animator animator, Component owner)

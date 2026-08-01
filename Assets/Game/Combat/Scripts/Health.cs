@@ -136,11 +136,19 @@ public class Health : NetworkBehaviour
     public float EnemyHealthBarHeightOffset => enemyHealthBarHeightOffset;
     public float EnemyHealthBarFixedHeight => enemyHealthBarFixedHeight;
     public bool ShowEnemyHoverInfo => showEnemyHoverInfo;
+    public string ConfiguredEnemyDisplayName => enemyDisplayName;
+    public int ConfiguredEnemyLevel => enemyLevel;
     public int EnemyLevel => enemyLevel;
     public bool HasEnemyLevel => enemyLevel > 0;
     public string EnemyHoverDisplayName => GetEnemyHoverDisplayName();
     public bool ShouldShowEnemyHoverInfo() => showEnemyHoverInfo && !isPlayer && IsAlive &&
         _enemyTargetTagActive && IsEnemyLikeForHud();
+
+    public void ConfigureEnemyHoverIdentity(string displayName, int level)
+    {
+        enemyDisplayName = displayName != null ? displayName.Trim() : "";
+        enemyLevel = Mathf.Max(0, level);
+    }
 
     // ── StatusEffect integration ───────────────────────────────────
     private StatusEffectManager _statusEffects;
@@ -194,6 +202,8 @@ public class Health : NetworkBehaviour
         base.OnStartClient();
         ApplyEnemyNonBlockingCollision();
 #if UNITY_EDITOR || !UNITY_SERVER
+        if (!isPlayer && IsEnemyLikeForHud() && GetComponent<EnemySlopeVisualAligner>() == null)
+            gameObject.AddComponent<EnemySlopeVisualAligner>();
         TryAttachEnemyHealthBar();
 #endif
         onHealthChanged?.Invoke(currentHealth, maxHealth);

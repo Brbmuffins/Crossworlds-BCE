@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Mirror;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using TMPro;
@@ -112,6 +113,15 @@ public class PlayerHUD : MonoBehaviour
     int                 _activeSlot         = 0;
     bool                _wasAimingLastFrame = false;
 
+    // Ability tooltip
+    const float AbilityTooltipWidth = 370f;
+    const float AbilityTooltipHeight = 176f;
+    RectTransform       _abilityTooltipRoot;
+    TextMeshProUGUI     _abilityTooltipName;
+    TextMeshProUGUI     _abilityTooltipStats;
+    TextMeshProUGUI     _abilityTooltipDescription;
+    int                 _abilityTooltipSlot = -1;
+
     // Cast bar
     GameObject          _castBarRoot;
     Image               _castBarFill;
@@ -174,6 +184,7 @@ public class PlayerHUD : MonoBehaviour
         if (_floatCanvas != null && _floatCanvas.gameObject.activeSelf != show) _floatCanvas.gameObject.SetActive(show);
         if (!show)
         {
+            HideAbilityTooltip();
             CloseSpellLoadout();
             return;
         }
@@ -182,6 +193,7 @@ public class PlayerHUD : MonoBehaviour
         TickManaWell();
         TickAbilityBar();
         TickCastBar();
+        TickAbilityTooltip();
         TickSpellbook();
     }
 
@@ -264,6 +276,7 @@ public class PlayerHUD : MonoBehaviour
         BuildHpBar();
         BuildAbilityBar();
         BuildCastBar();
+        BuildAbilityTooltip();
 
         _floatCanvas  = MakeCanvas(110);
         _spellbookCanvas = MakeCanvas(120);
@@ -527,6 +540,7 @@ public class PlayerHUD : MonoBehaviour
         _slotRing[i] = Img(slotRt, "Ring", Transparent);
         _slotRing[i].sprite = SlotRingSprite();
         _slotRing[i].type = Image.Type.Sliced;
+        _slotRing[i].raycastTarget = false;
         _slotRing[i].rectTransform.anchorMin = new Vector2(-0.06f, -0.06f);
         _slotRing[i].rectTransform.anchorMax = new Vector2(1.06f, 1.06f);
         _slotRing[i].rectTransform.offsetMin = _slotRing[i].rectTransform.offsetMax = Vector2.zero;
@@ -550,6 +564,32 @@ public class PlayerHUD : MonoBehaviour
         nameRt.pivot            = new Vector2(0.5f, 0f);
         nameRt.anchoredPosition = new Vector2(x, ActionBarNameY);
         nameRt.sizeDelta        = new Vector2(size, 16f);
+
+        int capturedSlot = i;
+        var pointerEvents = slotRt.gameObject.AddComponent<EventTrigger>();
+        pointerEvents.triggers = new List<EventTrigger.Entry>();
+        AddPointerEvent(
+            pointerEvents,
+            EventTriggerType.PointerEnter,
+            data => ShowAbilityTooltip(
+                capturedSlot,
+                ((PointerEventData)data).position));
+        AddPointerEvent(
+            pointerEvents,
+            EventTriggerType.PointerExit,
+            _ => HideAbilityTooltip());
+        AddPointerEvent(
+            pointerEvents,
+            EventTriggerType.PointerClick,
+            data =>
+            {
+                var pointer = data as PointerEventData;
+                if (pointer == null ||
+                    pointer.button != PointerEventData.InputButton.Left)
+                    return;
+
+                _caster?.TryActivateSlot(capturedSlot);
+            });
     }
 
     void RebuildAbilitySlots()
@@ -671,6 +711,238 @@ public class PlayerHUD : MonoBehaviour
     void SetActiveSlot(int slot)
     {
         _activeSlot = slot;
+    }
+
+    void BuildAbilityTooltip()
+    {
+        _abilityTooltipRoot = Rt(
+            _canvas.transform,
+            "AbilityTooltip");
+        _abilityTooltipRoot.anchorMin = Vector2.zero;
+        _abilityTooltipRoot.anchorMax = Vector2.zero;
+        _abilityTooltipRoot.pivot = new Vector2(0.5f, 0.5f);
+        _abilityTooltipRoot.sizeDelta =
+            new Vector2(AbilityTooltipWidth, AbilityTooltipHeight);
+
+        var shadow = Img(
+            _abilityTooltipRoot,
+            "Shadow",
+            new Color(0f, 0f, 0f, 0.72f));
+        Stretch(shadow.rectTransform);
+        shadow.rectTransform.offsetMin = new Vector2(5f, -5f);
+        shadow.rectTransform.offsetMax = new Vector2(5f, -5f);
+        shadow.raycastTarget = false;
+
+        var border = Img(
+            _abilityTooltipRoot,
+            "Border",
+            new Color(0.66f, 0.50f, 0.12f, 0.98f));
+        Stretch(border.rectTransform);
+        border.raycastTarget = false;
+
+        var panel = Img(
+            _abilityTooltipRoot,
+            "Panel",
+            new Color(0.035f, 0.035f, 0.065f, 0.985f));
+        Stretch(panel.rectTransform);
+        panel.rectTransform.offsetMin = new Vector2(2f, 2f);
+        panel.rectTransform.offsetMax = new Vector2(-2f, -2f);
+        panel.raycastTarget = false;
+
+        var accent = Img(
+            _abilityTooltipRoot,
+            "Accent",
+            SlotActive);
+        accent.rectTransform.anchorMin = new Vector2(0f, 0f);
+        accent.rectTransform.anchorMax = new Vector2(0f, 1f);
+        accent.rectTransform.pivot = new Vector2(0f, 0.5f);
+        accent.rectTransform.sizeDelta = new Vector2(5f, 0f);
+        accent.rectTransform.anchoredPosition = Vector2.zero;
+        accent.raycastTarget = false;
+
+        _abilityTooltipName = Lbl(
+            _abilityTooltipRoot,
+            "Name",
+            "",
+            18f);
+        _abilityTooltipName.fontStyle = FontStyles.Bold;
+        _abilityTooltipName.color = TextPrimary;
+        _abilityTooltipName.enableAutoSizing = true;
+        _abilityTooltipName.fontSizeMin = 13f;
+        _abilityTooltipName.fontSizeMax = 18f;
+        _abilityTooltipName.alignment =
+            TextAlignmentOptions.MidlineLeft;
+        _abilityTooltipName.rectTransform.anchorMin =
+            new Vector2(0.055f, 0.72f);
+        _abilityTooltipName.rectTransform.anchorMax =
+            new Vector2(0.95f, 0.94f);
+        _abilityTooltipName.rectTransform.offsetMin =
+            _abilityTooltipName.rectTransform.offsetMax =
+                Vector2.zero;
+        _abilityTooltipName.raycastTarget = false;
+
+        _abilityTooltipStats = Lbl(
+            _abilityTooltipRoot,
+            "Stats",
+            "",
+            11.5f);
+        _abilityTooltipStats.fontStyle = FontStyles.Bold;
+        _abilityTooltipStats.color =
+            new Color(0.95f, 0.78f, 0.24f, 1f);
+        _abilityTooltipStats.alignment =
+            TextAlignmentOptions.MidlineLeft;
+        _abilityTooltipStats.rectTransform.anchorMin =
+            new Vector2(0.055f, 0.56f);
+        _abilityTooltipStats.rectTransform.anchorMax =
+            new Vector2(0.95f, 0.72f);
+        _abilityTooltipStats.rectTransform.offsetMin =
+            _abilityTooltipStats.rectTransform.offsetMax =
+                Vector2.zero;
+        _abilityTooltipStats.raycastTarget = false;
+
+        _abilityTooltipDescription = Lbl(
+            _abilityTooltipRoot,
+            "Description",
+            "",
+            12f);
+        _abilityTooltipDescription.color =
+            new Color(0.84f, 0.83f, 0.87f, 1f);
+        _abilityTooltipDescription.enableAutoSizing = true;
+        _abilityTooltipDescription.fontSizeMin = 9f;
+        _abilityTooltipDescription.fontSizeMax = 12f;
+        _abilityTooltipDescription.textWrappingMode =
+            TextWrappingModes.Normal;
+        _abilityTooltipDescription.alignment =
+            TextAlignmentOptions.TopLeft;
+        _abilityTooltipDescription.rectTransform.anchorMin =
+            new Vector2(0.055f, 0.09f);
+        _abilityTooltipDescription.rectTransform.anchorMax =
+            new Vector2(0.95f, 0.55f);
+        _abilityTooltipDescription.rectTransform.offsetMin =
+            _abilityTooltipDescription.rectTransform.offsetMax =
+                Vector2.zero;
+        _abilityTooltipDescription.raycastTarget = false;
+
+        _abilityTooltipRoot.gameObject.SetActive(false);
+    }
+
+    static void AddPointerEvent(
+        EventTrigger trigger,
+        EventTriggerType type,
+        UnityEngine.Events.UnityAction<BaseEventData> callback)
+    {
+        var entry = new EventTrigger.Entry
+        {
+            eventID = type
+        };
+        entry.callback.AddListener(callback);
+        trigger.triggers.Add(entry);
+    }
+
+    void ShowAbilityTooltip(int slot, Vector2 pointerPosition)
+    {
+        if (!TryGetSlottedAbility(slot, out _))
+        {
+            HideAbilityTooltip();
+            return;
+        }
+
+        _abilityTooltipSlot = slot;
+        RefreshAbilityTooltip(pointerPosition);
+        _abilityTooltipRoot.gameObject.SetActive(true);
+        _abilityTooltipRoot.SetAsLastSibling();
+    }
+
+    void HideAbilityTooltip()
+    {
+        _abilityTooltipSlot = -1;
+        if (_abilityTooltipRoot != null)
+            _abilityTooltipRoot.gameObject.SetActive(false);
+    }
+
+    void TickAbilityTooltip()
+    {
+        if (_abilityTooltipSlot < 0 ||
+            _abilityTooltipRoot == null ||
+            !_abilityTooltipRoot.gameObject.activeSelf)
+            return;
+
+        var mouse = UnityEngine.InputSystem.Mouse.current;
+        if (mouse == null)
+        {
+            HideAbilityTooltip();
+            return;
+        }
+
+        RefreshAbilityTooltip(mouse.position.ReadValue());
+    }
+
+    void RefreshAbilityTooltip(Vector2 pointerPosition)
+    {
+        if (!TryGetSlottedAbility(
+                _abilityTooltipSlot,
+                out AbilityDef ability))
+        {
+            HideAbilityTooltip();
+            return;
+        }
+
+        float remaining =
+            _caster.GetCooldownRemaining(_abilityTooltipSlot);
+        float mana = _caster.ManaCostFor(ability, 0);
+
+        _abilityTooltipName.text =
+            string.IsNullOrWhiteSpace(ability.abilityName)
+                ? "UNNAMED SPELL"
+                : ability.abilityName.ToUpperInvariant();
+        _abilityTooltipStats.text =
+            remaining > 0.05f
+                ? $"COOLDOWN  {remaining:0.#}s / {ability.cooldown:0.#}s     MANA  {mana:0.#}"
+                : $"COOLDOWN  {ability.cooldown:0.#}s     MANA  {mana:0.#}";
+        _abilityTooltipDescription.text =
+            string.IsNullOrWhiteSpace(ability.description)
+                ? "No description authored yet."
+                : ability.description.Trim();
+
+        PositionAbilityTooltip(pointerPosition);
+    }
+
+    bool TryGetSlottedAbility(int slot, out AbilityDef ability)
+    {
+        ability = null;
+        if (_caster == null ||
+            _caster.abilities == null ||
+            slot < 0 ||
+            slot >= _caster.abilities.Length)
+            return false;
+
+        ability = _caster.abilities[slot];
+        return ability != null;
+    }
+
+    void PositionAbilityTooltip(Vector2 pointerPosition)
+    {
+        float scale = _canvas != null
+            ? Mathf.Max(0.01f, _canvas.scaleFactor)
+            : 1f;
+        float halfWidth = AbilityTooltipWidth * scale * 0.5f;
+        float halfHeight = AbilityTooltipHeight * scale * 0.5f;
+        float gap = 18f * scale;
+
+        float x = Mathf.Clamp(
+            pointerPosition.x,
+            halfWidth + 8f,
+            Screen.width - halfWidth - 8f);
+        float y = pointerPosition.y + halfHeight + gap;
+        if (y + halfHeight > Screen.height - 8f)
+            y = pointerPosition.y - halfHeight - gap;
+        y = Mathf.Clamp(
+            y,
+            halfHeight + 8f,
+            Screen.height - halfHeight - 8f);
+
+        _abilityTooltipRoot.position =
+            new Vector3(x, y, 0f);
     }
 
     // ── Spellbook ─────────────────────────────────────────────────────────────
@@ -827,7 +1099,7 @@ public class PlayerHUD : MonoBehaviour
         contentRt.offsetMin = contentRt.offsetMax = Vector2.zero;
 
         var glg = content.GetComponent<GridLayoutGroup>();
-        glg.cellSize        = new Vector2(215f, 150f);
+        glg.cellSize        = new Vector2(215f, 185f);
         glg.spacing         = new Vector2(12f, 12f);
         glg.padding         = new RectOffset(6, 6, 6, 6);
         glg.startCorner     = GridLayoutGroup.Corner.UpperLeft;
@@ -1013,6 +1285,11 @@ public class PlayerHUD : MonoBehaviour
 
         // Readable stat lines (one fact per line, colour-coded)
         var sb = new System.Text.StringBuilder();
+        if (!string.IsNullOrWhiteSpace(ab.description))
+        {
+            sb.Append(
+                $"<color=#d8d3e3><i>{ab.description.Trim()}</i></color>\n");
+        }
         if (hasVariants)
         {
             AppendVariantStats(sb, ab, _caster);
@@ -1037,7 +1314,7 @@ public class PlayerHUD : MonoBehaviour
         var desc = Lbl(cardRt, "Desc", sb.ToString(), hasVariants ? 9.4f : 10.5f);
         desc.color             = new Color(0.88f, 0.88f, 0.92f, 1f);
         desc.richText          = true;
-        desc.enableAutoSizing  = hasVariants;
+        desc.enableAutoSizing  = true;
         desc.fontSizeMin       = 7.5f;
         desc.fontSizeMax       = hasVariants ? 9.4f : 10.5f;
         desc.textWrappingMode  = TextWrappingModes.Normal;

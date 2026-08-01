@@ -25,8 +25,8 @@ namespace Crossworlds.EditorTools
         {
             "Arcanist",
             "Marauder",
-            "Ironclad",
-            "Shadowblade",
+            "Templar",
+            "Night Hunter",
             "Cleric"
         };
 
@@ -680,6 +680,7 @@ namespace Crossworlds.EditorTools
             DrawFieldGroup(
                 "IDENTITY & TARGETING", ability,
                 "abilityName",
+                "description",
                 "variantOnly",
                 "icon",
                 "category",
@@ -1063,6 +1064,12 @@ namespace Crossworlds.EditorTools
                     if (property == null) continue;
 
                     if (property.propertyType ==
+                        SerializedPropertyType.String &&
+                        propertyName == "description")
+                    {
+                        DrawDescriptionProperty(property);
+                    }
+                    else if (property.propertyType ==
                         SerializedPropertyType.String)
                     {
                         DrawStringProperty(property);
@@ -1180,6 +1187,26 @@ namespace Crossworlds.EditorTools
                     property.displayName,
                     property.tooltip),
                 property.stringValue);
+            if (nextValue != property.stringValue)
+                property.stringValue = nextValue;
+
+            if (GUI.GetNameOfFocusedControl() == controlName)
+                EditorGUIUtility.editingTextField = true;
+        }
+
+        static void DrawDescriptionProperty(
+            SerializedProperty property)
+        {
+            string controlName =
+                "BCE.Spellbook." + property.propertyPath;
+            EditorGUILayout.LabelField(
+                new GUIContent(
+                    property.displayName,
+                    property.tooltip));
+            GUI.SetNextControlName(controlName);
+            string nextValue = EditorGUILayout.TextArea(
+                property.stringValue,
+                GUILayout.MinHeight(54f));
             if (nextValue != property.stringValue)
                 property.stringValue = nextValue;
 
