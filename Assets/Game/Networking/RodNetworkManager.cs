@@ -106,7 +106,7 @@ public class RodNetworkManager : NetworkManager
     // ── Launch-arg overrides (dev/prod on one binary) ─────────────────────────
     //   -port <n>       UDP port for the KCP transport (prod 7777 / dev 7778)
     //   -authurl <url>  auth server this game server validates JWTs against
-    //                   (prod http://127.0.0.1:3000 / dev http://127.0.0.1:3002)
+    //                   (prod http://127.0.0.1:3000 / dev http://127.0.0.1:3010)
     // Missing args keep the Inspector-baked values, so an un-flagged launch is prod.
     void ApplyServerLaunchArgs()
     {

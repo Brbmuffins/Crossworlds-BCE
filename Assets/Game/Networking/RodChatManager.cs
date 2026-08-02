@@ -73,7 +73,11 @@ public class RodChatManager : NetworkBehaviour
 
     public void RequestOnlineRoster()
     {
-        if (isClient)
+        // NetworkClient.active (not isClient): during client shutdown the identity is
+        // still isClient==true while the connection has already gone inactive, so a
+        // roster refresh fired from OnStopClient teardown would hit SendCommandInternal's
+        // "without an active client" guard and log an error. Skip the Cmd once inactive.
+        if (NetworkClient.active && isClient)
             CmdRequestOnlineRoster();
     }
 

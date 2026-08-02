@@ -279,7 +279,7 @@ public class LoginManager : MonoBehaviour
         serverLabel.characterSpacing = 4f;
 
         // Environment toggle — PROD | DEV segmented control, right of the label.
-        // Dev routes auth (:3002), the game connection (:7778) and its DB to the
+        // Dev routes auth (:3010), the game connection (:7778) and its DB to the
         // isolated dev stack. See ServerConfig.
         BuildEnvToggle(panelRt);
 
@@ -844,7 +844,7 @@ public class LoginManager : MonoBehaviour
 
     string TryParseError(string json)
     {
-        try { return JsonUtility.FromJson<ErrorResponse>(json)?.message; }
+        try { return JsonUtility.FromJson<ErrorResponse>(json)?.error; }
         catch { return null; }
     }
 
@@ -898,5 +898,5 @@ public class LoginManager : MonoBehaviour
     }
 
     [System.Serializable] class TokenResponse { public string token; }
-    [System.Serializable] class ErrorResponse  { public string message; }
+    [System.Serializable] class ErrorResponse  { public string error; }
 }

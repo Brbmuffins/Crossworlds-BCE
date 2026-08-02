@@ -9,12 +9,12 @@ using UnityEngine;
 //    • ENV    — Prod vs Dev. The login screen's toggle writes PlayerPrefs
 //               "environment" ("prod"/"dev"). Dev points every client→auth call
 //               and the Mirror game connection at the ISOLATED dev stack
-//               (auth :3001 + game :7778 + its own DB), so dev testing can never
+//               (auth :3010 + game :7778 + its own DB), so dev testing can never
 //               touch prod accounts/characters.
 //
 //  Same binary, both envs: the DEDICATED SERVER picks its port + auth URL from
 //  launch args (-port / -authurl in RodNetworkManager), so one build runs as
-//  either prod (:7777 → auth :3000) or dev (:7778 → auth :3001).
+//  either prod (:7777 → auth :3000) or dev (:7778 → auth :3010).
 // ═══════════════════════════════════════════════════════════════════════════
 
 public enum ServerEnvironment { Prod, Dev }
@@ -32,9 +32,9 @@ public static class ServerConfig
     // ── Per-environment ports ────────────────────────────────────────────────
     // Auth = the Node/Express API; Game = the Mirror/KCP UDP listener.
     // NOTE: 3001 is Uptime Kuma, 3500 SpacetimeDB, 4000 dashboard, 5000 rod-realtime —
-    // all taken. Dev auth uses 3002 (next free); dev game uses 7778.
+    // all taken. Dev auth uses 3010 (isolated staging stack); dev game uses 7778.
     public const int    ProdAuthPort = 3000;
-    public const int    DevAuthPort  = 3002;
+    public const int    DevAuthPort  = 3010;
     public const ushort ProdGamePort = 7777;
     public const ushort DevGamePort  = 7778;
 
@@ -66,7 +66,7 @@ public static class ServerConfig
 
     /// <summary>
     /// Base URL for ALL client→auth calls. Environment-aware: dev traffic goes to
-    /// the isolated dev auth on :3001. Every REST singleton already builds off this,
+    /// the isolated dev auth on :3010. Every REST singleton already builds off this,
     /// so flipping the toggle reroutes login, inventory, mastery, crafting, etc.
     /// </summary>
     public static string AuthBaseUrl => $"http://{ServerIP}:{AuthPort}";
