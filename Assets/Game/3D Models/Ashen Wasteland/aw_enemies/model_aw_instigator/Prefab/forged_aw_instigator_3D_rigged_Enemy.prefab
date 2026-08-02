@@ -16,6 +16,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: forged_aw_instigator_3D_rigged_Enemy
       objectReference: {fileID: 0}
+    - target: {fileID: 2268381934861270257, guid: bbae198992dff6240a0d425f3b7b48dd, type: 3}
+      propertyPath: enemyDisplayName
+      value: Ashen Instigator
+      objectReference: {fileID: 0}
     - target: {fileID: 3524543951096264757, guid: bbae198992dff6240a0d425f3b7b48dd, type: 3}
       propertyPath: m_BaseOffset
       value: 0

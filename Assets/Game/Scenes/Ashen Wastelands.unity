@@ -587,7 +587,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2029869154457814526, guid: ccdcc8d6f3c2d8941bffa495c7adb6c0, type: 3}
       propertyPath: enableRoaming
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6045816424560110649, guid: ccdcc8d6f3c2d8941bffa495c7adb6c0, type: 3}
       propertyPath: m_LocalPosition.x
@@ -635,7 +635,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7806446736298007974, guid: ccdcc8d6f3c2d8941bffa495c7adb6c0, type: 3}
       propertyPath: m_Name
-      value: forged_aw_pummeler_3D_rigged (1) 1_Enemy (1)
+      value: forged_aw_pummeler_3D_rigged (1) 1_Enemy
       objectReference: {fileID: 0}
     - target: {fileID: 8887122568359973558, guid: ccdcc8d6f3c2d8941bffa495c7adb6c0, type: 3}
       propertyPath: sceneId
@@ -1467,7 +1467,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8857853131041869042, guid: 7b3e4f3eaf73c0b48be4b3030db5b465, type: 3}
       propertyPath: m_Name
-      value: forged_aw_instigator_3D_rigged_Enemy (9)
+      value: forged_aw_instigator_3D_rigged_Enemy
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1488,7 +1488,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2685514400232373661, guid: 7b3e4f3eaf73c0b48be4b3030db5b465, type: 3}
       propertyPath: enableRoaming
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5645928186077021714, guid: 7b3e4f3eaf73c0b48be4b3030db5b465, type: 3}
       propertyPath: m_LocalPosition.x
@@ -1532,7 +1532,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8857853131041869042, guid: 7b3e4f3eaf73c0b48be4b3030db5b465, type: 3}
       propertyPath: m_Name
-      value: forged_aw_instigator_3D_rigged_Enemy (3)
+      value: forged_aw_instigator_3D_rigged_Enemy
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -2605,7 +2605,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2685514400232373661, guid: 7b3e4f3eaf73c0b48be4b3030db5b465, type: 3}
       propertyPath: enableRoaming
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5645928186077021714, guid: 7b3e4f3eaf73c0b48be4b3030db5b465, type: 3}
       propertyPath: m_LocalPosition.x
@@ -2649,7 +2649,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8857853131041869042, guid: 7b3e4f3eaf73c0b48be4b3030db5b465, type: 3}
       propertyPath: m_Name
-      value: forged_aw_instigator_3D_rigged_Enemy (18)
+      value: forged_aw_instigator_3D_rigged_Enemy
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -2857,7 +2857,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8857853131041869042, guid: 7b3e4f3eaf73c0b48be4b3030db5b465, type: 3}
       propertyPath: m_Name
-      value: forged_aw_instigator_3D_rigged_Enemy (21)
+      value: forged_aw_instigator_3D_rigged_Enemy
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -3703,7 +3703,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2029869154457814526, guid: ccdcc8d6f3c2d8941bffa495c7adb6c0, type: 3}
       propertyPath: enableRoaming
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6045816424560110649, guid: ccdcc8d6f3c2d8941bffa495c7adb6c0, type: 3}
       propertyPath: m_LocalPosition.x
@@ -3747,7 +3747,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7806446736298007974, guid: ccdcc8d6f3c2d8941bffa495c7adb6c0, type: 3}
       propertyPath: m_Name
-      value: forged_aw_pummeler_3D_rigged (1) 1_Enemy (2)
+      value: forged_aw_pummeler_3D_rigged (1) 1_Enemy
       objectReference: {fileID: 0}
     - target: {fileID: 8887122568359973558, guid: ccdcc8d6f3c2d8941bffa495c7adb6c0, type: 3}
       propertyPath: sceneId
@@ -3992,7 +3992,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2029869154457814526, guid: ccdcc8d6f3c2d8941bffa495c7adb6c0, type: 3}
       propertyPath: enableRoaming
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6045816424560110649, guid: ccdcc8d6f3c2d8941bffa495c7adb6c0, type: 3}
       propertyPath: m_LocalPosition.x
@@ -4036,7 +4036,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7806446736298007974, guid: ccdcc8d6f3c2d8941bffa495c7adb6c0, type: 3}
       propertyPath: m_Name
-      value: forged_aw_pummeler_3D_rigged (1) 1_Enemy (6)
+      value: forged_aw_pummeler_3D_rigged (1) 1_Enemy
       objectReference: {fileID: 0}
     - target: {fileID: 8887122568359973558, guid: ccdcc8d6f3c2d8941bffa495c7adb6c0, type: 3}
       propertyPath: sceneId
@@ -4159,7 +4159,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2685514400232373661, guid: 7b3e4f3eaf73c0b48be4b3030db5b465, type: 3}
       propertyPath: enableRoaming
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5645928186077021714, guid: 7b3e4f3eaf73c0b48be4b3030db5b465, type: 3}
       propertyPath: m_LocalPosition.x
@@ -4203,7 +4203,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8857853131041869042, guid: 7b3e4f3eaf73c0b48be4b3030db5b465, type: 3}
       propertyPath: m_Name
-      value: forged_aw_instigator_3D_rigged_Enemy (5)
+      value: forged_aw_instigator_3D_rigged_Enemy
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -4668,7 +4668,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8857853131041869042, guid: 7b3e4f3eaf73c0b48be4b3030db5b465, type: 3}
       propertyPath: m_Name
-      value: forged_aw_instigator_3D_rigged_Enemy (10)
+      value: forged_aw_instigator_3D_rigged_Enemy
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -5400,7 +5400,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2685514400232373661, guid: 7b3e4f3eaf73c0b48be4b3030db5b465, type: 3}
       propertyPath: enableRoaming
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5645928186077021714, guid: 7b3e4f3eaf73c0b48be4b3030db5b465, type: 3}
       propertyPath: m_LocalPosition.x
@@ -5444,7 +5444,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8857853131041869042, guid: 7b3e4f3eaf73c0b48be4b3030db5b465, type: 3}
       propertyPath: m_Name
-      value: forged_aw_instigator_3D_rigged_Enemy (1)
+      value: forged_aw_instigator_3D_rigged_Enemy
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -6718,7 +6718,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2685514400232373661, guid: 7b3e4f3eaf73c0b48be4b3030db5b465, type: 3}
       propertyPath: enableRoaming
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5645928186077021714, guid: 7b3e4f3eaf73c0b48be4b3030db5b465, type: 3}
       propertyPath: m_LocalPosition.x
@@ -6762,7 +6762,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8857853131041869042, guid: 7b3e4f3eaf73c0b48be4b3030db5b465, type: 3}
       propertyPath: m_Name
-      value: forged_aw_instigator_3D_rigged_Enemy (16)
+      value: forged_aw_instigator_3D_rigged_Enemy
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -7123,7 +7123,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2685514400232373661, guid: 7b3e4f3eaf73c0b48be4b3030db5b465, type: 3}
       propertyPath: enableRoaming
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5645928186077021714, guid: 7b3e4f3eaf73c0b48be4b3030db5b465, type: 3}
       propertyPath: m_LocalPosition.x
@@ -7167,7 +7167,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8857853131041869042, guid: 7b3e4f3eaf73c0b48be4b3030db5b465, type: 3}
       propertyPath: m_Name
-      value: forged_aw_instigator_3D_rigged_Enemy (7)
+      value: forged_aw_instigator_3D_rigged_Enemy
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -7262,7 +7262,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2685514400232373661, guid: 7b3e4f3eaf73c0b48be4b3030db5b465, type: 3}
       propertyPath: enableRoaming
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5645928186077021714, guid: 7b3e4f3eaf73c0b48be4b3030db5b465, type: 3}
       propertyPath: m_LocalPosition.x
@@ -7306,7 +7306,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8857853131041869042, guid: 7b3e4f3eaf73c0b48be4b3030db5b465, type: 3}
       propertyPath: m_Name
-      value: forged_aw_instigator_3D_rigged_Enemy (15)
+      value: forged_aw_instigator_3D_rigged_Enemy
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -7924,7 +7924,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8857853131041869042, guid: 7b3e4f3eaf73c0b48be4b3030db5b465, type: 3}
       propertyPath: m_Name
-      value: forged_aw_instigator_3D_rigged_Enemy (8)
+      value: forged_aw_instigator_3D_rigged_Enemy
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -7985,7 +7985,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8857853131041869042, guid: 7b3e4f3eaf73c0b48be4b3030db5b465, type: 3}
       propertyPath: m_Name
-      value: forged_aw_instigator_3D_rigged_Enemy (20)
+      value: forged_aw_instigator_3D_rigged_Enemy
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -8184,7 +8184,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8857853131041869042, guid: 7b3e4f3eaf73c0b48be4b3030db5b465, type: 3}
       propertyPath: m_Name
-      value: forged_aw_instigator_3D_rigged_Enemy (22)
+      value: forged_aw_instigator_3D_rigged_Enemy
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -8696,7 +8696,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8857853131041869042, guid: 7b3e4f3eaf73c0b48be4b3030db5b465, type: 3}
       propertyPath: m_Name
-      value: forged_aw_instigator_3D_rigged_Enemy (13)
+      value: forged_aw_instigator_3D_rigged_Enemy
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -8757,7 +8757,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8857853131041869042, guid: 7b3e4f3eaf73c0b48be4b3030db5b465, type: 3}
       propertyPath: m_Name
-      value: forged_aw_instigator_3D_rigged_Enemy (23)
+      value: forged_aw_instigator_3D_rigged_Enemy
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -9943,7 +9943,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7806446736298007974, guid: ccdcc8d6f3c2d8941bffa495c7adb6c0, type: 3}
       propertyPath: m_Name
-      value: forged_aw_pummeler_3D_rigged (1) 1_Enemy (9)
+      value: forged_aw_pummeler_3D_rigged (1) 1_Enemy
       objectReference: {fileID: 0}
     - target: {fileID: 8887122568359973558, guid: ccdcc8d6f3c2d8941bffa495c7adb6c0, type: 3}
       propertyPath: sceneId
@@ -10433,7 +10433,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2685514400232373661, guid: 7b3e4f3eaf73c0b48be4b3030db5b465, type: 3}
       propertyPath: enableRoaming
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5645928186077021714, guid: 7b3e4f3eaf73c0b48be4b3030db5b465, type: 3}
       propertyPath: m_LocalPosition.x
@@ -10477,7 +10477,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8857853131041869042, guid: 7b3e4f3eaf73c0b48be4b3030db5b465, type: 3}
       propertyPath: m_Name
-      value: forged_aw_instigator_3D_rigged_Enemy (6)
+      value: forged_aw_instigator_3D_rigged_Enemy
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -11048,7 +11048,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2029869154457814526, guid: ccdcc8d6f3c2d8941bffa495c7adb6c0, type: 3}
       propertyPath: enableRoaming
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6045816424560110649, guid: ccdcc8d6f3c2d8941bffa495c7adb6c0, type: 3}
       propertyPath: m_LocalPosition.x
@@ -11092,7 +11092,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7806446736298007974, guid: ccdcc8d6f3c2d8941bffa495c7adb6c0, type: 3}
       propertyPath: m_Name
-      value: forged_aw_pummeler_3D_rigged (1) 1_Enemy (3)
+      value: forged_aw_pummeler_3D_rigged (1) 1_Enemy
       objectReference: {fileID: 0}
     - target: {fileID: 8887122568359973558, guid: ccdcc8d6f3c2d8941bffa495c7adb6c0, type: 3}
       propertyPath: sceneId
@@ -11312,7 +11312,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7806446736298007974, guid: ccdcc8d6f3c2d8941bffa495c7adb6c0, type: 3}
       propertyPath: m_Name
-      value: forged_aw_pummeler_3D_rigged (1) 1_Enemy (4)
+      value: forged_aw_pummeler_3D_rigged (1) 1_Enemy
       objectReference: {fileID: 0}
     - target: {fileID: 8887122568359973558, guid: ccdcc8d6f3c2d8941bffa495c7adb6c0, type: 3}
       propertyPath: sceneId
@@ -11373,7 +11373,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2685514400232373661, guid: 7b3e4f3eaf73c0b48be4b3030db5b465, type: 3}
       propertyPath: enableRoaming
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5645928186077021714, guid: 7b3e4f3eaf73c0b48be4b3030db5b465, type: 3}
       propertyPath: m_LocalPosition.x
@@ -11417,7 +11417,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8857853131041869042, guid: 7b3e4f3eaf73c0b48be4b3030db5b465, type: 3}
       propertyPath: m_Name
-      value: forged_aw_instigator_3D_rigged_Enemy (14)
+      value: forged_aw_instigator_3D_rigged_Enemy
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -11502,7 +11502,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8857853131041869042, guid: 7b3e4f3eaf73c0b48be4b3030db5b465, type: 3}
       propertyPath: m_Name
-      value: forged_aw_instigator_3D_rigged_Enemy (19)
+      value: forged_aw_instigator_3D_rigged_Enemy
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -11758,7 +11758,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8857853131041869042, guid: 7b3e4f3eaf73c0b48be4b3030db5b465, type: 3}
       propertyPath: m_Name
-      value: forged_aw_instigator_3D_rigged_Enemy (11)
+      value: forged_aw_instigator_3D_rigged_Enemy
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -12552,7 +12552,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7806446736298007974, guid: ccdcc8d6f3c2d8941bffa495c7adb6c0, type: 3}
       propertyPath: m_Name
-      value: forged_aw_pummeler_3D_rigged (1) 1_Enemy (10)
+      value: forged_aw_pummeler_3D_rigged (1) 1_Enemy
       objectReference: {fileID: 0}
     - target: {fileID: 8887122568359973558, guid: ccdcc8d6f3c2d8941bffa495c7adb6c0, type: 3}
       propertyPath: sceneId
@@ -12577,7 +12577,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2685514400232373661, guid: 7b3e4f3eaf73c0b48be4b3030db5b465, type: 3}
       propertyPath: enableRoaming
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5645928186077021714, guid: 7b3e4f3eaf73c0b48be4b3030db5b465, type: 3}
       propertyPath: m_LocalPosition.x
@@ -12621,7 +12621,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8857853131041869042, guid: 7b3e4f3eaf73c0b48be4b3030db5b465, type: 3}
       propertyPath: m_Name
-      value: forged_aw_instigator_3D_rigged_Enemy (4)
+      value: forged_aw_instigator_3D_rigged_Enemy
       objectReference: {fileID: 0}
     - target: {fileID: 9011164311147284036, guid: 7b3e4f3eaf73c0b48be4b3030db5b465, type: 3}
       propertyPath: m_LocalPosition.x
@@ -17824,7 +17824,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7806446736298007974, guid: ccdcc8d6f3c2d8941bffa495c7adb6c0, type: 3}
       propertyPath: m_Name
-      value: forged_aw_pummeler_3D_rigged (1) 1_Enemy (5)
+      value: forged_aw_pummeler_3D_rigged (1) 1_Enemy
       objectReference: {fileID: 0}
     - target: {fileID: 8887122568359973558, guid: ccdcc8d6f3c2d8941bffa495c7adb6c0, type: 3}
       propertyPath: sceneId
@@ -18342,7 +18342,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2685514400232373661, guid: 7b3e4f3eaf73c0b48be4b3030db5b465, type: 3}
       propertyPath: enableRoaming
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5645928186077021714, guid: 7b3e4f3eaf73c0b48be4b3030db5b465, type: 3}
       propertyPath: m_LocalPosition.x
@@ -18386,7 +18386,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8857853131041869042, guid: 7b3e4f3eaf73c0b48be4b3030db5b465, type: 3}
       propertyPath: m_Name
-      value: forged_aw_instigator_3D_rigged_Enemy (17)
+      value: forged_aw_instigator_3D_rigged_Enemy
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -18567,7 +18567,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7806446736298007974, guid: ccdcc8d6f3c2d8941bffa495c7adb6c0, type: 3}
       propertyPath: m_Name
-      value: forged_aw_pummeler_3D_rigged (1) 1_Enemy (8)
+      value: forged_aw_pummeler_3D_rigged (1) 1_Enemy
       objectReference: {fileID: 0}
     - target: {fileID: 8887122568359973558, guid: ccdcc8d6f3c2d8941bffa495c7adb6c0, type: 3}
       propertyPath: sceneId
@@ -18624,7 +18624,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2029869154457814526, guid: ccdcc8d6f3c2d8941bffa495c7adb6c0, type: 3}
       propertyPath: enableRoaming
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6045816424560110649, guid: ccdcc8d6f3c2d8941bffa495c7adb6c0, type: 3}
       propertyPath: m_LocalPosition.x
@@ -18668,7 +18668,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7806446736298007974, guid: ccdcc8d6f3c2d8941bffa495c7adb6c0, type: 3}
       propertyPath: m_Name
-      value: forged_aw_pummeler_3D_rigged (1) 1_Enemy (7)
+      value: forged_aw_pummeler_3D_rigged (1) 1_Enemy
       objectReference: {fileID: 0}
     - target: {fileID: 8887122568359973558, guid: ccdcc8d6f3c2d8941bffa495c7adb6c0, type: 3}
       propertyPath: sceneId
@@ -19098,7 +19098,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2685514400232373661, guid: 7b3e4f3eaf73c0b48be4b3030db5b465, type: 3}
       propertyPath: enableRoaming
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5645928186077021714, guid: 7b3e4f3eaf73c0b48be4b3030db5b465, type: 3}
       propertyPath: m_LocalPosition.x
@@ -19142,7 +19142,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8857853131041869042, guid: 7b3e4f3eaf73c0b48be4b3030db5b465, type: 3}
       propertyPath: m_Name
-      value: forged_aw_instigator_3D_rigged_Enemy (2)
+      value: forged_aw_instigator_3D_rigged_Enemy
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -19227,7 +19227,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8857853131041869042, guid: 7b3e4f3eaf73c0b48be4b3030db5b465, type: 3}
       propertyPath: m_Name
-      value: forged_aw_instigator_3D_rigged_Enemy (12)
+      value: forged_aw_instigator_3D_rigged_Enemy
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
