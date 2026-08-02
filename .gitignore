@@ -54,6 +54,7 @@ crashlytics-build.properties
 
 # ── Server build output (deploy separately via SCP) ──────────────────────────
 ServerBuild/
+Dev Build/
 
 # ── Test zips / scratch ───────────────────────────────────────────────────────
 *.zip
