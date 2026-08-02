@@ -72,7 +72,8 @@ public class CombatAudio : MonoBehaviour
     public void PlayAt(AudioClip clip, Vector3 position, float volumeScale = 1f)
     {
         if (clip == null) return;
-        AudioSource.PlayClipAtPoint(clip, position, masterVolume * volumeScale);
+        AudioSource.PlayClipAtPoint(clip, position,
+            SfxVolumeSettings.Scale(masterVolume * volumeScale));
     }
 
     // ── Internal ──────────────────────────────────────────────────────────────────
@@ -83,7 +84,7 @@ public class CombatAudio : MonoBehaviour
         // Pitch randomization prevents repetitive sound — ±pitchVariance from FeelConfig
         float variance   = FeelConfig.Instance != null ? FeelConfig.Instance.pitchVariance : 0.07f;
         _src.pitch       = 1f + Random.Range(-variance, variance);
-        _src.PlayOneShot(clip, masterVolume);
+        _src.PlayOneShot(clip, SfxVolumeSettings.Scale(masterVolume));
     }
 }
 #endif

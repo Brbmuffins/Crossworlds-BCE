@@ -3024,7 +3024,7 @@ public class AbilityCaster : NetworkBehaviour
 
         var src = go.AddComponent<AudioSource>();
         src.clip          = clip;
-        src.volume        = Mathf.Clamp01(volume);
+        src.volume        = SfxVolumeSettings.Scale(volume);
         float variance    = FeelConfig.Instance != null ? FeelConfig.Instance.pitchVariance : 0.07f;
         src.pitch         = 1f + Random.Range(-variance, variance);
         src.spatialBlend  = 1f;   // 3D — positional so it locates the caster/impact

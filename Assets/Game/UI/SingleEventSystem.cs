@@ -50,11 +50,53 @@ public class SingleEventSystem : MonoBehaviour
         if (all.Length == 1 && all[0].gameObject.scene.name != "DontDestroyOnLoad")
             return;
 
+        Rebuild(all);
+    }
+
+    /// <summary>
+    /// Verifies that the active EventSystem still has a live Input System module
+    /// and enabled pointer/click actions. Scene transitions can leave the objects
+    /// present while their shared input actions have already been disabled.
+    /// </summary>
+    public static void EnsureHealthy()
+    {
+        EventSystem current = EventSystem.current;
+        InputSystemUIInputModule module = current != null
+            ? current.GetComponent<InputSystemUIInputModule>()
+            : null;
+
+        bool pointerEnabled = module?.point?.action != null && module.point.action.enabled;
+        bool clickEnabled = module?.leftClick?.action != null && module.leftClick.action.enabled;
+        bool healthy = current != null && current.isActiveAndEnabled &&
+                       module != null && module.isActiveAndEnabled &&
+                       pointerEnabled && clickEnabled;
+
+        if (healthy)
+            return;
+
+        Rebuild(FindObjectsByType<EventSystem>(FindObjectsInactive.Include));
+    }
+
+    /// <summary>
+    /// Rebinds UI input even when Unity reports the existing action references as
+    /// enabled. This is used for an explicitly opened modal after scene travel,
+    /// where stale shared actions can look healthy but no longer deliver events.
+    /// </summary>
+    public static void ForceRebuild()
+    {
+        Rebuild(FindObjectsByType<EventSystem>(FindObjectsInactive.Include));
+    }
+
+    static void Rebuild(EventSystem[] all)
+    {
+
         foreach (var es in all)
             DestroyImmediate(es.gameObject);
 
         var go = new GameObject("EventSystem");
         go.AddComponent<EventSystem>();
-        go.AddComponent<InputSystemUIInputModule>();
+        var module = go.AddComponent<InputSystemUIInputModule>();
+        module.AssignDefaultActions();
+        DontDestroyOnLoad(go);
     }
 }

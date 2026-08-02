@@ -239,7 +239,7 @@ public class ClericRadarUI : MonoBehaviour
     void PlayPing(Vector3 pos)
     {
         if (pingClip != null)
-            AudioSource.PlayClipAtPoint(pingClip, pos, 0.6f);
+            AudioSource.PlayClipAtPoint(pingClip, pos, SfxVolumeSettings.Scale(0.6f));
     }
 
     // ── Build UI ──────────────────────────────────────────────────────────────
