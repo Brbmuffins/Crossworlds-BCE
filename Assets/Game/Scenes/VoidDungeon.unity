@@ -936,6 +936,7 @@ MonoBehaviour:
   - {fileID: 1915601892}
   - {fileID: 789286933}
   zoneConfig: {fileID: 11400000, guid: d5f632db3595dfc49a4576dbf3be1d13, type: 2}
+  difficultyScaler: {fileID: 0}
   baseEnemiesPerWave: 4
   enemiesAddedPerWave: 2
   timeBetweenWaves: 8
