@@ -92,31 +92,11 @@ public class CharacterSelectUI : MonoBehaviour
             ShowClass(0);
     }
 
-    // Two enabled EventSystems (e.g. a DontDestroyOnLoad one carried in from another
-    // scene plus this scene's own) make uGUI silently stop processing clicks. Keep one,
-    // disable the rest, and guarantee it drives the new Input System.
-    void EnsureSingleEventSystem()
-    {
-        var systems = FindObjectsByType<EventSystem>(FindObjectsInactive.Exclude);
-        EventSystem keep = systems.Length > 0 ? systems[0] : null;
-
-        if (keep == null)
-        {
-            var go = new GameObject("EventSystem");
-            keep = go.AddComponent<EventSystem>();
-            go.AddComponent<InputSystemUIInputModule>();
-        }
-        else
-        {
-            for (int i = 1; i < systems.Length; i++)
-                Destroy(systems[i].gameObject);
-            if (keep.GetComponent<InputSystemUIInputModule>() == null)
-            {
-                foreach (var m in keep.GetComponents<BaseInputModule>()) m.enabled = false;
-                keep.gameObject.AddComponent<InputSystemUIInputModule>();
-            }
-        }
-    }
+    // Two enabled EventSystems (e.g. a DontDestroyOnLoad one carried in from a gameplay
+    // scene plus this scene's own) make uGUI silently stop processing clicks — you reach
+    // character select after logout but nothing is clickable. Rebuild a single clean
+    // EventSystem synchronously so the Input System's UI actions stay enabled.
+    void EnsureSingleEventSystem() => SingleEventSystem.ForceSingle();
 
     void Update()
     {

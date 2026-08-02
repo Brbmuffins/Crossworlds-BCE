@@ -74,6 +74,11 @@ public class LoginManager : MonoBehaviour
         if (SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.Null)
             return;
 
+        // A DontDestroyOnLoad EventSystem carried in from a gameplay session leaves the
+        // login screen unclickable after logout (Input System UI actions get disabled
+        // when its EventSystem is torn down). Rebuild a single clean one.
+        SingleEventSystem.ForceSingle();
+
         BuildCanvas();
     }
 
