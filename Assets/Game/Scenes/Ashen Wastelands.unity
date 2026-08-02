@@ -2426,7 +2426,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 75ba9038ecd2f3746b42ff4092049e7a, type: 3}
       propertyPath: m_Name
-      value: tripo_convert_4446dca8-cc49-4c91-8eb2-4ed7516e9e5f
+      value: temple_top
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
