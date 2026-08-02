@@ -4,6 +4,8 @@
 [Oo]bj/
 [Bb]uild/
 [Bb]uilds/
+# Packaged player builds — CI rebuilds these; never commit build artifacts.
+WindowsClient/
 [Ll]ogs/
 [Mm]emoryCaptures/
 [Uu]serSettings/
