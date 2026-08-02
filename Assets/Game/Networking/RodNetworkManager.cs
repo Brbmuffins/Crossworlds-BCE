@@ -276,7 +276,12 @@ public class RodNetworkManager : NetworkManager
                                     int classIndex, string username, Vector3 spawnPos,
                                     RodPlayerAuth auth, bool hasSavedPos)
     {
-        string zoneName = SceneNames.NormalizeZone(auth != null ? auth.zone : null);
+        // Login always returns players to HUB regardless of the zone they logged out
+        // in (overrides ROADMAP 6.2 zone-persistence by request). The saved DB position
+        // is only valid inside its own zone, so ignore it here and drop onto HUB's spawn
+        // point. In-session zone travel (portals/waypoints) is unaffected.
+        string zoneName = SceneNames.Hub;
+        hasSavedPos = false;
 
         if (ZoneManager.Instance == null)
         {
