@@ -10954,8 +10954,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MusicZoneTrigger
   zoneTrack: {fileID: 8300000, guid: 33d79ae93edcd33469f4bb8eb72a5bfa, type: 3}
+  additionalTracks: []
   stopMusicInstead: 0
   restartIfAlreadyPlaying: 0
+  minSilenceSeconds: 30
+  maxSilenceSeconds: 120
   fadeSeconds: 1.5
   localPlayerOnly: 1
   triggerOnce: 0

@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -42,6 +43,12 @@ public class MusicController : MonoBehaviour
     private Coroutine _fadeRoutine;
     private AudioClip _pendingTrack;
     private bool _trackTransitionPending;
+    private readonly List<AudioClip> _playlist = new List<AudioClip>();
+    private Coroutine _playlistRoutine;
+    private bool _playlistActive;
+    private float _playlistMinSilence;
+    private float _playlistMaxSilence;
+    private int _lastPlaylistIndex = -1;
     private float _volume;
     private bool _muted;
 
@@ -79,6 +86,15 @@ public class MusicController : MonoBehaviour
             Play(fadeInSeconds);
     }
 
+    void Update()
+    {
+        if (!_playlistActive || _source == null || _source.isPlaying ||
+            _fadeRoutine != null || _playlistRoutine != null)
+            return;
+
+        _playlistRoutine = StartCoroutine(PlayNextPlaylistTrackAfterDelay());
+    }
+
     void OnDestroy()
     {
         if (Instance == this)
@@ -102,10 +118,10 @@ public class MusicController : MonoBehaviour
             return;
 
         StopFade();
-        _fadeRoutine = StartCoroutine(PlayWhenReadyRoutine(_source.clip, fadeSeconds));
+        _fadeRoutine = StartCoroutine(PlayWhenReadyRoutine(_source.clip, fadeSeconds, loopTrack));
     }
 
-    private IEnumerator PlayWhenReadyRoutine(AudioClip clip, float fadeSeconds)
+    private IEnumerator PlayWhenReadyRoutine(AudioClip clip, float fadeSeconds, bool loop)
     {
         EnsureGlobalAudioEnabled();
         yield return EnsureClipLoaded(clip);
@@ -119,7 +135,7 @@ public class MusicController : MonoBehaviour
             yield break;
         }
 
-        _source.loop = loopTrack;
+        _source.loop = loop;
 
         if (fadeSeconds <= 0f)
         {
@@ -142,8 +158,20 @@ public class MusicController : MonoBehaviour
 
     public void Stop(float fadeSeconds)
     {
+        StopPlaylist();
+
         if (_source == null || !_source.isPlaying)
+        {
+            // A track may still be loading or waiting to begin. Cancel that work
+            // so travel cannot start music from the zone we just left.
+            StopFade();
+            if (_source != null)
+            {
+                _source.Stop();
+                ApplyVolumeImmediate();
+            }
             return;
+        }
 
         StopFade();
 
@@ -204,6 +232,8 @@ public class MusicController : MonoBehaviour
 
     public void FadeToTrack(AudioClip nextTrack, float fadeSeconds, bool restartIfSameTrack)
     {
+        StopPlaylist();
+
         if (_source == null)
             return;
 
@@ -226,6 +256,46 @@ public class MusicController : MonoBehaviour
         _pendingTrack = nextTrack;
         _trackTransitionPending = true;
         _fadeRoutine = StartCoroutine(FadeToTrackRoutine(nextTrack, Mathf.Max(0f, fadeSeconds)));
+    }
+
+    /// <summary>
+    /// Starts an ambient playlist. Tracks play once, followed by a randomized
+    /// period of silence. Re-selecting the active playlist does not restart it.
+    /// </summary>
+    public void SetPlaylist(IList<AudioClip> tracks, float minSilenceSeconds,
+        float maxSilenceSeconds, float fadeSeconds, bool restartIfAlreadyPlaying = false)
+    {
+        if (_source == null)
+            return;
+
+        var validTracks = new List<AudioClip>();
+        if (tracks != null)
+        {
+            for (int i = 0; i < tracks.Count; i++)
+                if (tracks[i] != null && !validTracks.Contains(tracks[i]))
+                    validTracks.Add(tracks[i]);
+        }
+
+        if (validTracks.Count == 0)
+        {
+            Stop(fadeSeconds);
+            return;
+        }
+
+        bool samePlaylist = _playlistActive && PlaylistsMatch(validTracks);
+        _playlistMinSilence = Mathf.Max(0f, minSilenceSeconds);
+        _playlistMaxSilence = Mathf.Max(_playlistMinSilence, maxSilenceSeconds);
+
+        if (samePlaylist && !restartIfAlreadyPlaying)
+            return;
+
+        StopPlaylist();
+        _playlist.AddRange(validTracks);
+        _playlistActive = true;
+        _lastPlaylistIndex = -1;
+
+        AudioClip firstTrack = ChooseNextPlaylistTrack();
+        StartPlaylistTrack(firstTrack, fadeSeconds);
     }
 
     public void SetVolume(float value)
@@ -268,6 +338,69 @@ public class MusicController : MonoBehaviour
         _source.playOnAwake = false;
         _source.loop = loopTrack;
         _source.spatialBlend = 0f;
+    }
+
+    private IEnumerator PlayNextPlaylistTrackAfterDelay()
+    {
+        float delay = Random.Range(_playlistMinSilence, _playlistMaxSilence);
+        if (delay > 0f)
+            yield return new WaitForSecondsRealtime(delay);
+
+        _playlistRoutine = null;
+        if (!_playlistActive || _source == null || _source.isPlaying)
+            yield break;
+
+        StartPlaylistTrack(ChooseNextPlaylistTrack(), fadeInSeconds);
+    }
+
+    private void StartPlaylistTrack(AudioClip track, float fadeSeconds)
+    {
+        if (track == null)
+            return;
+
+        StopFade();
+        _source.Stop();
+        _source.clip = track;
+        _source.loop = false;
+        _fadeRoutine = StartCoroutine(PlayWhenReadyRoutine(track, Mathf.Max(0f, fadeSeconds), false));
+    }
+
+    private AudioClip ChooseNextPlaylistTrack()
+    {
+        if (_playlist.Count == 0)
+            return null;
+
+        int index = Random.Range(0, _playlist.Count);
+        if (_playlist.Count > 1 && index == _lastPlaylistIndex)
+            index = (index + Random.Range(1, _playlist.Count)) % _playlist.Count;
+
+        _lastPlaylistIndex = index;
+        return _playlist[index];
+    }
+
+    private bool PlaylistsMatch(IList<AudioClip> tracks)
+    {
+        if (_playlist.Count != tracks.Count)
+            return false;
+
+        for (int i = 0; i < tracks.Count; i++)
+            if (!_playlist.Contains(tracks[i]))
+                return false;
+
+        return true;
+    }
+
+    private void StopPlaylist()
+    {
+        _playlistActive = false;
+        _playlist.Clear();
+        _lastPlaylistIndex = -1;
+
+        if (_playlistRoutine != null)
+        {
+            StopCoroutine(_playlistRoutine);
+            _playlistRoutine = null;
+        }
     }
 
     private void LoadPreferences()

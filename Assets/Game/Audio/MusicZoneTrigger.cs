@@ -1,4 +1,5 @@
 using Mirror;
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -11,8 +12,16 @@ public class MusicZoneTrigger : MonoBehaviour
 {
     [Header("Music")]
     [SerializeField] private AudioClip zoneTrack;
+    [Tooltip("Additional tracks for this zone. The original zone track is always included first.")]
+    [SerializeField] private List<AudioClip> additionalTracks = new List<AudioClip>();
     [SerializeField] private bool stopMusicInstead = false;
     [SerializeField] private bool restartIfAlreadyPlaying = false;
+
+    [Header("Ambient Timing")]
+    [Min(0f)]
+    [SerializeField] private float minSilenceSeconds = 30f;
+    [Min(0f)]
+    [SerializeField] private float maxSilenceSeconds = 120f;
 
     [Header("Fade")]
     [Min(0f)]
@@ -96,7 +105,15 @@ public class MusicZoneTrigger : MonoBehaviour
             return;
         }
 
-        controller.FadeToTrack(zoneTrack, fadeSeconds, restartIfAlreadyPlaying);
+        var playlist = new List<AudioClip>();
+        if (zoneTrack != null)
+            playlist.Add(zoneTrack);
+        foreach (AudioClip track in additionalTracks)
+            if (track != null && !playlist.Contains(track))
+                playlist.Add(track);
+
+        controller.SetPlaylist(playlist, minSilenceSeconds, maxSilenceSeconds,
+            fadeSeconds, restartIfAlreadyPlaying);
     }
 
     void OnTriggerStay(Collider other)
