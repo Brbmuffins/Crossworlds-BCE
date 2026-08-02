@@ -213,7 +213,7 @@ public sealed class LoadingScreen : MonoBehaviour
     static Rigidbody FindLocalPlayerRigidbody()
     {
         foreach (var id in FindObjectsByType<NetworkIdentity>(
-                     FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+                     FindObjectsInactive.Exclude))
         {
             if (id.isLocalPlayer)
                 return id.GetComponent<Rigidbody>();

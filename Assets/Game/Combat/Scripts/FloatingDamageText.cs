@@ -254,7 +254,7 @@ public class FloatingDamageText : MonoBehaviour
     {
         label.alignment = TextAlignmentOptions.Center;
         label.enableAutoSizing = false;
-        label.enableWordWrapping = false;
+        label.textWrappingMode = TextWrappingModes.NoWrap;
         label.fontStyle = FontStyles.Bold;
         label.raycastTarget = false;
     }

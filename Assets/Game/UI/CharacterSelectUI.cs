@@ -893,7 +893,7 @@ public class CharacterSelectUI : MonoBehaviour
     {
         string jwt      = PlayerPrefs.GetString("jwt_token", "");
         string serverIP = PlayerPrefs.GetString("game_server_ip", serverAddress).Trim();
-        string url      = $"http://{serverIP}:3000/character";
+        string url      = $"{ServerConfig.AuthBaseUrl}/character";  // environment-aware (dev → :3002)
         string json     = $"{{\"class_index\":{classIndex}}}";
 
         using var req = new UnityWebRequest();
@@ -935,7 +935,14 @@ public class CharacterSelectUI : MonoBehaviour
         }
 
         NetworkManager.singleton.networkAddress = serverIP;
-        Debug.Log($"[CharSel] Class {classIndex} confirmed. Connecting to {serverIP}...");
+
+        // Environment-aware port: prod → 7777, dev → 7778. The dev game service is a
+        // separate systemd unit on the same box, launched with -port 7778 -authurl :3002.
+        if (NetworkManager.singleton.transport is PortTransport pt)
+            pt.Port = ServerConfig.GamePort;
+
+        Debug.Log($"[CharSel] Class {classIndex} confirmed. Connecting to {serverIP}:{ServerConfig.GamePort} " +
+                  $"({ServerConfig.Environment})...");
         NetworkManager.singleton.StartClient();
 
         // Timeout guard: re-enable the button if the scene never changes.

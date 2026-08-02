@@ -16,7 +16,7 @@ public class BastionNode : MonoBehaviour
     // Assign: brbmuffins Dark Arts/.../Shield buff.prefab
     public GameObject domeVFX;
 
-    [HideInInspector] public int ownerID;
+    [HideInInspector] public UnityEngine.EntityId ownerID;
 
     private float _timer;
 

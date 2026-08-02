@@ -20,7 +20,7 @@ public class RestorationBeacon : NetworkBehaviour
     // Assign: brbmuffins Dark Arts/.../Healing buff.prefab
     public GameObject pulseVFX;
 
-    [HideInInspector] public int ownerID;
+    [HideInInspector] public UnityEngine.EntityId ownerID;
     [HideInInspector] public GameObject owner;
 
     private float _pulseTimer;

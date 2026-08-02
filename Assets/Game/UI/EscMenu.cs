@@ -395,7 +395,7 @@ public class EscMenu : MonoBehaviour
                 return follow;
         }
 
-        return FindFirstObjectByType<CameraFollow>();
+        return FindAnyObjectByType<CameraFollow>();
     }
 
     void ToggleVariantMode()
@@ -407,7 +407,7 @@ public class EscMenu : MonoBehaviour
         RefreshVariantModeLabel();
 
         // Apply immediately to the local player's AbilityCaster if in-game
-        var caster = FindFirstObjectByType<AbilityCaster>();
+        var caster = FindAnyObjectByType<AbilityCaster>();
         if (caster != null)
             caster.useScrollWheelVariants = next;
     }

@@ -52,6 +52,7 @@ public class GuardianFollower : MonoBehaviour
 
     TurretController _turret;
     Rigidbody _rb;
+    readonly RaycastHit[] _groundHits = new RaycastHit[64];
     float _nextOwnerResolveTime;
     float _nextTeleportTime;
 
@@ -211,20 +212,32 @@ public class GuardianFollower : MonoBehaviour
     Vector3 ProjectToGround(Vector3 point)
     {
         Vector3 origin = point + Vector3.up * groundRayHeight;
-        RaycastHit[] hits = ZonePhysics.RaycastAll(
+        RaycastHit[] hits = _groundHits;
+        int hitCount = ZonePhysics.RaycastNonAlloc(
             gameObject,
             origin,
             Vector3.down,
+            _groundHits,
             groundRayHeight + groundRayDistance,
             groundMask,
             QueryTriggerInteraction.Ignore);
 
-        if (hits.Length == 0)
+        if (hitCount == 0)
             return point;
 
-        System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
-        foreach (RaycastHit hit in hits)
+        if (hitCount == _groundHits.Length)
         {
+            hits = ZonePhysics.RaycastAll(
+                gameObject, origin, Vector3.down, groundRayHeight + groundRayDistance,
+                groundMask, QueryTriggerInteraction.Ignore);
+            hitCount = hits.Length;
+        }
+
+        bool found = false;
+        RaycastHit nearest = default;
+        for (int i = 0; i < hitCount; i++)
+        {
+            RaycastHit hit = hits[i];
             if (hit.collider == null)
                 continue;
 
@@ -232,10 +245,14 @@ public class GuardianFollower : MonoBehaviour
             if (hitTransform == transform || hitTransform.IsChildOf(transform))
                 continue;
 
-            return hit.point + Vector3.up * groundOffset;
+            if (!found || hit.distance < nearest.distance)
+            {
+                found = true;
+                nearest = hit;
+            }
         }
 
-        return point;
+        return found ? nearest.point + Vector3.up * groundOffset : point;
     }
 
     void ResolveOwnerTarget(bool force)

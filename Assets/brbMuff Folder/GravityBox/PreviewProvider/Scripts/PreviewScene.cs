@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -97,7 +97,7 @@ namespace GravityBox.PreviewProvider
 		public void DisableSceneLights()
 		{
 			disabled = new List<Light>();
-			Light[] lights = FindObjectsOfType<Light>();
+			Light[] lights = FindObjectsByType<Light>();
 			
 			foreach (Light l in lights)
 			{

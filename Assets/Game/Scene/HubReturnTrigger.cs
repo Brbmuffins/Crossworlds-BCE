@@ -85,7 +85,7 @@ public class HubReturnTrigger : NetworkBehaviour
         if (_localPlayer == null)
             _localPlayer = FindLocalPlayer();
         _playerNear = _localPlayer != null &&
-                      Vector3.Distance(transform.position, _localPlayer.position) <= interactionRange;
+                      (transform.position - _localPlayer.position).sqrMagnitude <= interactionRange * interactionRange;
 
         SetPromptVisible(_playerNear);
         if (!_playerNear) return;
@@ -206,7 +206,7 @@ public class HubReturnTrigger : NetworkBehaviour
         ArenaSessionController.Instance?.EndSession();
 
         UnityEngine.SceneManagement.Scene? zone = ZoneManager.Instance?.ZoneOf(sender);
-        foreach (var spawner in FindObjectsByType<WaveSpawner>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+        foreach (var spawner in FindObjectsByType<WaveSpawner>(FindObjectsInactive.Exclude))
         {
             if (spawner == null) continue;
             if (zone.HasValue && spawner.gameObject.scene != zone.Value) continue;
@@ -292,10 +292,8 @@ public class HubReturnTrigger : NetworkBehaviour
 
     static Transform FindLocalPlayer()
     {
-        var identities = FindObjectsByType<NetworkIdentity>(FindObjectsInactive.Exclude);
-        foreach (var identity in identities)
-            if (identity.isLocalPlayer)
-                return identity.transform;
+        if (PlayerIdentity.Local != null)
+            return PlayerIdentity.Local.transform;
 
         var taggedPlayer = GameObject.FindWithTag("Player");
         return taggedPlayer != null ? taggedPlayer.transform : null;
@@ -502,7 +500,7 @@ sealed class HubReturnConfirmationUI : MonoBehaviour
         _message = MakeText("Message", panel, 22f, FontStyles.Normal);
         SetRect(_message.rectTransform, new Vector2(0.08f, 0.36f), new Vector2(0.92f, 0.7f), 0f, 0f, 0f, 0f);
         _message.alignment = TextAlignmentOptions.Center;
-        _message.enableWordWrapping = true;
+        _message.textWrappingMode = TextWrappingModes.Normal;
 
         _confirmButton = MakeButton("ReturnButton", panel, new Color(0.24f, 0.63f, 0.42f, 1f), out _confirmLabel);
         SetRect(_confirmButton.GetComponent<RectTransform>(), new Vector2(0.12f, 0.12f), new Vector2(0.46f, 0.29f), 0f, 0f, 0f, 0f);

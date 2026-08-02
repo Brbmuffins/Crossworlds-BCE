@@ -146,6 +146,7 @@ public class EnemyController : NetworkBehaviour
     private readonly List<AnimatorCullingMode> _corpseAnimatorCullingModes = new List<AnimatorCullingMode>();
     private readonly List<SkinnedMeshRenderer> _corpseRenderers = new List<SkinnedMeshRenderer>();
     private readonly List<bool> _corpseRendererUpdateModes = new List<bool>();
+    private readonly Collider[] _aggroHits = new Collider[64];
     float _locomotionMovingUntil;
 
     bool HasSimulationAuthority => NetworkServer.active ||
@@ -597,17 +598,26 @@ public class EnemyController : NetworkBehaviour
             return;
         }
 
-        var hits = ZonePhysics.OverlapSphere(gameObject, transform.position, aggroRadius);
+        Collider[] hits = _aggroHits;
+        int hitCount = ZonePhysics.OverlapSphereNonAlloc(
+            gameObject, transform.position, aggroRadius, _aggroHits);
+        if (hitCount == _aggroHits.Length)
+        {
+            hits = ZonePhysics.OverlapSphere(gameObject, transform.position, aggroRadius);
+            hitCount = hits.Length;
+        }
+
         float     nearest = float.MaxValue;
         Transform found   = null;
 
-        foreach (var col in hits)
+        for (int i = 0; i < hitCount; i++)
         {
+            Collider col = hits[i];
             if (col.transform.IsChildOf(transform)) continue;
             if (!col.CompareTag("Player")) continue;
             var h = col.GetComponent<Health>();
             if (h == null || !h.IsAlive) continue;
-            float d = Vector3.Distance(transform.position, col.transform.position);
+            float d = (transform.position - col.transform.position).sqrMagnitude;
             if (d < nearest) { nearest = d; found = col.transform; }
         }
 

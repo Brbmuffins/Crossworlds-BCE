@@ -666,6 +666,52 @@ see the note in `_CONTEXT/HANDOFF_zone_persistence.md`.
 
 ---
 
+## Phase 8 — Performance & Optimization (added 2026-08-02)
+
+*Entry:* stable build. *Exit:* no per-frame or per-combat-event GC spikes in the profiler during
+normal play. *Why a phase, not drive-by fixes:* the combat hot paths are already well-optimized
+(EnemyController runs a 5 Hz brain with cached refs; player/portal scans are throttled and cached;
+no LINQ in hot paths). The remaining wins are allocation churn, and each has a clear scope boundary
+that must be respected — this phase is minimum-change GC reduction, **not** a rewrite.
+
+> **Done 2026-08-02 (context, not a task):** the aim-indicator fill-mesh projection in
+> `UI/AbilityCaster.cs` (`UpdateProjectedCircleFill`/`RectFill`/`ConeFill`) reallocated
+> `mesh.vertices` + `mesh.uv` every frame while aiming (~15 KB/frame; the circle disk is 769 verts).
+> Now reuses shared `List<Vector3>`/`List<Vector2>` buffers via `Mesh.GetVertices`/`GetUVs`/
+> `SetVertices`. Behaviour-identical; review-only, confirm in editor. See
+> [[Known Issues & Tech Debt]] §Performance.
+
+- **8.1 — Pool the frequently-spawned LOCAL VFX.** New `Assets/Game/Systems/VfxPool.cs` — a simple
+  prefab-keyed `Dictionary<GameObject, Queue<GameObject>>` pool with `Get(prefab, pos, rot)` and a
+  timed `Release(go, seconds)` that re-parents to the pool and resets `ParticleSystem`s (Clear +
+  Play on reuse) instead of `Destroy`. Route the **client-side, non-networked, auto-despawning**
+  VFX through it: impact/hit VFX in `UI/AbilityCaster.cs` (the `RpcPlayHitVFX`/cast-VFX
+  `Instantiate` sites ~2966/2986/3046/4261), `Combat/Scripts/ChainLightningVFXProfile.cs:115`,
+  `Combat/Scripts/ElementalLightningVFXProfile.cs:81`, `Combat/Scripts/ClericHealVFX.cs`
+  (72/84/108), `Combat/Scripts/EnemyDeathVFX.cs:46`, and the one-shot burst VFX in the ability
+  behaviours (`NaniteSwarmBehaviour.cs:80`, `ShockMineBehaviour.cs:71`, `SingularityBehaviour.cs:101`,
+  `RestorationBeacon.cs:75`). These are the high-frequency, short-lived effects whose create/destroy
+  churn is the steady GC source during a busy wave.
+  **⚠ Hard scope boundary — do NOT pool these:** anything spawned via `NetworkServer.Spawn`
+  (enemies at `WaveSpawner.cs:193`/`WaveChest.cs:118`, projectiles/drops in `EnemyController`,
+  boss shards/drops in `WorldBossController`, turret/drops in `IronWardenController`) — Mirror owns
+  that lifecycle and pooling it is a separate, much larger task; and the persistent idle VFX
+  parented to a deployable (`ShockMine`/`Singularity`/`NullFieldZone`/relay `idleVFX`), whose
+  lifetime is already tied to the deployable and which are spawned once, not churned.
+  *Accept:* profiler shows flat GC Alloc during sustained combat where before it spiked on every
+  hit/death; VFX look and time out exactly as before; nothing networked changed. *Deps:* none.
+  **READY** (client-only; guard the pool `#if UNITY_EDITOR || !UNITY_SERVER`).
+
+- **8.2 — Allocating physics overlaps (deferred, deliberate — kept here so it isn't lost).**
+  ~17 `ZonePhysics.OverlapSphere` / `Physics.OverlapSphere` calls allocate per call and none use
+  `NonAlloc`. All observed sites are on-cast / on-hit (e.g. `EnemyHeavyAttack.ExecuteAbility`), not
+  per-frame, so the benefit is negligible, and `NonAlloc` with a fixed buffer risks silently
+  truncating hits (a real gameplay bug). Changing the shared `ZonePhysics` wrapper is also
+  foundational. **Do not convert** unless a query moves into a per-frame path — and then only with
+  a generously sized buffer and an overflow check. *Deps:* none.
+
+---
+
 ## Standards note (from the audit brief)
 
 UniTask, DOTween, and A* Pro are **not in the project** (see SNAPSHOT.md §0). Adopting UniTask

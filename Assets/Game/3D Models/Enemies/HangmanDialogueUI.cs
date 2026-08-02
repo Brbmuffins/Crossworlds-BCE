@@ -101,7 +101,7 @@ public class HangmanDialogueUI : MonoBehaviour
     // ── Button handlers ───────────────────────────────────────────────────────
     void OnEnterArena()
     {
-        var npc = HangmanNPC.Instance ?? Object.FindFirstObjectByType<HangmanNPC>();
+        var npc = HangmanNPC.Instance ?? Object.FindAnyObjectByType<HangmanNPC>();
         if (npc == null)
         {
             Debug.LogWarning("[HANGMAN UI] HangmanNPC not found — cannot confirm challenge");
@@ -230,7 +230,7 @@ public class HangmanDialogueUI : MonoBehaviour
         _flavorText.color     = ColFlavor;
         _flavorText.fontStyle = FontStyles.Italic;
         _flavorText.alignment = TextAlignmentOptions.Center;
-        _flavorText.enableWordWrapping = true;
+        _flavorText.textWrappingMode = TextWrappingModes.Normal;
         _flavorText.text = FlavorLines[0];
 
         // ── [Enter Arena] button ──────────────────────────────────────────────

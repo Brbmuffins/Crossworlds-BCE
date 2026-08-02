@@ -43,8 +43,10 @@ public class MusicZoneTrigger : MonoBehaviour
 
         // Additive travel can leave the old zone loaded briefly. Never let its
         // trigger select music for a player who has already moved to another scene.
+#if UNITY_EDITOR || !UNITY_SERVER
         if (!ZoneCameraDirector.IsCurrentLocalZone(gameObject.scene))
             return;
+#endif
 
         ApplyTrack(respectTriggerTiming: true);
     }

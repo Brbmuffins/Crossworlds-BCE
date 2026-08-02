@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -86,7 +86,7 @@ namespace GravityBox.PreviewProvider
 			{
 				//check if texture is runtime created texture 
 				//and not an asset (assets have instance ids > 0)
-				if (preview.Value.GetInstanceID() < 0)
+				if (preview.Value.GetEntityId().GetHashCode() < 0)
 					Destroy(preview.Value);
 			}
 

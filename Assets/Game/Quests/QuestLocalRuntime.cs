@@ -102,8 +102,10 @@ public sealed class QuestLocalRuntime : MonoBehaviour
     {
         if (gold > 0) PlayerProgressManager.Local?.AwardGold(gold);
         if (xp > 0) PlayerProgressManager.Local?.AwardXp(xp);
+#if UNITY_EDITOR || !UNITY_SERVER
         if (!string.IsNullOrWhiteSpace(itemId) && itemQuantity > 0)
             InventoryManager.Instance?.OnItemPickedUp(itemId, itemQuantity);
+#endif
     }
 
     [Server]

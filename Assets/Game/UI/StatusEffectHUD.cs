@@ -83,7 +83,7 @@ public class StatusEffectHUD : MonoBehaviour
         bool networkActive = Mirror.NetworkClient.active || Mirror.NetworkServer.active;
 
         // Cache local player's StatusEffectManager — throttled search
-        var identities = FindObjectsByType<Mirror.NetworkIdentity>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+        var identities = FindObjectsByType<Mirror.NetworkIdentity>(FindObjectsInactive.Exclude);
         foreach (var ni in identities)
         {
             bool isLocal = networkActive ? ni.isLocalPlayer : (ni.CompareTag("Player") || ni.GetComponent<PlayerMovement>() != null);
@@ -216,7 +216,7 @@ public class StatusEffectHUD : MonoBehaviour
         slot.label.color     = Color.white;
         slot.label.alignment = TextAlignmentOptions.Center;
         slot.label.fontStyle = FontStyles.Bold;
-        slot.label.enableWordWrapping = true;
+        slot.label.textWrappingMode = TextWrappingModes.Normal;
 
         // Duration bar (at very bottom)
         var barGO = new GameObject("DurBar"); barGO.transform.SetParent(root.transform, false);

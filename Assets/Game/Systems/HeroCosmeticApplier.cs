@@ -1,4 +1,4 @@
-﻿#if UNITY_EDITOR || !UNITY_SERVER
+#if UNITY_EDITOR || !UNITY_SERVER
 using System;
 using System.Collections;
 using UnityEngine;
@@ -327,7 +327,7 @@ public class HeroCosmeticApplier : MonoBehaviour
     // ── Helpers ───────────────────────────────────────────────────────────────
     static PlayerIdentity FindLocalIdentity()
     {
-        foreach (var id in FindObjectsByType<PlayerIdentity>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+        foreach (var id in FindObjectsByType<PlayerIdentity>(FindObjectsInactive.Exclude))
             if (id.isLocalPlayer) return id;
         return null;
     }

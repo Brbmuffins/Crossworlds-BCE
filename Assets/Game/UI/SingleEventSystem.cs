@@ -17,7 +17,7 @@ public class SingleEventSystem : MonoBehaviour
         // Find the survivor: lowest instance ID wins (created earliest).
         EventSystem survivor = all[0];
         foreach (var es in all)
-            if (es.GetInstanceID() < survivor.GetInstanceID())
+            if (es.GetEntityId().CompareTo(survivor.GetEntityId()) < 0)
                 survivor = es;
 
         foreach (var es in all)

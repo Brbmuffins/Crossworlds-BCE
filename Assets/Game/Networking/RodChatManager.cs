@@ -595,7 +595,7 @@ public class RodChatManager : NetworkBehaviour
 
     bool AnyOtherInputFocused()
     {
-        foreach (var f in FindObjectsByType<TMP_InputField>(FindObjectsSortMode.None))
+        foreach (var f in FindObjectsByType<TMP_InputField>())
             if (f != _input && f.isFocused) return true;
         return false;
     }
@@ -747,7 +747,7 @@ public class RodChatManager : NetworkBehaviour
             if (s_font == null)
             {
                 // Last resort: adopt the font from any TMP text already alive in the scene.
-                var any = FindFirstObjectByType<TMP_Text>();
+                var any = FindAnyObjectByType<TMP_Text>();
                 if (any != null) s_font = any.font;
             }
             return s_font;

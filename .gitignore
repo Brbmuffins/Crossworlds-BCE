@@ -93,3 +93,4 @@ WIKI_CORRECTIONS_*.md
 # safe to delete these two from disk manually):
 Backend_GM_Permissions_Handoff.md
 Docs/vps-character-system-prompt.txt
+DEV_ENV_VPS_SETUP.md

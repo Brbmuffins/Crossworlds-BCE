@@ -16,8 +16,7 @@ public class HubReturnSpawnPoint : MonoBehaviour
     {
         string id = NormalizeId(requestedSpawnId);
         HubReturnSpawnPoint[] points = FindObjectsByType<HubReturnSpawnPoint>(
-            FindObjectsInactive.Exclude,
-            FindObjectsSortMode.None);
+            FindObjectsInactive.Exclude);
 
         foreach (HubReturnSpawnPoint point in points)
         {
@@ -52,8 +51,7 @@ public class HubReturnSpawnPoint : MonoBehaviour
 
         string id = NormalizeId(requestedSpawnId);
         HubReturnSpawnPoint[] points = FindObjectsByType<HubReturnSpawnPoint>(
-            FindObjectsInactive.Exclude,
-            FindObjectsSortMode.None);
+            FindObjectsInactive.Exclude);
 
         HubReturnSpawnPoint firstInScene = null;
 
@@ -71,7 +69,7 @@ public class HubReturnSpawnPoint : MonoBehaviour
         if (firstInScene != null) return firstInScene.transform;
 
         foreach (NetworkStartPosition start in FindObjectsByType<NetworkStartPosition>(
-                     FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+                     FindObjectsInactive.Exclude))
         {
             if (start != null && start.gameObject.scene == scene)
                 return start.transform;

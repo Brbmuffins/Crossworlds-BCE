@@ -35,6 +35,21 @@ public static class ZonePhysics
         }
     }
 
+    public static int OverlapSphereNonAlloc(
+        GameObject context,
+        Vector3 position,
+        float radius,
+        Collider[] results,
+        int layerMask = Physics.AllLayers,
+        QueryTriggerInteraction queryTriggerInteraction = QueryTriggerInteraction.UseGlobal)
+    {
+        if (results == null)
+            throw new System.ArgumentNullException(nameof(results));
+
+        return Resolve(context).OverlapSphere(
+            position, radius, results, layerMask, queryTriggerInteraction);
+    }
+
     public static Collider[] OverlapBox(
         GameObject context,
         Vector3 center,
@@ -67,6 +82,35 @@ public static class ZonePhysics
     {
         return RaycastAll(
             context, ray.origin, ray.direction, maxDistance, layerMask, queryTriggerInteraction);
+    }
+
+    public static int RaycastNonAlloc(
+        GameObject context,
+        Ray ray,
+        RaycastHit[] results,
+        float maxDistance,
+        int layerMask = Physics.AllLayers,
+        QueryTriggerInteraction queryTriggerInteraction = QueryTriggerInteraction.UseGlobal)
+    {
+        return RaycastNonAlloc(
+            context, ray.origin, ray.direction, results, maxDistance,
+            layerMask, queryTriggerInteraction);
+    }
+
+    public static int RaycastNonAlloc(
+        GameObject context,
+        Vector3 origin,
+        Vector3 direction,
+        RaycastHit[] results,
+        float maxDistance,
+        int layerMask = Physics.AllLayers,
+        QueryTriggerInteraction queryTriggerInteraction = QueryTriggerInteraction.UseGlobal)
+    {
+        if (results == null)
+            throw new System.ArgumentNullException(nameof(results));
+
+        return Resolve(context).Raycast(
+            origin, direction, results, maxDistance, layerMask, queryTriggerInteraction);
     }
 
     public static RaycastHit[] RaycastAll(

@@ -97,8 +97,42 @@ public class RodNetworkManager : NetworkManager
         // Skip the LoginManager UI and go straight to StartServer().
         if (SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.Null)
         {
+            ApplyServerLaunchArgs();
             Debug.Log("[RodNM] Headless server detected — StartServer()");
             StartServer();
+        }
+    }
+
+    // ── Launch-arg overrides (dev/prod on one binary) ─────────────────────────
+    //   -port <n>       UDP port for the KCP transport (prod 7777 / dev 7778)
+    //   -authurl <url>  auth server this game server validates JWTs against
+    //                   (prod http://127.0.0.1:3000 / dev http://127.0.0.1:3002)
+    // Missing args keep the Inspector-baked values, so an un-flagged launch is prod.
+    void ApplyServerLaunchArgs()
+    {
+        string[] args = System.Environment.GetCommandLineArgs();
+        for (int i = 0; i < args.Length - 1; i++)
+        {
+            if (args[i] == "-port" && ushort.TryParse(args[i + 1], out ushort p))
+            {
+                if (transport is PortTransport pt)
+                {
+                    pt.Port = p;
+                    Debug.Log($"[RodNM] Launch arg -port → transport bound to {p}");
+                }
+                else
+                {
+                    Debug.LogWarning("[RodNM] -port given but transport is not a PortTransport; ignoring.");
+                }
+            }
+            else if (args[i] == "-authurl")
+            {
+                string url = args[i + 1];
+                authServerURL = url;
+                if (authenticator is RodNetworkAuthenticator ra)
+                    ra.authServerURL = url;
+                Debug.Log($"[RodNM] Launch arg -authurl → validating JWTs against {url}");
+            }
         }
     }
 

@@ -1,4 +1,4 @@
-﻿#if UNITY_EDITOR || !UNITY_SERVER
+#if UNITY_EDITOR || !UNITY_SERVER
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -33,6 +33,7 @@ public class ClericRadarUI : MonoBehaviour
     const float LowHpThreshold  = 0.40f;   // pulse
     const float CritHpThreshold = 0.20f;   // solid red + scale + ping
     const float PulseSpeed       = Mathf.PI * 2f / 0.8f; // full cycle / 0.8s
+    static readonly WaitForSeconds ScanWait = new WaitForSeconds(ScanInterval);
 
     [Tooltip("Optional one-shot ping clip played when an ally drops below 20%.")]
     public AudioClip pingClip;
@@ -52,10 +53,10 @@ public class ClericRadarUI : MonoBehaviour
         public float    pulseT;
     }
     private readonly Dictionary<Health, NameplateState> _tracked = new();
+    private readonly List<Health> _staleHealth = new();
 
     // ── State ─────────────────────────────────────────────────────────────────
     private bool  _isCleric   = false;
-    private float _scanTimer  = 0f;
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
     void Awake()     => BuildUI();
@@ -65,7 +66,7 @@ public class ClericRadarUI : MonoBehaviour
     {
         while (true)
         {
-            yield return new WaitForSeconds(ScanInterval);
+            yield return ScanWait;
             CheckClericClass();
             if (_isCleric)
                 ScanAllies();
@@ -84,16 +85,16 @@ public class ClericRadarUI : MonoBehaviour
     void ScanAllies()
     {
         // Throttled FindObjectsByType — only once per scan interval
-        var allHealth = FindObjectsByType<Health>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+        var allHealth = FindObjectsByType<Health>(FindObjectsInactive.Exclude);
 
         Health lowestAlly = null;
         float  lowestFrac = 1f;
 
         // Remove stale entries
-        var toRemove = new List<Health>();
+        _staleHealth.Clear();
         foreach (var kv in _tracked)
-            if (kv.Key == null) toRemove.Add(kv.Key);
-        foreach (var h in toRemove) _tracked.Remove(h);
+            if (kv.Key == null) _staleHealth.Add(kv.Key);
+        foreach (Health health in _staleHealth) _tracked.Remove(health);
 
         foreach (var h in allHealth)
         {

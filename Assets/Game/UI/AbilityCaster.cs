@@ -560,6 +560,15 @@ public class AbilityCaster : NetworkBehaviour
     private float committedCastDuration;
     private float committedCastElapsed;
 
+    // Reusable buffers for the per-frame indicator fill-mesh ground projection.
+    // Only one aim indicator is ever active at a time (Update refreshes a single
+    // activeIndicator and bails while a committed cast runs), so one shared pair
+    // is safe and avoids the ~15 KB/frame the mesh.vertices/mesh.uv getters
+    // allocate while aiming. Behaviour is identical: every vertex is recomputed
+    // from the immutable UV template each frame regardless of prior contents.
+    private readonly List<Vector3> _fillVertexBuffer = new();
+    private readonly List<Vector2> _fillUvBuffer = new();
+
     // Read by CameraFollow to suspend orbit while an indicator is active
     public static bool    IsAimingLocally { get; private set; }
     // Read by PlayerMovement to face the cursor during aim (Smite-style)
@@ -2751,19 +2760,20 @@ public class AbilityCaster : NetworkBehaviour
         if (mf == null || mf.sharedMesh == null) return;
 
         Mesh mesh = mf.sharedMesh;
-        Vector3[] vertices = mesh.vertices;
-        Vector2[] uv = mesh.uv;
-        if (uv == null || uv.Length != vertices.Length) return;
+        mesh.GetVertices(_fillVertexBuffer);
+        mesh.GetUVs(0, _fillUvBuffer);
+        if (_fillUvBuffer.Count != _fillVertexBuffer.Count) return;
 
         Transform fillTransform = mf.transform;
-        for (int i = 0; i < vertices.Length; i++)
+        for (int i = 0; i < _fillVertexBuffer.Count; i++)
         {
-            Vector3 flatLocal = new Vector3(uv[i].x - 0.5f, uv[i].y - 0.5f, 0f);
+            Vector2 uv = _fillUvBuffer[i];
+            Vector3 flatLocal = new Vector3(uv.x - 0.5f, uv.y - 0.5f, 0f);
             Vector3 world = fillTransform.TransformPoint(flatLocal);
-            vertices[i] = fillTransform.InverseTransformPoint(ProjectToGround(world));
+            _fillVertexBuffer[i] = fillTransform.InverseTransformPoint(ProjectToGround(world));
         }
 
-        mesh.vertices = vertices;
+        mesh.SetVertices(_fillVertexBuffer);
         mesh.RecalculateBounds();
         mesh.RecalculateNormals();
     }
@@ -2784,19 +2794,20 @@ public class AbilityCaster : NetworkBehaviour
         if (mf == null || mf.sharedMesh == null || data == null || !data.valid) return;
 
         Mesh mesh = mf.sharedMesh;
-        Vector3[] vertices = mesh.vertices;
-        Vector2[] uv = mesh.uv;
-        if (uv == null || uv.Length != vertices.Length) return;
+        mesh.GetVertices(_fillVertexBuffer);
+        mesh.GetUVs(0, _fillUvBuffer);
+        if (_fillUvBuffer.Count != _fillVertexBuffer.Count) return;
 
-        for (int i = 0; i < vertices.Length; i++)
+        for (int i = 0; i < _fillVertexBuffer.Count; i++)
         {
-            float localX = (uv[i].x - 0.5f) * data.visualWidth;
-            float localZ = (uv[i].y - 0.5f) * data.visualLength;
+            Vector2 uv = _fillUvBuffer[i];
+            float localX = (uv.x - 0.5f) * data.visualWidth;
+            float localZ = (uv.y - 0.5f) * data.visualLength;
             Vector3 world = data.visualCenter + data.visualRight * localX + data.visualForward * localZ;
-            vertices[i] = mf.transform.InverseTransformPoint(ProjectToGround(world));
+            _fillVertexBuffer[i] = mf.transform.InverseTransformPoint(ProjectToGround(world));
         }
 
-        mesh.vertices = vertices;
+        mesh.SetVertices(_fillVertexBuffer);
         mesh.RecalculateBounds();
         mesh.RecalculateNormals();
     }
@@ -2807,20 +2818,21 @@ public class AbilityCaster : NetworkBehaviour
         if (mf == null || mf.sharedMesh == null || data == null || !data.valid) return;
 
         Mesh mesh = mf.sharedMesh;
-        Vector3[] vertices = mesh.vertices;
-        Vector2[] uv = mesh.uv;
-        if (uv == null || uv.Length != vertices.Length) return;
+        mesh.GetVertices(_fillVertexBuffer);
+        mesh.GetUVs(0, _fillUvBuffer);
+        if (_fillUvBuffer.Count != _fillVertexBuffer.Count) return;
 
-        for (int i = 0; i < vertices.Length; i++)
+        for (int i = 0; i < _fillVertexBuffer.Count; i++)
         {
-            float radial = uv[i].x;
-            float angle = Mathf.Lerp(-data.halfAngle, data.halfAngle, uv[i].y);
+            Vector2 uv = _fillUvBuffer[i];
+            float radial = uv.x;
+            float angle = Mathf.Lerp(-data.halfAngle, data.halfAngle, uv.y);
             Vector3 dir = Quaternion.AngleAxis(angle, data.visualNormal) * data.visualForward;
             Vector3 world = data.origin + dir * (radial * data.visualRange);
-            vertices[i] = mf.transform.InverseTransformPoint(ProjectToGround(world));
+            _fillVertexBuffer[i] = mf.transform.InverseTransformPoint(ProjectToGround(world));
         }
 
-        mesh.vertices = vertices;
+        mesh.SetVertices(_fillVertexBuffer);
         mesh.RecalculateBounds();
         mesh.RecalculateNormals();
     }
@@ -3971,7 +3983,7 @@ public class AbilityCaster : NetworkBehaviour
                 SpawnDeployableAt(beaconPrefab ?? ability.deployablePrefab, castPoint, go =>
                 {
                     var rb = go.GetComponent<RestorationBeacon>();
-                    if (rb != null) { rb.ownerID = gameObject.GetInstanceID(); rb.owner = gameObject; }
+                    if (rb != null) { rb.ownerID = gameObject.GetEntityId(); rb.owner = gameObject; }
                 });
                 break;
 
@@ -4279,7 +4291,7 @@ public class AbilityCaster : NetworkBehaviour
         // Find this player's deployed turrets and set their focus target.
         if (DeployableManager.Instance != null)
         {
-            foreach (var dep in DeployableManager.Instance.GetAll(gameObject.GetInstanceID()))
+            foreach (var dep in DeployableManager.Instance.GetAll(gameObject.GetEntityId()))
             {
                 if (dep == null) continue;
                 var tc = dep.GetComponent<TurretController>();
@@ -4308,10 +4320,10 @@ public class AbilityCaster : NetworkBehaviour
     void CastSystemOverload()
     {
         if (DeployableManager.Instance == null) return;
-        DeployableManager.Instance.SystemOverload(gameObject.GetInstanceID(), 8f);
+        DeployableManager.Instance.SystemOverload(gameObject.GetEntityId(), 8f);
 
         // Force all turrets to rapid-fire mode for 8 seconds
-        foreach (var dep in DeployableManager.Instance.GetAll(gameObject.GetInstanceID()))
+        foreach (var dep in DeployableManager.Instance.GetAll(gameObject.GetEntityId()))
         {
             if (dep == null) continue;
             var tc = dep.GetComponent<TurretController>();
@@ -4378,7 +4390,7 @@ public class AbilityCaster : NetworkBehaviour
             s.applyExposed     = isEventHorizon;
             s.owner            = gameObject;
             // Check for Phase Relay bonus
-            float bonus = PhaseRelayDeployable.GetBonusNearPoint(castPoint, gameObject.GetInstanceID());
+            float bonus = PhaseRelayDeployable.GetBonusNearPoint(castPoint, gameObject.GetEntityId());
             s.pullDurationBonus = bonus;
         });
     }
@@ -4604,7 +4616,7 @@ public class AbilityCaster : NetworkBehaviour
         if (NetworkServer.active && go.GetComponent<NetworkIdentity>() != null)
             NetworkServer.Spawn(go);
 
-        DeployableManager.Instance?.Register(go, gameObject.GetInstanceID(),
+        DeployableManager.Instance?.Register(go, gameObject.GetEntityId(),
             classPool != null ? GetClassDeployableLimit() : 1);
     }
 
@@ -5113,7 +5125,7 @@ public class AbilityCaster : NetworkBehaviour
 
         DeployableManager.Instance?.Register(
             turret,
-            gameObject.GetInstanceID(),
+            gameObject.GetEntityId(),
             classPool != null ? GetClassDeployableLimit() : 1);
     }
 

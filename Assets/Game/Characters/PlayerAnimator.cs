@@ -53,6 +53,7 @@ public class PlayerAnimator : MonoBehaviour
     private Health    _health;
     private float     _combatTimer;
     private bool      _dead;
+    private readonly Collider[] _combatHits = new Collider[64];
 
     private System.Collections.Generic.HashSet<string> _params =
         new System.Collections.Generic.HashSet<string>();
@@ -118,9 +119,18 @@ public class PlayerAnimator : MonoBehaviour
             _combatTimer = combatCheckInterval;
 
             bool nearEnemy = false;
-            var cols = ZonePhysics.OverlapSphere(gameObject, transform.position, combatCheckRadius);
-            foreach (var c in cols)
+            Collider[] cols = _combatHits;
+            int hitCount = ZonePhysics.OverlapSphereNonAlloc(
+                gameObject, transform.position, combatCheckRadius, _combatHits);
+            if (hitCount == _combatHits.Length)
             {
+                cols = ZonePhysics.OverlapSphere(gameObject, transform.position, combatCheckRadius);
+                hitCount = cols.Length;
+            }
+
+            for (int i = 0; i < hitCount; i++)
+            {
+                Collider c = cols[i];
                 if (c.CompareTag("Enemy"))
                 {
                     // Only count live enemies

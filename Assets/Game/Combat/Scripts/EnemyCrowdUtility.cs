@@ -14,7 +14,7 @@ public static class EnemyCrowdUtility
 
         unchecked
         {
-            uint value = (uint)owner.GetInstanceID();
+            uint value = (uint)owner.GetEntityId().GetHashCode();
             value ^= (uint)salt * 0x9E3779B9u;
             value ^= value >> 16;
             value *= 0x7FEB352Du;
