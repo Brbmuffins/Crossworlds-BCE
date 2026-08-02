@@ -77,6 +77,20 @@ public class LoginManager : MonoBehaviour
         if (SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.Null)
             return;
 
+        // ESC-menu "Change Character": we came here only to rebuild the NetworkManager
+        // (LoginScene owns it) — the session is still valid. Skip the login UI entirely
+        // and forward straight to CharacterSelect so the player can pick a new class
+        // without re-entering credentials.
+        if (RodNetworkManager.PendingChangeCharacter)
+        {
+            RodNetworkManager.PendingChangeCharacter = false;
+            if (!string.IsNullOrEmpty(PlayerPrefs.GetString("jwt_token", "")))
+            {
+                SceneManager.LoadScene("CharacterSelect");
+                return;
+            }
+        }
+
         // A DontDestroyOnLoad EventSystem carried in from a gameplay session leaves the
         // login screen unclickable after logout (Input System UI actions get disabled
         // when its EventSystem is torn down). Rebuild a single clean one.

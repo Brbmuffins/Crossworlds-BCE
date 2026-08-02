@@ -106,6 +106,29 @@ public class EscMenu : MonoBehaviour
         _mainView.SetActive(true);
     }
 
+    void ChangeCharacter()
+    {
+        SetOpen(false);
+
+        // Re-enable cursor before the scene transition so character select isn't mouse-locked
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible   = true;
+
+        // Return to CharacterSelect WITHOUT clearing the session — the player keeps their
+        // JWT and picks a different class without re-entering credentials. RodNetworkManager
+        // redirects offlineScene for this one disconnect; do NOT also LoadScene here.
+        if (NetworkManager.singleton is RodNetworkManager rod)
+        {
+            rod.ReturnToCharacterSelect();
+        }
+        else
+        {
+            // Fallback if the manager isn't the expected type: behave like Logout.
+            Debug.LogWarning("[EscMenu] NetworkManager is not RodNetworkManager — falling back to Logout.");
+            Logout();
+        }
+    }
+
     void Logout()
     {
         SetOpen(false);
@@ -218,17 +241,20 @@ public class EscMenu : MonoBehaviour
         _optionsView = MakeRect("OptionsView", cardRt, Vector2.zero, Vector2.one);
         var optionsRt = _optionsView.GetComponent<RectTransform>();
 
-        // Buttons
-        MakeButton("Resume",   mainRt, new Vector2(0.1f, 0.58f), new Vector2(0.9f, 0.70f),
+        // Buttons — five stacked entries, evenly spaced within the card.
+        MakeButton("Resume",   mainRt, new Vector2(0.1f, 0.60f), new Vector2(0.9f, 0.71f),
             new Color(0.08f, 0.5f, 0.18f), Resume);
 
-        MakeButton("Options", mainRt, new Vector2(0.1f, 0.43f), new Vector2(0.9f, 0.55f),
+        MakeButton("Change Character", mainRt, new Vector2(0.1f, 0.47f), new Vector2(0.9f, 0.58f),
+            new Color(0.20f, 0.15f, 0.45f), ChangeCharacter);
+
+        MakeButton("Options", mainRt, new Vector2(0.1f, 0.34f), new Vector2(0.9f, 0.45f),
             new Color(0.08f, 0.25f, 0.5f), ShowOptions);
 
-        MakeButton("Logout",   mainRt, new Vector2(0.1f, 0.28f), new Vector2(0.9f, 0.40f),
+        MakeButton("Logout",   mainRt, new Vector2(0.1f, 0.21f), new Vector2(0.9f, 0.32f),
             new Color(0.45f, 0.35f, 0.05f), Logout);
 
-        MakeButton("Quit Game", mainRt, new Vector2(0.1f, 0.13f), new Vector2(0.9f, 0.25f),
+        MakeButton("Quit Game", mainRt, new Vector2(0.1f, 0.08f), new Vector2(0.9f, 0.19f),
             new Color(0.5f, 0.05f, 0.05f), Quit);
 
         BuildOptionsView(optionsRt);

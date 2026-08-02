@@ -77,6 +77,36 @@ public class RodNetworkManager : NetworkManager
         base.Awake();
     }
 
+    // ── Return to character select without a full logout ──────────────────────
+    // ESC-menu "Change Character": tear down the game connection and KEEP the session
+    // (jwt_token) so the player picks a different class without re-entering credentials.
+    //
+    // We do NOT redirect offlineScene to CharacterSelect: that scene has no baked
+    // NetworkManager, and on disconnect Mirror pulls the live manager out of DDOL
+    // expecting the offline scene to supply a fresh one — so landing on CharacterSelect
+    // directly leaves NetworkManager.singleton == null ("No NetworkManager" at Deploy).
+    // Instead we take the normal disconnect path to LoginScene (which DOES have a
+    // NetworkManager) and set a one-shot flag; LoginManager reads it on load and
+    // forwards straight to CharacterSelect, skipping the login UI.
+    public static bool PendingChangeCharacter;
+
+    public void ReturnToCharacterSelect()
+    {
+        PendingChangeCharacter = true;
+
+        if (NetworkServer.active && NetworkClient.isConnected)
+            StopHost();                 // editor/dev host mode
+        else if (NetworkClient.isConnected || NetworkClient.active)
+            StopClient();               // normal client connected to the VPS game server
+        else
+        {
+            // Not connected — the live manager is still the DDOL singleton, so a direct
+            // load keeps it. No disconnect will fire, so clear the flag and go straight.
+            PendingChangeCharacter = false;
+            UnityEngine.SceneManagement.SceneManager.LoadScene(SceneNames.CharacterSelect);
+        }
+    }
+
     // ── Custom network message ────────────────────────────────────────────────
     // selectedClass is only used in dev mode (fromDB = false).
     // In production the server reads class from conn.authenticationData.
