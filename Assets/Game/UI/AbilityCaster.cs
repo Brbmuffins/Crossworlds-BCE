@@ -548,6 +548,13 @@ public class AbilityCaster : NetworkBehaviour
     [SerializeField, HideInInspector] private AbilityDef[] _equippedAbilities = new AbilityDef[4];
     public AbilityDef[] abilities => _equippedAbilities;
 
+    /// <summary>
+    /// Raised on the owning client after the server accepts or rejects a spell
+    /// loadout change. The UI waits for this authoritative result before
+    /// reporting success.
+    /// </summary>
+    public event System.Action<bool, string> SpellEquipResult;
+
     private int heldAbilityIndex = -1;
     private GameObject activeIndicator;
     private GameObject _rangeRingGO;
@@ -937,30 +944,76 @@ public class AbilityCaster : NetworkBehaviour
         }
     }
 
-    public void EquipSpell(int spellbookIndex, int slot)
+    public bool EquipSpell(int spellbookIndex, int slot)
     {
-        if (slot < 0 || slot >= 4) return;
-        if (spellbookIndex < 0 || spellbookIndex >= spellbook.Length) return;
-        if (!IsAllowedByClass(spellbookIndex)) return;
-        if (Application.isPlaying &&
-            !SpellLoadoutShrine.ServerCanEditLoadout(netIdentity))
-            return;
+        if (slot < 0 || slot >= 4) return false;
+        if (spellbookIndex < 0 || spellbookIndex >= spellbook.Length) return false;
+        if (!IsAllowedByClass(spellbookIndex)) return false;
 
         if (ShouldRouteCastToServer())
+        {
             CmdEquipSpell(spellbookIndex, slot);
+            return true;
+        }
+
+        if (Application.isPlaying &&
+            !SpellLoadoutShrine.ServerCanEditLoadout(netIdentity))
+            return false;
 
         ApplyEquippedSpell(spellbookIndex, slot);
+        SpellEquipResult?.Invoke(true, "Loadout updated");
+        return true;
     }
 
     [Command]
     void CmdEquipSpell(int spellbookIndex, int slot)
     {
-        if (slot < 0 || slot >= 4) return;
-        if (spellbookIndex < 0 || spellbookIndex >= spellbook.Length) return;
-        if (!IsAllowedByClass(spellbookIndex)) return;
-        if (!SpellLoadoutShrine.ServerCanEditLoadout(netIdentity)) return;
+        if (slot < 0 || slot >= 4 ||
+            spellbookIndex < 0 || spellbookIndex >= spellbook.Length ||
+            !IsAllowedByClass(spellbookIndex))
+        {
+            TargetEquipSpellResult(connectionToClient, false,
+                "That spell or slot is not available.", -1, -1, -1, -1);
+            return;
+        }
+
+        if (!SpellLoadoutShrine.ServerCanEditLoadout(netIdentity))
+        {
+            TargetEquipSpellResult(connectionToClient, false,
+                "Move closer to the Spell Shrine and try again.", -1, -1, -1, -1);
+            return;
+        }
 
         ApplyEquippedSpell(spellbookIndex, slot);
+        TargetEquipSpellResult(connectionToClient, true, "Loadout updated",
+            EquippedIndexAt(0), EquippedIndexAt(1),
+            EquippedIndexAt(2), EquippedIndexAt(3));
+    }
+
+    [TargetRpc]
+    void TargetEquipSpellResult(NetworkConnectionToClient target, bool accepted,
+        string message, int slot0, int slot1, int slot2, int slot3)
+    {
+        if (accepted)
+        {
+            if (equippedIndices == null || equippedIndices.Length != 4)
+                equippedIndices = new int[4];
+
+            equippedIndices[0] = slot0;
+            equippedIndices[1] = slot1;
+            equippedIndices[2] = slot2;
+            equippedIndices[3] = slot3;
+            SyncEquippedFromSpellbook();
+        }
+
+        SpellEquipResult?.Invoke(accepted, message);
+    }
+
+    int EquippedIndexAt(int slot)
+    {
+        return equippedIndices != null && slot >= 0 && slot < equippedIndices.Length
+            ? equippedIndices[slot]
+            : -1;
     }
 
     void ApplyEquippedSpell(int spellbookIndex, int slot)

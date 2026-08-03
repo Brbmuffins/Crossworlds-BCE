@@ -222,10 +222,12 @@ public class PlayerHUD : MonoBehaviour
         // Unsubscribe from old player if we're rebinding (e.g. after respawn)
         if (_health) _health.onHealthChanged.RemoveListener(OnHealthChanged);
         if (_stats) _stats.onManaChanged.RemoveListener(OnManaChanged);
+        if (_caster) _caster.SpellEquipResult -= OnSpellEquipResult;
 
         _health = player.GetComponent<Health>();
         _stats = player.GetComponent<CharacterStats>();
         _caster = player.GetComponent<AbilityCaster>();
+        if (_caster) _caster.SpellEquipResult += OnSpellEquipResult;
 
         if (_health)
         {
@@ -252,6 +254,7 @@ public class PlayerHUD : MonoBehaviour
     {
         if (_health) _health.onHealthChanged.RemoveListener(OnHealthChanged);
         if (_stats) _stats.onManaChanged.RemoveListener(OnManaChanged);
+        if (_caster) _caster.SpellEquipResult -= OnSpellEquipResult;
     }
 
     void OnHealthChanged(float current, float max)
@@ -1550,13 +1553,33 @@ public class PlayerHUD : MonoBehaviour
     {
         if (_caster == null) return;
 
-        _caster.EquipSpell(spellbookIndex, slot);
+        if (!_caster.EquipSpell(spellbookIndex, slot))
+        {
+            SetSpellbookInstructions(
+                "Unable to update loadout. Move closer to the Spell Shrine and try again.");
+            return;
+        }
+
         _pendingSpellIdx = -1;
         _pendingLoadoutSlot = -1;
-        RebuildAbilitySlots();
-        RebuildSpellbook();
+        SetSpellbookInstructions("Updating loadout…");
+    }
+
+    void OnSpellEquipResult(bool accepted, string message)
+    {
+        if (accepted)
+        {
+            RebuildAbilitySlots();
+            RebuildSpellbook();
+            SetSpellbookInstructions(
+                "Loadout updated — choose another spell or press Escape to finish");
+            return;
+        }
+
         SetSpellbookInstructions(
-            "Loadout updated — choose another spell or press Escape to finish");
+            string.IsNullOrWhiteSpace(message)
+                ? "The server rejected that loadout change."
+                : message);
     }
 
     void RefreshLoadoutSlots()
