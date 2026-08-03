@@ -223,7 +223,14 @@ namespace Crossworlds.EditorTools.EnemyForge
             controller.preferredRange = d.preferredRange;
             controller.tooCloseDistance = d.tooCloseDistance;
             controller.dropTable = d.dropTable;
-            controller.worldItemPrefab = d.worldItemPrefab;
+            controller.worldItemPrefab =
+                EnemyForgeLootPrefabUtility.ResolveNetworkReadyPickup(
+                    d.worldItemPrefab);
+            if (controller.worldItemPrefab != d.worldItemPrefab)
+            {
+                d.worldItemPrefab = controller.worldItemPrefab;
+                EditorUtility.SetDirty(d);
+            }
             controller.deadModelVisibleSeconds = d.deadModelVisibleSeconds;
             controller.respawnAfterDeath = d.respawnAfterDeath;
             controller.respawnDelay = d.respawnDelay;

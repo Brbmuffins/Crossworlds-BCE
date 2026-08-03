@@ -276,11 +276,11 @@ MonoBehaviour:
   projectilePrefab: {fileID: 1520745592202967756, guid: dcb276aaea8b63c459b7e241a7192191, type: 3}
   preferredRange: 10
   tooCloseDistance: 4
-  dropTable: {fileID: 0}
-  worldItemPrefab: {fileID: 0}
+  dropTable: {fileID: 11400000, guid: 91e1b47960e84c6294e4800d6135527b, type: 2}
+  worldItemPrefab: {fileID: 2360249239558683541, guid: afa6b6c6fa2bf1d4781c7971f36a74c0, type: 3}
   enemyTemplateId: prefab_aw_chaos_weaver_basic
   deadModelVisibleSeconds: 15
-  respawnAfterDeath: 0
+  respawnAfterDeath: 1
   respawnDelay: 30
   respawnProtectionSeconds: 2
   keepCorpseGrounded: 1
