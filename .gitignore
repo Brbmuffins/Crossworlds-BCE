@@ -4,6 +4,8 @@
 [Oo]bj/
 [Bb]uild/
 [Bb]uilds/
+# Packaged player builds — CI rebuilds these; never commit build artifacts.
+WindowsClient/
 [Ll]ogs/
 [Mm]emoryCaptures/
 [Uu]serSettings/
@@ -52,6 +54,7 @@ crashlytics-build.properties
 
 # ── Server build output (deploy separately via SCP) ──────────────────────────
 ServerBuild/
+Dev Build/
 
 # ── Test zips / scratch ───────────────────────────────────────────────────────
 *.zip
@@ -91,3 +94,4 @@ WIKI_CORRECTIONS_*.md
 # safe to delete these two from disk manually):
 Backend_GM_Permissions_Handoff.md
 Docs/vps-character-system-prompt.txt
+DEV_ENV_VPS_SETUP.md

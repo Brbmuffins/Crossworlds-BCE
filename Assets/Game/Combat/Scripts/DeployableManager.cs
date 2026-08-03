@@ -9,8 +9,8 @@ public class DeployableManager : MonoBehaviour
     public static DeployableManager Instance { get; private set; }
 
     // ownerInstanceID → ordered list of active deployables (oldest first)
-    private readonly Dictionary<int, List<GameObject>> _byOwner =
-        new Dictionary<int, List<GameObject>>();
+    private readonly Dictionary<UnityEngine.EntityId, List<GameObject>> _byOwner =
+        new Dictionary<UnityEngine.EntityId, List<GameObject>>();
 
     // deployable → output stack count (0–5), driven by Overengineered
     private readonly Dictionary<GameObject, int>   _stacks     = new Dictionary<GameObject, int>();
@@ -25,7 +25,7 @@ public class DeployableManager : MonoBehaviour
     // Call this right after spawning a deployable.
     // ownerID    = owner.GetInstanceID()
     // classLimit = max simultaneous deployables for this class (Engineer=3, others=1)
-    public void Register(GameObject deployable, int ownerID, int classLimit = 1)
+    public void Register(GameObject deployable, UnityEngine.EntityId ownerID, int classLimit = 1)
     {
         if (!_byOwner.ContainsKey(ownerID))
             _byOwner[ownerID] = new List<GameObject>();
@@ -61,7 +61,7 @@ public class DeployableManager : MonoBehaviour
             list.Remove(deployable);
     }
 
-    public List<GameObject> GetAll(int ownerID)
+    public List<GameObject> GetAll(UnityEngine.EntityId ownerID)
     {
         return _byOwner.TryGetValue(ownerID, out var list)
             ? new List<GameObject>(list)
@@ -91,7 +91,7 @@ public class DeployableManager : MonoBehaviour
         _multiplier.TryGetValue(dep, out float m) ? m : 1f;
 
     // System Overload: force all deployables to max stacks + temp multiplier
-    public void SystemOverload(int ownerID, float duration)
+    public void SystemOverload(UnityEngine.EntityId ownerID, float duration)
     {
         foreach (var dep in GetAll(ownerID))
         {

@@ -59,17 +59,17 @@ public class ZoneManager : MonoBehaviour
     public float unloadDelaySeconds = 30f;
 
     // scene handle → connection ids currently in it
-    readonly Dictionary<int, HashSet<int>> _occupants = new Dictionary<int, HashSet<int>>();
+    readonly Dictionary<SceneHandle, HashSet<int>> _occupants = new Dictionary<SceneHandle, HashSet<int>>();
     // scene handle → the Scene itself (handles are ints; we need the struct back)
-    readonly Dictionary<int, Scene> _scenesByHandle = new Dictionary<int, Scene>();
+    readonly Dictionary<SceneHandle, Scene> _scenesByHandle = new Dictionary<SceneHandle, Scene>();
     // connection id → scene handle it is currently in
-    readonly Dictionary<int, int> _connZone = new Dictionary<int, int>();
+    readonly Dictionary<int, SceneHandle> _connZone = new Dictionary<int, SceneHandle>();
     // shared zone name → scene handle (instanced zones deliberately absent)
-    readonly Dictionary<string, int> _sharedZones = new Dictionary<string, int>();
+    readonly Dictionary<string, SceneHandle> _sharedZones = new Dictionary<string, SceneHandle>();
     // instance key ("zone:party") → scene handle, so a party lands in one copy
-    readonly Dictionary<string, int> _instances = new Dictionary<string, int>();
+    readonly Dictionary<string, SceneHandle> _instances = new Dictionary<string, SceneHandle>();
     // scene handles with a pending unload, so we can cancel on re-entry
-    readonly Dictionary<int, Coroutine> _pendingUnloads = new Dictionary<int, Coroutine>();
+    readonly Dictionary<SceneHandle, Coroutine> _pendingUnloads = new Dictionary<SceneHandle, Coroutine>();
     // zones that own a physics scene we must step ourselves — see FixedUpdate
     readonly List<Scene> _simulated = new List<Scene>();
 
@@ -214,7 +214,7 @@ public class ZoneManager : MonoBehaviour
     IEnumerator MovePlayerRoutine(NetworkConnectionToClient conn, string zoneName,
                                   string spawnId, string instanceKey)
     {
-        int previousHandle = _connZone.TryGetValue(conn.connectionId, out int prev) ? prev : -1;
+        SceneHandle previousHandle = _connZone.TryGetValue(conn.connectionId, out SceneHandle prev) ? prev : default;
 
         // LoadingScreen.Show starts this fade on the traveling client. Give it time
         // to finish before initiating additive loading so the source scene's music
@@ -262,7 +262,7 @@ public class ZoneManager : MonoBehaviour
 
         // Book-keeping. RemoveOccupant must run BEFORE AssignOccupant or the
         // player stays counted in their old zone forever and it never unloads.
-        if (previousHandle != -1 && previousHandle != destination.handle)
+        if (previousHandle != default && previousHandle != destination.handle)
         {
             // Grab the name before RemoveOccupant can schedule the scene's removal.
             string previousName =
@@ -299,13 +299,13 @@ public class ZoneManager : MonoBehaviour
             : null;
 
         // Reuse an existing copy when one applies.
-        int existing = -1;
-        if (!instanced && _sharedZones.TryGetValue(zoneName, out int sharedHandle))
+        SceneHandle existing = default;
+        if (!instanced && _sharedZones.TryGetValue(zoneName, out SceneHandle sharedHandle))
             existing = sharedHandle;
-        else if (instanced && _instances.TryGetValue(key, out int instHandle))
+        else if (instanced && _instances.TryGetValue(key, out SceneHandle instHandle))
             existing = instHandle;
 
-        if (existing != -1 && _scenesByHandle.TryGetValue(existing, out Scene reuse)
+        if (existing != default && _scenesByHandle.TryGetValue(existing, out Scene reuse)
             && reuse.IsValid() && reuse.isLoaded)
         {
             CancelPendingUnload(existing);
@@ -385,7 +385,7 @@ public class ZoneManager : MonoBehaviour
     }
 
     /// <summary>Schedules an unload if the zone is empty. Safe to call repeatedly.</summary>
-    void ReleaseZone(int handle)
+    void ReleaseZone(SceneHandle handle)
     {
         if (_occupants.TryGetValue(handle, out HashSet<int> set) && set.Count > 0)
             return;   // still occupied — nothing to do
@@ -396,7 +396,7 @@ public class ZoneManager : MonoBehaviour
 
     void RemoveOccupant(int connId)
     {
-        if (!_connZone.TryGetValue(connId, out int handle)) return;
+        if (!_connZone.TryGetValue(connId, out SceneHandle handle)) return;
         _connZone.Remove(connId);
 
         if (_occupants.TryGetValue(handle, out HashSet<int> set))
@@ -406,14 +406,14 @@ public class ZoneManager : MonoBehaviour
         }
     }
 
-    void CancelPendingUnload(int handle)
+    void CancelPendingUnload(SceneHandle handle)
     {
         if (!_pendingUnloads.TryGetValue(handle, out Coroutine routine)) return;
         if (routine != null) StopCoroutine(routine);
         _pendingUnloads.Remove(handle);
     }
 
-    IEnumerator UnloadAfterDelay(int handle)
+    IEnumerator UnloadAfterDelay(SceneHandle handle)
     {
         yield return new WaitForSeconds(unloadDelaySeconds);
 
@@ -436,7 +436,7 @@ public class ZoneManager : MonoBehaviour
         yield return SceneManager.UnloadSceneAsync(scene);
     }
 
-    void Forget(int handle)
+    void Forget(SceneHandle handle)
     {
         _occupants.Remove(handle);
         _scenesByHandle.Remove(handle);
@@ -449,7 +449,7 @@ public class ZoneManager : MonoBehaviour
         RemoveByValue(_instances, handle);
     }
 
-    static void RemoveByValue(Dictionary<string, int> map, int handle)
+    static void RemoveByValue(Dictionary<string, SceneHandle> map, SceneHandle handle)
     {
         string found = null;
         foreach (var kvp in map)
@@ -550,7 +550,7 @@ public class ZoneManager : MonoBehaviour
     public int OccupantCount(NetworkConnectionToClient conn)
     {
         if (conn == null) return 0;
-        if (!_connZone.TryGetValue(conn.connectionId, out int handle)) return 0;
+        if (!_connZone.TryGetValue(conn.connectionId, out SceneHandle handle)) return 0;
         return _occupants.TryGetValue(handle, out HashSet<int> set) ? set.Count : 0;
     }
 
@@ -558,7 +558,7 @@ public class ZoneManager : MonoBehaviour
     public Scene? ZoneOf(NetworkConnectionToClient conn)
     {
         if (conn == null) return null;
-        if (!_connZone.TryGetValue(conn.connectionId, out int handle)) return null;
+        if (!_connZone.TryGetValue(conn.connectionId, out SceneHandle handle)) return null;
         if (!_scenesByHandle.TryGetValue(handle, out Scene scene)) return null;
         return scene;
     }

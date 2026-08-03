@@ -35,6 +35,7 @@ public class HubPortal : MonoBehaviour
     TextMeshPro _promptText;
     bool        _playerNear;
     bool        _loading;
+    Transform   _localPlayer;
 
     static readonly Color ColorReady    = new Color(0.85f, 1.00f, 0.85f, 1f);
     static readonly Color ColorDisabled = new Color(0.65f, 0.65f, 0.70f, 1f);
@@ -52,9 +53,11 @@ public class HubPortal : MonoBehaviour
         if (_loading) return;
 
         // Distance check against local player
-        var player = FindLocalPlayer();
-        bool near  = player != null &&
-                     Vector3.Distance(transform.position, player.position) <= activateRadius;
+        if (_localPlayer == null)
+            _localPlayer = FindLocalPlayer();
+
+        bool near = _localPlayer != null &&
+                    (transform.position - _localPlayer.position).sqrMagnitude <= activateRadius * activateRadius;
 
         if (near != _playerNear)
         {
@@ -125,7 +128,7 @@ public class HubPortal : MonoBehaviour
         _promptText.fontSize         = 3.2f;
         _promptText.richText         = true;
         _promptText.raycastTarget    = false;
-        _promptText.enableWordWrapping = false;
+        _promptText.textWrappingMode = TextWrappingModes.NoWrap;
 
         // Billboard — always face camera
         _promptGO.AddComponent<RodBillboard>();
@@ -151,12 +154,8 @@ public class HubPortal : MonoBehaviour
 
     static Transform FindLocalPlayer()
     {
-        // Local player's GameObject is tagged "Player" and carries a Mirror
-        // NetworkIdentity marked isLocalPlayer. Fallback to any "Player" tag.
-        var identities = Object.FindObjectsByType<Mirror.NetworkIdentity>(
-            FindObjectsInactive.Exclude, FindObjectsSortMode.None);
-        foreach (var id in identities)
-            if (id.isLocalPlayer) return id.transform;
+        if (PlayerIdentity.Local != null)
+            return PlayerIdentity.Local.transform;
 
         // Fallback for dev mode / no Mirror
         var go = GameObject.FindWithTag("Player");

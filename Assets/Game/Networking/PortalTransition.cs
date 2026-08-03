@@ -146,8 +146,7 @@ public class PortalTransition : NetworkBehaviour
         if (_localPlayer == null) FindLocalPlayer();
         if (_localPlayer == null) return;
 
-        float dist = Vector3.Distance(transform.position, _localPlayer.position);
-        bool inRange = dist <= promptRadius;
+        bool inRange = (transform.position - _localPlayer.position).sqrMagnitude <= promptRadius * promptRadius;
 
         if (inRange != _promptVisible)
         {
@@ -161,10 +160,8 @@ public class PortalTransition : NetworkBehaviour
 
     void FindLocalPlayer()
     {
-        foreach (var id in FindObjectsByType<NetworkIdentity>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
-        {
-            if (id.isLocalPlayer) { _localPlayer = id.transform; return; }
-        }
+        if (PlayerIdentity.Local != null)
+            _localPlayer = PlayerIdentity.Local.transform;
     }
 
     // ── Prompt UI (world-space billboard) ────────────────────────────────────

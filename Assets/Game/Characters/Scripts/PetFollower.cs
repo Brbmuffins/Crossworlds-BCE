@@ -187,7 +187,7 @@ public class PetFollower : MonoBehaviour
 
         _nextTargetSearchTime = Time.time + 1f;
 
-        NetworkIdentity[] identities = FindObjectsByType<NetworkIdentity>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+        NetworkIdentity[] identities = FindObjectsByType<NetworkIdentity>(FindObjectsInactive.Exclude);
         foreach (NetworkIdentity identity in identities)
         {
             if (identity != null && identity.isLocalPlayer)

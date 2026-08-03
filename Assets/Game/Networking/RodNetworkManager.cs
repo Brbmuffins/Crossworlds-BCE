@@ -77,6 +77,36 @@ public class RodNetworkManager : NetworkManager
         base.Awake();
     }
 
+    // ── Return to character select without a full logout ──────────────────────
+    // ESC-menu "Change Character": tear down the game connection and KEEP the session
+    // (jwt_token) so the player picks a different class without re-entering credentials.
+    //
+    // We do NOT redirect offlineScene to CharacterSelect: that scene has no baked
+    // NetworkManager, and on disconnect Mirror pulls the live manager out of DDOL
+    // expecting the offline scene to supply a fresh one — so landing on CharacterSelect
+    // directly leaves NetworkManager.singleton == null ("No NetworkManager" at Deploy).
+    // Instead we take the normal disconnect path to LoginScene (which DOES have a
+    // NetworkManager) and set a one-shot flag; LoginManager reads it on load and
+    // forwards straight to CharacterSelect, skipping the login UI.
+    public static bool PendingChangeCharacter;
+
+    public void ReturnToCharacterSelect()
+    {
+        PendingChangeCharacter = true;
+
+        if (NetworkServer.active && NetworkClient.isConnected)
+            StopHost();                 // editor/dev host mode
+        else if (NetworkClient.isConnected || NetworkClient.active)
+            StopClient();               // normal client connected to the VPS game server
+        else
+        {
+            // Not connected — the live manager is still the DDOL singleton, so a direct
+            // load keeps it. No disconnect will fire, so clear the flag and go straight.
+            PendingChangeCharacter = false;
+            UnityEngine.SceneManagement.SceneManager.LoadScene(SceneNames.CharacterSelect);
+        }
+    }
+
     // ── Custom network message ────────────────────────────────────────────────
     // selectedClass is only used in dev mode (fromDB = false).
     // In production the server reads class from conn.authenticationData.
@@ -97,8 +127,42 @@ public class RodNetworkManager : NetworkManager
         // Skip the LoginManager UI and go straight to StartServer().
         if (SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.Null)
         {
+            ApplyServerLaunchArgs();
             Debug.Log("[RodNM] Headless server detected — StartServer()");
             StartServer();
+        }
+    }
+
+    // ── Launch-arg overrides (dev/prod on one binary) ─────────────────────────
+    //   -port <n>       UDP port for the KCP transport (prod 7777 / dev 7778)
+    //   -authurl <url>  auth server this game server validates JWTs against
+    //                   (prod http://127.0.0.1:3000 / dev http://127.0.0.1:3010)
+    // Missing args keep the Inspector-baked values, so an un-flagged launch is prod.
+    void ApplyServerLaunchArgs()
+    {
+        string[] args = System.Environment.GetCommandLineArgs();
+        for (int i = 0; i < args.Length - 1; i++)
+        {
+            if (args[i] == "-port" && ushort.TryParse(args[i + 1], out ushort p))
+            {
+                if (transport is PortTransport pt)
+                {
+                    pt.Port = p;
+                    Debug.Log($"[RodNM] Launch arg -port → transport bound to {p}");
+                }
+                else
+                {
+                    Debug.LogWarning("[RodNM] -port given but transport is not a PortTransport; ignoring.");
+                }
+            }
+            else if (args[i] == "-authurl")
+            {
+                string url = args[i + 1];
+                authServerURL = url;
+                if (authenticator is RodNetworkAuthenticator ra)
+                    ra.authServerURL = url;
+                Debug.Log($"[RodNM] Launch arg -authurl → validating JWTs against {url}");
+            }
         }
     }
 
@@ -276,7 +340,12 @@ public class RodNetworkManager : NetworkManager
                                     int classIndex, string username, Vector3 spawnPos,
                                     RodPlayerAuth auth, bool hasSavedPos)
     {
-        string zoneName = SceneNames.NormalizeZone(auth != null ? auth.zone : null);
+        // Login always returns players to HUB regardless of the zone they logged out
+        // in (overrides ROADMAP 6.2 zone-persistence by request). The saved DB position
+        // is only valid inside its own zone, so ignore it here and drop onto HUB's spawn
+        // point. In-session zone travel (portals/waypoints) is unaffected.
+        string zoneName = SceneNames.Hub;
+        hasSavedPos = false;
 
         if (ZoneManager.Instance == null)
         {

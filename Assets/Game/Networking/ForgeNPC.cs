@@ -31,6 +31,7 @@ public class ForgeNPC : MonoBehaviour
 
     // ── State ─────────────────────────────────────────────────────────────────
     Transform  _localPlayer;
+    Camera     _camera;
     float      _scanTimer;
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
@@ -48,8 +49,7 @@ public class ForgeNPC : MonoBehaviour
         }
         if (_localPlayer == null) return;
 
-        float dist = Vector3.Distance(transform.position, _localPlayer.position);
-        bool inRange = dist <= interactRange;
+        bool inRange = (transform.position - _localPlayer.position).sqrMagnitude <= interactRange * interactRange;
 
         // Show/hide prompt
         if (inRange != _promptVisible)
@@ -61,11 +61,12 @@ public class ForgeNPC : MonoBehaviour
         // Billboard: face camera
         if (_promptVisible)
         {
-            var cam = Camera.main;
-            if (cam != null)
+            if (_camera == null || !_camera.isActiveAndEnabled)
+                _camera = Camera.main;
+            if (_camera != null)
                 _promptGO.transform.rotation = Quaternion.LookRotation(
-                    _promptGO.transform.position - cam.transform.position,
-                    cam.transform.up);
+                    _promptGO.transform.position - _camera.transform.position,
+                    _camera.transform.up);
         }
 
         // Interact
@@ -110,9 +111,7 @@ public class ForgeNPC : MonoBehaviour
     // ── Find local player ─────────────────────────────────────────────────────
     static Transform FindLocalPlayer()
     {
-        foreach (var id in FindObjectsByType<Mirror.NetworkIdentity>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
-            if (id.isLocalPlayer) return id.transform;
-        return null;
+        return PlayerIdentity.Local != null ? PlayerIdentity.Local.transform : null;
     }
 
     // ── Editor gizmo ─────────────────────────────────────────────────────────

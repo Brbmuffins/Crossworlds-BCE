@@ -92,31 +92,11 @@ public class CharacterSelectUI : MonoBehaviour
             ShowClass(0);
     }
 
-    // Two enabled EventSystems (e.g. a DontDestroyOnLoad one carried in from another
-    // scene plus this scene's own) make uGUI silently stop processing clicks. Keep one,
-    // disable the rest, and guarantee it drives the new Input System.
-    void EnsureSingleEventSystem()
-    {
-        var systems = FindObjectsByType<EventSystem>(FindObjectsInactive.Exclude);
-        EventSystem keep = systems.Length > 0 ? systems[0] : null;
-
-        if (keep == null)
-        {
-            var go = new GameObject("EventSystem");
-            keep = go.AddComponent<EventSystem>();
-            go.AddComponent<InputSystemUIInputModule>();
-        }
-        else
-        {
-            for (int i = 1; i < systems.Length; i++)
-                Destroy(systems[i].gameObject);
-            if (keep.GetComponent<InputSystemUIInputModule>() == null)
-            {
-                foreach (var m in keep.GetComponents<BaseInputModule>()) m.enabled = false;
-                keep.gameObject.AddComponent<InputSystemUIInputModule>();
-            }
-        }
-    }
+    // Two enabled EventSystems (e.g. a DontDestroyOnLoad one carried in from a gameplay
+    // scene plus this scene's own) make uGUI silently stop processing clicks — you reach
+    // character select after logout but nothing is clickable. Rebuild a single clean
+    // EventSystem synchronously so the Input System's UI actions stay enabled.
+    void EnsureSingleEventSystem() => SingleEventSystem.ForceSingle();
 
     void Update()
     {
@@ -913,7 +893,7 @@ public class CharacterSelectUI : MonoBehaviour
     {
         string jwt      = PlayerPrefs.GetString("jwt_token", "");
         string serverIP = PlayerPrefs.GetString("game_server_ip", serverAddress).Trim();
-        string url      = $"http://{serverIP}:3000/character";
+        string url      = $"{ServerConfig.AuthBaseUrl}/character";  // environment-aware (dev → :3010)
         string json     = $"{{\"class_index\":{classIndex}}}";
 
         using var req = new UnityWebRequest();
@@ -955,7 +935,14 @@ public class CharacterSelectUI : MonoBehaviour
         }
 
         NetworkManager.singleton.networkAddress = serverIP;
-        Debug.Log($"[CharSel] Class {classIndex} confirmed. Connecting to {serverIP}...");
+
+        // Environment-aware port: prod → 7777, dev → 7778. The dev game service is a
+        // separate systemd unit on the same box, launched with -port 7778 -authurl :3010.
+        if (NetworkManager.singleton.transport is PortTransport pt)
+            pt.Port = ServerConfig.GamePort;
+
+        Debug.Log($"[CharSel] Class {classIndex} confirmed. Connecting to {serverIP}:{ServerConfig.GamePort} " +
+                  $"({ServerConfig.Environment})...");
         NetworkManager.singleton.StartClient();
 
         // Timeout guard: re-enable the button if the scene never changes.

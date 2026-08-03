@@ -16,7 +16,7 @@ public class ShadowRelayDeployable : MonoBehaviour
     // Assign: brbmuffins Technologies/.../GroundFog.prefab (set start color very dark)
     public GameObject idleVFX;
 
-    [HideInInspector] public int ownerID;
+    [HideInInspector] public UnityEngine.EntityId ownerID;
     [HideInInspector] public Transform ownerTransform;
 
     private float _timer;

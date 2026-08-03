@@ -80,7 +80,7 @@ public class CameraFollow : MonoBehaviour
 
             // Networked: find the Mirror local player
             foreach (var ni in FindObjectsByType<NetworkIdentity>(
-                         FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+                         FindObjectsInactive.Exclude))
             {
                 if (!ni.isLocalPlayer) continue;
                 if (ni.GetComponent<PlayerMovement>() == null) continue;
@@ -91,7 +91,7 @@ public class CameraFollow : MonoBehaviour
             // Solo / editor (no Mirror session): find any PlayerMovement
             if (!NetworkClient.active && !NetworkServer.active)
             {
-                var pm = FindFirstObjectByType<PlayerMovement>();
+                var pm = FindAnyObjectByType<PlayerMovement>();
                 if (pm != null) { target = pm.transform; yield break; }
             }
         }

@@ -45,7 +45,7 @@ public sealed class EnemySfxProfile : MonoBehaviour
         oneShot.transform.position = transform.position;
         var source = oneShot.AddComponent<AudioSource>();
         source.clip = clip;
-        source.volume = Mathf.Clamp01(volume);
+        source.volume = SfxVolumeSettings.Scale(volume);
         source.pitch = 1f + Random.Range(-pitchVariation, pitchVariation);
         source.spatialBlend = 1f;
         source.rolloffMode = AudioRolloffMode.Logarithmic;

@@ -56,7 +56,9 @@ public class PlayerHitFeedback : NetworkBehaviour
 
         // Sound
         if (playerHurtSFX != null)
-            AudioSource.PlayClipAtPoint(playerHurtSFX, Camera.main?.transform.position ?? Vector3.zero, 0.6f);
+            AudioSource.PlayClipAtPoint(playerHurtSFX,
+                Camera.main?.transform.position ?? Vector3.zero,
+                SfxVolumeSettings.Scale(0.6f));
 
         // Hitstop on heavy hits (>20% HP in one hit)
         if (fraction >= 0.20f)

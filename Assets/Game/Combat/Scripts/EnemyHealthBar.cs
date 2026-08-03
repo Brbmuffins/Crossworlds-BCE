@@ -1,4 +1,5 @@
 #if UNITY_EDITOR || !UNITY_SERVER
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -32,6 +33,10 @@ public class EnemyHealthBar : MonoBehaviour
     RectTransform _fillRect;
     Canvas  _canvas;
     bool    _canRevealFromHealthChange;
+    Camera  _camera;
+    readonly List<Renderer> _boundsRenderers = new List<Renderer>(8);
+    readonly List<Collider> _boundsColliders = new List<Collider>(4);
+    bool _boundsSourcesDirty = true;
 
     // ── Setup ─────────────────────────────────────────────────────────────────
     void Awake()
@@ -65,6 +70,11 @@ public class EnemyHealthBar : MonoBehaviour
             _health.onDamageTaken.RemoveListener(OnDamageTaken);
             _health.onDeath.RemoveListener(OnDeath);
         }
+    }
+
+    void OnTransformChildrenChanged()
+    {
+        _boundsSourcesDirty = true;
     }
 
     // ── World-space canvas ────────────────────────────────────────────────────
@@ -130,15 +140,17 @@ public class EnemyHealthBar : MonoBehaviour
         float heightOffset = _health != null ? _health.EnemyHealthBarHeightOffset : DEFAULT_OFFSET;
         float top = float.NegativeInfinity;
 
-        foreach (var renderer in GetComponentsInChildren<Renderer>())
+        RefreshBoundsSourcesIfNeeded();
+
+        foreach (Renderer renderer in _boundsRenderers)
         {
-            if (renderer == null || !renderer.enabled) continue;
+            if (renderer == null || !renderer.enabled || !renderer.gameObject.activeInHierarchy) continue;
             top = Mathf.Max(top, transform.InverseTransformPoint(renderer.bounds.max).y);
         }
 
-        foreach (var collider in GetComponentsInChildren<Collider>())
+        foreach (Collider collider in _boundsColliders)
         {
-            if (collider == null || !collider.enabled) continue;
+            if (collider == null || !collider.enabled || !collider.gameObject.activeInHierarchy) continue;
             top = Mathf.Max(top, transform.InverseTransformPoint(collider.bounds.max).y);
         }
 
@@ -148,16 +160,28 @@ public class EnemyHealthBar : MonoBehaviour
         return Mathf.Max(MIN_HEIGHT, top + heightOffset);
     }
 
+    void RefreshBoundsSourcesIfNeeded()
+    {
+        if (!_boundsSourcesDirty) return;
+
+        _boundsSourcesDirty = false;
+        _boundsRenderers.Clear();
+        _boundsColliders.Clear();
+        GetComponentsInChildren(true, _boundsRenderers);
+        GetComponentsInChildren(true, _boundsColliders);
+    }
+
     // ── Billboard — always face camera ────────────────────────────────────────
     void LateUpdate()
     {
         if (_canvas == null || !_canvas.gameObject.activeSelf) return;
         _canvas.transform.localPosition = new Vector3(0f, GetBarHeight(), 0f);
 
-        var cam = Camera.main;
-        if (cam == null) return;
+        if (_camera == null || !_camera.isActiveAndEnabled)
+            _camera = Camera.main;
+        if (_camera == null) return;
         // Face toward camera (not toward target like LookAt, just copy camera rotation)
-        _canvas.transform.rotation = cam.transform.rotation;
+        _canvas.transform.rotation = _camera.transform.rotation;
     }
 
     // ── Health events ─────────────────────────────────────────────────────────

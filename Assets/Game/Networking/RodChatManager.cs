@@ -73,7 +73,11 @@ public class RodChatManager : NetworkBehaviour
 
     public void RequestOnlineRoster()
     {
-        if (isClient)
+        // NetworkClient.active (not isClient): during client shutdown the identity is
+        // still isClient==true while the connection has already gone inactive, so a
+        // roster refresh fired from OnStopClient teardown would hit SendCommandInternal's
+        // "without an active client" guard and log an error. Skip the Cmd once inactive.
+        if (NetworkClient.active && isClient)
             CmdRequestOnlineRoster();
     }
 
@@ -595,7 +599,7 @@ public class RodChatManager : NetworkBehaviour
 
     bool AnyOtherInputFocused()
     {
-        foreach (var f in FindObjectsByType<TMP_InputField>(FindObjectsSortMode.None))
+        foreach (var f in FindObjectsByType<TMP_InputField>())
             if (f != _input && f.isFocused) return true;
         return false;
     }
@@ -747,7 +751,7 @@ public class RodChatManager : NetworkBehaviour
             if (s_font == null)
             {
                 // Last resort: adopt the font from any TMP text already alive in the scene.
-                var any = FindFirstObjectByType<TMP_Text>();
+                var any = FindAnyObjectByType<TMP_Text>();
                 if (any != null) s_font = any.font;
             }
             return s_font;

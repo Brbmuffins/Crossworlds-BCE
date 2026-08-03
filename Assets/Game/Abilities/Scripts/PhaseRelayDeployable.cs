@@ -15,7 +15,7 @@ public class PhaseRelayDeployable : MonoBehaviour
     // Assign: brbmuffins Dark Arts/.../Magic buff.prefab
     public GameObject idleVFX;
 
-    [HideInInspector] public int ownerID;
+    [HideInInspector] public UnityEngine.EntityId ownerID;
     [HideInInspector] public Transform ownerTransform;
 
     private float _timer;
@@ -36,9 +36,9 @@ public class PhaseRelayDeployable : MonoBehaviour
     }
 
     // Called by SingularityBehaviour at spawn to check for bonus.
-    public static float GetBonusNearPoint(Vector3 point, int ownerID)
+    public static float GetBonusNearPoint(Vector3 point, UnityEngine.EntityId ownerID)
     {
-        PhaseRelayDeployable[] relays = FindObjectsByType<PhaseRelayDeployable>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+        PhaseRelayDeployable[] relays = FindObjectsByType<PhaseRelayDeployable>(FindObjectsInactive.Exclude);
         foreach (var r in relays)
         {
             if (r.ownerID != ownerID) continue;

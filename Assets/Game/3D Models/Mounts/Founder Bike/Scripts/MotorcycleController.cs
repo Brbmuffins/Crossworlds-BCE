@@ -20,11 +20,17 @@ public class MotorcycleController : MonoBehaviour
     public AudioClip FounderBikeDrive;
 
     private AudioSource audioSource;
+    private float authoredAudioVolume = 1f;
     private Vector3 groundNormal = Vector3.up;
 
     void OnEnable()
     {
         audioSource = GetComponent<AudioSource>();
+        if (audioSource != null)
+        {
+            authoredAudioVolume = audioSource.volume;
+            audioSource.volume = SfxVolumeSettings.Scale(authoredAudioVolume);
+        }
 
         if (audioSource != null && FounderBikeIdle != null)
         {
@@ -119,6 +125,7 @@ public class MotorcycleController : MonoBehaviour
     void HandleAudio(bool driving)
     {
         if (audioSource == null) return;
+        audioSource.volume = SfxVolumeSettings.Scale(authoredAudioVolume);
 
         if (driving)
         {

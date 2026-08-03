@@ -36,8 +36,10 @@ public class EscMenu : MonoBehaviour
     GameObject  _mainView;
     GameObject  _optionsView;
     Slider      _musicSlider;
+    Slider      _sfxSlider;
     Slider      _zoomSlider;
     TextMeshProUGUI _musicValueLabel;
+    TextMeshProUGUI _sfxValueLabel;
     TextMeshProUGUI _zoomValueLabel;
     TextMeshProUGUI _variantModeValueLabel;
     bool        _open;
@@ -91,6 +93,7 @@ public class EscMenu : MonoBehaviour
     void ShowOptions()
     {
         RefreshMusicSlider();
+        RefreshSfxSlider();
         RefreshZoomSlider();
         RefreshVariantModeLabel();
         _mainView.SetActive(false);
@@ -101,6 +104,29 @@ public class EscMenu : MonoBehaviour
     {
         _optionsView.SetActive(false);
         _mainView.SetActive(true);
+    }
+
+    void ChangeCharacter()
+    {
+        SetOpen(false);
+
+        // Re-enable cursor before the scene transition so character select isn't mouse-locked
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible   = true;
+
+        // Return to CharacterSelect WITHOUT clearing the session — the player keeps their
+        // JWT and picks a different class without re-entering credentials. RodNetworkManager
+        // redirects offlineScene for this one disconnect; do NOT also LoadScene here.
+        if (NetworkManager.singleton is RodNetworkManager rod)
+        {
+            rod.ReturnToCharacterSelect();
+        }
+        else
+        {
+            // Fallback if the manager isn't the expected type: behave like Logout.
+            Debug.LogWarning("[EscMenu] NetworkManager is not RodNetworkManager — falling back to Logout.");
+            Logout();
+        }
     }
 
     void Logout()
@@ -135,6 +161,12 @@ public class EscMenu : MonoBehaviour
 
     void SetOpen(bool open)
     {
+        // Unity can report carried-over Input System actions as enabled even after
+        // they have stopped delivering pointer events. Rebind them whenever this
+        // explicit modal is opened so its controls always receive clicks.
+        if (open)
+            SingleEventSystem.ForceRebuild();
+
         _open = open;
         _panel.SetActive(open);
 
@@ -146,6 +178,7 @@ public class EscMenu : MonoBehaviour
         {
             ShowMainMenu();
             RefreshMusicSlider();
+            RefreshSfxSlider();
             RefreshZoomSlider();
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible   = true;
@@ -163,7 +196,9 @@ public class EscMenu : MonoBehaviour
 
         _canvas = cgo.GetComponent<Canvas>();
         _canvas.renderMode   = RenderMode.ScreenSpaceOverlay;
-        _canvas.sortingOrder = 200; // on top of chat (100) and GM console (999 only when open)
+        // Above every ordinary persistent HUD/console canvas, but below the loading
+        // screen (9999). This prevents invisible higher-order UI from taking clicks.
+        _canvas.sortingOrder = 3000;
 
         var scaler = cgo.GetComponent<CanvasScaler>();
         scaler.uiScaleMode         = CanvasScaler.ScaleMode.ScaleWithScreenSize;
@@ -206,17 +241,20 @@ public class EscMenu : MonoBehaviour
         _optionsView = MakeRect("OptionsView", cardRt, Vector2.zero, Vector2.one);
         var optionsRt = _optionsView.GetComponent<RectTransform>();
 
-        // Buttons
-        MakeButton("Resume",   mainRt, new Vector2(0.1f, 0.58f), new Vector2(0.9f, 0.70f),
+        // Buttons — five stacked entries, evenly spaced within the card.
+        MakeButton("Resume",   mainRt, new Vector2(0.1f, 0.60f), new Vector2(0.9f, 0.71f),
             new Color(0.08f, 0.5f, 0.18f), Resume);
 
-        MakeButton("Options", mainRt, new Vector2(0.1f, 0.43f), new Vector2(0.9f, 0.55f),
+        MakeButton("Change Character", mainRt, new Vector2(0.1f, 0.47f), new Vector2(0.9f, 0.58f),
+            new Color(0.20f, 0.15f, 0.45f), ChangeCharacter);
+
+        MakeButton("Options", mainRt, new Vector2(0.1f, 0.34f), new Vector2(0.9f, 0.45f),
             new Color(0.08f, 0.25f, 0.5f), ShowOptions);
 
-        MakeButton("Logout",   mainRt, new Vector2(0.1f, 0.28f), new Vector2(0.9f, 0.40f),
+        MakeButton("Logout",   mainRt, new Vector2(0.1f, 0.21f), new Vector2(0.9f, 0.32f),
             new Color(0.45f, 0.35f, 0.05f), Logout);
 
-        MakeButton("Quit Game", mainRt, new Vector2(0.1f, 0.13f), new Vector2(0.9f, 0.25f),
+        MakeButton("Quit Game", mainRt, new Vector2(0.1f, 0.08f), new Vector2(0.9f, 0.19f),
             new Color(0.5f, 0.05f, 0.05f), Quit);
 
         BuildOptionsView(optionsRt);
@@ -240,7 +278,7 @@ public class EscMenu : MonoBehaviour
         header.alignment = TextAlignmentOptions.Center;
 
         var musicLabel = MakeTmp("MusicVolumeLabel", parent,
-            new Vector2(0.1f, 0.55f), new Vector2(0.58f, 0.62f));
+            new Vector2(0.1f, 0.57f), new Vector2(0.58f, 0.63f));
         musicLabel.text      = "MUSIC";
         musicLabel.fontSize  = 13f;
         musicLabel.color     = Color.white;
@@ -248,18 +286,37 @@ public class EscMenu : MonoBehaviour
         musicLabel.alignment = TextAlignmentOptions.MidlineLeft;
 
         _musicValueLabel = MakeTmp("MusicVolumeValue", parent,
-            new Vector2(0.6f, 0.55f), new Vector2(0.9f, 0.62f));
+            new Vector2(0.6f, 0.57f), new Vector2(0.9f, 0.63f));
         _musicValueLabel.fontSize  = 13f;
         _musicValueLabel.color     = new Color(0.75f, 0.9f, 1f);
         _musicValueLabel.fontStyle = FontStyles.Bold;
         _musicValueLabel.alignment = TextAlignmentOptions.MidlineRight;
 
         _musicSlider = MakeSlider("MusicVolumeSlider", parent,
-            new Vector2(0.1f, 0.48f), new Vector2(0.9f, 0.53f));
+            new Vector2(0.1f, 0.52f), new Vector2(0.9f, 0.56f));
         _musicSlider.onValueChanged.AddListener(OnMusicVolumeChanged);
 
+        var sfxLabel = MakeTmp("SfxVolumeLabel", parent,
+            new Vector2(0.1f, 0.44f), new Vector2(0.58f, 0.50f));
+        sfxLabel.text      = "SFX";
+        sfxLabel.fontSize  = 13f;
+        sfxLabel.color     = Color.white;
+        sfxLabel.fontStyle = FontStyles.Bold;
+        sfxLabel.alignment = TextAlignmentOptions.MidlineLeft;
+
+        _sfxValueLabel = MakeTmp("SfxVolumeValue", parent,
+            new Vector2(0.6f, 0.44f), new Vector2(0.9f, 0.50f));
+        _sfxValueLabel.fontSize  = 13f;
+        _sfxValueLabel.color     = new Color(0.75f, 0.9f, 1f);
+        _sfxValueLabel.fontStyle = FontStyles.Bold;
+        _sfxValueLabel.alignment = TextAlignmentOptions.MidlineRight;
+
+        _sfxSlider = MakeSlider("SfxVolumeSlider", parent,
+            new Vector2(0.1f, 0.39f), new Vector2(0.9f, 0.43f));
+        _sfxSlider.onValueChanged.AddListener(OnSfxVolumeChanged);
+
         var zoomLabel = MakeTmp("CameraZoomLabel", parent,
-            new Vector2(0.1f, 0.39f), new Vector2(0.58f, 0.46f));
+            new Vector2(0.1f, 0.31f), new Vector2(0.58f, 0.37f));
         zoomLabel.text      = "CAMERA ZOOM";
         zoomLabel.fontSize  = 13f;
         zoomLabel.color     = Color.white;
@@ -267,19 +324,19 @@ public class EscMenu : MonoBehaviour
         zoomLabel.alignment = TextAlignmentOptions.MidlineLeft;
 
         _zoomValueLabel = MakeTmp("CameraZoomValue", parent,
-            new Vector2(0.6f, 0.39f), new Vector2(0.9f, 0.46f));
+            new Vector2(0.6f, 0.31f), new Vector2(0.9f, 0.37f));
         _zoomValueLabel.fontSize  = 13f;
         _zoomValueLabel.color     = new Color(0.75f, 0.9f, 1f);
         _zoomValueLabel.fontStyle = FontStyles.Bold;
         _zoomValueLabel.alignment = TextAlignmentOptions.MidlineRight;
 
         _zoomSlider = MakeSlider("CameraZoomSlider", parent,
-            new Vector2(0.1f, 0.32f), new Vector2(0.9f, 0.37f));
+            new Vector2(0.1f, 0.26f), new Vector2(0.9f, 0.30f));
         _zoomSlider.onValueChanged.AddListener(OnCameraZoomChanged);
 
         // Variant zone selector mode
         var variantLabel = MakeTmp("VariantModeLabel", parent,
-            new Vector2(0.1f, 0.23f), new Vector2(0.58f, 0.30f));
+            new Vector2(0.1f, 0.18f), new Vector2(0.58f, 0.24f));
         variantLabel.text      = "ABILITY ZONE";
         variantLabel.fontSize  = 13f;
         variantLabel.color     = Color.white;
@@ -288,7 +345,7 @@ public class EscMenu : MonoBehaviour
 
         // Clickable value — toggles between MOUSE and SCROLL WHEEL
         var variantValueGo = MakeRect("VariantModeValueBtn", parent,
-            new Vector2(0.58f, 0.23f), new Vector2(0.9f, 0.30f));
+            new Vector2(0.58f, 0.18f), new Vector2(0.9f, 0.24f));
         _variantModeValueLabel = variantValueGo.AddComponent<TextMeshProUGUI>();
         _variantModeValueLabel.fontSize  = 13f;
         _variantModeValueLabel.color     = new Color(0.75f, 0.9f, 1f);
@@ -297,10 +354,11 @@ public class EscMenu : MonoBehaviour
         var variantBtn = variantValueGo.AddComponent<Button>();
         variantBtn.onClick.AddListener(ToggleVariantMode);
 
-        MakeButton("Back", parent, new Vector2(0.1f, 0.10f), new Vector2(0.9f, 0.20f),
+        MakeButton("Back", parent, new Vector2(0.1f, 0.07f), new Vector2(0.9f, 0.15f),
             new Color(0.16f, 0.16f, 0.26f), ShowMainMenu);
 
         RefreshMusicSlider();
+        RefreshSfxSlider();
         RefreshZoomSlider();
         RefreshVariantModeLabel();
     }
@@ -341,6 +399,27 @@ public class EscMenu : MonoBehaviour
     {
         if (_musicValueLabel != null)
             _musicValueLabel.text = $"{Mathf.RoundToInt(Mathf.Clamp01(value) * 100f)}%";
+    }
+
+    void RefreshSfxSlider()
+    {
+        if (_sfxSlider == null) return;
+        float volume = SfxVolumeSettings.Volume;
+        _sfxSlider.SetValueWithoutNotify(volume);
+        UpdateSfxValueLabel(volume);
+    }
+
+    void OnSfxVolumeChanged(float value)
+    {
+        value = Mathf.Clamp01(value);
+        SfxVolumeSettings.SetVolume(value);
+        UpdateSfxValueLabel(value);
+    }
+
+    void UpdateSfxValueLabel(float value)
+    {
+        if (_sfxValueLabel != null)
+            _sfxValueLabel.text = $"{Mathf.RoundToInt(Mathf.Clamp01(value) * 100f)}%";
     }
 
     void RefreshZoomSlider()
@@ -395,7 +474,7 @@ public class EscMenu : MonoBehaviour
                 return follow;
         }
 
-        return FindFirstObjectByType<CameraFollow>();
+        return FindAnyObjectByType<CameraFollow>();
     }
 
     void ToggleVariantMode()
@@ -407,7 +486,7 @@ public class EscMenu : MonoBehaviour
         RefreshVariantModeLabel();
 
         // Apply immediately to the local player's AbilityCaster if in-game
-        var caster = FindFirstObjectByType<AbilityCaster>();
+        var caster = FindAnyObjectByType<AbilityCaster>();
         if (caster != null)
             caster.useScrollWheelVariants = next;
     }

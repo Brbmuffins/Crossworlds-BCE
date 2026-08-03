@@ -1,5 +1,6 @@
 #if UNITY_EDITOR || !UNITY_SERVER
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -10,13 +11,21 @@ using UnityEngine.InputSystem;
 /// </summary>
 public class EnemyHoverController : MonoBehaviour
 {
+    const int HitBufferSize = 64;
+
     public static EnemyHoverController Instance { get; private set; }
+
+    static readonly IComparer<RaycastHit> HitDistanceComparer =
+        Comparer<RaycastHit>.Create((left, right) => left.distance.CompareTo(right.distance));
 
     [SerializeField, Min(1f)] float maxHoverDistance = 150f;
     [SerializeField] LayerMask hoverMask = ~0;
 
     Health _hoveredEnemy;
     EnemyHoverHighlight _hoverHighlight;
+    Camera _camera;
+    readonly RaycastHit[] _hitBuffer = new RaycastHit[HitBufferSize];
+    readonly List<Renderer> _rendererScratch = new List<Renderer>(16);
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     static void Bootstrap()
@@ -47,8 +56,6 @@ public class EnemyHoverController : MonoBehaviour
         if (target != _hoveredEnemy)
             SetHoveredEnemy(target);
 
-        if (_hoveredEnemy != null)
-            EnemyHoverTooltipUI.EnsureInstance().Show(_hoveredEnemy);
     }
 
     void OnDisable()
@@ -68,24 +75,40 @@ public class EnemyHoverController : MonoBehaviour
         if (Cursor.lockState == CursorLockMode.Locked) return null;
         if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject()) return null;
 
-        Camera cam = Camera.main;
-        if (cam == null) return null;
+        if (_camera == null || !_camera.isActiveAndEnabled)
+            _camera = Camera.main;
+        if (_camera == null) return null;
 
         Vector2 screenPos = mouse.position.ReadValue();
         if (screenPos.x < 0f || screenPos.y < 0f || screenPos.x > Screen.width || screenPos.y > Screen.height)
             return null;
 
-        Ray ray = cam.ScreenPointToRay(screenPos);
-        RaycastHit[] hits = ZonePhysics.RaycastAll(gameObject, ray, maxHoverDistance, hoverMask, QueryTriggerInteraction.Collide);
-        if (hits == null || hits.Length == 0)
+        Ray ray = _camera.ScreenPointToRay(screenPos);
+        int hitCount = ZonePhysics.RaycastNonAlloc(
+            gameObject, ray, _hitBuffer, maxHoverDistance, hoverMask, QueryTriggerInteraction.Collide);
+        if (hitCount == 0)
             return null;
 
-        Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
-        foreach (var hit in hits)
+        if (hitCount == _hitBuffer.Length)
         {
-            if (hit.collider == null) continue;
+            RaycastHit[] allHits = ZonePhysics.RaycastAll(
+                gameObject, ray, maxHoverDistance, hoverMask, QueryTriggerInteraction.Collide);
+            Array.Sort(allHits, HitDistanceComparer);
+            return FindFirstHoverable(allHits, allHits.Length);
+        }
 
-            Health health = hit.collider.GetComponentInParent<Health>();
+        Array.Sort(_hitBuffer, 0, hitCount, HitDistanceComparer);
+        return FindFirstHoverable(_hitBuffer, hitCount);
+    }
+
+    Health FindFirstHoverable(RaycastHit[] hits, int hitCount)
+    {
+        for (int i = 0; i < hitCount; i++)
+        {
+            Collider collider = hits[i].collider;
+            if (collider == null) continue;
+
+            Health health = collider.GetComponentInParent<Health>();
             if (IsHoverableEnemy(health))
                 return health;
         }
@@ -93,14 +116,16 @@ public class EnemyHoverController : MonoBehaviour
         return null;
     }
 
-    static bool IsHoverableEnemy(Health health)
+    bool IsHoverableEnemy(Health health)
     {
         if (health == null) return false;
         if (!health.enabled || !health.gameObject.activeInHierarchy) return false;
         if (!health.IsAlive) return false;
         if (!health.ShouldShowEnemyHoverInfo()) return false;
 
-        foreach (var renderer in health.GetComponentsInChildren<Renderer>(true))
+        _rendererScratch.Clear();
+        health.GetComponentsInChildren(true, _rendererScratch);
+        foreach (Renderer renderer in _rendererScratch)
         {
             if (renderer != null && renderer.enabled)
                 return true;
@@ -130,6 +155,7 @@ public class EnemyHoverController : MonoBehaviour
             _hoverHighlight = _hoveredEnemy.gameObject.AddComponent<EnemyHoverHighlight>();
 
         _hoverHighlight.SetHighlighted(true);
+        EnemyHoverTooltipUI.EnsureInstance().Show(_hoveredEnemy);
     }
 }
 #endif

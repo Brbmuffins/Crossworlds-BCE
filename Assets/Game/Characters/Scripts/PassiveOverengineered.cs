@@ -21,7 +21,7 @@ public class PassiveOverengineered : ClassPassive
 
         if (DeployableManager.Instance == null) return;
 
-        List<GameObject> deployables = DeployableManager.Instance.GetAll(gameObject.GetInstanceID());
+        List<GameObject> deployables = DeployableManager.Instance.GetAll(gameObject.GetEntityId());
 
         foreach (var dep in deployables)
         {

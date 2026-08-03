@@ -77,7 +77,8 @@ public class RodPositionSaver : MonoBehaviour
         if (!CanSave()) return;
         _lastZone = ResolveZoneForSave();
         StartCoroutine(PositionSaveRoutine.Save(
-            authServerURL, jwt, characterId, transform.position, transform.eulerAngles.y, _lastZone));
+            authServerURL, jwt, characterId, transform.position, transform.eulerAngles.y, _lastZone,
+            isLogout: false));
     }
 
     IEnumerator PeriodicSaveLoop()
@@ -93,7 +94,8 @@ public class RodPositionSaver : MonoBehaviour
 
             _lastZone = ResolveZoneForSave();
             yield return PositionSaveRoutine.Save(
-                authServerURL, jwt, characterId, transform.position, transform.eulerAngles.y, _lastZone);
+                authServerURL, jwt, characterId, transform.position, transform.eulerAngles.y, _lastZone,
+                isLogout: false);
         }
     }
 
@@ -107,17 +109,17 @@ public class RodPositionSaver : MonoBehaviour
 
         // Can't use coroutines after OnDestroy — hand off to a detached host.
         SavePosition(authServerURL, jwt, characterId,
-            transform.position, transform.eulerAngles.y, ResolveZoneForSave());
+            transform.position, transform.eulerAngles.y, ResolveZoneForSave(), isLogout: true);
     }
 
     // Static so it can survive the MonoBehaviour being destroyed
     public static void SavePosition(string url, string jwt, int charId,
-        Vector3 pos, float orientation, string zone)
+        Vector3 pos, float orientation, string zone, bool isLogout)
     {
         // Fire-and-forget via a temporary GameObject coroutine host
         var host = new GameObject("_PositionSaveRequest");
         DontDestroyOnLoad(host);
-        host.AddComponent<PositionSaveHost>().Run(url, jwt, charId, pos, orientation, zone);
+        host.AddComponent<PositionSaveHost>().Run(url, jwt, charId, pos, orientation, zone, isLogout);
     }
 }
 
@@ -126,7 +128,7 @@ public class RodPositionSaver : MonoBehaviour
 static class PositionSaveRoutine
 {
     public static IEnumerator Save(string url, string jwt, int charId,
-        Vector3 pos, float orientation, string zone)
+        Vector3 pos, float orientation, string zone, bool isLogout)
     {
         // Force invariant culture so floats always serialize with a '.' decimal
         // separator. On a build whose OS locale uses ',' (much of Europe) the old
@@ -137,7 +139,8 @@ static class PositionSaveRoutine
                       $"\"y\":{pos.y.ToString("F3", ic)}," +
                       $"\"z\":{pos.z.ToString("F3", ic)}," +
                       $"\"map\":\"{zone}\"," +
-                      $"\"orientation\":{orientation.ToString("F3", ic)}}}";
+                      $"\"orientation\":{orientation.ToString("F3", ic)}," +
+                      $"\"logout\":{(isLogout ? "true" : "false")}}}";
 
         using var req = new UnityWebRequest($"{url}/character/position", "PATCH");
         req.uploadHandler   = new UploadHandlerRaw(Encoding.UTF8.GetBytes(json));
@@ -159,14 +162,16 @@ static class PositionSaveRoutine
 
 class PositionSaveHost : MonoBehaviour
 {
-    public void Run(string url, string jwt, int charId, Vector3 pos, float orientation, string zone)
+    public void Run(string url, string jwt, int charId, Vector3 pos, float orientation, string zone,
+        bool isLogout)
     {
-        StartCoroutine(RunThenDestroy(url, jwt, charId, pos, orientation, zone));
+        StartCoroutine(RunThenDestroy(url, jwt, charId, pos, orientation, zone, isLogout));
     }
 
-    IEnumerator RunThenDestroy(string url, string jwt, int charId, Vector3 pos, float orientation, string zone)
+    IEnumerator RunThenDestroy(string url, string jwt, int charId, Vector3 pos, float orientation,
+        string zone, bool isLogout)
     {
-        yield return PositionSaveRoutine.Save(url, jwt, charId, pos, orientation, zone);
+        yield return PositionSaveRoutine.Save(url, jwt, charId, pos, orientation, zone, isLogout);
         Destroy(gameObject);
     }
 }

@@ -12,6 +12,13 @@ public class WorldBossHealthBar : MonoBehaviour
 {
     private static WorldBossHealthBar _instance;
 
+    // Client-only UI. On a headless Dedicated Server there is no graphics/IMGUI, so
+    // building the Canvas/TMP hierarchy in Awake throws every frame. Guard the auto-
+    // bootstrap so it never runs on the server (UNITY_EDITOR || !UNITY_SERVER — never
+    // !UNITY_SERVER alone; the editor's build target is Dedicated Server). The class
+    // itself still compiles, so server-side OnPhaseChanged() callers keep their type
+    // reference; FindAnyObjectByType returns null there and the ?. call no-ops.
+#if UNITY_EDITOR || !UNITY_SERVER
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void Bootstrap()
     {
@@ -20,6 +27,7 @@ public class WorldBossHealthBar : MonoBehaviour
         DontDestroyOnLoad(go);
         _instance = go.AddComponent<WorldBossHealthBar>();
     }
+#endif
 
     private Canvas         _canvas;
     private Slider         _hpSlider;

@@ -1,4 +1,4 @@
-﻿#if UNITY_EDITOR || !UNITY_SERVER
+#if UNITY_EDITOR || !UNITY_SERVER
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -231,14 +231,14 @@ public class CharacterSheetUI : MonoBehaviour
 
     static bool AnyInputFocused()
     {
-        foreach (var f in FindObjectsByType<TMP_InputField>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+        foreach (var f in FindObjectsByType<TMP_InputField>(FindObjectsInactive.Exclude))
             if (f.isFocused) return true;
         return false;
     }
 
     static PlayerIdentity FindLocalIdentity()
     {
-        foreach (var id in FindObjectsByType<PlayerIdentity>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+        foreach (var id in FindObjectsByType<PlayerIdentity>(FindObjectsInactive.Exclude))
             if (id.isLocalPlayer) return id;
         return null;
     }

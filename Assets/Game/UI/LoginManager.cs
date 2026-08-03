@@ -34,6 +34,7 @@ public class LoginManager : MonoBehaviour
     const string ClosedAlphaPromoResource = "UI/ClosedAlphaTest";
 
     [Header("Server")]
+    [Tooltip("Legacy field — auth URL now comes from ServerConfig.AuthBaseUrl (environment-aware). Kept for Inspector compatibility.")]
     public string authServerURL  = "http://15.204.243.36:3000";
     public string gameScene      = "GameWorld"; // fallback only — Mirror loads this via NetworkManager.Online Scene
 
@@ -59,6 +60,8 @@ public class LoginManager : MonoBehaviour
     private TMP_InputField  _userInput, _passInput;
     private TMP_InputField  _regUserInput, _regEmailInput, _regPassInput;
     private TMP_InputField  _serverInput;
+    private Image           _envProdBtn, _envDevBtn;
+    private TextMeshProUGUI _envProdLabel, _envDevLabel;
     private TMP_Text        _statusText, _regStatusText;
     private TextMeshProUGUI _titleText;
     private GameObject      _loginPanel, _registerPanel;
@@ -73,6 +76,25 @@ public class LoginManager : MonoBehaviour
         // Dedicated server build — Null graphics device means no display, skip all UI.
         if (SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.Null)
             return;
+
+        // ESC-menu "Change Character": we came here only to rebuild the NetworkManager
+        // (LoginScene owns it) — the session is still valid. Skip the login UI entirely
+        // and forward straight to CharacterSelect so the player can pick a new class
+        // without re-entering credentials.
+        if (RodNetworkManager.PendingChangeCharacter)
+        {
+            RodNetworkManager.PendingChangeCharacter = false;
+            if (!string.IsNullOrEmpty(PlayerPrefs.GetString("jwt_token", "")))
+            {
+                SceneManager.LoadScene("CharacterSelect");
+                return;
+            }
+        }
+
+        // A DontDestroyOnLoad EventSystem carried in from a gameplay session leaves the
+        // login screen unclickable after logout (Input System UI actions get disabled
+        // when its EventSystem is torn down). Rebuild a single clean one.
+        SingleEventSystem.ForceSingle();
 
         BuildCanvas();
     }
@@ -270,6 +292,11 @@ public class LoginManager : MonoBehaviour
         serverLabel.rectTransform.offsetMin = serverLabel.rectTransform.offsetMax = Vector2.zero;
         serverLabel.characterSpacing = 4f;
 
+        // Environment toggle — PROD | DEV segmented control, right of the label.
+        // Dev routes auth (:3010), the game connection (:7778) and its DB to the
+        // isolated dev stack. See ServerConfig.
+        BuildEnvToggle(panelRt);
+
         _serverInput = BuildInputField(panelRt, "IP", new Vector2(0.05f, 0.235f), new Vector2(0.95f, 0.31f), false);
 
         // Status text (shifted up slightly to make room)
@@ -297,6 +324,68 @@ public class LoginManager : MonoBehaviour
 #endif
 
         return panel;
+    }
+
+    // ── Environment toggle (PROD | DEV) ──────────────────────────────────────
+    void BuildEnvToggle(RectTransform panelRt)
+    {
+        // Two segments sharing the top-right of the GAME SERVER label row.
+        _envProdBtn = BuildEnvSegment(panelRt, "PROD",
+            new Vector2(0.56f, 0.305f), new Vector2(0.755f, 0.365f),
+            out _envProdLabel, () => SetEnvironment(ServerEnvironment.Prod));
+        _envDevBtn = BuildEnvSegment(panelRt, "DEV",
+            new Vector2(0.755f, 0.305f), new Vector2(0.95f, 0.365f),
+            out _envDevLabel, () => SetEnvironment(ServerEnvironment.Dev));
+
+        RefreshEnvToggle();
+    }
+
+    Image BuildEnvSegment(RectTransform parent, string label, Vector2 aMin, Vector2 aMax,
+        out TextMeshProUGUI labelText, UnityEngine.Events.UnityAction onClick)
+    {
+        GameObject go = new GameObject("Env_" + label, typeof(RectTransform), typeof(Image), typeof(Button));
+        go.transform.SetParent(parent, false);
+        var img = go.GetComponent<Image>();
+        img.raycastTarget = true;
+        var rt = go.GetComponent<RectTransform>();
+        rt.anchorMin = aMin;
+        rt.anchorMax = aMax;
+        rt.offsetMin = rt.offsetMax = Vector2.zero;
+        go.GetComponent<Button>().onClick.AddListener(onClick);
+
+        labelText = MakeLabel(rt, "Label", label, 10f, FontStyles.Bold, TextPrimary);
+        labelText.alignment = TextAlignmentOptions.Center;
+        labelText.characterSpacing = 3f;
+        labelText.rectTransform.anchorMin = Vector2.zero;
+        labelText.rectTransform.anchorMax = Vector2.one;
+        labelText.rectTransform.offsetMin = labelText.rectTransform.offsetMax = Vector2.zero;
+        return img;
+    }
+
+    void SetEnvironment(ServerEnvironment env)
+    {
+        ServerConfig.Environment = env;
+        RefreshEnvToggle();
+        SetStatus(_statusText,
+            env == ServerEnvironment.Dev
+                ? "DEV environment — isolated test stack."
+                : "PROD environment.",
+            env == ServerEnvironment.Prod);
+    }
+
+    void RefreshEnvToggle()
+    {
+        if (_envProdBtn == null || _envDevBtn == null) return;
+        bool dev = ServerConfig.IsDev;
+
+        Color activeProd = new Color(0.10f, 0.45f, 0.80f, 1f);   // cyan-blue
+        Color activeDev  = new Color(0.85f, 0.45f, 0.10f, 1f);   // amber — visually distinct = "you are in dev"
+        Color inactive   = new Color(0.10f, 0.10f, 0.16f, 0.9f);
+
+        _envProdBtn.color   = dev ? inactive : activeProd;
+        _envDevBtn.color    = dev ? activeDev : inactive;
+        _envProdLabel.color = dev ? TextDim : TextPrimary;
+        _envDevLabel.color  = dev ? TextPrimary : TextDim;
     }
 
     GameObject BuildRegisterPanel(RectTransform root)
@@ -676,7 +765,7 @@ public class LoginManager : MonoBehaviour
         SetStatus(_statusText, "Authenticating...", true);
 
         string json = $"{{\"username\":\"{username}\",\"password\":\"{password}\"}}";
-        using UnityWebRequest req = new UnityWebRequest(authServerURL + "/login", "POST");
+        using UnityWebRequest req = new UnityWebRequest(ServerConfig.AuthBaseUrl + "/login", "POST");
         req.uploadHandler   = new UploadHandlerRaw(System.Text.Encoding.UTF8.GetBytes(json));
         req.downloadHandler = new DownloadHandlerBuffer();
         req.SetRequestHeader("Content-Type", "application/json");
@@ -719,7 +808,7 @@ public class LoginManager : MonoBehaviour
         SetStatus(_regStatusText, "Creating account...", true);
 
         string json = $"{{\"username\":\"{username}\",\"email\":\"{email}\",\"password\":\"{password}\"}}";
-        using UnityWebRequest req = new UnityWebRequest(authServerURL + "/register", "POST");
+        using UnityWebRequest req = new UnityWebRequest(ServerConfig.AuthBaseUrl + "/register", "POST");
         req.uploadHandler   = new UploadHandlerRaw(System.Text.Encoding.UTF8.GetBytes(json));
         req.downloadHandler = new DownloadHandlerBuffer();
         req.SetRequestHeader("Content-Type", "application/json");
@@ -769,7 +858,7 @@ public class LoginManager : MonoBehaviour
 
     string TryParseError(string json)
     {
-        try { return JsonUtility.FromJson<ErrorResponse>(json)?.message; }
+        try { return JsonUtility.FromJson<ErrorResponse>(json)?.error; }
         catch { return null; }
     }
 
@@ -823,5 +912,5 @@ public class LoginManager : MonoBehaviour
     }
 
     [System.Serializable] class TokenResponse { public string token; }
-    [System.Serializable] class ErrorResponse  { public string message; }
+    [System.Serializable] class ErrorResponse  { public string error; }
 }

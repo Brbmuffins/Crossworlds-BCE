@@ -101,7 +101,7 @@ public sealed class WaypointMapTrigger : NetworkBehaviour
             _localPlayer = FindLocalPlayer();
 
         _playerNear = _localPlayer != null &&
-                      Vector3.Distance(transform.position, _localPlayer.position) <= interactionRange;
+                      (transform.position - _localPlayer.position).sqrMagnitude <= interactionRange * interactionRange;
 
         SetPromptVisible(_playerNear);
         if (!_playerNear) return;
@@ -471,10 +471,8 @@ public sealed class WaypointMapTrigger : NetworkBehaviour
 
     static Transform FindLocalPlayer()
     {
-        var identities = FindObjectsByType<NetworkIdentity>(FindObjectsInactive.Exclude);
-        foreach (var identity in identities)
-            if (identity.isLocalPlayer)
-                return identity.transform;
+        if (PlayerIdentity.Local != null)
+            return PlayerIdentity.Local.transform;
 
         GameObject taggedPlayer = GameObject.FindWithTag("Player");
         return taggedPlayer != null ? taggedPlayer.transform : null;
