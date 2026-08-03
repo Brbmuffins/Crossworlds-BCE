@@ -176,10 +176,14 @@ public class RodNetworkManager : NetworkManager
 
     public override void OnStartClient()
     {
+        GameObject[] generatedLootPrefabs =
+            Resources.LoadAll<GameObject>("EnemyForge/Loot");
+
         // Stage all prefabs into spawnPrefabs BEFORE base.OnStartClient() so Mirror's
         // built-in RegisterPrefab pass picks them all up in one shot.
         RegisterIntoSpawnList(classPrefabs);
         RegisterIntoSpawnList(worldPrefabs);
+        RegisterIntoSpawnList(generatedLootPrefabs);
         if (chatManagerPrefab != null)
             RegisterIntoSpawnList(new[] { chatManagerPrefab });
 
@@ -188,6 +192,7 @@ public class RodNetworkManager : NetworkManager
         // Belt-and-suspenders direct registration for non-editor builds
         DirectRegister(classPrefabs);
         DirectRegister(worldPrefabs);
+        DirectRegister(generatedLootPrefabs);
         if (chatManagerPrefab != null)
             DirectRegister(new[] { chatManagerPrefab });
     }

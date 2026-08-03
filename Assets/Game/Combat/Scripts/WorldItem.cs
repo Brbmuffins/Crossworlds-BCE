@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using Mirror;
 
@@ -29,6 +30,7 @@ public class WorldItem : NetworkBehaviour
 
     private Vector3 _origin;
     private bool    _pickedUp = false;
+    private bool    _pickupRequested = false;
 
     static readonly Color ColorCommon   = new Color(0.75f, 0.75f, 0.75f);
     static readonly Color ColorUncommon = new Color(0.2f,  0.9f,  0.2f);
@@ -76,42 +78,70 @@ public class WorldItem : NetworkBehaviour
 
     void OnTriggerEnter(Collider other)
     {
-        if (_pickedUp || !other.CompareTag("Player")) return;
+        if (_pickedUp || _pickupRequested || !other.CompareTag("Player")) return;
         var netId = other.GetComponent<NetworkIdentity>();
         if (netId == null || !netId.isLocalPlayer) return;
 
-        _pickedUp = true;
-        CmdPickup(netId.netId);
+        _pickupRequested = true;
+        CmdPickup();
     }
 
     [Command(requiresAuthority = false)]
-    void CmdPickup(uint playerNetId)
+    void CmdPickup(NetworkConnectionToClient sender = null)
     {
-        if (_pickedUp && !isServer) return;
+        if (_pickedUp || sender == null || sender.identity == null)
+            return;
+
+        NetworkIdentity picker = sender.identity;
+        if (picker.connectionToClient != sender)
+            return;
+
+        // This command intentionally does not require authority because the
+        // pickup belongs to the world. Validate proximity on the server so a
+        // client cannot collect arbitrary loot elsewhere in the zone.
+        const float maximumPickupDistance = 3f;
+        Vector3 offset = picker.transform.position - transform.position;
+        offset.y = 0f;
+        if (offset.sqrMagnitude > maximumPickupDistance * maximumPickupDistance)
+        {
+            Debug.LogWarning(
+                $"[LOOT] Rejected distant pickup from netId={picker.netId} " +
+                $"for '{itemId}' ({offset.magnitude:F2}m away).",
+                this);
+            return;
+        }
+
         _pickedUp = true;
-        if (NetworkServer.spawned.TryGetValue(playerNetId, out NetworkIdentity picker) &&
-            picker.connectionToClient != null && !itemId.StartsWith("gold:"))
-            QuestLocalRuntime.ServerReport(picker.connectionToClient,
+        if (!itemId.StartsWith("gold:"))
+            QuestLocalRuntime.ServerReport(sender,
                 QuestObjectiveType.CollectItem, itemId, Mathf.Max(1, quantity));
-        RpcOnPickedUp(playerNetId, itemId, quantity);
-        NetworkServer.Destroy(gameObject);
+
+        TargetOnPickedUp(sender, itemId, quantity);
+        StartCoroutine(DestroyAfterRewardDispatch());
     }
 
-    [ClientRpc]
-    void RpcOnPickedUp(uint pickerNetId, string pickedItemId, int qty)
+    [TargetRpc]
+    void TargetOnPickedUp(
+        NetworkConnectionToClient target,
+        string pickedItemId,
+        int qty)
     {
-        var localPlayer = NetworkClient.localPlayer;
-        if (localPlayer == null) return;
-
-        var localNetId = localPlayer.GetComponent<NetworkIdentity>();
-        if (localNetId == null || localNetId.netId != pickerNetId) return;
 
         // Gold pickup — award directly to progress, don't add to inventory
         if (pickedItemId.StartsWith("gold:"))
         {
             if (int.TryParse(pickedItemId.Substring(5), out int goldAmt))
             {
-                PlayerProgressManager.Local?.AwardGold(goldAmt);
+                var progress = PlayerProgressManager.Local;
+                if (progress == null)
+                {
+                    Debug.LogError(
+                        $"[LOOT] PlayerProgressManager unavailable — " +
+                        $"could not award {goldAmt} gold.");
+                    return;
+                }
+
+                progress.AwardGold(goldAmt);
                 Debug.Log($"[LOOT] Picked up {goldAmt} gold");
             }
             return;
@@ -124,6 +154,16 @@ public class WorldItem : NetworkBehaviour
         else
             Debug.LogWarning($"[LOOT] InventoryManager not found — {pickedItemId} x{qty} lost on client");
 #endif
+    }
+
+    [Server]
+    IEnumerator DestroyAfterRewardDispatch()
+    {
+        // Keep this identity alive for one transport frame so the targeted
+        // reward is dispatched before the shared pickup's destroy message.
+        yield return null;
+        if (gameObject != null)
+            NetworkServer.Destroy(gameObject);
     }
 
     void OnItemIdChanged(string _, string newVal) => ApplyRarityGlow(newVal);

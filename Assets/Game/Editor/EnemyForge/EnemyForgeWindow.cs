@@ -130,6 +130,18 @@ namespace Crossworlds.EditorTools.EnemyForge
 
                 if (propertyName == "corpseGroundOffset")
                     DrawCorpseGroundOffset(property);
+                else if (propertyName == "worldItemPrefab")
+                {
+                    EditorGUILayout.PropertyField(
+                        property,
+                        new GUIContent(
+                            "Loot Visual or Pickup Prefab",
+                            "Select either a ready WorldItem prefab or an ordinary visual prefab such as a loot bag, chest, sword, or item model. Enemy Forge creates and assigns a reusable network-ready pickup wrapper when the enemy is built or updated."),
+                        true);
+                    EditorGUILayout.HelpBox(
+                        "Ordinary visual prefabs are automatically converted into reusable network-ready pickups when you Build or Update the enemy.",
+                        MessageType.Info);
+                }
                 else
                     EditorGUILayout.PropertyField(property, true);
             }
