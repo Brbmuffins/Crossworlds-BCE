@@ -49,6 +49,10 @@ namespace Crossworlds.EditorTools.EnemyForge
                 issues.Add(new EnemyForgeIssue(
                     EnemyForgeSeverity.Info,
                     "No custom projectile is selected. Enemy Forge will assign its network-ready ranged test projectile."));
+            if (d.dropTable != null && d.worldItemPrefab == null)
+                issues.Add(new EnemyForgeIssue(
+                    EnemyForgeSeverity.Error,
+                    "A Drop Table requires a Loot Visual. Assign any prefab visual (bag, sword, chest, or other model); Enemy Forge will create and register its network-ready pickup wrapper."));
             if (d.IsRanged && d.attackRange < d.preferredRange + Mathf.Max(0.5f, d.agentRadius))
                 issues.Add(new EnemyForgeIssue(
                     EnemyForgeSeverity.Warning,
@@ -155,6 +159,29 @@ namespace Crossworlds.EditorTools.EnemyForge
                     var projectileCollider = projectile.GetComponent<Collider>();
                     if (projectileCollider == null || !projectileCollider.isTrigger)
                         issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Error, "The assigned ranged projectile requires a trigger collider."));
+                }
+            }
+            if (enemyController != null && enemyController.dropTable != null)
+            {
+                GameObject pickup = enemyController.worldItemPrefab;
+                if (pickup == null)
+                    issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Error,
+                        "The prefab has a Drop Table but no generated loot pickup. Assign a Loot Visual and deploy again."));
+                else
+                {
+                    if (pickup.GetComponent<WorldItem>() == null)
+                        issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Error,
+                            "The generated loot pickup is missing WorldItem."));
+                    if (pickup.GetComponent<NetworkIdentity>() == null)
+                        issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Error,
+                            "The generated loot pickup is missing NetworkIdentity."));
+                    var pickupCollider = pickup.GetComponent<Collider>();
+                    if (pickupCollider == null || !pickupCollider.isTrigger)
+                        issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Error,
+                            "The generated loot pickup requires a trigger collider."));
+                    if (!EnemyForgeDeployment.IsNetworkRegistered(pickup))
+                        issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Error,
+                            "The generated loot pickup is not registered with Mirror. Deploy the forged enemy again before building."));
                 }
             }
             if (enemyController != null && enemyController.keepCorpseGrounded)
