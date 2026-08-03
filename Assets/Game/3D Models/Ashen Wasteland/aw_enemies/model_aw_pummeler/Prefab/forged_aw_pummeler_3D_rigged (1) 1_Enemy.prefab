@@ -12,6 +12,14 @@ PrefabInstance:
       propertyPath: m_Enabled
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1464702870238786807, guid: 085be80bf778dbb4ca4eb9574b31874c, type: 3}
+      propertyPath: enemyLevel
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1464702870238786807, guid: 085be80bf778dbb4ca4eb9574b31874c, type: 3}
+      propertyPath: enemyDisplayName
+      value: Ashen Pummeler
+      objectReference: {fileID: 0}
     - target: {fileID: 4576553034309821294, guid: 085be80bf778dbb4ca4eb9574b31874c, type: 3}
       propertyPath: m_Controller
       value: 
@@ -118,7 +126,7 @@ MonoBehaviour:
   syncInterval: 0
   state: 0
   allowOfflineSimulation: 0
-  enemyForgeRuntimeProfileVersion: 19
+  enemyForgeRuntimeProfileVersion: 27
   aggroRadius: 8
   leashRadius: 20
   aggroWhenDamaged: 1
@@ -135,10 +143,10 @@ MonoBehaviour:
   attackImpactDelay: 1.0200001
   attackAnimationVariantMask: 1
   attackAnimationImpactDelays:
-  - 0.35
-  - 0.35
-  - 0.35
-  - 0.35
+  - 1.0200001
+  - 1.0200001
+  - 1.0200001
+  - 1.0200001
   idleAnimationSpeed: 1
   chaseAnimationSpeed: 1
   attackAnimationSpeeds:

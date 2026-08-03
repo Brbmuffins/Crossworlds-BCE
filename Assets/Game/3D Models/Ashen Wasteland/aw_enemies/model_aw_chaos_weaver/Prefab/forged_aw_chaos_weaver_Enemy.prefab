@@ -109,7 +109,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Mirror::Mirror.NetworkIdentity
   sceneId: 0
-  _assetId: 2708426837
+  _assetId: 375776307
   serverOnly: 0
   visibility: 0
   hasSpawned: 0
@@ -137,8 +137,8 @@ MonoBehaviour:
   enemyHealthBarHeightOffset: 0.25
   enemyHealthBarFixedHeight: -1
   showEnemyHoverInfo: 1
-  enemyDisplayName: 
-  enemyLevel: 0
+  enemyDisplayName: Ashen Chaos Weaver
+  enemyLevel: 1
   autoRespawnPlayers: 1
   playerRespawnDelay: 10
   playerRespawnHealthPercent: 1
