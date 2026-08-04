@@ -7,8 +7,11 @@ using UnityEngine;
 public sealed class LocalQuestProgress
 {
     public string questId;
+    public int definitionVersion = 1;
     public LocalQuestStatus status;
+    public List<string> objectiveIds = new();
     public List<int> objectiveProgress = new();
+    public bool rewardClaimed;
 }
 
 public enum LocalQuestStatus { Available, Active, ReadyToTurnIn, Completed }
@@ -51,7 +54,10 @@ public sealed class QuestLocalRuntime : MonoBehaviour
     public static void RegisterDefinition(QuestDefinition definition)
     {
         if (definition != null && !string.IsNullOrWhiteSpace(definition.questId))
+        {
             Definitions[definition.questId] = definition;
+            QuestPersistenceService.SyncDefinition(definition);
+        }
     }
 
     public LocalQuestStatus GetStatus(QuestDefinition definition)
@@ -66,8 +72,13 @@ public sealed class QuestLocalRuntime : MonoBehaviour
     {
         if (definition == null || !_clientStates.TryGetValue(definition.questId, out var state))
             return 0;
-        return index >= 0 && index < state.objectiveProgress.Count
-            ? state.objectiveProgress[index] : 0;
+        if (index < 0 || index >= definition.objectives.Count) return 0;
+        string objectiveId = definition.objectives[index]?.objectiveId;
+        int persistedIndex = !string.IsNullOrWhiteSpace(objectiveId)
+            ? state.objectiveIds.FindIndex(x => string.Equals(x, objectiveId, StringComparison.OrdinalIgnoreCase))
+            : index;
+        return persistedIndex >= 0 && persistedIndex < state.objectiveProgress.Count
+            ? state.objectiveProgress[persistedIndex] : 0;
     }
 
     public void Accept(QuestDefinition definition)
@@ -118,6 +129,7 @@ public sealed class QuestLocalRuntime : MonoBehaviour
         states[questId] = CreateProgress(definition, LocalQuestStatus.Active);
         UpdateReady(definition, states[questId]);
         SendState(sender);
+        QuestPersistenceService.SaveState(sender, definition, states[questId]);
     }
 
     [Server]
@@ -128,10 +140,21 @@ public sealed class QuestLocalRuntime : MonoBehaviour
         Dictionary<string, LocalQuestProgress> states = GetServerStates(sender);
         if (!states.TryGetValue(questId, out var state) ||
             state.status != LocalQuestStatus.ReadyToTurnIn) return;
-        state.status = LocalQuestStatus.Completed;
-        SendState(sender);
-        RodChatManager.Instance?.ServerGrantQuestReward(sender, definition.goldReward,
-            definition.experienceReward, definition.itemRewardId, definition.itemRewardQuantity);
+        if (!QuestPersistenceService.IsEnabled)
+        {
+            state.status = LocalQuestStatus.Completed;
+            SendState(sender);
+            RodChatManager.Instance?.ServerGrantQuestReward(sender, definition.goldReward,
+                definition.experienceReward, definition.itemRewardId, definition.itemRewardQuantity);
+            return;
+        }
+        QuestPersistenceService.ClaimReward(sender, definition, () =>
+        {
+            state.status = LocalQuestStatus.Completed;
+            state.rewardClaimed = true;
+            SendState(sender);
+            RodChatManager.Instance?.ServerRefreshQuestRewards(sender);
+        });
     }
 
     [Server]
@@ -171,6 +194,8 @@ public sealed class QuestLocalRuntime : MonoBehaviour
             for (int i = 0; i < definition.objectives.Count; i++)
             {
                 QuestObjectiveDefinition objective = definition.objectives[i];
+                int stateIndex = StateIndex(state, objective, i);
+                if (stateIndex < 0) continue;
                 string objectiveTargetId = type == QuestObjectiveType.KillEnemy
                     ? QuestTargetId.NormalizeEnemy(objective.targetId) : objective.targetId;
                 if (objective.type != type ||
@@ -179,13 +204,19 @@ public sealed class QuestLocalRuntime : MonoBehaviour
                     (definition.objectivesMustBeCompletedInOrder && !PriorComplete(definition, state, i)))
                     continue;
                 int required = Mathf.Max(1, objective.requiredAmount);
-                int next = Mathf.Clamp(state.objectiveProgress[i] + amount, 0, required);
-                changed |= next != state.objectiveProgress[i];
-                state.objectiveProgress[i] = next;
+                int next = Mathf.Clamp(state.objectiveProgress[stateIndex] + amount, 0, required);
+                changed |= next != state.objectiveProgress[stateIndex];
+                state.objectiveProgress[stateIndex] = next;
             }
             changed |= UpdateReady(definition, state);
         }
-        if (changed) SendState(sender);
+        if (changed)
+        {
+            SendState(sender);
+            foreach (var pair in states)
+                if (TryGetDefinition(pair.Key, out QuestDefinition definition))
+                    QuestPersistenceService.SaveState(sender, definition, pair.Value);
+        }
     }
 
     [Server]
@@ -200,6 +231,23 @@ public sealed class QuestLocalRuntime : MonoBehaviour
     public static void ServerForget(NetworkConnectionToClient sender)
     {
         if (sender != null) ServerStates.Remove(sender.connectionId);
+    }
+
+    [Server]
+    public static void ServerLoad(NetworkConnectionToClient sender) =>
+        QuestPersistenceService.LoadState(sender, ApplyLoadedServerState);
+
+    [Server]
+    static void ApplyLoadedServerState(NetworkConnectionToClient sender, List<LocalQuestProgress> loaded)
+    {
+        if (sender == null) return;
+        var states = GetServerStates(sender);
+        states.Clear();
+        if (loaded != null)
+            foreach (LocalQuestProgress state in loaded)
+                if (state != null && !string.IsNullOrWhiteSpace(state.questId))
+                    states[state.questId] = state;
+        SendState(sender);
     }
 
     static bool TryGetDefinition(string id, out QuestDefinition definition) =>
@@ -217,16 +265,29 @@ public sealed class QuestLocalRuntime : MonoBehaviour
 
     static LocalQuestProgress CreateProgress(QuestDefinition definition, LocalQuestStatus status)
     {
-        var state = new LocalQuestProgress { questId = definition.questId, status = status };
-        for (int i = 0; i < definition.objectives.Count; i++) state.objectiveProgress.Add(0);
+        var state = new LocalQuestProgress
+        {
+            questId = definition.questId,
+            definitionVersion = Mathf.Max(1, definition.definitionVersion),
+            status = status
+        };
+        for (int i = 0; i < definition.objectives.Count; i++)
+        {
+            state.objectiveIds.Add(definition.objectives[i]?.objectiveId ?? $"legacy_{i}");
+            state.objectiveProgress.Add(0);
+        }
         return state;
     }
 
     static bool PriorComplete(QuestDefinition definition, LocalQuestProgress state, int index)
     {
         for (int i = 0; i < index; i++)
-            if (state.objectiveProgress[i] < Mathf.Max(1, definition.objectives[i].requiredAmount))
+        {
+            int stateIndex = StateIndex(state, definition.objectives[i], i);
+            if (stateIndex < 0 ||
+                state.objectiveProgress[stateIndex] < Mathf.Max(1, definition.objectives[i].requiredAmount))
                 return false;
+        }
         return true;
     }
 
@@ -234,10 +295,26 @@ public sealed class QuestLocalRuntime : MonoBehaviour
     {
         if (state.status != LocalQuestStatus.Active) return false;
         for (int i = 0; i < definition.objectives.Count; i++)
-            if (state.objectiveProgress[i] < Mathf.Max(1, definition.objectives[i].requiredAmount))
+        {
+            int stateIndex = StateIndex(state, definition.objectives[i], i);
+            if (stateIndex < 0 ||
+                state.objectiveProgress[stateIndex] < Mathf.Max(1, definition.objectives[i].requiredAmount))
                 return false;
+        }
         state.status = LocalQuestStatus.ReadyToTurnIn;
         return true;
+    }
+
+    static int StateIndex(LocalQuestProgress state, QuestObjectiveDefinition objective, int legacyIndex)
+    {
+        if (state == null) return -1;
+        if (!string.IsNullOrWhiteSpace(objective?.objectiveId))
+        {
+            int found = state.objectiveIds.FindIndex(x =>
+                string.Equals(x, objective.objectiveId, StringComparison.OrdinalIgnoreCase));
+            if (found >= 0 && found < state.objectiveProgress.Count) return found;
+        }
+        return legacyIndex >= 0 && legacyIndex < state.objectiveProgress.Count ? legacyIndex : -1;
     }
 
     [Server]

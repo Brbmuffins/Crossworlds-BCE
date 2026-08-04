@@ -13,8 +13,10 @@ MonoBehaviour:
   m_Name: Kill Ogres
   m_EditorClassIdentifier: Assembly-CSharp::QuestDefinition
   questId: kill_ogres
+  definitionVersion: 1
   title: Kill Ogres
   description: 
+  minimumLevel: 1
   objectivesMustBeCompletedInOrder: 0
   offerText: I have a task for you.
   activeText: How goes the task?
@@ -22,7 +24,8 @@ MonoBehaviour:
   questGiverPrefab: {fileID: 0}
   turnInPrefab: {fileID: 0}
   objectives:
-  - type: 0
+  - objectiveId: 653cf8f7e0a448b5bb95ec5971686c4b
+    type: 0
     targetId: prefab_ogrebrute
     description: Kill 10 Ogre
     requiredAmount: 10

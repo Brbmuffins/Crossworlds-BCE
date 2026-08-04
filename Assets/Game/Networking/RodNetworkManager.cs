@@ -404,6 +404,7 @@ public class RodNetworkManager : NetworkManager
         EnsureHostClientReadyForAddPlayer(conn);
         NetworkServer.AddPlayerForConnection(conn, player);
         ZoneManager.Instance.RegisterInitialPlacement(conn, zone);
+        QuestLocalRuntime.ServerLoad(conn);
 
         Debug.Log($"[RodNM] Spawned {username} as class {classIndex} in zone {zone.name} at " +
                   $"{player.transform.position} (fromDB={auth?.fromDB}, hasSavedPos={hasSavedPos})");

@@ -13,8 +13,10 @@ MonoBehaviour:
   m_Name: Kill Gunda
   m_EditorClassIdentifier: Assembly-CSharp::QuestDefinition
   questId: kill_gunda
+  definitionVersion: 1
   title: Kill Gunda
   description: Kill 10 Gunda and return to me!
+  minimumLevel: 1
   objectivesMustBeCompletedInOrder: 0
   offerText: I have a task for you.
   activeText: How goes the task?
@@ -22,7 +24,8 @@ MonoBehaviour:
   questGiverPrefab: {fileID: 0}
   turnInPrefab: {fileID: 0}
   objectives:
-  - type: 0
+  - objectiveId: 190cb3ed4ba5471790e56047ab79f96d
+    type: 0
     targetId: gunda
     description: Kill 10 Gunda
     requiredAmount: 10

@@ -86,7 +86,7 @@ public sealed class QuestForgeWindow : EditorWindow
         var serialized = new SerializedObject(_quest);
         serialized.Update();
         _scroll = EditorGUILayout.BeginScrollView(_scroll);
-        foreach (string property in new[] { "questId", "title", "description",
+        foreach (string property in new[] { "questId", "definitionVersion", "title", "description", "minimumLevel",
                      "objectivesMustBeCompletedInOrder", "offerText", "activeText",
                      "completionText", "turnInPrefab" })
             DrawProperty(serialized, property);
@@ -99,12 +99,6 @@ public sealed class QuestForgeWindow : EditorWindow
         {
             serialized.ApplyModifiedProperties();
             AssociateSelectedFindObject();
-            serialized.Update();
-        }
-        if (GUILayout.Button("Use Selected Enemy as Kill Objective", GUILayout.Height(28)))
-        {
-            serialized.ApplyModifiedProperties();
-            AssociateSelectedKillEnemy();
             serialized.Update();
         }
         if (GUILayout.Button("Use Selected Enemy as Kill Objective", GUILayout.Height(28)))
@@ -258,6 +252,8 @@ public sealed class QuestForgeWindow : EditorWindow
         for (int i = countBeforeDraw; i < objectives.arraySize; i++)
         {
             SerializedProperty objective = objectives.GetArrayElementAtIndex(i);
+            objective.FindPropertyRelative("objectiveId").stringValue =
+                System.Guid.NewGuid().ToString("N");
             objective.FindPropertyRelative("type").enumValueIndex =
                 (int)QuestObjectiveType.KillEnemy;
             objective.FindPropertyRelative("targetId").stringValue = "";
@@ -273,6 +269,7 @@ public sealed class QuestForgeWindow : EditorWindow
         _questName = "New Quest";
         _quest.title = _questName;
         _quest.questId = Slug(_questName);
+        _quest.definitionVersion = 1;
     }
 
     bool SaveQuest()
@@ -290,7 +287,8 @@ public sealed class QuestForgeWindow : EditorWindow
         _quest.title = cleanName;
         _quest.questId = Slug(cleanName);
         NormalizeKillObjectiveIds();
-        NormalizeKillObjectiveIds();
+        EnsureStableObjectiveIds();
+        NormalizeItemReward();
 
         string desiredPath = $"{DefaultFolder}/{cleanName}.asset";
         string currentPath = AssetDatabase.GetAssetPath(_quest);
@@ -319,6 +317,20 @@ public sealed class QuestForgeWindow : EditorWindow
         Selection.activeObject = _quest;
         Debug.Log($"[Quest Forge] Saved '{cleanName}' to {desiredPath}.");
         return true;
+    }
+
+    void NormalizeItemReward()
+    {
+        if (string.IsNullOrWhiteSpace(_quest.itemRewardId))
+        {
+            // Keep the asset and persistence payload unambiguous: no selected reward
+            // is represented as a database NULL with a zero quantity.
+            _quest.itemRewardId = null;
+            _quest.itemRewardQuantity = 0;
+            return;
+        }
+
+        _quest.itemRewardId = _quest.itemRewardId.Trim();
     }
 
     void DeployQuest()
@@ -776,6 +788,17 @@ public sealed class QuestForgeWindow : EditorWindow
             issues.Add("Quest ID is empty. Enter a Quest Name and click Save Quest.");
         if (string.IsNullOrWhiteSpace(_quest.title))
             issues.Add("Quest title is empty. Enter a Quest Name and click Save Quest.");
+        if (_quest.definitionVersion < 1)
+            issues.Add("Definition Version must be at least 1.");
+        if (_quest.minimumLevel < 1)
+            issues.Add("Minimum Level must be at least 1.");
+        bool hasRewardItem = !string.IsNullOrWhiteSpace(_quest.itemRewardId);
+        if (!hasRewardItem && _quest.itemRewardQuantity > 0)
+            issues.Add("Item Reward Quantity is set, but Item Reward ID is empty. " +
+                       "Enter an existing database items.id value or set the quantity to 0.");
+        if (hasRewardItem && _quest.itemRewardQuantity < 1)
+            issues.Add($"Item Reward ID '{_quest.itemRewardId}' is set, but Item Reward Quantity is 0. " +
+                       "Set the quantity to at least 1 or clear the Item Reward ID.");
         if (_questGiverSource == null)
             issues.Add("Quest Giver is not assigned. Select a scene object or prefab in the Quest Giver field.");
         if (_quest.objectives == null || _quest.objectives.Count == 0)
@@ -783,6 +806,7 @@ public sealed class QuestForgeWindow : EditorWindow
 
         if (_quest.objectives != null)
         {
+            var objectiveIds = new HashSet<string>(System.StringComparer.OrdinalIgnoreCase);
             for (int i = 0; i < _quest.objectives.Count; i++)
             {
                 QuestObjectiveDefinition objective = _quest.objectives[i];
@@ -796,6 +820,10 @@ public sealed class QuestForgeWindow : EditorWindow
                 }
                 if (string.IsNullOrWhiteSpace(objective.targetId))
                     issues.Add($"{label} has no Target ID. Assign its target object or enter a matching ID.");
+                if (string.IsNullOrWhiteSpace(objective.objectiveId))
+                    issues.Add($"{label} has no Objective ID. Click Save Quest to assign one.");
+                else if (!objectiveIds.Add(objective.objectiveId))
+                    issues.Add($"{label} reuses Objective ID '{objective.objectiveId}'. Click Save Quest to repair it.");
                 if (objective.requiredAmount < 1)
                     issues.Add($"{label} requires an amount of at least 1.");
                 if (objective.type == QuestObjectiveType.EnterArea &&
@@ -847,6 +875,25 @@ public sealed class QuestForgeWindow : EditorWindow
             if (objective == null || objective.type != QuestObjectiveType.KillEnemy) continue;
             objective.targetId = NormalizeEnemyTargetId(objective.targetId);
         }
+    }
+
+    void EnsureStableObjectiveIds()
+    {
+        if (_quest?.objectives == null) return;
+        var used = new HashSet<string>(System.StringComparer.OrdinalIgnoreCase);
+        foreach (QuestObjectiveDefinition objective in _quest.objectives)
+        {
+            if (objective == null) continue;
+            string id = objective.objectiveId?.Trim();
+            if (string.IsNullOrWhiteSpace(id) || !used.Add(id))
+            {
+                do id = System.Guid.NewGuid().ToString("N");
+                while (!used.Add(id));
+                objective.objectiveId = id;
+            }
+        }
+        _quest.definitionVersion = Mathf.Max(1, _quest.definitionVersion);
+        _quest.minimumLevel = Mathf.Max(1, _quest.minimumLevel);
     }
 
     static string SanitizeFileName(string value)
