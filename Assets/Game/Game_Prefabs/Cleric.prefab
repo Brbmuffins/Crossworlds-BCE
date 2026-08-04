@@ -291,24 +291,24 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CharacterStats
   baseMaxHealthBonus: 0
   baseDamageBonusPct: 0
-  baseCriticalStrikeChance: 0
+  baseCriticalStrikeChance: 0.203
   baseCriticalStrikeDamageMultiplier: 1.5
   baseDamageReduction: 0
-  baseMaxMana: 100
+  baseMaxMana: 200
   baseHp5: 0
-  baseMp5: 5
+  baseMp5: 25
   baseMoveSpeedBonusPct: 0
   baseCooldownReduction: 0
   baseHealBonusPct: 0
   effectiveMaxHealthBonus: 0
   effectiveDamageMultiplier: 1
-  effectiveCriticalStrikeChance: 0
+  effectiveCriticalStrikeChance: 0.203
   effectiveCriticalStrikeDamageMultiplier: 1.5
   effectiveDamageReduction: 0
-  effectiveMaxMana: 100
-  currentMana: 100
+  effectiveMaxMana: 200
+  currentMana: 2
   effectiveHp5: 0
-  effectiveMp5: 5
+  effectiveMp5: 25
   effectiveMoveSpeedMultiplier: 1
   effectiveCooldownReduction: 0
   effectiveHealMultiplier: 1
@@ -401,6 +401,7 @@ MonoBehaviour:
     castingVFX: {fileID: 7003859763675930989, guid: 9860f4dd1ea3cb642bf80c02eb3be913, type: 3}
     healVFX: {fileID: 6633059331430029136, guid: cb1f3abdae72c0e46af78111865f3fa7, type: 3}
     hitVFX: {fileID: 7242445543629226806, guid: 8e065c77fcd69024b8c808cc3106a0bc, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 0}
@@ -419,6 +420,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -473,6 +475,7 @@ MonoBehaviour:
     castingVFX: {fileID: 5098401545737662111, guid: 6c0ecb00300466145bb35aeaee7c040f, type: 3}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 7242445543629226806, guid: 8e065c77fcd69024b8c808cc3106a0bc, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 0}
@@ -491,6 +494,80 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
+    pullRadius: 0
+    pullDuration: 0
+    crowdControlType: 0
+    pullDestination: 0
+    pullSpeed: 8
+    pullStopDistance: 1.25
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Chaining Stars
+    description: Deal chaining damage to proximal enemies.
+    variantOnly: 0
+    variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
+    shape: 2
+    category: 0
+    range: 15
+    coneAngle: 60
+    useFixedRange: 1
+    rectWidth: 1.5
+    indicatorSize: 5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 2
+    manaCost: 10
+    icon: {fileID: 21300000, guid: 11b244da10d941340a9f3c6838e55716, type: 3}
+    castTime: 1
+    marauderCastAnimation: {fileID: -203655887218126122, guid: 5985b35f69302314f83d86d6af70498a, type: 3}
+    moveCasterToTarget: 0
+    instantMovement: 0
+    movementTiming: 0
+    moveToSpeed: 14
+    fixedMovementDuration: 0.9
+    movementArcHeight: 0
+    resolveEffectsOnLanding: 0
+    animationLandingPoint: 0.8
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 15
+    damageDelay: 0
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 0}
+    castingVFX: {fileID: 2140210316703695753, guid: 3af1bfe825df9134a98b4ef259a9252f, type: 3}
+    healVFX: {fileID: 0}
+    hitVFX: {fileID: 8539519918497431904, guid: c06afbc428e89da46be53cfe448e8c29, type: 3}
+    chainVFX: {fileID: 4644953612870229060, guid: 3b79c7e1233fe74468b2ebcdf821e618, type: 3}
+    castVFXAtCaster: 0
+    hitVFXFollowsTarget: 1
+    castSFX: {fileID: 0}
+    hitSFX: {fileID: 0}
+    sfxVolume: 0.85
+    shieldAbsorb: 0
+    shieldDuration: 0
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    usePulseHealing: 0
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 8
+    chainDamageFalloff: 1
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -544,6 +621,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 6823302871133167919, guid: 3138a83bedbd6ad4481ba0b061da2eb6, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 2bd74c80f39d2499c9a10aa2b2e9416d, type: 3}
@@ -562,6 +640,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -615,6 +694,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 7606620699271223679, guid: 5aa2236667d208e41a28e0f79695320a, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 2235a73994ef949028f98e69dfa6b28d, type: 3}
@@ -633,6 +713,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -686,6 +767,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 2965222256817593503, guid: a164e676dbbd6e54587237e619372c98, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: b0075925862904e369c331cac802fa71, type: 3}
@@ -704,6 +786,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -757,6 +840,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 8378648546881499446, guid: 867c572a5be680d42a042d2349f10143, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 06f5cd224af534bc8865fcdcc2b69615, type: 3}
@@ -775,6 +859,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -828,6 +913,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 5631927496442371602, guid: 6c52ee79710704a4dab242c5ba8e0408, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 7b39327fb76c44e07874c25e9d634a18, type: 3}
@@ -846,6 +932,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -899,6 +986,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 4994997792314849709, guid: 3dd50886582244645be87adb42aa8528, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 56b58917fd03d4c24a7be84988846713, type: 3}
@@ -917,6 +1005,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -970,6 +1059,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 3f6e9ab0fbbbd45eea658a5f5c4ec03c, type: 3}
@@ -988,6 +1078,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -1041,6 +1132,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 3632712385227303547, guid: 324fc9687c94a5f4585d7728801af43d, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: e7636d8a626794ff4a21a8d8cab74731, type: 3}
@@ -1059,6 +1151,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -1112,6 +1205,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 2944396702758532163, guid: e190bf97c041e58448af6b043116cba0, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 66a15246b78944ae08ebf0bbd39e0bb7, type: 3}
@@ -1130,6 +1224,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -1183,6 +1278,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 5263261513851132598, guid: 870a10c1f420abb4598b34344a9e7823, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: e353f0ed5b80e47d2b3ecb5b43549ff9, type: 3}
@@ -1201,6 +1297,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -1254,6 +1351,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 689667626583958020, guid: 1336648bc1d8baf46a4515860950c9d4, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 118c4d43c091f4268b5ee7242ca49b97, type: 3}
@@ -1272,6 +1370,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -1325,6 +1424,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 4994997792314849709, guid: 3dd50886582244645be87adb42aa8528, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 1a0f5ddb1357c49aba3532a2009da161, type: 3}
@@ -1343,6 +1443,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -1396,6 +1497,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 5631927496442371602, guid: 6c52ee79710704a4dab242c5ba8e0408, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 069ec01f3874e4ac799e6fd50557c2c8, type: 3}
@@ -1414,6 +1516,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -1467,6 +1570,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 70e88b9a0e9bf4ee69a57795b775e764, type: 3}
@@ -1485,6 +1589,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -1538,6 +1643,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 1171201465392465800, guid: 4aa9f30a28a77224ba84b2a2c334c71b, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: a007fdb937a71474da95cfe3b57bf7a1, type: 3}
@@ -1556,6 +1662,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -1609,6 +1716,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: b64d7dd2e353c44c0b6868da568ea884, type: 3}
@@ -1627,6 +1735,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -1680,6 +1789,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 1427244075889090, guid: 5ada718ad8eefc341a11217c754bc91a, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: a398c08610abc49b3bbf7cb5e46c7281, type: 3}
@@ -1698,6 +1808,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -1751,6 +1862,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 8974203713140315807, guid: 709b0bd6b0b625249a98409dd7a87343, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: d13d842343eb14ba98808eaa2b82d7e3, type: 3}
@@ -1769,6 +1881,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -1822,6 +1935,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 1914988783019038, guid: bf79162d73e16994d8b477d54f0b0f21, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: a68d8422f064545fab56b21cb7e79cae, type: 3}
@@ -1840,6 +1954,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -1893,6 +2008,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 358637981425055526, guid: 8eb503696b886e04faff8fc0f480d473, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: a473ca48fa0604a5fbd2626a74455656, type: 3}
@@ -1911,6 +2027,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -1964,6 +2081,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: e43e2edf1e01440d8adba04517fc1650, type: 3}
@@ -1982,6 +2100,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -2035,6 +2154,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 3632712385227303547, guid: 324fc9687c94a5f4585d7728801af43d, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 3ce10bd9c90a94acd96077efee2875a0, type: 3}
@@ -2053,6 +2173,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -2106,6 +2227,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 2944396702758532163, guid: e190bf97c041e58448af6b043116cba0, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 861ea10781d724f3986d0b50dce2f873, type: 3}
@@ -2124,6 +2246,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -2177,6 +2300,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 5631927496442371602, guid: 6c52ee79710704a4dab242c5ba8e0408, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 2aecde109fcab4f8894eb034afe6febf, type: 3}
@@ -2195,6 +2319,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -2248,6 +2373,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 2965222256817593503, guid: a164e676dbbd6e54587237e619372c98, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: bbbda9d3cbbab4573947bd86ec854a66, type: 3}
@@ -2266,6 +2392,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -2319,6 +2446,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 7761031033666763820, guid: 1eb833340b41fb444b576c4dced8d4dc, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: b689335f3f3b34193b079642aa637bf5, type: 3}
@@ -2337,6 +2465,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -2390,6 +2519,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 2cda47037d0b44fffa4d42e8e4c1e1be, type: 3}
@@ -2408,6 +2538,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -2461,6 +2592,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 5631927496442371602, guid: 6c52ee79710704a4dab242c5ba8e0408, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: c6d6f3f872dda4b61a7791a009e5009f, type: 3}
@@ -2479,6 +2611,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -2532,6 +2665,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 5034656251238326012, guid: 9de2fa19f0390d44491264d9cab8cec5, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 288656c1bff204824bc1b23fe6c0ae0c, type: 3}
@@ -2550,6 +2684,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -2603,6 +2738,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: f42a75528b8f041759766240f0397c9e, type: 3}
@@ -2621,6 +2757,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -2674,6 +2811,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: f42a75528b8f041759766240f0397c9e, type: 3}
@@ -2692,6 +2830,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -2745,6 +2884,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: f42a75528b8f041759766240f0397c9e, type: 3}
@@ -2763,6 +2903,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -2816,6 +2957,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 66a15246b78944ae08ebf0bbd39e0bb7, type: 3}
@@ -2834,6 +2976,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -2887,6 +3030,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 2816f4af3700643c09bf9de7f2cef0b3, type: 3}
@@ -2905,6 +3049,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -2958,6 +3103,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: ebe66f3d80a7e495ab46d4ff580b829d, type: 3}
@@ -2976,6 +3122,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -3029,6 +3176,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: e533e2a0c86934276a85451608059792, type: 3}
@@ -3047,6 +3195,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -3100,6 +3249,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: df915f6f62cf74f7681cd064c322ae52, type: 3}
@@ -3118,6 +3268,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -3171,6 +3322,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: a0b95ca15e7db422b9f64302006a40b6, type: 3}
@@ -3189,6 +3341,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -3242,6 +3395,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 3ff570fc052eb40ae8945cb5550caf55, type: 3}
@@ -3260,6 +3414,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -3376,6 +3531,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 723a7a81ce27f4d8c82e5b5c8be70c13, type: 3}
@@ -3394,6 +3550,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -3510,6 +3667,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 23d5f13028ba44f7b91038b2f2143718, type: 3}
@@ -3528,6 +3686,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -3644,6 +3803,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 1f8f34f442bab4cc4b17a787035152a1, type: 3}
@@ -3662,6 +3822,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -3778,6 +3939,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: d7fbb727ffa4a4608bcbe6cf23a088c7, type: 3}
@@ -3796,6 +3958,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -3912,6 +4075,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 984f1458e61cd4f6c979dacae09f570e, type: 3}
@@ -3930,6 +4094,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -4046,6 +4211,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: f42a75528b8f041759766240f0397c9e, type: 3}
@@ -4064,6 +4230,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -4180,6 +4347,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: d0d8a5c796f1c40d5ad847ee0c661bd0, type: 3}
@@ -4198,6 +4366,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -4314,6 +4483,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 3e6f3cabe65f045898a8800d9c77fb98, type: 3}
@@ -4332,6 +4502,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -4448,6 +4619,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: a6c3cbe979d724a3f8c8edcde04869f0, type: 3}
@@ -4466,6 +4638,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -4582,6 +4755,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: e353f0ed5b80e47d2b3ecb5b43549ff9, type: 3}
@@ -4600,6 +4774,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -4716,6 +4891,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 666ac5bf3ffc54c0e98e26ee560c70ff, type: 3}
@@ -4734,6 +4910,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -4850,6 +5027,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 323d94ce8bfb247599408d7159ee1ab1, type: 3}
@@ -4868,6 +5046,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -4984,6 +5163,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: f06281b11aee1491b8b149a1b19cbc63, type: 3}
@@ -5002,6 +5182,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -5118,6 +5299,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 06f5cd224af534bc8865fcdcc2b69615, type: 3}
@@ -5136,6 +5318,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -5252,6 +5435,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 1b03b2ca5591c4cd6b082c64e6155956, type: 3}
@@ -5270,6 +5454,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -5323,6 +5508,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: ef20774ba4f7242c5a345e8d1ff3bf6d, type: 3}
@@ -5341,6 +5527,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -5394,6 +5581,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 4c9f019fda12848a9aadaf6d2764b231, type: 3}
@@ -5412,6 +5600,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -5465,6 +5654,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 7504de784cce4419ab341732e1beecb9, type: 3}
@@ -5483,6 +5673,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -5536,6 +5727,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 861ea10781d724f3986d0b50dce2f873, type: 3}
@@ -5554,6 +5746,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -5607,6 +5800,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 861ea10781d724f3986d0b50dce2f873, type: 3}
@@ -5625,6 +5819,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -5678,6 +5873,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 172ddfaaa7bf0497e9abe3c8f9a4e83c, type: 3}
@@ -5696,6 +5892,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -5749,6 +5946,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 0193ac24f4de7403b8cb9dc053d12713, type: 3}
@@ -5767,6 +5965,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -5820,6 +6019,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: e748fd16448464593a5c0d1a2515299e, type: 3}
@@ -5838,6 +6038,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -5891,6 +6092,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: fd413bdf351ee4c499f9aef4299617a8, type: 3}
@@ -5909,6 +6111,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -5962,6 +6165,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 6ad8fe7f5edb04b29a77bcc46db08bfe, type: 3}
@@ -5980,6 +6184,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -6033,6 +6238,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: c0dd5822532c94ff4aa22529f55eb3bd, type: 3}
@@ -6051,6 +6257,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -6104,6 +6311,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: cf77e9bb89e8c4893b29d87b75f5357b, type: 3}
@@ -6122,6 +6330,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -6175,6 +6384,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 3ce10bd9c90a94acd96077efee2875a0, type: 3}
@@ -6193,6 +6403,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -6246,6 +6457,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: a2ec6ee6720004512b80bc8d91b97d68, type: 3}
@@ -6264,6 +6476,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -6317,6 +6530,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 6806156be49ef48c98900882ee3b3c2d, type: 3}
@@ -6335,6 +6549,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -6388,6 +6603,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 12d0b24bda2a44e88a242ceb71b99f5c, type: 3}
@@ -6406,6 +6622,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -6459,6 +6676,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: edee64837502944a7b503f81261ac79f, type: 3}
@@ -6477,6 +6695,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -6530,6 +6749,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: f42a75528b8f041759766240f0397c9e, type: 3}
@@ -6548,6 +6768,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -6601,6 +6822,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 1a0f5ddb1357c49aba3532a2009da161, type: 3}
@@ -6619,6 +6841,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -6672,6 +6895,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: a6c3cbe979d724a3f8c8edcde04869f0, type: 3}
@@ -6690,6 +6914,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -6743,6 +6968,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: bbbda9d3cbbab4573947bd86ec854a66, type: 3}
@@ -6761,6 +6987,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -6814,6 +7041,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: d0d8a5c796f1c40d5ad847ee0c661bd0, type: 3}
@@ -6832,6 +7060,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -6885,6 +7114,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: bbbda9d3cbbab4573947bd86ec854a66, type: 3}
@@ -6903,6 +7133,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -6956,6 +7187,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: cefa9ddc513824b9bbd44c812975464c, type: 3}
@@ -6974,6 +7206,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -7027,6 +7260,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: a6c3cbe979d724a3f8c8edcde04869f0, type: 3}
@@ -7045,6 +7279,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -7098,6 +7333,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 4ed7a8b94082c4e76b95cb2d1c08d901, type: 3}
@@ -7116,6 +7352,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -7169,6 +7406,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: a68d8422f064545fab56b21cb7e79cae, type: 3}
@@ -7187,6 +7425,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -7240,6 +7479,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: f1f4b3c1c128044518d01cb70dd84c7e, type: 3}
@@ -7258,6 +7498,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -7311,6 +7552,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: d0d8a5c796f1c40d5ad847ee0c661bd0, type: 3}
@@ -7329,6 +7571,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -7382,6 +7625,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 3ef637a3b96c14eb4895a4bb524e0651, type: 3}
@@ -7400,6 +7644,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -7453,6 +7698,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: f42a75528b8f041759766240f0397c9e, type: 3}
@@ -7471,6 +7717,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -7524,6 +7771,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 1d6618310a6df4cb6b8cae7a0cb06952, type: 3}
@@ -7542,6 +7790,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -7595,6 +7844,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 118c4d43c091f4268b5ee7242ca49b97, type: 3}
@@ -7613,6 +7863,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -7666,6 +7917,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 06f5cd224af534bc8865fcdcc2b69615, type: 3}
@@ -7684,6 +7936,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -7737,6 +7990,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: d0d8a5c796f1c40d5ad847ee0c661bd0, type: 3}
@@ -7755,6 +8009,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -7808,6 +8063,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: c0dd5822532c94ff4aa22529f55eb3bd, type: 3}
@@ -7826,6 +8082,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -7879,6 +8136,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 27773472b692d4511992a6cf08f2664c, type: 3}
@@ -7897,6 +8155,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -7950,6 +8209,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 3ce10bd9c90a94acd96077efee2875a0, type: 3}
@@ -7968,6 +8228,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -8021,6 +8282,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 72e04b369cb94498f8168a376f408373, type: 3}
@@ -8039,6 +8301,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -8092,6 +8355,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: fd413bdf351ee4c499f9aef4299617a8, type: 3}
@@ -8110,6 +8374,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -8163,6 +8428,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: fd413bdf351ee4c499f9aef4299617a8, type: 3}
@@ -8181,6 +8447,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -8234,6 +8501,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: a6c3cbe979d724a3f8c8edcde04869f0, type: 3}
@@ -8252,6 +8520,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -8305,6 +8574,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: b64d7dd2e353c44c0b6868da568ea884, type: 3}
@@ -8323,6 +8593,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -8376,6 +8647,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: f42a75528b8f041759766240f0397c9e, type: 3}
@@ -8394,6 +8666,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -8447,6 +8720,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 3ff570fc052eb40ae8945cb5550caf55, type: 3}
@@ -8465,6 +8739,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -8518,6 +8793,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 3ff570fc052eb40ae8945cb5550caf55, type: 3}
@@ -8536,6 +8812,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -8589,6 +8866,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 3ff570fc052eb40ae8945cb5550caf55, type: 3}
@@ -8607,6 +8885,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -8660,6 +8939,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 723a7a81ce27f4d8c82e5b5c8be70c13, type: 3}
@@ -8678,6 +8958,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -8731,6 +9012,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 723a7a81ce27f4d8c82e5b5c8be70c13, type: 3}
@@ -8749,6 +9031,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -8802,6 +9085,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 723a7a81ce27f4d8c82e5b5c8be70c13, type: 3}
@@ -8820,6 +9104,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -8873,6 +9158,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 23d5f13028ba44f7b91038b2f2143718, type: 3}
@@ -8891,6 +9177,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -8944,6 +9231,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 23d5f13028ba44f7b91038b2f2143718, type: 3}
@@ -8962,6 +9250,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -9015,6 +9304,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 23d5f13028ba44f7b91038b2f2143718, type: 3}
@@ -9033,6 +9323,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -9086,6 +9377,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 1f8f34f442bab4cc4b17a787035152a1, type: 3}
@@ -9104,6 +9396,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -9157,6 +9450,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 1f8f34f442bab4cc4b17a787035152a1, type: 3}
@@ -9175,6 +9469,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -9228,6 +9523,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 1f8f34f442bab4cc4b17a787035152a1, type: 3}
@@ -9246,6 +9542,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -9299,6 +9596,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: d7fbb727ffa4a4608bcbe6cf23a088c7, type: 3}
@@ -9317,6 +9615,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -9370,6 +9669,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: d7fbb727ffa4a4608bcbe6cf23a088c7, type: 3}
@@ -9388,6 +9688,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -9441,6 +9742,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: d7fbb727ffa4a4608bcbe6cf23a088c7, type: 3}
@@ -9459,6 +9761,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -9512,6 +9815,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 984f1458e61cd4f6c979dacae09f570e, type: 3}
@@ -9530,6 +9834,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -9583,6 +9888,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 984f1458e61cd4f6c979dacae09f570e, type: 3}
@@ -9601,6 +9907,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -9654,6 +9961,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 984f1458e61cd4f6c979dacae09f570e, type: 3}
@@ -9672,6 +9980,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -9725,6 +10034,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: f42a75528b8f041759766240f0397c9e, type: 3}
@@ -9743,6 +10053,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -9796,6 +10107,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: f42a75528b8f041759766240f0397c9e, type: 3}
@@ -9814,6 +10126,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -9867,6 +10180,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: f42a75528b8f041759766240f0397c9e, type: 3}
@@ -9885,6 +10199,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -9938,6 +10253,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: d0d8a5c796f1c40d5ad847ee0c661bd0, type: 3}
@@ -9956,6 +10272,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -10009,6 +10326,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: d0d8a5c796f1c40d5ad847ee0c661bd0, type: 3}
@@ -10027,6 +10345,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -10080,6 +10399,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: d0d8a5c796f1c40d5ad847ee0c661bd0, type: 3}
@@ -10098,6 +10418,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -10151,6 +10472,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 3e6f3cabe65f045898a8800d9c77fb98, type: 3}
@@ -10169,6 +10491,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -10222,6 +10545,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 3e6f3cabe65f045898a8800d9c77fb98, type: 3}
@@ -10240,6 +10564,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -10293,6 +10618,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 3e6f3cabe65f045898a8800d9c77fb98, type: 3}
@@ -10311,6 +10637,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -10364,6 +10691,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: a6c3cbe979d724a3f8c8edcde04869f0, type: 3}
@@ -10382,6 +10710,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -10435,6 +10764,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: a6c3cbe979d724a3f8c8edcde04869f0, type: 3}
@@ -10453,6 +10783,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -10506,6 +10837,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: a6c3cbe979d724a3f8c8edcde04869f0, type: 3}
@@ -10524,6 +10856,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -10577,6 +10910,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: e353f0ed5b80e47d2b3ecb5b43549ff9, type: 3}
@@ -10595,6 +10929,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -10648,6 +10983,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: e353f0ed5b80e47d2b3ecb5b43549ff9, type: 3}
@@ -10666,6 +11002,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -10719,6 +11056,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: e353f0ed5b80e47d2b3ecb5b43549ff9, type: 3}
@@ -10737,6 +11075,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -10790,6 +11129,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 666ac5bf3ffc54c0e98e26ee560c70ff, type: 3}
@@ -10808,6 +11148,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -10861,6 +11202,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 666ac5bf3ffc54c0e98e26ee560c70ff, type: 3}
@@ -10879,6 +11221,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -10932,6 +11275,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 666ac5bf3ffc54c0e98e26ee560c70ff, type: 3}
@@ -10950,6 +11294,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -11003,6 +11348,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 323d94ce8bfb247599408d7159ee1ab1, type: 3}
@@ -11021,6 +11367,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -11074,6 +11421,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 323d94ce8bfb247599408d7159ee1ab1, type: 3}
@@ -11092,6 +11440,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -11145,6 +11494,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 323d94ce8bfb247599408d7159ee1ab1, type: 3}
@@ -11163,6 +11513,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -11216,6 +11567,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: f06281b11aee1491b8b149a1b19cbc63, type: 3}
@@ -11234,6 +11586,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -11287,6 +11640,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: f06281b11aee1491b8b149a1b19cbc63, type: 3}
@@ -11305,6 +11659,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -11358,6 +11713,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: f06281b11aee1491b8b149a1b19cbc63, type: 3}
@@ -11376,6 +11732,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -11429,6 +11786,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 06f5cd224af534bc8865fcdcc2b69615, type: 3}
@@ -11447,6 +11805,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -11500,6 +11859,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 06f5cd224af534bc8865fcdcc2b69615, type: 3}
@@ -11518,6 +11878,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -11571,6 +11932,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 8300000, guid: 06f5cd224af534bc8865fcdcc2b69615, type: 3}
@@ -11589,6 +11951,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -11642,6 +12005,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 1828176872806910, guid: 64891a0eb28db934898420d80ca07cb3, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 0}
@@ -11660,6 +12024,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -11713,6 +12078,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 1947871717301538, guid: a990e3ac1318b834488c784d851f42a9, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 0}
@@ -11731,6 +12097,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -11784,6 +12151,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 1121192042590650, guid: e1b08032bec16ba4eb1ae23cbd572664, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 0}
@@ -11802,6 +12170,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -11855,6 +12224,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 3266835628973167763, guid: 99c92a1b2b2906945bf3b9abc6590151, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 0}
@@ -11873,6 +12243,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -11926,6 +12297,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 1277326047212212, guid: 34cd452c8ebeb7e42830ade065f09ee6, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 0}
@@ -11944,6 +12316,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -11997,6 +12370,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 4749980201479958301, guid: a4cbca814b838a5458720cd2f8d6a501, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 0}
@@ -12015,6 +12389,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -12068,6 +12443,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 1538599107982412, guid: 37ab7e60d7b792c4ead4feb01381c6cc, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 0}
@@ -12086,6 +12462,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -12139,6 +12516,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 1820680284854294, guid: 1a1c02facd51d87458dcaa3a761e2c03, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 0}
@@ -12157,6 +12535,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -12210,6 +12589,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 7843366240102593674, guid: bfed7a9fe64f03f4ab32c9a946a4f647, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 0}
@@ -12228,6 +12608,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -12281,6 +12662,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 1341869769842038, guid: 8b7a1ffda5bb7474b8fae646c45ce7b4, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 0}
@@ -12299,6 +12681,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -12352,6 +12735,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 1240250018707908, guid: 5656e7ea1f1a75d4c895547ec2b824b3, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 0}
@@ -12370,6 +12754,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -12423,6 +12808,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 1000012909287652, guid: abb9f519b142e304d9c45b56afa768bc, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 0}
@@ -12441,6 +12827,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -12494,6 +12881,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 1341869769842038, guid: 8b7a1ffda5bb7474b8fae646c45ce7b4, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 0}
@@ -12512,6 +12900,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -12565,6 +12954,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 1344314377593938, guid: 9e03786a9517b604d8e930182607a128, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 0}
@@ -12583,6 +12973,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -12636,6 +13027,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 1314945738539566, guid: 32c9fd11a72259d45aa26ae41c34c5aa, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 0}
@@ -12654,6 +13046,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -12707,6 +13100,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 1051704587376508, guid: fffb77091d2311b4bb70c69cbd77ef57, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 0}
@@ -12725,6 +13119,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -12778,6 +13173,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 1000010675638318, guid: a3768c8a9d1b90d4bb0eb0e4bdbe730c, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 0}
@@ -12796,6 +13192,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -12849,6 +13246,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 1240250018707908, guid: 5656e7ea1f1a75d4c895547ec2b824b3, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 0}
@@ -12867,6 +13265,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -12920,6 +13319,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 1892351807075712, guid: 44be68b4fc4366142a9cd1ae1f761ea4, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 0}
@@ -12938,6 +13338,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -12991,6 +13392,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 1341869769842038, guid: 8b7a1ffda5bb7474b8fae646c45ce7b4, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 0}
@@ -13009,6 +13411,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -13062,6 +13465,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 1314945738539566, guid: 32c9fd11a72259d45aa26ae41c34c5aa, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 0}
@@ -13080,6 +13484,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -13133,6 +13538,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 8550103265853490525, guid: 10f20a501ddb3db4db094749bb054e68, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 0}
@@ -13151,6 +13557,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -13204,6 +13611,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 6226639424814228509, guid: aa77297fca95b7346a94d76cf84fe635, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 0}
@@ -13222,6 +13630,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -13275,6 +13684,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 1892351807075712, guid: 44be68b4fc4366142a9cd1ae1f761ea4, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 0}
@@ -13293,6 +13703,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -13346,6 +13757,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 1892351807075712, guid: 44be68b4fc4366142a9cd1ae1f761ea4, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 0}
@@ -13364,6 +13776,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -13417,6 +13830,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 1341869769842038, guid: 8b7a1ffda5bb7474b8fae646c45ce7b4, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 0}
@@ -13435,6 +13849,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -13488,6 +13903,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 5263261513851132598, guid: 870a10c1f420abb4598b34344a9e7823, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 0}
@@ -13506,6 +13922,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -13559,6 +13976,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 1892351807075712, guid: 44be68b4fc4366142a9cd1ae1f761ea4, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 0}
@@ -13577,6 +13995,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -13630,6 +14049,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 1000011945391522, guid: 78b71003e8b357d4bbf89c8b5e5e4f0e, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 0}
@@ -13648,6 +14068,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -13701,6 +14122,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 1051704587376508, guid: fffb77091d2311b4bb70c69cbd77ef57, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 0}
@@ -13719,6 +14141,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -13772,6 +14195,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 1547757601392324, guid: 6f672a31584a6a748912a49c1dce2f0c, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 0}
@@ -13790,6 +14214,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -13843,6 +14268,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 1547757601392324, guid: 6f672a31584a6a748912a49c1dce2f0c, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 0}
@@ -13861,6 +14287,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -13914,6 +14341,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 1547757601392324, guid: 6f672a31584a6a748912a49c1dce2f0c, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 0}
@@ -13932,6 +14360,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -13985,6 +14414,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 1901902437216624, guid: 3bdca15d736d48f409ccf70e68bf79de, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 0}
@@ -14003,6 +14433,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -14056,6 +14487,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 1235240895896398, guid: 3fdbf782d6900074fb425dbc4c92ba9c, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 0}
@@ -14074,6 +14506,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -14127,6 +14560,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 1235240895896398, guid: 3fdbf782d6900074fb425dbc4c92ba9c, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 0}
@@ -14145,6 +14579,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -14198,6 +14633,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 8550103265853490525, guid: 10f20a501ddb3db4db094749bb054e68, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 0}
@@ -14216,6 +14652,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -14269,6 +14706,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 1775406099119076, guid: 379785de5e39005469c875710d3cc5a7, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 0}
@@ -14287,6 +14725,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -14340,6 +14779,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 6226639424814228509, guid: aa77297fca95b7346a94d76cf84fe635, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 0}
@@ -14358,6 +14798,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -14411,6 +14852,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 1361995951083618, guid: acd1463ce2d63c34daa4daaaaab28fe4, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 0}
@@ -14429,6 +14871,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -14482,6 +14925,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 6226639424814228509, guid: aa77297fca95b7346a94d76cf84fe635, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 0}
@@ -14500,6 +14944,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -14553,6 +14998,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 2309628055276507911, guid: 5dc06ed64db520147912484d5ba21615, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 0}
@@ -14571,6 +15017,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -14624,6 +15071,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 8550103265853490525, guid: 10f20a501ddb3db4db094749bb054e68, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 0}
@@ -14642,6 +15090,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -14695,6 +15144,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 1901245927194888, guid: bb98861c48ad2024ca93498c7dd93a6c, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 0}
@@ -14713,6 +15163,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -14766,6 +15217,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 1121192042590650, guid: e1b08032bec16ba4eb1ae23cbd572664, type: 3}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 0}
@@ -14784,6 +15236,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -14839,6 +15292,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 0}
@@ -14857,6 +15311,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -14910,6 +15365,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 0}
@@ -14928,6 +15384,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -14981,6 +15438,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 0}
@@ -14999,6 +15457,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0
@@ -15052,6 +15511,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 0}
@@ -15070,6 +15530,7 @@ MonoBehaviour:
     activeDuration: 0
     chainTargets: 0
     chainDamageFalloff: 5
+    chainRadius: 6
     pullRadius: 0
     pullDuration: 0
     crowdControlType: 0

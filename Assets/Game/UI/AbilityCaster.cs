@@ -164,6 +164,8 @@ public class AbilityDef
     [Tooltip("VFX played on each ally when this spell restores health. Heal-over-time spells play it on each successful tick.")]
     public GameObject healVFX;
     public GameObject hitVFX;
+    [Tooltip("Optional connector VFX spawned between each pair of chain targets. Prefabs with children named 'Cast Position' and 'Hit Position' have those endpoints placed on the two targets.")]
+    public GameObject chainVFX;
     [Tooltip("Spawn the cast VFX at the caster instead of the spell's destination or the far edge of its cone.")]
     public bool castVFXAtCaster = false;
     [Tooltip("Attach the hit VFX to each affected target so the effect follows their movement.")]
@@ -201,8 +203,15 @@ public class AbilityDef
     public float activeDuration = 0f;      // Phase Cloak, Siege Mode, Iron Tether, Transfer Protocol
 
     [Header("Chain Lightning")]
-    public int   chainTargets       = 0;   // Arc Lance: 4
-    public float chainDamageFalloff = 5f;  // damage lost per jump
+    [Min(0)]
+    [Tooltip("Maximum total enemies struck by the chain, including the initial target. Set to 0 to disable chaining.")]
+    public int chainTargets = 0;
+    [Min(0f)]
+    [Tooltip("Flat damage removed after each jump.")]
+    public float chainDamageFalloff = 5f;
+    [Min(0.1f)]
+    [Tooltip("Maximum distance from the previous enemy to the next chain target.")]
+    public float chainRadius = 6f;
 
     [Header("Pull / Zone")]
     public float pullRadius   = 0f;        // Magnetize, Singularity, Event Horizon
@@ -3654,15 +3663,19 @@ public class AbilityCaster : NetworkBehaviour
         }
 
         bool isVariantSpell = ability.variants != null && ability.variants.Length > 0;
+        bool usesChainDamage = UsesChainDamage(ability);
 
-        if (!isVariantSpell && ability.shape == AbilityShape.Rectangle && ability.damage > 0f && indicator != null)
+        if (!isVariantSpell && usesChainDamage)
+            CastChainDamage(ability, indicator, castOrigin, damageMultiplier, aimTime);
+
+        if (!isVariantSpell && !usesChainDamage && ability.shape == AbilityShape.Rectangle && ability.damage > 0f && indicator != null)
         {
             float chargeFraction = GetChargeFraction(ability, aimTime);
             float damage = Mathf.Lerp(ability.damage, ability.maxChargeDamage, chargeFraction) * damageMultiplier;
             ApplyRectangleDamage(ability, indicator, damage);
         }
 
-        if (!isVariantSpell && ability.shape == AbilityShape.Cone && ability.damage > 0f && indicator != null)
+        if (!isVariantSpell && !usesChainDamage && ability.shape == AbilityShape.Cone && ability.damage > 0f && indicator != null)
         {
             float chargeFraction = GetChargeFraction(ability, aimTime);
             float damage = Mathf.Lerp(ability.damage, ability.maxChargeDamage, chargeFraction) * damageMultiplier;
@@ -3678,7 +3691,7 @@ public class AbilityCaster : NetworkBehaviour
 #endif
         }
 
-        if (ability.shape == AbilityShape.Circle && ability.damage > 0f && !IsArcaneStep(ability) && !IsVoidMaw(ability))
+        if (!usesChainDamage && ability.shape == AbilityShape.Circle && ability.damage > 0f && !IsArcaneStep(ability) && !IsVoidMaw(ability))
         {
             ApplyCircleDamage(ability, indicator, damageMultiplier);
         }
@@ -4153,10 +4166,6 @@ public class AbilityCaster : NetworkBehaviour
 
             case "Void Maw":
                 CastSingularity(ability, castPoint, false, dmgMult);
-                break;
-
-            case "Forked Lightning":
-                CastArcLance(ability, castPoint, dmgMult);
                 break;
 
             case "Collapsing Void":
@@ -4690,77 +4699,180 @@ public class AbilityCaster : NetworkBehaviour
         });
     }
 
-    void CastArcLance(AbilityDef ability, Vector3 startPoint, float dmgMult)
+    static bool UsesChainDamage(AbilityDef ability)
     {
-        int   maxChain   = ability.chainTargets > 0 ? ability.chainTargets : 4;
-        float dmg        = ability.damage * dmgMult;
-        float falloff    = ability.chainDamageFalloff;
-        float jumpRadius = 6f;
-        string tag       = ability.targetTag;
+        if (ability == null || ability.damage <= 0f)
+            return false;
 
-        Transform last = null;
-        Collider   nearest = FindNearestInRadius(startPoint, jumpRadius, tag, null);
+        // Forked Lightning predates the serialized chain fields. Keep its old
+        // four-target behaviour while making new spells fully data-driven.
+        return ability.chainTargets > 0 || ability.abilityName == "Forked Lightning";
+    }
 
-        for (int i = 0; i < maxChain && nearest != null; i++)
+    void CastChainDamage(
+        AbilityDef ability,
+        GameObject indicator,
+        Vector3 castOrigin,
+        float damageMultiplier,
+        float aimTime)
+    {
+        if (ability == null || indicator == null)
+            return;
+
+        var initialHits = new System.Collections.Generic.List<Collider>();
+        CollectHitsForAbilityShape(
+            ability,
+            indicator,
+            castOrigin,
+            ability.targetTag,
+            initialHits);
+
+        Vector3 aimedPoint = GetCastPointForAbility(ability, indicator, castOrigin);
+        Health current = FindClosestHealth(initialHits, aimedPoint);
+        if (current == null)
+            return;
+
+        int maxTargets = ability.chainTargets > 0 ? ability.chainTargets : 4;
+        float chargeFraction = GetChargeFraction(ability, aimTime);
+        float damage = (ability.chargeable
+            ? Mathf.Lerp(ability.damage, ability.maxChargeDamage, chargeFraction)
+            : ability.damage) * damageMultiplier;
+        float falloff = Mathf.Max(0f, ability.chainDamageFalloff);
+        float jumpRadius = ability.chainRadius > 0f ? ability.chainRadius : 6f;
+        var visited = new System.Collections.Generic.HashSet<Health>();
+        Vector3 previousPoint = castOrigin;
+
+        for (int i = 0; i < maxTargets && current != null; i++)
         {
-            Health h = nearest.GetComponentInParent<Health>();
-            if (h != null)
-                DealAbilityDamage(h, Mathf.Max(1f, dmg));
+            visited.Add(current);
 
-            Vector3 nearestPos = h != null ? h.transform.position : nearest.transform.position;
-            EmitHitVFX(ability.hitVFX, nearestPos + Vector3.up * 0.5f);
+            Vector3 currentPoint = current.transform.position;
+            ResolveDirectAbilityHit(ability, current, Mathf.Max(1f, damage));
+            EmitChainVFX(
+                ability,
+                previousPoint + Vector3.up * 0.8f,
+                currentPoint + Vector3.up * 0.8f);
 
-            // Draw lightning between jumps (quick LineRenderer)
-            Vector3 from = last != null ? last.position + Vector3.up * 0.8f
-                                        : startPoint    + Vector3.up * 0.8f;
-            DrawLightningLine(from, nearestPos + Vector3.up * 0.8f, 0.15f);
-
-            last  = h != null ? h.transform : nearest.transform;
-            dmg   = Mathf.Max(1f, dmg - falloff);
-            nearest = FindNearestInRadius(last.position, jumpRadius, tag, last);
+            previousPoint = currentPoint;
+            damage = Mathf.Max(1f, damage - falloff);
+            current = FindNearestUnvisitedHealth(
+                currentPoint,
+                jumpRadius,
+                ability.targetTag,
+                visited);
         }
     }
 
-    Collider FindNearestInRadius(Vector3 center, float radius, string tag, Transform exclude)
+    static Health FindClosestHealth(
+        System.Collections.Generic.List<Collider> hits,
+        Vector3 point)
+    {
+        Health closest = null;
+        float bestDistance = Mathf.Infinity;
+        var considered = new System.Collections.Generic.HashSet<Health>();
+
+        foreach (Collider hit in hits)
+        {
+            Health health = hit != null ? hit.GetComponentInParent<Health>() : null;
+            if (health == null || !health.IsAlive || !considered.Add(health))
+                continue;
+
+            float distance = (health.transform.position - point).sqrMagnitude;
+            if (distance < bestDistance)
+            {
+                bestDistance = distance;
+                closest = health;
+            }
+        }
+
+        return closest;
+    }
+
+    Health FindNearestUnvisitedHealth(
+        Vector3 center,
+        float radius,
+        string tag,
+        System.Collections.Generic.HashSet<Health> visited)
     {
         Collider[] hits = ZonePhysics.OverlapSphere(gameObject, center, radius);
         float best = Mathf.Infinity;
-        Collider found = null;
+        Health found = null;
         foreach (var col in hits)
         {
             if (!TryGetMatchingHealth(col, tag, out Health health)) continue;
-            if (exclude != null && health.transform == exclude) continue;
-            float d = Vector3.Distance(center, health.transform.position);
-            if (d < best) { best = d; found = col; }
+            if (visited != null && visited.Contains(health)) continue;
+
+            float d = (health.transform.position - center).sqrMagnitude;
+            if (d < best)
+            {
+                best = d;
+                found = health;
+            }
         }
         return found;
     }
 
-    void DrawLightningLine(Vector3 from, Vector3 to, float duration)
+    void EmitChainVFX(AbilityDef ability, Vector3 from, Vector3 to)
     {
-        GameObject go   = new GameObject("ArcLance");
-        LineRenderer lr = go.AddComponent<LineRenderer>();
-        lr.positionCount = 8;
-        lr.startWidth    = 0.05f;
-        lr.endWidth      = 0.01f;
-        lr.material      = new Material(Shader.Find("Sprites/Default"));
-        lr.startColor    = new Color(0.8f, 0.4f, 1f, 0.9f);
-        lr.endColor      = new Color(0.5f, 0.2f, 1f, 0.3f);
+        if (ability?.chainVFX == null)
+            return;
 
-        for (int i = 0; i < 8; i++)
+        if (NetworkServer.active)
         {
-            float t   = i / 7f;
-            Vector3 p = Vector3.Lerp(from, to, t);
-            if (i > 0 && i < 7)
-            {
-                Vector3 perp = Vector3.Cross((to - from).normalized, Vector3.up);
-                p += perp * (Random.Range(-0.3f, 0.3f));
-                p += Vector3.up * Random.Range(-0.15f, 0.15f);
-            }
-            lr.SetPosition(i, p);
+            int spellbookIndex = FindSpellbookIndex(ability);
+            if (spellbookIndex >= 0)
+                RpcPlayChainVFX(spellbookIndex, from, to);
+        }
+        else if (!NetworkClient.active)
+            SpawnChainVFX(ability.chainVFX, from, to);
+    }
+
+    [ClientRpc]
+    void RpcPlayChainVFX(int spellbookIndex, Vector3 from, Vector3 to)
+    {
+        if (spellbook == null ||
+            spellbookIndex < 0 ||
+            spellbookIndex >= spellbook.Length)
+            return;
+
+        SpawnChainVFX(spellbook[spellbookIndex]?.chainVFX, from, to);
+    }
+
+    void SpawnChainVFX(GameObject prefab, Vector3 from, Vector3 to)
+    {
+        if (prefab == null)
+            return;
+
+        GameObject fx = Instantiate(prefab, Vector3.zero, Quaternion.identity);
+        Transform castEndpoint = FindNamedDescendant(fx.transform, "Cast Position");
+        Transform hitEndpoint = FindNamedDescendant(fx.transform, "Hit Position");
+
+        if (castEndpoint != null && hitEndpoint != null)
+        {
+            castEndpoint.position = from;
+            hitEndpoint.position = to;
+        }
+        else
+        {
+            Vector3 direction = to - from;
+            fx.transform.position = from;
+            if (direction.sqrMagnitude > 0.0001f)
+                fx.transform.rotation = Quaternion.LookRotation(direction.normalized, Vector3.up);
         }
 
-        Destroy(go, duration);
+        Destroy(fx, 4f);
+    }
+
+    static Transform FindNamedDescendant(Transform root, string childName)
+    {
+        if (root == null || string.IsNullOrEmpty(childName))
+            return null;
+
+        foreach (Transform candidate in root.GetComponentsInChildren<Transform>(true))
+            if (candidate != null && candidate.name == childName)
+                return candidate;
+
+        return null;
     }
 
     void CastTransferProtocol(Vector3 castPoint)
@@ -7271,8 +7383,9 @@ public class AbilityCaster : NetworkBehaviour
 
         GameObject hitVfxPrefab = effectAbility.hitVFX != null ? effectAbility.hitVFX : selectorAbility.hitVFX;
         GameObject healVfxPrefab = effectAbility.healVFX != null ? effectAbility.healVFX : selectorAbility.healVFX;
+        bool usesChainDamage = UsesChainDamage(effectAbility);
 
-        if (indicator != null && HasDirectPayload(effectAbility))
+        if (indicator != null && HasDirectPayload(effectAbility) && !usesChainDamage)
         {
             var hits = new System.Collections.Generic.List<Collider>();
             CollectHitsForAbilityShape(effectAbility, indicator, castOrigin, effectAbility.targetTag, hits);
@@ -7285,6 +7398,9 @@ public class AbilityCaster : NetworkBehaviour
                     damageMultiplier,
                     aimTime);
         }
+
+        if (usesChainDamage)
+            CastChainDamage(effectAbility, indicator, castOrigin, damageMultiplier, aimTime);
 
         Vector3 castPoint = GetCastPointForAbility(effectAbility, indicator, castOrigin);
         Quaternion castRotation = indicator != null ? indicator.transform.rotation : transform.rotation;
