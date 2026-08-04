@@ -461,6 +461,7 @@ public class InventoryBagUI : MonoBehaviour
             _currentItemId    = null;
             _bg.color         = EmptyColor;
             _icon.color       = new Color(1f, 1f, 1f, 0f);
+            _icon.sprite      = null;
             _qty.text         = "";
             _equipBadge.gameObject.SetActive(false);
 #if UNITY_EDITOR || !UNITY_SERVER
@@ -472,8 +473,10 @@ public class InventoryBagUI : MonoBehaviour
         {
             _currentItemId = itemId;
             _bg.color = equipped ? EquippedColor : FilledColor;
-            // Icon: colour-code by rarity prefix until we have a sprite atlas
-            _icon.color = RarityColor(itemId);
+            LootItemDefinition definition = LootItemCatalog.Find(itemId);
+            _icon.sprite = definition != null ? definition.inventoryIcon : null;
+            _icon.preserveAspect = true;
+            _icon.color = _icon.sprite != null ? Color.white : RarityColor(itemId);
             _qty.text   = qty > 1 ? qty.ToString() : "";
             _equipBadge.gameObject.SetActive(equipped);
         }

@@ -66,14 +66,19 @@ public class ItemTooltipUI : MonoBehaviour
 
         var catalog = ItemCatalogManager.Instance;
         var def     = catalog?.GetTemplate(itemId);
+        LootItemDefinition lootDefinition = LootItemCatalog.Find(itemId);
 
-        string displayName = def?.name ?? FormatId(itemId);
-        string typeLine    = def?.item_type != null
+        string displayName = !string.IsNullOrWhiteSpace(lootDefinition?.displayName)
+            ? lootDefinition.displayName : def?.name ?? FormatId(itemId);
+        string typeLine = lootDefinition != null
+            ? FormatId(lootDefinition.databaseItemType.ToString())
+            : def?.item_type != null
             ? System.Globalization.CultureInfo.CurrentCulture.TextInfo
                    .ToTitleCase(def.item_type.Replace('_', ' '))
             : "";
-        string valueLine   = def != null && def.sell_value > 0
-            ? $"Sell: {def.sell_value}g"
+        int sellValue = lootDefinition != null ? lootDefinition.sellValue : def?.sell_value ?? 0;
+        string valueLine = sellValue > 0
+            ? $"Sell: {sellValue}g"
             : "";
 
         _nameTxt.text  = displayName;
@@ -82,7 +87,9 @@ public class ItemTooltipUI : MonoBehaviour
         _valueTxt.text = valueLine;
 
         // Rarity-tint the border
-        _border.color = ItemCatalogManager.GetRarityColor(itemId);
+        _border.color = lootDefinition != null
+            ? LootItemCatalog.RarityColor(lootDefinition.rarity)
+            : ItemCatalogManager.GetRarityColor(itemId);
 
         PositionNearCursor(screenPos);
         _panelRT.gameObject.SetActive(true);
