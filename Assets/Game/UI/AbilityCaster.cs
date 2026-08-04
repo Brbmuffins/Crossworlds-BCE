@@ -646,14 +646,14 @@ public class AbilityCaster : NetworkBehaviour
 
     public float ManaCostFor(AbilityDef ability, int variantIndex = 0)
     {
-        if (ability == null || HasFreeGmCasting()) return 0f;
+        if (ability == null || HasActiveGmMode()) return 0f;
 
         AbilityDef payload = GetVariantPayload(ability, variantIndex);
         AbilityDef costSource = payload != null ? payload : ability;
         return Mathf.Max(0f, costSource.manaCost);
     }
 
-    bool HasFreeGmCasting()
+    bool HasActiveGmMode()
     {
         // The server is authoritative. GM mode is stored on the authenticated
         // connection and can only be enabled through the validated GM command.
@@ -667,7 +667,7 @@ public class AbilityCaster : NetworkBehaviour
 
 #if UNITY_EDITOR || !UNITY_SERVER
         // The acting client mirrors that validated state for immediate input
-        // gating and HUD mana-cost display.
+        // gating and HUD cost/cooldown display.
         return isLocalPlayer &&
             RodChatManager.Instance != null &&
             RodChatManager.Instance.IsGmModeActive;
@@ -764,8 +764,8 @@ public class AbilityCaster : NetworkBehaviour
         if (ShouldBackfillMissingSpellbookEntries)
             BackfillMissingSpellbookEntries();
 
-        // Seed by ability name for known classes so old prefab spellbook order cannot
-        // make class-pool indices point at the wrong spell.
+        // Seed from the class pool. Legacy name-based defaults are only used when
+        // an older or incomplete pool does not contain a usable four-slot loadout.
         ApplyDefaultLoadoutFromClassPool();
 
         useScrollWheelVariants = PlayerPrefs.GetInt("VariantScrollMode", 0) == 1;
@@ -1144,9 +1144,18 @@ public class AbilityCaster : NetworkBehaviour
     {
         if (classPool == null || equippedIndices == null) return;
 
+        int slotCount = Mathf.Min(equippedIndices.Length, 4);
+        if (HasUsablePoolDefaultLoadout(classPool, slotCount))
+        {
+            for (int i = 0; i < slotCount; i++)
+                equippedIndices[i] = GetPoolDefaultIndex(classPool, i);
+            return;
+        }
+
+        // Migration fallback for old pools that did not serialize valid defaults.
         if (TryGetDefaultAbilityNames(classPool.className, out string[] defaultAbilityNames))
         {
-            for (int i = 0; i < equippedIndices.Length && i < 4; i++)
+            for (int i = 0; i < slotCount; i++)
             {
                 int idx = (i < defaultAbilityNames.Length) ? FindDefaultAbilityIndex(defaultAbilityNames[i]) : -1;
                 equippedIndices[i] = idx >= 0 ? idx : GetPoolDefaultIndex(classPool, i);
@@ -1154,8 +1163,23 @@ public class AbilityCaster : NetworkBehaviour
             return;
         }
 
-        for (int i = 0; i < equippedIndices.Length && i < 4; i++)
+        for (int i = 0; i < slotCount; i++)
             equippedIndices[i] = GetPoolDefaultIndex(classPool, i);
+    }
+
+    bool HasUsablePoolDefaultLoadout(ClassAbilityPool pool, int slotCount)
+    {
+        if (slotCount <= 0 || pool?.defaultEquipped == null || pool.defaultEquipped.Length < slotCount)
+            return false;
+
+        for (int i = 0; i < slotCount; i++)
+        {
+            int idx = pool.defaultEquipped[i];
+            if (!IsUsableSpellbookIndex(idx) || !PoolContainsIndex(pool, idx))
+                return false;
+        }
+
+        return true;
     }
 
     int FindDefaultAbilityIndex(string abilityName)
@@ -1617,7 +1641,7 @@ public class AbilityCaster : NetworkBehaviour
         if (spellbookIndex < 0 || spellbookIndex >= spellbook.Length) return;
         int equippedSlot = FindEquippedSlotForSpellbookIndex(spellbookIndex);
         if (equippedSlot < 0) return;
-        if (cooldownTimers[equippedSlot] > 0f) return;
+        if (IsCooldownActive(equippedSlot)) return;
 
         RpcCommittedCastAnimationStarted(spellbookIndex, variantIndex);
     }
@@ -1763,15 +1787,18 @@ public class AbilityCaster : NetworkBehaviour
     public float GetCooldownFraction(int slot)
     {
         if (slot < 0 || slot >= cooldownTimers.Length) return 0f;
-        if (abilities[slot] == null || abilities[slot].cooldown <= 0f) return 0f;
+        if (abilities[slot] == null) return 0f;
 
-        return Mathf.Clamp01(cooldownTimers[slot] / abilities[slot].cooldown);
+        float cooldownDuration = CooldownFor(abilities[slot]);
+        if (cooldownDuration <= 0f) return 0f;
+
+        return Mathf.Clamp01(cooldownTimers[slot] / cooldownDuration);
     }
 
     // Seconds of cooldown left on a slot (0 when ready). Used by the HUD countdown.
     public float GetCooldownRemaining(int slot)
     {
-        if (slot < 0 || slot >= cooldownTimers.Length) return 0f;
+        if (slot < 0 || slot >= cooldownTimers.Length || HasActiveGmMode()) return 0f;
         return Mathf.Max(0f, cooldownTimers[slot]);
     }
 
@@ -3225,7 +3252,7 @@ public class AbilityCaster : NetworkBehaviour
             return false;
 
         AbilityDef ability = abilities[slot];
-        if (ability == null || cooldownTimers[slot] > 0f)
+        if (ability == null || IsCooldownActive(slot))
             return false;
 
         bool canPickDifferentVariantCost =
@@ -3419,13 +3446,24 @@ public class AbilityCaster : NetworkBehaviour
             cooldownTimers[i] = Mathf.Max(0f, cooldownTimers[i] - seconds);
     }
 
-    // Cooldown after gear/attunement Cooldown Reduction is applied.
-    float CooldownFor(AbilityDef ability)
+    // Cooldown after GM mode and gear/attunement Cooldown Reduction are applied.
+    public float CooldownFor(AbilityDef ability)
     {
+        if (ability == null || HasActiveGmMode())
+            return 0f;
+
         float cd = ability.cooldown;
         if (_characterStats != null)
             cd *= (1f - _characterStats.CooldownReduction);
         return cd;
+    }
+
+    bool IsCooldownActive(int slot)
+    {
+        return slot >= 0 &&
+            slot < cooldownTimers.Length &&
+            !HasActiveGmMode() &&
+            cooldownTimers[slot] > 0f;
     }
 
     float CastTimeFor(AbilityDef ability)
@@ -3733,7 +3771,7 @@ public class AbilityCaster : NetworkBehaviour
 
         AbilityDef ability = spellbook[spellbookIndex];
         if (ability == null) return;
-        if (cooldownTimers[equippedSlot] > 0f) return;
+        if (IsCooldownActive(equippedSlot)) return;
         if (!HasEnoughManaForCast(ability, variantIndex)) return;
 
         castPosition = ClampCasterMovementDestination(

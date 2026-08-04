@@ -8,12 +8,32 @@ using UnityEngine;
 [System.Serializable]
 public class DropEntry
 {
+    [Tooltip("Preferred scalable setup: one shared definition owns the item ID, world model, and rarity.")]
+    public LootItemDefinition itemDefinition;
+
+    [Tooltip("Legacy/fallback backend item ID. Used only when Item Definition is unassigned.")]
     public string itemId;
     [Tooltip("Relative probability weight. Higher = more common than other entries.")]
     public float weight = 1f;
     public int   minQty = 1;
     public int   maxQty = 1;
+
+    public string ResolvedItemId =>
+        itemDefinition != null && !string.IsNullOrWhiteSpace(itemDefinition.itemId)
+            ? itemDefinition.itemId
+            : itemId;
+
+    public GameObject ResolvedWorldVisualPrefab =>
+        itemDefinition != null
+            ? itemDefinition.worldVisualPrefab
+            : null;
+
+    public ItemRarity ResolvedRarity =>
+        itemDefinition != null
+            ? itemDefinition.rarity
+            : ItemRarity.Common;
 }
+
 
 /// <summary>
 /// DropTable — ScriptableObject assigned to each enemy prefab's EnemyController.
@@ -71,7 +91,7 @@ public class DropTable : ScriptableObject
             if (roll < cumulative)
             {
                 int qty = Random.Range(d.minQty, d.maxQty + 1);
-                items.Add((d.itemId, qty));
+                items.Add((d.ResolvedItemId, qty));
                 break;
             }
         }
@@ -87,6 +107,28 @@ public class DropTable : ScriptableObject
         return total > 0f ? (total - nothingWeight) / total : 0f;
     }
 
+    public bool TryGetEntry(string itemId, out DropEntry entry)
+    {
+        entry = null;
+        if (string.IsNullOrEmpty(itemId) || drops == null)
+            return false;
+
+        foreach (DropEntry candidate in drops)
+        {
+            if (candidate != null &&
+                string.Equals(
+                    candidate.ResolvedItemId,
+                    itemId,
+                    System.StringComparison.OrdinalIgnoreCase))
+            {
+                entry = candidate;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
 #if UNITY_EDITOR
     void OnValidate()
     {
@@ -94,7 +136,7 @@ public class DropTable : ScriptableObject
         if (drops == null) return;
         foreach (var d in drops)
             if (d.weight <= 0f)
-                UnityEngine.Debug.LogWarning($"[DropTable] {name}: entry '{d.itemId}' has weight ≤ 0 and will never drop.");
+                UnityEngine.Debug.LogWarning($"[DropTable] {name}: entry '{d.ResolvedItemId}' has weight ≤ 0 and will never drop.");
     }
 #endif
 }

@@ -892,6 +892,7 @@ public class PlayerHUD : MonoBehaviour
 
         float remaining =
             _caster.GetCooldownRemaining(_abilityTooltipSlot);
+        float cooldown = _caster.CooldownFor(ability);
         float mana = _caster.ManaCostFor(ability, 0);
 
         _abilityTooltipName.text =
@@ -900,8 +901,8 @@ public class PlayerHUD : MonoBehaviour
                 : ability.abilityName.ToUpperInvariant();
         _abilityTooltipStats.text =
             remaining > 0.05f
-                ? $"COOLDOWN  {remaining:0.#}s / {ability.cooldown:0.#}s     MANA  {mana:0.#}"
-                : $"COOLDOWN  {ability.cooldown:0.#}s     MANA  {mana:0.#}";
+                ? $"COOLDOWN  {remaining:0.#}s / {cooldown:0.#}s     MANA  {mana:0.#}"
+                : $"COOLDOWN  {cooldown:0.#}s     MANA  {mana:0.#}";
         _abilityTooltipDescription.text =
             string.IsNullOrWhiteSpace(ability.description)
                 ? "No description authored yet."
