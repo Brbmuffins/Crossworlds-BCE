@@ -175,6 +175,26 @@ PrefabInstance:
       propertyPath: sceneId
       value: 622483116
       objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyLevel
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyDisplayName
+      value: Ogre
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: aggroRadius
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: leashRadius
+      value: 120
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: retaliationRadius
+      value: 50
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -532,9 +552,37 @@ PrefabInstance:
       propertyPath: m_Name
       value: Gunda (8)
       objectReference: {fileID: 0}
+    - target: {fileID: 4113607730127671070, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: aggroRadius
+      value: 9
+      objectReference: {fileID: 0}
+    - target: {fileID: 4113607730127671070, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: attackRange
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 4113607730127671070, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: leashRadius
+      value: 100
+      objectReference: {fileID: 0}
+    - target: {fileID: 4113607730127671070, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: roamingMaxWait
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 4707486476532063064, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: enemyLevel
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 4707486476532063064, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: enemyDisplayName
+      value: Gunda Grunt
+      objectReference: {fileID: 0}
     - target: {fileID: 5425423173228415393, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
       propertyPath: sceneId
       value: 1898801731
+      objectReference: {fileID: 0}
+    - target: {fileID: 8434263084384881432, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: runSpeedThreshold
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -745,6 +793,26 @@ PrefabInstance:
       propertyPath: sceneId
       value: 2605837571
       objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyLevel
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyDisplayName
+      value: Ogre
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: aggroRadius
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: leashRadius
+      value: 120
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: retaliationRadius
+      value: 50
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -815,6 +883,26 @@ PrefabInstance:
     - target: {fileID: 4426403183218579001, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
       propertyPath: sceneId
       value: 2712534006
+      objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyLevel
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyDisplayName
+      value: Ogre
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: aggroRadius
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: leashRadius
+      value: 120
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: retaliationRadius
+      value: 50
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1216,9 +1304,37 @@ PrefabInstance:
       propertyPath: m_Name
       value: Gunda (6)
       objectReference: {fileID: 0}
+    - target: {fileID: 4113607730127671070, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: aggroRadius
+      value: 9
+      objectReference: {fileID: 0}
+    - target: {fileID: 4113607730127671070, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: attackRange
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 4113607730127671070, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: leashRadius
+      value: 100
+      objectReference: {fileID: 0}
+    - target: {fileID: 4113607730127671070, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: roamingMaxWait
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 4707486476532063064, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: enemyLevel
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 4707486476532063064, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: enemyDisplayName
+      value: Gunda Grunt
+      objectReference: {fileID: 0}
     - target: {fileID: 5425423173228415393, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
       propertyPath: sceneId
       value: 1259309107
+      objectReference: {fileID: 0}
+    - target: {fileID: 8434263084384881432, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: runSpeedThreshold
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1551,6 +1667,26 @@ PrefabInstance:
       propertyPath: sceneId
       value: 1357200352
       objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyLevel
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyDisplayName
+      value: Ogre
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: aggroRadius
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: leashRadius
+      value: 120
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: retaliationRadius
+      value: 50
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1725,6 +1861,26 @@ PrefabInstance:
       propertyPath: sceneId
       value: 2523902138
       objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyLevel
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyDisplayName
+      value: Ogre
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: aggroRadius
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: leashRadius
+      value: 120
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: retaliationRadius
+      value: 50
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1792,9 +1948,37 @@ PrefabInstance:
       propertyPath: m_Name
       value: Gunda (11)
       objectReference: {fileID: 0}
+    - target: {fileID: 4113607730127671070, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: aggroRadius
+      value: 9
+      objectReference: {fileID: 0}
+    - target: {fileID: 4113607730127671070, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: attackRange
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 4113607730127671070, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: leashRadius
+      value: 100
+      objectReference: {fileID: 0}
+    - target: {fileID: 4113607730127671070, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: roamingMaxWait
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 4707486476532063064, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: enemyLevel
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 4707486476532063064, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: enemyDisplayName
+      value: Gunda Grunt
+      objectReference: {fileID: 0}
     - target: {fileID: 5425423173228415393, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
       propertyPath: sceneId
       value: 371282650
+      objectReference: {fileID: 0}
+    - target: {fileID: 8434263084384881432, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: runSpeedThreshold
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -2216,9 +2400,37 @@ PrefabInstance:
       propertyPath: m_Name
       value: Gunda (10)
       objectReference: {fileID: 0}
+    - target: {fileID: 4113607730127671070, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: aggroRadius
+      value: 9
+      objectReference: {fileID: 0}
+    - target: {fileID: 4113607730127671070, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: attackRange
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 4113607730127671070, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: leashRadius
+      value: 100
+      objectReference: {fileID: 0}
+    - target: {fileID: 4113607730127671070, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: roamingMaxWait
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 4707486476532063064, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: enemyLevel
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 4707486476532063064, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: enemyDisplayName
+      value: Gunda Grunt
+      objectReference: {fileID: 0}
     - target: {fileID: 5425423173228415393, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
       propertyPath: sceneId
       value: 462208172
+      objectReference: {fileID: 0}
+    - target: {fileID: 8434263084384881432, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: runSpeedThreshold
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -2437,6 +2649,26 @@ PrefabInstance:
       propertyPath: sceneId
       value: 23208963
       objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyLevel
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyDisplayName
+      value: Ogre
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: aggroRadius
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: leashRadius
+      value: 120
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: retaliationRadius
+      value: 50
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects:
@@ -2505,6 +2737,26 @@ PrefabInstance:
     - target: {fileID: 4426403183218579001, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
       propertyPath: sceneId
       value: 2638443728
+      objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyLevel
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyDisplayName
+      value: Ogre
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: aggroRadius
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: leashRadius
+      value: 120
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: retaliationRadius
+      value: 50
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -2617,72 +2869,6 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 3901835443433150371, guid: fdbb070f49a61e84cbba6ce1159c706a, type: 3}
---- !u!1001 &539463166
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 1866997234}
-    m_Modifications:
-    - target: {fileID: 1460533510189676354, guid: 4f580ccb97c30b340b8edc298c6de7a4, type: 3}
-      propertyPath: m_Name
-      value: Prefab_TrainingDummy
-      objectReference: {fileID: 0}
-    - target: {fileID: 4603783340664834974, guid: 4f580ccb97c30b340b8edc298c6de7a4, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 502.71002
-      objectReference: {fileID: 0}
-    - target: {fileID: 4603783340664834974, guid: 4f580ccb97c30b340b8edc298c6de7a4, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 1.0383701
-      objectReference: {fileID: 0}
-    - target: {fileID: 4603783340664834974, guid: 4f580ccb97c30b340b8edc298c6de7a4, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 481.98
-      objectReference: {fileID: 0}
-    - target: {fileID: 4603783340664834974, guid: 4f580ccb97c30b340b8edc298c6de7a4, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 4603783340664834974, guid: 4f580ccb97c30b340b8edc298c6de7a4, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4603783340664834974, guid: 4f580ccb97c30b340b8edc298c6de7a4, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4603783340664834974, guid: 4f580ccb97c30b340b8edc298c6de7a4, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4603783340664834974, guid: 4f580ccb97c30b340b8edc298c6de7a4, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4603783340664834974, guid: 4f580ccb97c30b340b8edc298c6de7a4, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4603783340664834974, guid: 4f580ccb97c30b340b8edc298c6de7a4, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6124746080639278201, guid: 4f580ccb97c30b340b8edc298c6de7a4, type: 3}
-      propertyPath: sceneId
-      value: 2412006381
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: 4f580ccb97c30b340b8edc298c6de7a4, type: 3}
---- !u!4 &539463167 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 4603783340664834974, guid: 4f580ccb97c30b340b8edc298c6de7a4, type: 3}
-  m_PrefabInstance: {fileID: 539463166}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &543544324
 GameObject:
   m_ObjectHideFlags: 0
@@ -3078,6 +3264,26 @@ PrefabInstance:
       propertyPath: sceneId
       value: 982900819
       objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyLevel
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyDisplayName
+      value: Ogre
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: aggroRadius
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: leashRadius
+      value: 120
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: retaliationRadius
+      value: 50
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -3307,6 +3513,26 @@ PrefabInstance:
       propertyPath: sceneId
       value: 4070608690
       objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyLevel
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyDisplayName
+      value: Ogre
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: aggroRadius
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: leashRadius
+      value: 120
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: retaliationRadius
+      value: 50
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -3399,6 +3625,26 @@ PrefabInstance:
     - target: {fileID: 4426403183218579001, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
       propertyPath: sceneId
       value: 4211362311
+      objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyLevel
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyDisplayName
+      value: Ogre
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: aggroRadius
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: leashRadius
+      value: 120
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: retaliationRadius
+      value: 50
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -3811,9 +4057,37 @@ PrefabInstance:
       propertyPath: m_Name
       value: Gunda (2)
       objectReference: {fileID: 0}
+    - target: {fileID: 4113607730127671070, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: aggroRadius
+      value: 9
+      objectReference: {fileID: 0}
+    - target: {fileID: 4113607730127671070, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: attackRange
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 4113607730127671070, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: leashRadius
+      value: 100
+      objectReference: {fileID: 0}
+    - target: {fileID: 4113607730127671070, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: roamingMaxWait
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 4707486476532063064, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: enemyLevel
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 4707486476532063064, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: enemyDisplayName
+      value: Gunda Grunt
+      objectReference: {fileID: 0}
     - target: {fileID: 5425423173228415393, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
       propertyPath: sceneId
       value: 716090741
+      objectReference: {fileID: 0}
+    - target: {fileID: 8434263084384881432, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: runSpeedThreshold
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -4244,6 +4518,26 @@ PrefabInstance:
       propertyPath: sceneId
       value: 577202872
       objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyLevel
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyDisplayName
+      value: Ogre
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: aggroRadius
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: leashRadius
+      value: 120
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: retaliationRadius
+      value: 50
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -4306,9 +4600,37 @@ PrefabInstance:
       propertyPath: m_Name
       value: Gunda
       objectReference: {fileID: 0}
+    - target: {fileID: 4113607730127671070, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: aggroRadius
+      value: 9
+      objectReference: {fileID: 0}
+    - target: {fileID: 4113607730127671070, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: attackRange
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 4113607730127671070, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: leashRadius
+      value: 100
+      objectReference: {fileID: 0}
+    - target: {fileID: 4113607730127671070, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: roamingMaxWait
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 4707486476532063064, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: enemyLevel
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 4707486476532063064, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: enemyDisplayName
+      value: Gunda Grunt
+      objectReference: {fileID: 0}
     - target: {fileID: 5425423173228415393, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
       propertyPath: sceneId
       value: 2768773503
+      objectReference: {fileID: 0}
+    - target: {fileID: 8434263084384881432, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: runSpeedThreshold
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -4376,6 +4698,26 @@ PrefabInstance:
       propertyPath: sceneId
       value: 1219965657
       objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyLevel
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyDisplayName
+      value: Ogre
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: aggroRadius
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: leashRadius
+      value: 120
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: retaliationRadius
+      value: 50
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -4441,6 +4783,26 @@ PrefabInstance:
     - target: {fileID: 4426403183218579001, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
       propertyPath: sceneId
       value: 4244447448
+      objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyLevel
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyDisplayName
+      value: Ogre
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: aggroRadius
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: leashRadius
+      value: 120
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: retaliationRadius
+      value: 50
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -4844,9 +5206,37 @@ PrefabInstance:
       propertyPath: m_Name
       value: Gunda (5)
       objectReference: {fileID: 0}
+    - target: {fileID: 4113607730127671070, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: aggroRadius
+      value: 9
+      objectReference: {fileID: 0}
+    - target: {fileID: 4113607730127671070, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: attackRange
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 4113607730127671070, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: leashRadius
+      value: 100
+      objectReference: {fileID: 0}
+    - target: {fileID: 4113607730127671070, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: roamingMaxWait
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 4707486476532063064, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: enemyLevel
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 4707486476532063064, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: enemyDisplayName
+      value: Gunda Grunt
+      objectReference: {fileID: 0}
     - target: {fileID: 5425423173228415393, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
       propertyPath: sceneId
       value: 320818978
+      objectReference: {fileID: 0}
+    - target: {fileID: 8434263084384881432, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: runSpeedThreshold
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -5076,6 +5466,26 @@ PrefabInstance:
     - target: {fileID: 4426403183218579001, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
       propertyPath: sceneId
       value: 1258264753
+      objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyLevel
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyDisplayName
+      value: Ogre
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: aggroRadius
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: leashRadius
+      value: 120
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: retaliationRadius
+      value: 50
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -5335,6 +5745,26 @@ PrefabInstance:
       propertyPath: sceneId
       value: 1209533765
       objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyLevel
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyDisplayName
+      value: Ogre
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: aggroRadius
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: leashRadius
+      value: 120
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: retaliationRadius
+      value: 50
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -5405,6 +5835,26 @@ PrefabInstance:
     - target: {fileID: 4426403183218579001, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
       propertyPath: sceneId
       value: 1488427096
+      objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyLevel
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyDisplayName
+      value: Ogre
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: aggroRadius
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: leashRadius
+      value: 120
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: retaliationRadius
+      value: 50
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -5742,6 +6192,26 @@ PrefabInstance:
       propertyPath: sceneId
       value: 2028410426
       objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyLevel
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyDisplayName
+      value: Ogre
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: aggroRadius
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: leashRadius
+      value: 120
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: retaliationRadius
+      value: 50
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -5977,6 +6447,26 @@ PrefabInstance:
     - target: {fileID: 4426403183218579001, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
       propertyPath: sceneId
       value: 1495694665
+      objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyLevel
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyDisplayName
+      value: Ogre
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: aggroRadius
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: leashRadius
+      value: 120
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: retaliationRadius
+      value: 50
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -6681,6 +7171,26 @@ PrefabInstance:
       propertyPath: sceneId
       value: 2829475085
       objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyLevel
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyDisplayName
+      value: Ogre
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: aggroRadius
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: leashRadius
+      value: 120
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: retaliationRadius
+      value: 50
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -7042,6 +7552,26 @@ PrefabInstance:
       propertyPath: sceneId
       value: 2401364476
       objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyLevel
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyDisplayName
+      value: Ogre
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: aggroRadius
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: leashRadius
+      value: 120
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: retaliationRadius
+      value: 50
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -7112,6 +7642,26 @@ PrefabInstance:
     - target: {fileID: 4426403183218579001, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
       propertyPath: sceneId
       value: 2598223254
+      objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyLevel
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyDisplayName
+      value: Ogre
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: aggroRadius
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: leashRadius
+      value: 120
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: retaliationRadius
+      value: 50
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -7452,6 +8002,26 @@ PrefabInstance:
     - target: {fileID: 4426403183218579001, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
       propertyPath: sceneId
       value: 3021593959
+      objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyLevel
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyDisplayName
+      value: Ogre
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: aggroRadius
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: leashRadius
+      value: 120
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: retaliationRadius
+      value: 50
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -7816,6 +8386,26 @@ PrefabInstance:
       propertyPath: sceneId
       value: 2399181684
       objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyLevel
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyDisplayName
+      value: Ogre
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: aggroRadius
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: leashRadius
+      value: 120
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: retaliationRadius
+      value: 50
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -8015,6 +8605,26 @@ PrefabInstance:
       propertyPath: sceneId
       value: 2232795291
       objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyLevel
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyDisplayName
+      value: Ogre
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: aggroRadius
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: leashRadius
+      value: 120
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: retaliationRadius
+      value: 50
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -8152,6 +8762,26 @@ PrefabInstance:
     - target: {fileID: 4426403183218579001, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
       propertyPath: sceneId
       value: 664665276
+      objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyLevel
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyDisplayName
+      value: Ogre
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: aggroRadius
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: leashRadius
+      value: 120
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: retaliationRadius
+      value: 50
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -8359,6 +8989,26 @@ PrefabInstance:
       propertyPath: sceneId
       value: 3209632240
       objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyLevel
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyDisplayName
+      value: Ogre
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: aggroRadius
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: leashRadius
+      value: 120
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: retaliationRadius
+      value: 50
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -8561,6 +9211,26 @@ PrefabInstance:
       propertyPath: sceneId
       value: 2472510731
       objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyLevel
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyDisplayName
+      value: Ogre
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: aggroRadius
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: leashRadius
+      value: 120
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: retaliationRadius
+      value: 50
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -8658,6 +9328,26 @@ PrefabInstance:
     - target: {fileID: 4426403183218579001, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
       propertyPath: sceneId
       value: 2806986273
+      objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyLevel
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyDisplayName
+      value: Ogre
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: aggroRadius
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: leashRadius
+      value: 120
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: retaliationRadius
+      value: 50
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -8890,6 +9580,26 @@ PrefabInstance:
       propertyPath: sceneId
       value: 1736374102
       objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyLevel
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyDisplayName
+      value: Ogre
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: aggroRadius
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: leashRadius
+      value: 120
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: retaliationRadius
+      value: 50
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -8987,6 +9697,26 @@ PrefabInstance:
     - target: {fileID: 4426403183218579001, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
       propertyPath: sceneId
       value: 2755711853
+      objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyLevel
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyDisplayName
+      value: Ogre
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: aggroRadius
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: leashRadius
+      value: 120
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: retaliationRadius
+      value: 50
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -9188,9 +9918,37 @@ PrefabInstance:
       propertyPath: m_Name
       value: Gunda (1)
       objectReference: {fileID: 0}
+    - target: {fileID: 4113607730127671070, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: aggroRadius
+      value: 9
+      objectReference: {fileID: 0}
+    - target: {fileID: 4113607730127671070, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: attackRange
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 4113607730127671070, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: leashRadius
+      value: 100
+      objectReference: {fileID: 0}
+    - target: {fileID: 4113607730127671070, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: roamingMaxWait
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 4707486476532063064, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: enemyLevel
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 4707486476532063064, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: enemyDisplayName
+      value: Gunda Grunt
+      objectReference: {fileID: 0}
     - target: {fileID: 5425423173228415393, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
       propertyPath: sceneId
       value: 1932958058
+      objectReference: {fileID: 0}
+    - target: {fileID: 8434263084384881432, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: runSpeedThreshold
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -9645,9 +10403,37 @@ PrefabInstance:
       propertyPath: m_Name
       value: Gunda (7)
       objectReference: {fileID: 0}
+    - target: {fileID: 4113607730127671070, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: aggroRadius
+      value: 9
+      objectReference: {fileID: 0}
+    - target: {fileID: 4113607730127671070, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: attackRange
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 4113607730127671070, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: leashRadius
+      value: 100
+      objectReference: {fileID: 0}
+    - target: {fileID: 4113607730127671070, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: roamingMaxWait
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 4707486476532063064, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: enemyLevel
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 4707486476532063064, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: enemyDisplayName
+      value: Gunda Grunt
+      objectReference: {fileID: 0}
     - target: {fileID: 5425423173228415393, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
       propertyPath: sceneId
       value: 2459720647
+      objectReference: {fileID: 0}
+    - target: {fileID: 8434263084384881432, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: runSpeedThreshold
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -9715,6 +10501,26 @@ PrefabInstance:
       propertyPath: sceneId
       value: 441056329
       objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyLevel
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyDisplayName
+      value: Ogre
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: aggroRadius
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: leashRadius
+      value: 120
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: retaliationRadius
+      value: 50
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -9777,9 +10583,37 @@ PrefabInstance:
       propertyPath: m_Name
       value: Gunda (3)
       objectReference: {fileID: 0}
+    - target: {fileID: 4113607730127671070, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: aggroRadius
+      value: 9
+      objectReference: {fileID: 0}
+    - target: {fileID: 4113607730127671070, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: attackRange
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 4113607730127671070, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: leashRadius
+      value: 100
+      objectReference: {fileID: 0}
+    - target: {fileID: 4113607730127671070, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: roamingMaxWait
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 4707486476532063064, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: enemyLevel
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 4707486476532063064, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: enemyDisplayName
+      value: Gunda Grunt
+      objectReference: {fileID: 0}
     - target: {fileID: 5425423173228415393, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
       propertyPath: sceneId
       value: 3618980
+      objectReference: {fileID: 0}
+    - target: {fileID: 8434263084384881432, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: runSpeedThreshold
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -9959,9 +10793,37 @@ PrefabInstance:
       propertyPath: m_Name
       value: Gunda (9)
       objectReference: {fileID: 0}
+    - target: {fileID: 4113607730127671070, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: aggroRadius
+      value: 9
+      objectReference: {fileID: 0}
+    - target: {fileID: 4113607730127671070, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: attackRange
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 4113607730127671070, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: leashRadius
+      value: 100
+      objectReference: {fileID: 0}
+    - target: {fileID: 4113607730127671070, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: roamingMaxWait
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 4707486476532063064, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: enemyLevel
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 4707486476532063064, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: enemyDisplayName
+      value: Gunda Grunt
+      objectReference: {fileID: 0}
     - target: {fileID: 5425423173228415393, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
       propertyPath: sceneId
       value: 1876477425
+      objectReference: {fileID: 0}
+    - target: {fileID: 8434263084384881432, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: runSpeedThreshold
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -10168,7 +11030,6 @@ Transform:
   - {fileID: 1763155278}
   - {fileID: 897808269}
   - {fileID: 568830889}
-  - {fileID: 539463167}
   - {fileID: 172971993}
   - {fileID: 411391426}
   m_Father: {fileID: 1002999888}
@@ -10203,7 +11064,7 @@ MonoBehaviour:
   m_OverrideVoxelSize: 0
   m_VoxelSize: 0.16666667
   m_MinRegionArea: 2
-  m_NavMeshData: {fileID: 0}
+  m_NavMeshData: {fileID: 23800000, guid: 7472ffa2f21507447bd818012390df5e, type: 2}
   m_BuildHeightMesh: 0
 --- !u!1 &1877921612
 GameObject:
@@ -10296,6 +11157,26 @@ PrefabInstance:
     - target: {fileID: 4426403183218579001, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
       propertyPath: sceneId
       value: 4144797967
+      objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyLevel
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyDisplayName
+      value: Ogre
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: aggroRadius
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: leashRadius
+      value: 120
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: retaliationRadius
+      value: 50
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -10654,9 +11535,37 @@ PrefabInstance:
       propertyPath: m_Name
       value: Gunda (4)
       objectReference: {fileID: 0}
+    - target: {fileID: 4113607730127671070, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: aggroRadius
+      value: 9
+      objectReference: {fileID: 0}
+    - target: {fileID: 4113607730127671070, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: attackRange
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 4113607730127671070, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: leashRadius
+      value: 100
+      objectReference: {fileID: 0}
+    - target: {fileID: 4113607730127671070, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: roamingMaxWait
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 4707486476532063064, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: enemyLevel
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 4707486476532063064, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: enemyDisplayName
+      value: Gunda Grunt
+      objectReference: {fileID: 0}
     - target: {fileID: 5425423173228415393, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
       propertyPath: sceneId
       value: 305206892
+      objectReference: {fileID: 0}
+    - target: {fileID: 8434263084384881432, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
+      propertyPath: runSpeedThreshold
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -10963,6 +11872,26 @@ PrefabInstance:
     - target: {fileID: 4426403183218579001, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
       propertyPath: sceneId
       value: 3659937593
+      objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyLevel
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyDisplayName
+      value: Ogre
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: aggroRadius
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: leashRadius
+      value: 120
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: retaliationRadius
+      value: 50
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -11945,6 +12874,26 @@ PrefabInstance:
     - target: {fileID: 4426403183218579001, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
       propertyPath: sceneId
       value: 793895103
+      objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyLevel
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 6416272850638160174, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: enemyDisplayName
+      value: Ogre
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: aggroRadius
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: leashRadius
+      value: 120
+      objectReference: {fileID: 0}
+    - target: {fileID: 8957003613231106498, guid: 39d217a761541dd46bae4ca231e22105, type: 3}
+      propertyPath: retaliationRadius
+      value: 50
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
