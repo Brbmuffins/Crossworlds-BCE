@@ -5,6 +5,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Controls;
 using UnityEngine.Rendering.Universal;
+using UnityEngine.Serialization;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -68,6 +69,8 @@ public class AbilityVariant
     [HideInInspector]
     public GameObject castVFX;
     [HideInInspector]
+    public GameObject healVFX;
+    [HideInInspector]
     public GameObject hitVFX;
     [HideInInspector]
     public AudioClip castSFX;
@@ -95,8 +98,9 @@ public class AbilityDef
     public AbilityCategory category = AbilityCategory.Damage;
     public float range = 4f;
     public float coneAngle = 60f;
-    [Tooltip("Keep a cone at its full configured range while aiming instead of resizing it to the mouse distance.")]
-    public bool useFixedConeRange = false;
+    [FormerlySerializedAs("useFixedConeRange")]
+    [Tooltip("For Cone and Rectangle spells, keep the indicator and hit area at the full configured Range instead of resizing them to the mouse distance.")]
+    public bool useFixedRange = false;
     public float rectWidth = 1.5f;
     public float indicatorSize = 1.5f;
     public bool spawnTurret = false;
@@ -157,6 +161,8 @@ public class AbilityDef
     public GameObject castVFX;
     [Tooltip("Looping VFX attached to the caster while this spell is being aimed or charged. It is removed on release or cancellation.")]
     public GameObject castingVFX;
+    [Tooltip("VFX played on each ally when this spell restores health. Heal-over-time spells play it on each successful tick.")]
+    public GameObject healVFX;
     public GameObject hitVFX;
     [Tooltip("Spawn the cast VFX at the caster instead of the spell's destination or the far edge of its cone.")]
     public bool castVFXAtCaster = false;
@@ -183,6 +189,8 @@ public class AbilityDef
     public float hotTickAmount = 0f;
     public int   hotTicks = 0;
     [Min(0.1f)] public float hotInterval = 1f;
+    [Tooltip("Apply the Heal over Time amount/count/interval as repeated area pulses at the spell location. Pulse Radius controls the affected ring.")]
+    public bool usePulseHealing = false;
 
     [Header("Status on hit")]
     public StatusEffectType statusEffect;
@@ -375,8 +383,6 @@ public class AbilityCaster : NetworkBehaviour
     public ClericHealVFX healVFX;
 
     /// <summary>Raised on the local client whenever a heal-category ability fires.</summary>
-    public event System.Action OnHealCast;
-
     [Header("Class Deployables")]
     [Tooltip("RestorationBeacon (Cleric) or BastionNode (Ironclad)")]
     public GameObject beaconPrefab;
@@ -640,11 +646,34 @@ public class AbilityCaster : NetworkBehaviour
 
     public float ManaCostFor(AbilityDef ability, int variantIndex = 0)
     {
-        if (ability == null) return 0f;
+        if (ability == null || HasFreeGmCasting()) return 0f;
 
         AbilityDef payload = GetVariantPayload(ability, variantIndex);
         AbilityDef costSource = payload != null ? payload : ability;
         return Mathf.Max(0f, costSource.manaCost);
+    }
+
+    bool HasFreeGmCasting()
+    {
+        // The server is authoritative. GM mode is stored on the authenticated
+        // connection and can only be enabled through the validated GM command.
+        if (NetworkServer.active)
+        {
+            RodPlayerAuth auth =
+                connectionToClient?.authenticationData as RodPlayerAuth;
+            if (GmCommandRouter.IsActiveGm(auth))
+                return true;
+        }
+
+#if UNITY_EDITOR || !UNITY_SERVER
+        // The acting client mirrors that validated state for immediate input
+        // gating and HUD mana-cost display.
+        return isLocalPlayer &&
+            RodChatManager.Instance != null &&
+            RodChatManager.Instance.IsGmModeActive;
+#else
+        return false;
+#endif
     }
 
     public string GetVariantDisplayName(AbilityDef ability, int variantIndex)
@@ -2143,8 +2172,10 @@ public class AbilityCaster : NetworkBehaviour
 
             float widthMul = Mathf.Lerp(1f, ability.maxChargeSizeMultiplier, chargeFraction);
             float hw = ability.rectWidth * widthMul / 2f;
-            // Variant rects always show at full range; cursor distance picks zone.
-            float rectLength = hasVariants ? ability.range : aimDistance;
+            // Variant and fixed-range rectangles always show at full range. For
+            // variants, cursor distance only selects the active zone.
+            bool useFullRange = hasVariants || ability.useFixedRange;
+            float rectLength = useFullRange ? ability.range : aimDistance;
             Vector3 mid = ProjectToGround(transform.position + aimDir * (rectLength / 2f), out Vector3 groundNormal);
             Vector3 groundForward = Vector3.ProjectOnPlane(aimDir, groundNormal);
             if (groundForward.sqrMagnitude < 0.0001f)
@@ -2195,7 +2226,7 @@ public class AbilityCaster : NetworkBehaviour
             float chargeMul   = Mathf.Lerp(1f, ability.maxChargeSizeMultiplier, chargeFraction);
             // Variant and fixed-range spells always show at full range. For variants,
             // cursor distance only selects the active zone.
-            bool useFullRange = hasVariants || ability.useFixedConeRange;
+            bool useFullRange = hasVariants || ability.useFixedRange;
             float distanceMul = useFullRange ? 1f : (ability.range > 0f ? aimDistance / ability.range : 1f);
             float visualRange = ability.range * distanceMul * chargeMul;
             // Pull origin 0.5 units behind the player so the character body sits
@@ -3132,6 +3163,46 @@ public class AbilityCaster : NetworkBehaviour
         }
     }
 
+    // Healing resolves on the server just like damage. Keep its visual separate
+    // from hitVFX so designers can show an impact and a recipient heal burst
+    // independently. The effect attaches to a networked recipient when possible.
+    void EmitHealVFX(GameObject healVFXPrefab, Health target, float lifetime = 4f)
+    {
+        if (healVFXPrefab == null || target == null) return;
+
+        Vector3 localOffset = Vector3.up * 0.5f;
+        if (NetworkServer.active)
+        {
+            int spellbookIndex = ResolveHealVfxIndex(healVFXPrefab);
+            if (spellbookIndex < 0) return;
+
+            NetworkIdentity targetIdentity = target.netIdentity;
+            if (targetIdentity != null && targetIdentity.netId != 0)
+            {
+                RpcPlayAttachedHealVFX(
+                    spellbookIndex,
+                    targetIdentity.netId,
+                    localOffset,
+                    lifetime);
+            }
+            else
+            {
+                RpcPlayHealVFX(
+                    spellbookIndex,
+                    target.transform.TransformPoint(localOffset),
+                    lifetime);
+            }
+        }
+        else if (!NetworkClient.active)
+        {
+            SpawnAttachedVFX(
+                healVFXPrefab,
+                target.transform,
+                localOffset,
+                lifetime);
+        }
+    }
+
     // Resolves the spell that owns a hit VFX prefab and plays its hit SFX. Used only
     // on the offline path — networked hits carry the SFX inside RpcPlayHitVFX instead.
     void PlayHitSFXFor(GameObject hitVFXPrefab, Vector3 position)
@@ -3256,6 +3327,21 @@ public class AbilityCaster : NetworkBehaviour
         }
     }
 
+    // Any spellbook entry that references the requested prefab is sufficient;
+    // clients use that entry to resolve the same asset without serializing it.
+    int ResolveHealVfxIndex(GameObject healVFXPrefab)
+    {
+        if (healVFXPrefab == null || spellbook == null) return -1;
+
+        for (int i = 0; i < spellbook.Length; i++)
+        {
+            if (spellbook[i] != null && spellbook[i].healVFX == healVFXPrefab)
+                return i;
+        }
+
+        return -1;
+    }
+
     [ClientRpc]
     void RpcPlayHitVFX(int spellbookIndex, Vector3 position, float lifetime, int variantIndex)
     {
@@ -3290,6 +3376,39 @@ public class AbilityCaster : NetworkBehaviour
             : targetIdentity.transform;
         SpawnAttachedVFX(ability.hitVFX, target, localOffset, lifetime);
         PlaySpellSFX(ability.hitSFX, target.position, ability.sfxVolume);
+#endif
+    }
+
+    [ClientRpc]
+    void RpcPlayHealVFX(int spellbookIndex, Vector3 position, float lifetime)
+    {
+        if (spellbookIndex < 0 || spellbookIndex >= spellbook.Length) return;
+        AbilityDef ability = spellbook[spellbookIndex];
+        if (ability == null) return;
+#if UNITY_EDITOR || !UNITY_SERVER
+        SpawnVFX(ability.healVFX, position, Quaternion.identity, lifetime);
+#endif
+    }
+
+    [ClientRpc]
+    void RpcPlayAttachedHealVFX(
+        int spellbookIndex,
+        uint targetNetId,
+        Vector3 localOffset,
+        float lifetime)
+    {
+        if (spellbookIndex < 0 || spellbookIndex >= spellbook.Length) return;
+        AbilityDef ability = spellbook[spellbookIndex];
+        if (ability == null) return;
+#if UNITY_EDITOR || !UNITY_SERVER
+        if (!NetworkClient.spawned.TryGetValue(targetNetId, out NetworkIdentity targetIdentity))
+            return;
+
+        Health targetHealth = targetIdentity.GetComponentInChildren<Health>();
+        Transform target = targetHealth != null
+            ? targetHealth.transform
+            : targetIdentity.transform;
+        SpawnAttachedVFX(ability.healVFX, target, localOffset, lifetime);
 #endif
     }
 
@@ -3475,11 +3594,6 @@ public class AbilityCaster : NetworkBehaviour
     {
         if (ability == null) return;
 
-#if UNITY_EDITOR || !UNITY_SERVER
-        if (ability.category == AbilityCategory.Heal && (ability.variants == null || ability.variants.Length == 0))
-            OnHealCast?.Invoke();
-#endif
-
         // Variant spells must resolve one of their zones to a spellbook payload.
         if (ability.variants != null && ability.variants.Length > 0)
         {
@@ -3514,7 +3628,7 @@ public class AbilityCaster : NetworkBehaviour
         {
             float chargeFraction = GetChargeFraction(ability, aimTime);
             float damage = Mathf.Lerp(ability.damage, ability.maxChargeDamage, chargeFraction) * damageMultiplier;
-            float coneScale = ability.useFixedConeRange
+            float coneScale = ability.useFixedRange
                 ? Mathf.Lerp(1f, ability.maxChargeSizeMultiplier, chargeFraction)
                 : indicator.transform.localScale.x;
             float coneRange = ability.range * coneScale;
@@ -3529,6 +3643,14 @@ public class AbilityCaster : NetworkBehaviour
         if (ability.shape == AbilityShape.Circle && ability.damage > 0f && !IsArcaneStep(ability) && !IsVoidMaw(ability))
         {
             ApplyCircleDamage(ability, indicator, damageMultiplier);
+        }
+
+        // Non-variant healing circles use Heal Amount as an optional initial
+        // burst. Repeating ground healing is handled separately by the
+        // explicit Use Pulse Healing setting below.
+        if (!isVariantSpell && ability.shape == AbilityShape.Circle && ability.healAmount > 0f)
+        {
+            ApplyCircleHealing(ability, indicator);
         }
 
         // Variant spells handle shields via their BUBBLE zone; skip the self-shield path.
@@ -3594,7 +3716,7 @@ public class AbilityCaster : NetworkBehaviour
                 ability.sfxVolume);
 #endif
         DispatchAbility(ability, castPoint, damageMultiplier);
-        StartPulseDamageIfNeeded(ability, pulsePoint, damageMultiplier);
+        StartPulseEffectsIfNeeded(ability, pulsePoint, damageMultiplier);
     }
 
     [Command]
@@ -3873,10 +3995,6 @@ public class AbilityCaster : NetworkBehaviour
 
         AbilityDef displayAbility = GetVariantPayload(ability, variantIndex) ?? ability;
 
-#if UNITY_EDITOR || !UNITY_SERVER
-        if (displayAbility.category == AbilityCategory.Heal) OnHealCast?.Invoke();
-#endif
-
         // Cast SFX (variant override falls back to the base spell). Plays before the
         // VFX null-return so a spell can be heard even with no cast particle. This is
         // the networked path — local caster (via FinalizeCast) and remote observers
@@ -4060,12 +4178,17 @@ public class AbilityCaster : NetworkBehaviour
 
     // ── New ability methods ──────────────────────────────────────
 
-    void StartPulseDamageIfNeeded(AbilityDef ability, Vector3 centre, float damageMultiplier)
+    void StartPulseEffectsIfNeeded(AbilityDef ability, Vector3 centre, float damageMultiplier)
     {
-        if (!ShouldRunPulseDamage(ability))
-            return;
+        if (ShouldRunPulseDamage(ability))
+            StartCoroutine(PulseDamage(ability, centre, damageMultiplier));
 
-        StartCoroutine(PulseDamage(ability, centre, damageMultiplier));
+        // Pulse healing intentionally shares the authored ground-ring radius,
+        // but uses the HoT amount/count/interval and always targets allies.
+        // This lets mixed zones such as Holy Ground damage Enemy-tagged units
+        // while healing Player-tagged units during the same pulse sequence.
+        if (ShouldRunPulseHealing(ability))
+            StartCoroutine(PulseHealing(ability, centre));
     }
 
     static bool ShouldRunPulseDamage(AbilityDef ability)
@@ -4077,6 +4200,14 @@ public class AbilityCaster : NetworkBehaviour
             return true;
 
         return ability.usePulseDamage && ability.pulseCount > 0;
+    }
+
+    static bool ShouldRunPulseHealing(AbilityDef ability)
+    {
+        return ability != null &&
+            ability.usePulseHealing &&
+            ability.hotTicks > 0 &&
+            ability.hotTickAmount > 0f;
     }
 
     System.Collections.IEnumerator PulseDamage(AbilityDef ability, Vector3 centre, float damageMultiplier)
@@ -4093,6 +4224,26 @@ public class AbilityCaster : NetworkBehaviour
         for (int pulse = 0; pulse < pulseCount; pulse++)
         {
             ApplyPulseDamage(centre, radius, damage, ability.targetTag, ability.hitVFX, vfxLifetime);
+            if (pulse < pulseCount - 1)
+                yield return new WaitForSeconds(interval);
+        }
+    }
+
+    System.Collections.IEnumerator PulseHealing(AbilityDef ability, Vector3 centre)
+    {
+        int pulseCount = Mathf.Max(0, ability.hotTicks);
+        float healAmount = Mathf.Max(0f, ability.hotTickAmount);
+        float interval = Mathf.Max(0.1f, ability.hotInterval);
+        float radius = GetPulseRadius(ability, GetDefaultPulseRadius(ability));
+
+        for (int pulse = 0; pulse < pulseCount; pulse++)
+        {
+            ApplyPulseHealing(
+                centre,
+                radius,
+                healAmount,
+                ability.healVFX);
+
             if (pulse < pulseCount - 1)
                 yield return new WaitForSeconds(interval);
         }
@@ -4152,7 +4303,9 @@ public class AbilityCaster : NetworkBehaviour
 
     static float GetPulseRadius(AbilityDef ability, float fallback)
     {
-        if (ability != null && ability.usePulseDamage && ability.pulseRadius > 0f)
+        if (ability != null &&
+            (ability.usePulseDamage || ability.usePulseHealing) &&
+            ability.pulseRadius > 0f)
             return ability.pulseRadius;
 
         return fallback;
@@ -4177,7 +4330,10 @@ public class AbilityCaster : NetworkBehaviour
 
     void ApplyPulseDamage(Vector3 centre, float radius, float damage, string targetTag, GameObject hitVFX, float hitVFXLifetime = 4f)
     {
-        Collider[] hits = ZonePhysics.OverlapSphere(gameObject, centre, radius);
+        Collider[] hits = ZonePhysics.OverlapSphere(
+            gameObject,
+            centre,
+            PulsePhysicsQueryRadius(radius));
         var damaged = new System.Collections.Generic.HashSet<Health>();
 
         foreach (Collider hit in hits)
@@ -4189,10 +4345,57 @@ public class AbilityCaster : NetworkBehaviour
             if (!HitMatchesTargetTag(hit, health, targetTag))
                 continue;
 
+            if (!IsWithinHorizontalPulseRadius(health.transform.position, centre, radius))
+                continue;
+
             damaged.Add(health);
             DealAbilityDamage(health, damage);
             EmitHitVFX(hitVFX, health.transform.position + Vector3.up * 0.5f, hitVFXLifetime);
         }
+    }
+
+    void ApplyPulseHealing(
+        Vector3 centre,
+        float radius,
+        float healAmount,
+        GameObject healVFX)
+    {
+        Collider[] hits = ZonePhysics.OverlapSphere(
+            gameObject,
+            centre,
+            PulsePhysicsQueryRadius(radius));
+        var healed = new System.Collections.Generic.HashSet<Health>();
+
+        foreach (Collider hit in hits)
+        {
+            if (!TryGetMatchingHealth(hit, "Player", out Health health) ||
+                healed.Contains(health) ||
+                !IsWithinHorizontalPulseRadius(health.transform.position, centre, radius))
+                continue;
+
+            healed.Add(health);
+            float healthBefore = health.currentHealth;
+            health.Heal(healAmount);
+            if (health.currentHealth > healthBefore)
+                EmitHealVFX(healVFX, health);
+        }
+    }
+
+    // Ground rings are flat gameplay areas. Query a slightly taller sphere so
+    // standing character colliders at the outer edge are found, then use an XZ
+    // distance check to enforce the exact visible radius.
+    static float PulsePhysicsQueryRadius(float radius) =>
+        Mathf.Max(0f, radius) + 2f;
+
+    static bool IsWithinHorizontalPulseRadius(
+        Vector3 position,
+        Vector3 centre,
+        float radius)
+    {
+        Vector3 offset = position - centre;
+        offset.y = 0f;
+        float safeRadius = Mathf.Max(0f, radius);
+        return offset.sqrMagnitude <= safeRadius * safeRadius;
     }
 
     static bool HitMatchesTargetTag(Collider hit, Health health, string targetTag)
@@ -4364,6 +4567,7 @@ public class AbilityCaster : NetworkBehaviour
             Health h = col.GetComponent<Health>();
             if (h == null || h == _health) continue;
             h.Heal(healAmt);
+            EmitHealVFX(ability.healVFX, h);
             col.GetComponent<StatusEffectManager>()?.RemoveAll();   // clears 1 debuff
             EmitHitVFX(ability.hitVFX, col.transform.position + Vector3.up);
             break;
@@ -4682,16 +4886,31 @@ public class AbilityCaster : NetworkBehaviour
     void ApplyCircleDamage(AbilityDef ability, GameObject indicator, float damageMultiplier = 1f)
     {
         Vector3 center = indicator != null ? indicator.transform.position : transform.position;
-        Collider[] hits = ZonePhysics.OverlapSphere(gameObject, center, ability.indicatorSize / 2f);
+        float radius = Mathf.Max(0f, ability.indicatorSize * 0.5f);
+        Collider[] hits = ZonePhysics.OverlapSphere(
+            gameObject,
+            center,
+            PulsePhysicsQueryRadius(radius));
         var damaged = new System.Collections.Generic.HashSet<Health>();
 
         foreach (Collider hit in hits)
         {
-            if (!TryGetMatchingHealth(hit, ability.targetTag, out Health health) || !damaged.Add(health))
+            if (!TryGetMatchingHealth(hit, ability.targetTag, out Health health) ||
+                !IsWithinHorizontalPulseRadius(health.transform.position, center, radius) ||
+                !damaged.Add(health))
                 continue;
 
             ResolveDirectAbilityHit(ability, health, ability.damage * damageMultiplier);
         }
+    }
+
+    void ApplyCircleHealing(AbilityDef ability, GameObject indicator)
+    {
+        Vector3 center = indicator != null
+            ? indicator.transform.position
+            : transform.position;
+        float radius = Mathf.Max(0f, ability.indicatorSize * 0.5f);
+        ApplyPulseHealing(center, radius, ability.healAmount, ability.healVFX);
     }
 
     void ApplyRectangleDamage(AbilityDef ability, GameObject indicator, float damage)
@@ -5023,6 +5242,7 @@ public class AbilityCaster : NetworkBehaviour
                     // Zone 1: HPS / Instant Burst
                     float healVal = (ability.healAmount > 0f ? ability.healAmount : 25f) * 1.5f;
                     targetHealth.Heal(healVal);
+                    EmitHealVFX(ability.healVFX, targetHealth);
                     EmitHitVFX(ability.hitVFX, hitPos);
 #if UNITY_EDITOR || !UNITY_SERVER
                     FloatingDamageText.SpawnAnchored(floatingTextPos, healVal, FloatingDamageText.DamageType.HealCrit);
@@ -5033,9 +5253,11 @@ public class AbilityCaster : NetworkBehaviour
                     // Zone 2: HoT / Healing over Time
                     float instantHeal = (ability.healAmount > 0f ? ability.healAmount : 25f) * 0.5f;
                     targetHealth.Heal(instantHeal);
+                    EmitHealVFX(ability.healVFX, targetHealth);
 
                     float tickAmount = (ability.healAmount > 0f ? ability.healAmount : 25f) * 0.25f;
-                    StartCoroutine(ApplyHealOverTime(targetHealth, tickAmount, 5, 1f));
+                    StartCoroutine(ApplyHealOverTime(
+                        targetHealth, tickAmount, 5, 1f, ability.healVFX));
 
                     EmitHitVFX(ability.hitVFX, hitPos);
 #if UNITY_EDITOR || !UNITY_SERVER
@@ -5104,7 +5326,12 @@ public class AbilityCaster : NetworkBehaviour
         }
     }
 
-    System.Collections.IEnumerator ApplyHealOverTime(Health target, float tickAmount, int ticks, float interval)
+    System.Collections.IEnumerator ApplyHealOverTime(
+        Health target,
+        float tickAmount,
+        int ticks,
+        float interval,
+        GameObject healVFXPrefab)
     {
         for (int i = 0; i < ticks; i++)
         {
@@ -5112,6 +5339,7 @@ public class AbilityCaster : NetworkBehaviour
             if (target != null && target.IsAlive)
             {
                 target.Heal(tickAmount);
+                EmitHealVFX(healVFXPrefab, target);
             }
         }
     }
@@ -5740,6 +5968,7 @@ public class AbilityCaster : NetworkBehaviour
             || variant.statusDuration > 0f
             || !string.IsNullOrEmpty(variant.targetTag)
             || variant.castVFX != null
+            || variant.healVFX != null
             || variant.hitVFX != null
             || variant.castSFX != null
             || variant.hitSFX != null
@@ -5794,6 +6023,7 @@ public class AbilityCaster : NetworkBehaviour
         payload.statusValue = variant.statusValue;
 
         payload.castVFX = variant.castVFX;
+        payload.healVFX = variant.healVFX;
         payload.hitVFX = variant.hitVFX;
         payload.castSFX = variant.castSFX;
         payload.hitSFX = variant.hitSFX;
@@ -5830,6 +6060,7 @@ public class AbilityCaster : NetworkBehaviour
         variant.statusValue = 0f;
         variant.targetTag = "";
         variant.castVFX = null;
+        variant.healVFX = null;
         variant.hitVFX = null;
         variant.castSFX = null;
         variant.hitSFX = null;
@@ -7000,18 +7231,21 @@ public class AbilityCaster : NetworkBehaviour
     {
         if (selectorAbility == null || effectAbility == null) return;
 
-#if UNITY_EDITOR || !UNITY_SERVER
-        if (effectAbility.category == AbilityCategory.Heal) OnHealCast?.Invoke();
-#endif
-
         GameObject hitVfxPrefab = effectAbility.hitVFX != null ? effectAbility.hitVFX : selectorAbility.hitVFX;
+        GameObject healVfxPrefab = effectAbility.healVFX != null ? effectAbility.healVFX : selectorAbility.healVFX;
 
         if (indicator != null && HasDirectPayload(effectAbility))
         {
             var hits = new System.Collections.Generic.List<Collider>();
             CollectHitsForAbilityShape(effectAbility, indicator, castOrigin, effectAbility.targetTag, hits);
             foreach (Collider hit in hits)
-                ApplyAbilityDefPayloadToHit(effectAbility, hit, hitVfxPrefab, damageMultiplier, aimTime);
+                ApplyAbilityDefPayloadToHit(
+                    effectAbility,
+                    hit,
+                    hitVfxPrefab,
+                    healVfxPrefab,
+                    damageMultiplier,
+                    aimTime);
         }
 
         Vector3 castPoint = GetCastPointForAbility(effectAbility, indicator, castOrigin);
@@ -7034,7 +7268,7 @@ public class AbilityCaster : NetworkBehaviour
             SpawnTurret(effectAbility, indicator.transform.position);
 
         DispatchAbility(effectAbility, castPoint, damageMultiplier);
-        StartPulseDamageIfNeeded(effectAbility, pulsePoint, damageMultiplier);
+        StartPulseEffectsIfNeeded(effectAbility, pulsePoint, damageMultiplier);
     }
 
     bool HasBrokenMigratedVariantPayloads(AbilityDef ability)
@@ -7070,6 +7304,7 @@ public class AbilityCaster : NetworkBehaviour
             || ability.spawnTurret
             || ability.deployablePrefab != null
             || ability.usePulseDamage
+            || ability.usePulseHealing
             || ability.chainTargets > 0
             || ability.pullRadius > 0f
             || ability.pullDuration > 0f
@@ -7082,7 +7317,9 @@ public class AbilityCaster : NetworkBehaviour
         if (ability == null) return false;
         return ability.damage > 0f
             || ability.healAmount > 0f
-            || (ability.hotTicks > 0 && ability.hotTickAmount > 0f)
+            || (!ability.usePulseHealing &&
+                ability.hotTicks > 0 &&
+                ability.hotTickAmount > 0f)
             || ability.shieldAbsorb > 0f
             || ability.statusDuration > 0f;
     }
@@ -7138,7 +7375,13 @@ public class AbilityCaster : NetworkBehaviour
         }
     }
 
-    void ApplyAbilityDefPayloadToHit(AbilityDef ability, Collider hit, GameObject hitVfxPrefab, float damageMultiplier, float aimTime)
+    void ApplyAbilityDefPayloadToHit(
+        AbilityDef ability,
+        Collider hit,
+        GameObject hitVfxPrefab,
+        GameObject healVfxPrefab,
+        float damageMultiplier,
+        float aimTime)
     {
         if (ability == null || hit == null) return;
 
@@ -7152,15 +7395,23 @@ public class AbilityCaster : NetworkBehaviour
         if (ability.healAmount > 0f)
         {
             health.Heal(ability.healAmount);
+            EmitHealVFX(healVfxPrefab, health);
 #if UNITY_EDITOR || !UNITY_SERVER
             FloatingDamageText.SpawnAnchored(floatingTextPos, ability.healAmount, FloatingDamageText.DamageType.Heal);
 #endif
             playedHitVfx = true;
         }
 
-        if (ability.hotTicks > 0 && ability.hotTickAmount > 0f)
+        if (!ability.usePulseHealing &&
+            ability.hotTicks > 0 &&
+            ability.hotTickAmount > 0f)
         {
-            StartCoroutine(ApplyHealOverTime(health, ability.hotTickAmount, ability.hotTicks, ability.hotInterval));
+            StartCoroutine(ApplyHealOverTime(
+                health,
+                ability.hotTickAmount,
+                ability.hotTicks,
+                ability.hotInterval,
+                healVfxPrefab));
             float totalHot = ability.hotTickAmount * ability.hotTicks;
 #if UNITY_EDITOR || !UNITY_SERVER
             FloatingDamageText.SpawnAnchored(floatingTextPos, totalHot, FloatingDamageText.DamageType.Heal);

@@ -215,8 +215,6 @@ MonoBehaviour:
   animator: {fileID: 0}
   baseMoveSpeed: 5
   baseSprintSpeed: 9
-  abilityCaster: {fileID: 2483979270693627920}
-  healVFX: {fileID: 8335447556292119033}
 --- !u!114 &2274001697713387715
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -364,144 +362,6 @@ MonoBehaviour:
   indicatorTextureHeal: {fileID: 2800000, guid: 0d383f0cd0395064eb4b64619b2840f3, type: 3}
   indicatorTextureSupport: {fileID: 2800000, guid: a9f31fa68537daf4799d1038b8f9fc6d, type: 3}
   spellbook:
-  - abilityName: Runic Sentinel
-    description: 
-    variantOnly: 0
-    variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
-    shape: 0
-    category: 2
-    range: 10
-    coneAngle: 60
-    useFixedConeRange: 0
-    rectWidth: 1.5
-    indicatorSize: 1.5
-    spawnTurret: 1
-    turretPrefab: {fileID: 832449836960929029, guid: aeeec77a192ced14c801c8c8521f793e, type: 3}
-    cooldown: 6
-    manaCost: 0
-    icon: {fileID: 21300000, guid: a659b39e757c5094895ec3f466d054f5, type: 3}
-    castTime: 0.6
-    marauderCastAnimation: {fileID: 0}
-    moveCasterToTarget: 0
-    instantMovement: 0
-    movementTiming: 0
-    moveToSpeed: 14
-    fixedMovementDuration: 0.9
-    movementArcHeight: 0
-    resolveEffectsOnLanding: 0
-    animationLandingPoint: 0.8
-    chargeable: 0
-    maxChargeTime: 1.5
-    damage: 10
-    damageDelay: 0
-    maxChargeDamage: 10
-    maxChargeSizeMultiplier: 1.8
-    targetTag: Enemy
-    chargedTint: {r: 0, g: 0, b: 0, a: 0}
-    fireVisual: 0
-    castVFX: {fileID: 1151652431613522, guid: dc081e8ab4711ba478a129a906452987, type: 3}
-    castingVFX: {fileID: 0}
-    hitVFX: {fileID: 2965222256817593503, guid: a164e676dbbd6e54587237e619372c98, type: 3}
-    castVFXAtCaster: 0
-    hitVFXFollowsTarget: 0
-    castSFX: {fileID: 8300000, guid: 3b50d025a816b48babcfabbf84b7155b, type: 3}
-    hitSFX: {fileID: 8300000, guid: d4e873285735d4220ae2bf54a2998bf4, type: 3}
-    sfxVolume: 0.75
-    shieldAbsorb: 0
-    shieldDuration: 0
-    healAmount: 0
-    hotTickAmount: 0
-    hotTicks: 0
-    hotInterval: 1
-    statusEffect: 0
-    statusDuration: 0
-    statusValue: 0
-    activeDuration: 0
-    chainTargets: 0
-    chainDamageFalloff: 5
-    pullRadius: 0
-    pullDuration: 0
-    crowdControlType: 0
-    pullDestination: 0
-    pullSpeed: 8
-    pullStopDistance: 1.25
-    usePulseDamage: 0
-    pulseCount: 0
-    pulseInterval: 0
-    pulseRadius: 0
-    pulseDamage: 0
-    pulseVFXLifetime: 0
-    deployablePrefab: {fileID: 1151652431613522, guid: dc081e8ab4711ba478a129a906452987, type: 3}
-    variants: []
-  - abilityName: Void Bolt
-    description: 
-    variantOnly: 0
-    variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
-    shape: 1
-    category: 0
-    range: 8
-    coneAngle: 60
-    useFixedConeRange: 0
-    rectWidth: 1.5
-    indicatorSize: 1.5
-    spawnTurret: 0
-    turretPrefab: {fileID: 0}
-    cooldown: 3
-    manaCost: 0
-    icon: {fileID: 21300000, guid: 1bc21f5844138bf44a721e5d99408301, type: 3}
-    castTime: 0.6
-    marauderCastAnimation: {fileID: 0}
-    moveCasterToTarget: 0
-    instantMovement: 0
-    movementTiming: 0
-    moveToSpeed: 14
-    fixedMovementDuration: 0.9
-    movementArcHeight: 0
-    resolveEffectsOnLanding: 0
-    animationLandingPoint: 0.8
-    chargeable: 1
-    maxChargeTime: 1.5
-    damage: 10
-    damageDelay: 0
-    maxChargeDamage: 30
-    maxChargeSizeMultiplier: 1.6
-    targetTag: Enemy
-    chargedTint: {r: 0.4, g: 0.1, b: 0.8, a: 0.9}
-    fireVisual: 0
-    castVFX: {fileID: 1741568361362846, guid: 4db85d1e064bd874cbfb92849ed76f3e, type: 3}
-    castingVFX: {fileID: 0}
-    hitVFX: {fileID: 8974203713140315807, guid: 709b0bd6b0b625249a98409dd7a87343, type: 3}
-    castVFXAtCaster: 0
-    hitVFXFollowsTarget: 0
-    castSFX: {fileID: 8300000, guid: a473ca48fa0604a5fbd2626a74455656, type: 3}
-    hitSFX: {fileID: 8300000, guid: d13d842343eb14ba98808eaa2b82d7e3, type: 3}
-    sfxVolume: 0.75
-    shieldAbsorb: 0
-    shieldDuration: 0
-    healAmount: 0
-    hotTickAmount: 0
-    hotTicks: 0
-    hotInterval: 1
-    statusEffect: 0
-    statusDuration: 0
-    statusValue: 0
-    activeDuration: 0
-    chainTargets: 0
-    chainDamageFalloff: 5
-    pullRadius: 0
-    pullDuration: 0
-    crowdControlType: 0
-    pullDestination: 0
-    pullSpeed: 8
-    pullStopDistance: 1.25
-    usePulseDamage: 0
-    pulseCount: 0
-    pulseInterval: 0
-    pulseRadius: 0
-    pulseDamage: 0
-    pulseVFXLifetime: 0
-    deployablePrefab: {fileID: 0}
-    variants: []
   - abilityName: Mending Circle
     description: 
     variantOnly: 0
@@ -510,7 +370,7 @@ MonoBehaviour:
     category: 1
     range: 6
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 3
     spawnTurret: 0
@@ -539,6 +399,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 7986504087968017091, guid: 12a56ee4630040c4eb17ae9707ed4cef, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 6823302871133167919, guid: 3138a83bedbd6ad4481ba0b061da2eb6, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -551,6 +412,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -571,75 +433,6 @@ MonoBehaviour:
     pulseVFXLifetime: 0
     deployablePrefab: {fileID: 7986504087968017091, guid: 12a56ee4630040c4eb17ae9707ed4cef, type: 3}
     variants: []
-  - abilityName: Storm Lash
-    description: 
-    variantOnly: 0
-    variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
-    shape: 2
-    category: 0
-    range: 10
-    coneAngle: 60
-    useFixedConeRange: 0
-    rectWidth: 1.5
-    indicatorSize: 1.5
-    spawnTurret: 0
-    turretPrefab: {fileID: 0}
-    cooldown: 4
-    manaCost: 0
-    icon: {fileID: 21300000, guid: 5c8b181005162704fbad039dcfa0f7ee, type: 3}
-    castTime: 0.6
-    marauderCastAnimation: {fileID: 0}
-    moveCasterToTarget: 0
-    instantMovement: 0
-    movementTiming: 0
-    moveToSpeed: 14
-    fixedMovementDuration: 0.9
-    movementArcHeight: 0
-    resolveEffectsOnLanding: 0
-    animationLandingPoint: 0.8
-    chargeable: 1
-    maxChargeTime: 1.5
-    damage: 15
-    damageDelay: 0
-    maxChargeDamage: 50
-    maxChargeSizeMultiplier: 1.8
-    targetTag: Enemy
-    chargedTint: {r: 0, g: 0, b: 0, a: 0}
-    fireVisual: 0
-    castVFX: {fileID: 4533992852024952465, guid: 5ebefd38fe1dbce4990790a0add9f65a, type: 3}
-    castingVFX: {fileID: 0}
-    hitVFX: {fileID: 1171201465392465800, guid: 4aa9f30a28a77224ba84b2a2c334c71b, type: 3}
-    castVFXAtCaster: 0
-    hitVFXFollowsTarget: 0
-    castSFX: {fileID: 8300000, guid: a68d8422f064545fab56b21cb7e79cae, type: 3}
-    hitSFX: {fileID: 8300000, guid: ffcae0360c2c54d71840031163ded163, type: 3}
-    sfxVolume: 0.75
-    shieldAbsorb: 0
-    shieldDuration: 0
-    healAmount: 0
-    hotTickAmount: 0
-    hotTicks: 0
-    hotInterval: 1
-    statusEffect: 0
-    statusDuration: 0
-    statusValue: 0
-    activeDuration: 0
-    chainTargets: 0
-    chainDamageFalloff: 5
-    pullRadius: 0
-    pullDuration: 0
-    crowdControlType: 0
-    pullDestination: 0
-    pullSpeed: 8
-    pullStopDistance: 1.25
-    usePulseDamage: 0
-    pulseCount: 0
-    pulseInterval: 0
-    pulseRadius: 0
-    pulseDamage: 0
-    pulseVFXLifetime: 0
-    deployablePrefab: {fileID: 0}
-    variants: []
   - abilityName: Ember Surge
     description: 
     variantOnly: 0
@@ -648,7 +441,7 @@ MonoBehaviour:
     category: 0
     range: 12
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 2
     spawnTurret: 0
@@ -677,6 +470,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 8149814289637279443, guid: 03ad2654f9e07194188f6a63eff8b2e0, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 7606620699271223679, guid: 5aa2236667d208e41a28e0f79695320a, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -689,6 +483,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -717,7 +512,7 @@ MonoBehaviour:
     category: 0
     range: 10
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 2.5
     spawnTurret: 0
@@ -746,6 +541,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 1105111623985532, guid: d03268a4406450646bbcdef70ee8ea3d, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 2965222256817593503, guid: a164e676dbbd6e54587237e619372c98, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -758,6 +554,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -786,7 +583,7 @@ MonoBehaviour:
     category: 0
     range: 5
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 5
     spawnTurret: 0
@@ -815,6 +612,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 1151652431613522, guid: dc081e8ab4711ba478a129a906452987, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 8378648546881499446, guid: 867c572a5be680d42a042d2349f10143, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -827,6 +625,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -855,7 +654,7 @@ MonoBehaviour:
     category: 2
     range: 0
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1
     spawnTurret: 0
@@ -884,6 +683,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 1626987590987328, guid: a0db8e7ecdf01174db2270f85ec0a739, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 5631927496442371602, guid: 6c52ee79710704a4dab242c5ba8e0408, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -896,6 +696,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -924,7 +725,7 @@ MonoBehaviour:
     category: 0
     range: 8
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1
     spawnTurret: 0
@@ -953,6 +754,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 1151652431613522, guid: dc081e8ab4711ba478a129a906452987, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 4994997792314849709, guid: 3dd50886582244645be87adb42aa8528, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -965,6 +767,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -993,7 +796,7 @@ MonoBehaviour:
     category: 2
     range: 0
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 6
     spawnTurret: 0
@@ -1022,6 +825,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 6226639424814228509, guid: aa77297fca95b7346a94d76cf84fe635, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -1034,6 +838,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -1062,7 +867,7 @@ MonoBehaviour:
     category: 2
     range: 12
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1
     spawnTurret: 0
@@ -1091,6 +896,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 7986504087968017091, guid: 12a56ee4630040c4eb17ae9707ed4cef, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 3632712385227303547, guid: 324fc9687c94a5f4585d7728801af43d, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -1103,6 +909,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -1131,7 +938,7 @@ MonoBehaviour:
     category: 1
     range: 6
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1
     spawnTurret: 0
@@ -1160,6 +967,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 9017484664307500583, guid: 1245b8d2997d5b34fb1637be70a7eb05, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 2944396702758532163, guid: e190bf97c041e58448af6b043116cba0, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -1172,6 +980,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -1200,7 +1009,7 @@ MonoBehaviour:
     category: 2
     range: 0
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1
     spawnTurret: 0
@@ -1229,6 +1038,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 4533992852024952465, guid: 5ebefd38fe1dbce4990790a0add9f65a, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 5263261513851132598, guid: 870a10c1f420abb4598b34344a9e7823, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -1241,6 +1051,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -1269,7 +1080,7 @@ MonoBehaviour:
     category: 2
     range: 8
     coneAngle: 70
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -1298,6 +1109,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 8145502431507700120, guid: 000832214335ffd4782827d2a4510f4a, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 689667626583958020, guid: 1336648bc1d8baf46a4515860950c9d4, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -1310,6 +1122,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -1338,7 +1151,7 @@ MonoBehaviour:
     category: 2
     range: 10
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 4
     spawnTurret: 0
@@ -1367,6 +1180,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 8644861730782453898, guid: b64478a730dfa2341bc02911953ad4e9, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 4994997792314849709, guid: 3dd50886582244645be87adb42aa8528, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -1379,6 +1193,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -1407,7 +1222,7 @@ MonoBehaviour:
     category: 0
     range: 6
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 2
     indicatorSize: 1.5
     spawnTurret: 0
@@ -1436,6 +1251,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 1626987590987328, guid: a0db8e7ecdf01174db2270f85ec0a739, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 5631927496442371602, guid: 6c52ee79710704a4dab242c5ba8e0408, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -1448,6 +1264,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -1476,7 +1293,7 @@ MonoBehaviour:
     category: 2
     range: 0
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1
     spawnTurret: 0
@@ -1505,6 +1322,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 2309628055276507911, guid: 5dc06ed64db520147912484d5ba21615, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -1517,6 +1335,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -1545,7 +1364,7 @@ MonoBehaviour:
     category: 2
     range: 8
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1
     spawnTurret: 0
@@ -1574,6 +1393,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 1949376974578768, guid: d49e8961a0a059b4ab38a07daef04519, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 1171201465392465800, guid: 4aa9f30a28a77224ba84b2a2c334c71b, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -1586,6 +1406,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -1614,7 +1435,7 @@ MonoBehaviour:
     category: 2
     range: 8
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 8
     indicatorSize: 1.5
     spawnTurret: 0
@@ -1643,6 +1464,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 1777011822275602, guid: 1fc25210aae1ece4b9dcb815d505301d, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -1655,6 +1477,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -1683,7 +1506,7 @@ MonoBehaviour:
     category: 2
     range: 10
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 3.5
     spawnTurret: 0
@@ -1712,6 +1535,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 7761031033666763820, guid: 1eb833340b41fb444b576c4dced8d4dc, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 1427244075889090, guid: 5ada718ad8eefc341a11217c754bc91a, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -1724,6 +1548,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -1752,7 +1577,7 @@ MonoBehaviour:
     category: 0
     range: 10
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 8
     spawnTurret: 0
@@ -1781,6 +1606,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 1901902437216624, guid: 3bdca15d736d48f409ccf70e68bf79de, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 8974203713140315807, guid: 709b0bd6b0b625249a98409dd7a87343, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -1793,6 +1619,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -1821,7 +1648,7 @@ MonoBehaviour:
     category: 0
     range: 10
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -1850,6 +1677,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 4533992852024952465, guid: 5ebefd38fe1dbce4990790a0add9f65a, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 1914988783019038, guid: bf79162d73e16994d8b477d54f0b0f21, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -1862,6 +1690,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -1890,7 +1719,7 @@ MonoBehaviour:
     category: 0
     range: 14
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 12
     spawnTurret: 0
@@ -1919,6 +1748,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 1901902437216624, guid: 3bdca15d736d48f409ccf70e68bf79de, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 358637981425055526, guid: 8eb503696b886e04faff8fc0f480d473, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -1931,6 +1761,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -1959,7 +1790,7 @@ MonoBehaviour:
     category: 2
     range: 8
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1
     spawnTurret: 0
@@ -1988,6 +1819,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 6226639424814228509, guid: aa77297fca95b7346a94d76cf84fe635, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -2000,6 +1832,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -2028,7 +1861,7 @@ MonoBehaviour:
     category: 1
     range: 10
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 2
     spawnTurret: 0
@@ -2057,6 +1890,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 7986504087968017091, guid: 12a56ee4630040c4eb17ae9707ed4cef, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 3632712385227303547, guid: 324fc9687c94a5f4585d7728801af43d, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -2069,6 +1903,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -2097,7 +1932,7 @@ MonoBehaviour:
     category: 1
     range: 6
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -2126,6 +1961,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 4115455537270748339, guid: 6555300494081614fa6b6a823cca9f64, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 2944396702758532163, guid: e190bf97c041e58448af6b043116cba0, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -2138,6 +1974,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -2166,7 +2003,7 @@ MonoBehaviour:
     category: 2
     range: 8
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1
     spawnTurret: 0
@@ -2195,6 +2032,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 1626987590987328, guid: a0db8e7ecdf01174db2270f85ec0a739, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 5631927496442371602, guid: 6c52ee79710704a4dab242c5ba8e0408, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -2207,6 +2045,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -2235,7 +2074,7 @@ MonoBehaviour:
     category: 2
     range: 8
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1
     spawnTurret: 0
@@ -2264,6 +2103,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 1151652431613522, guid: dc081e8ab4711ba478a129a906452987, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 2965222256817593503, guid: a164e676dbbd6e54587237e619372c98, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -2276,6 +2116,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -2304,7 +2145,7 @@ MonoBehaviour:
     category: 1
     range: 0
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1
     spawnTurret: 0
@@ -2333,6 +2174,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 3992058561654064293, guid: 13c990b8270c70b4c9f196019286028c, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 7761031033666763820, guid: 1eb833340b41fb444b576c4dced8d4dc, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -2345,6 +2187,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -2373,7 +2216,7 @@ MonoBehaviour:
     category: 2
     range: 0
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1
     spawnTurret: 0
@@ -2402,6 +2245,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 6526302276393259002, guid: f9d9793366789ae48a7e1b0692763acc, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -2414,6 +2258,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -2442,7 +2287,7 @@ MonoBehaviour:
     category: 2
     range: 10
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 5
     spawnTurret: 0
@@ -2471,6 +2316,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 1626987590987328, guid: a0db8e7ecdf01174db2270f85ec0a739, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 5631927496442371602, guid: 6c52ee79710704a4dab242c5ba8e0408, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -2483,6 +2329,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -2511,7 +2358,7 @@ MonoBehaviour:
     category: 0
     range: 8
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 8
     spawnTurret: 0
@@ -2540,6 +2387,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 1901902437216624, guid: 3bdca15d736d48f409ccf70e68bf79de, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 5034656251238326012, guid: 9de2fa19f0390d44491264d9cab8cec5, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -2552,6 +2400,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -2580,7 +2429,7 @@ MonoBehaviour:
     category: 0
     range: 4
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -2609,6 +2458,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -2621,6 +2471,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -2649,7 +2500,7 @@ MonoBehaviour:
     category: 0
     range: 4
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -2678,6 +2529,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -2690,6 +2542,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -2718,7 +2571,7 @@ MonoBehaviour:
     category: 0
     range: 4
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -2747,6 +2600,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -2759,6 +2613,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -2787,7 +2642,7 @@ MonoBehaviour:
     category: 1
     range: 10
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -2816,6 +2671,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -2828,6 +2684,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -2856,7 +2713,7 @@ MonoBehaviour:
     category: 1
     range: 12
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 2
     indicatorSize: 1.5
     spawnTurret: 0
@@ -2885,6 +2742,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -2897,6 +2755,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -2925,7 +2784,7 @@ MonoBehaviour:
     category: 0
     range: 10
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -2954,6 +2813,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -2966,6 +2826,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -2994,7 +2855,7 @@ MonoBehaviour:
     category: 0
     range: 12
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 2
     indicatorSize: 1.5
     spawnTurret: 0
@@ -3023,6 +2884,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -3035,6 +2897,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -3063,7 +2926,7 @@ MonoBehaviour:
     category: 0
     range: 10
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -3092,6 +2955,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -3104,6 +2968,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -3132,7 +2997,7 @@ MonoBehaviour:
     category: 0
     range: 14
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 8
     spawnTurret: 0
@@ -3161,6 +3026,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -3173,6 +3039,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -3201,7 +3068,7 @@ MonoBehaviour:
     category: 0
     range: 10
     coneAngle: 55
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -3230,6 +3097,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -3242,6 +3110,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -3279,6 +3148,7 @@ MonoBehaviour:
       statusValue: 0
       targetTag: 
       castVFX: {fileID: 0}
+      healVFX: {fileID: 0}
       hitVFX: {fileID: 0}
       castSFX: {fileID: 0}
       hitSFX: {fileID: 0}
@@ -3299,6 +3169,7 @@ MonoBehaviour:
       statusValue: 0
       targetTag: 
       castVFX: {fileID: 0}
+      healVFX: {fileID: 0}
       hitVFX: {fileID: 0}
       castSFX: {fileID: 0}
       hitSFX: {fileID: 0}
@@ -3319,6 +3190,7 @@ MonoBehaviour:
       statusValue: 0
       targetTag: 
       castVFX: {fileID: 0}
+      healVFX: {fileID: 0}
       hitVFX: {fileID: 0}
       castSFX: {fileID: 0}
       hitSFX: {fileID: 0}
@@ -3330,7 +3202,7 @@ MonoBehaviour:
     category: 0
     range: 10
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 3
     spawnTurret: 0
@@ -3359,6 +3231,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -3371,6 +3244,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -3408,6 +3282,7 @@ MonoBehaviour:
       statusValue: 0
       targetTag: 
       castVFX: {fileID: 0}
+      healVFX: {fileID: 0}
       hitVFX: {fileID: 0}
       castSFX: {fileID: 0}
       hitSFX: {fileID: 0}
@@ -3428,6 +3303,7 @@ MonoBehaviour:
       statusValue: 0
       targetTag: 
       castVFX: {fileID: 0}
+      healVFX: {fileID: 0}
       hitVFX: {fileID: 0}
       castSFX: {fileID: 0}
       hitSFX: {fileID: 0}
@@ -3448,6 +3324,7 @@ MonoBehaviour:
       statusValue: 0
       targetTag: 
       castVFX: {fileID: 0}
+      healVFX: {fileID: 0}
       hitVFX: {fileID: 0}
       castSFX: {fileID: 0}
       hitSFX: {fileID: 0}
@@ -3459,7 +3336,7 @@ MonoBehaviour:
     category: 0
     range: 8
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 4
     spawnTurret: 0
@@ -3488,6 +3365,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -3500,6 +3378,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -3537,6 +3416,7 @@ MonoBehaviour:
       statusValue: 0
       targetTag: 
       castVFX: {fileID: 0}
+      healVFX: {fileID: 0}
       hitVFX: {fileID: 0}
       castSFX: {fileID: 0}
       hitSFX: {fileID: 0}
@@ -3557,6 +3437,7 @@ MonoBehaviour:
       statusValue: 0
       targetTag: 
       castVFX: {fileID: 0}
+      healVFX: {fileID: 0}
       hitVFX: {fileID: 0}
       castSFX: {fileID: 0}
       hitSFX: {fileID: 0}
@@ -3577,6 +3458,7 @@ MonoBehaviour:
       statusValue: 0
       targetTag: 
       castVFX: {fileID: 0}
+      healVFX: {fileID: 0}
       hitVFX: {fileID: 0}
       castSFX: {fileID: 0}
       hitSFX: {fileID: 0}
@@ -3588,7 +3470,7 @@ MonoBehaviour:
     category: 0
     range: 9
     coneAngle: 50
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -3617,6 +3499,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -3629,6 +3512,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -3666,6 +3550,7 @@ MonoBehaviour:
       statusValue: 0
       targetTag: 
       castVFX: {fileID: 0}
+      healVFX: {fileID: 0}
       hitVFX: {fileID: 0}
       castSFX: {fileID: 0}
       hitSFX: {fileID: 0}
@@ -3686,6 +3571,7 @@ MonoBehaviour:
       statusValue: 0
       targetTag: 
       castVFX: {fileID: 0}
+      healVFX: {fileID: 0}
       hitVFX: {fileID: 0}
       castSFX: {fileID: 0}
       hitSFX: {fileID: 0}
@@ -3706,6 +3592,7 @@ MonoBehaviour:
       statusValue: 0
       targetTag: 
       castVFX: {fileID: 0}
+      healVFX: {fileID: 0}
       hitVFX: {fileID: 0}
       castSFX: {fileID: 0}
       hitSFX: {fileID: 0}
@@ -3717,7 +3604,7 @@ MonoBehaviour:
     category: 0
     range: 8
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 3
     spawnTurret: 0
@@ -3746,6 +3633,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -3758,6 +3646,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -3795,6 +3684,7 @@ MonoBehaviour:
       statusValue: 0
       targetTag: 
       castVFX: {fileID: 0}
+      healVFX: {fileID: 0}
       hitVFX: {fileID: 0}
       castSFX: {fileID: 0}
       hitSFX: {fileID: 0}
@@ -3815,6 +3705,7 @@ MonoBehaviour:
       statusValue: 0
       targetTag: 
       castVFX: {fileID: 0}
+      healVFX: {fileID: 0}
       hitVFX: {fileID: 0}
       castSFX: {fileID: 0}
       hitSFX: {fileID: 0}
@@ -3835,6 +3726,7 @@ MonoBehaviour:
       statusValue: 0
       targetTag: 
       castVFX: {fileID: 0}
+      healVFX: {fileID: 0}
       hitVFX: {fileID: 0}
       castSFX: {fileID: 0}
       hitSFX: {fileID: 0}
@@ -3846,7 +3738,7 @@ MonoBehaviour:
     category: 0
     range: 9
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 2
     spawnTurret: 0
@@ -3875,6 +3767,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -3887,6 +3780,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -3924,6 +3818,7 @@ MonoBehaviour:
       statusValue: 0
       targetTag: 
       castVFX: {fileID: 0}
+      healVFX: {fileID: 0}
       hitVFX: {fileID: 0}
       castSFX: {fileID: 0}
       hitSFX: {fileID: 0}
@@ -3944,6 +3839,7 @@ MonoBehaviour:
       statusValue: 0
       targetTag: 
       castVFX: {fileID: 0}
+      healVFX: {fileID: 0}
       hitVFX: {fileID: 0}
       castSFX: {fileID: 0}
       hitSFX: {fileID: 0}
@@ -3964,6 +3860,7 @@ MonoBehaviour:
       statusValue: 0
       targetTag: 
       castVFX: {fileID: 0}
+      healVFX: {fileID: 0}
       hitVFX: {fileID: 0}
       castSFX: {fileID: 0}
       hitSFX: {fileID: 0}
@@ -3975,7 +3872,7 @@ MonoBehaviour:
     category: 0
     range: 5
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 2.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -4004,6 +3901,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -4016,6 +3914,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -4053,6 +3952,7 @@ MonoBehaviour:
       statusValue: 0
       targetTag: 
       castVFX: {fileID: 0}
+      healVFX: {fileID: 0}
       hitVFX: {fileID: 0}
       castSFX: {fileID: 0}
       hitSFX: {fileID: 0}
@@ -4073,6 +3973,7 @@ MonoBehaviour:
       statusValue: 0
       targetTag: 
       castVFX: {fileID: 0}
+      healVFX: {fileID: 0}
       hitVFX: {fileID: 0}
       castSFX: {fileID: 0}
       hitSFX: {fileID: 0}
@@ -4093,6 +3994,7 @@ MonoBehaviour:
       statusValue: 0
       targetTag: 
       castVFX: {fileID: 0}
+      healVFX: {fileID: 0}
       hitVFX: {fileID: 0}
       castSFX: {fileID: 0}
       hitSFX: {fileID: 0}
@@ -4104,7 +4006,7 @@ MonoBehaviour:
     category: 2
     range: 0
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 6
     spawnTurret: 0
@@ -4133,6 +4035,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -4145,6 +4048,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -4182,6 +4086,7 @@ MonoBehaviour:
       statusValue: 0
       targetTag: 
       castVFX: {fileID: 0}
+      healVFX: {fileID: 0}
       hitVFX: {fileID: 0}
       castSFX: {fileID: 0}
       hitSFX: {fileID: 0}
@@ -4202,6 +4107,7 @@ MonoBehaviour:
       statusValue: 0
       targetTag: 
       castVFX: {fileID: 0}
+      healVFX: {fileID: 0}
       hitVFX: {fileID: 0}
       castSFX: {fileID: 0}
       hitSFX: {fileID: 0}
@@ -4222,6 +4128,7 @@ MonoBehaviour:
       statusValue: 0
       targetTag: 
       castVFX: {fileID: 0}
+      healVFX: {fileID: 0}
       hitVFX: {fileID: 0}
       castSFX: {fileID: 0}
       hitSFX: {fileID: 0}
@@ -4233,7 +4140,7 @@ MonoBehaviour:
     category: 0
     range: 7
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 2
     indicatorSize: 1.5
     spawnTurret: 0
@@ -4262,6 +4169,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -4274,6 +4182,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -4311,6 +4220,7 @@ MonoBehaviour:
       statusValue: 0
       targetTag: 
       castVFX: {fileID: 0}
+      healVFX: {fileID: 0}
       hitVFX: {fileID: 0}
       castSFX: {fileID: 0}
       hitSFX: {fileID: 0}
@@ -4331,6 +4241,7 @@ MonoBehaviour:
       statusValue: 0
       targetTag: 
       castVFX: {fileID: 0}
+      healVFX: {fileID: 0}
       hitVFX: {fileID: 0}
       castSFX: {fileID: 0}
       hitSFX: {fileID: 0}
@@ -4351,6 +4262,7 @@ MonoBehaviour:
       statusValue: 0
       targetTag: 
       castVFX: {fileID: 0}
+      healVFX: {fileID: 0}
       hitVFX: {fileID: 0}
       castSFX: {fileID: 0}
       hitSFX: {fileID: 0}
@@ -4362,7 +4274,7 @@ MonoBehaviour:
     category: 0
     range: 6
     coneAngle: 65
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -4391,6 +4303,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -4403,6 +4316,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -4440,6 +4354,7 @@ MonoBehaviour:
       statusValue: 0
       targetTag: 
       castVFX: {fileID: 0}
+      healVFX: {fileID: 0}
       hitVFX: {fileID: 0}
       castSFX: {fileID: 0}
       hitSFX: {fileID: 0}
@@ -4460,6 +4375,7 @@ MonoBehaviour:
       statusValue: 0
       targetTag: 
       castVFX: {fileID: 0}
+      healVFX: {fileID: 0}
       hitVFX: {fileID: 0}
       castSFX: {fileID: 0}
       hitSFX: {fileID: 0}
@@ -4480,6 +4396,7 @@ MonoBehaviour:
       statusValue: 0
       targetTag: 
       castVFX: {fileID: 0}
+      healVFX: {fileID: 0}
       hitVFX: {fileID: 0}
       castSFX: {fileID: 0}
       hitSFX: {fileID: 0}
@@ -4491,7 +4408,7 @@ MonoBehaviour:
     category: 0
     range: 8
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 3
     spawnTurret: 0
@@ -4520,6 +4437,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -4532,6 +4450,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -4569,6 +4488,7 @@ MonoBehaviour:
       statusValue: 0
       targetTag: 
       castVFX: {fileID: 0}
+      healVFX: {fileID: 0}
       hitVFX: {fileID: 0}
       castSFX: {fileID: 0}
       hitSFX: {fileID: 0}
@@ -4589,6 +4509,7 @@ MonoBehaviour:
       statusValue: 0
       targetTag: 
       castVFX: {fileID: 0}
+      healVFX: {fileID: 0}
       hitVFX: {fileID: 0}
       castSFX: {fileID: 0}
       hitSFX: {fileID: 0}
@@ -4609,6 +4530,7 @@ MonoBehaviour:
       statusValue: 0
       targetTag: 
       castVFX: {fileID: 0}
+      healVFX: {fileID: 0}
       hitVFX: {fileID: 0}
       castSFX: {fileID: 0}
       hitSFX: {fileID: 0}
@@ -4620,7 +4542,7 @@ MonoBehaviour:
     category: 0
     range: 7
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.2
     spawnTurret: 0
@@ -4649,6 +4571,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -4661,6 +4584,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -4698,6 +4622,7 @@ MonoBehaviour:
       statusValue: 0
       targetTag: 
       castVFX: {fileID: 0}
+      healVFX: {fileID: 0}
       hitVFX: {fileID: 0}
       castSFX: {fileID: 0}
       hitSFX: {fileID: 0}
@@ -4718,6 +4643,7 @@ MonoBehaviour:
       statusValue: 0
       targetTag: 
       castVFX: {fileID: 0}
+      healVFX: {fileID: 0}
       hitVFX: {fileID: 0}
       castSFX: {fileID: 0}
       hitSFX: {fileID: 0}
@@ -4738,6 +4664,7 @@ MonoBehaviour:
       statusValue: 0
       targetTag: 
       castVFX: {fileID: 0}
+      healVFX: {fileID: 0}
       hitVFX: {fileID: 0}
       castSFX: {fileID: 0}
       hitSFX: {fileID: 0}
@@ -4749,7 +4676,7 @@ MonoBehaviour:
     category: 1
     range: 10
     coneAngle: 55
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -4778,6 +4705,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -4790,6 +4718,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -4827,6 +4756,7 @@ MonoBehaviour:
       statusValue: 0
       targetTag: 
       castVFX: {fileID: 0}
+      healVFX: {fileID: 0}
       hitVFX: {fileID: 0}
       castSFX: {fileID: 0}
       hitSFX: {fileID: 0}
@@ -4847,6 +4777,7 @@ MonoBehaviour:
       statusValue: 0
       targetTag: 
       castVFX: {fileID: 0}
+      healVFX: {fileID: 0}
       hitVFX: {fileID: 0}
       castSFX: {fileID: 0}
       hitSFX: {fileID: 0}
@@ -4867,6 +4798,7 @@ MonoBehaviour:
       statusValue: 0
       targetTag: 
       castVFX: {fileID: 0}
+      healVFX: {fileID: 0}
       hitVFX: {fileID: 0}
       castSFX: {fileID: 0}
       hitSFX: {fileID: 0}
@@ -4878,7 +4810,7 @@ MonoBehaviour:
     category: 2
     range: 0
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 5
     spawnTurret: 0
@@ -4907,6 +4839,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -4919,6 +4852,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -4956,6 +4890,7 @@ MonoBehaviour:
       statusValue: 0
       targetTag: 
       castVFX: {fileID: 0}
+      healVFX: {fileID: 0}
       hitVFX: {fileID: 0}
       castSFX: {fileID: 0}
       hitSFX: {fileID: 0}
@@ -4976,6 +4911,7 @@ MonoBehaviour:
       statusValue: 0
       targetTag: 
       castVFX: {fileID: 0}
+      healVFX: {fileID: 0}
       hitVFX: {fileID: 0}
       castSFX: {fileID: 0}
       hitSFX: {fileID: 0}
@@ -4996,6 +4932,7 @@ MonoBehaviour:
       statusValue: 0
       targetTag: 
       castVFX: {fileID: 0}
+      healVFX: {fileID: 0}
       hitVFX: {fileID: 0}
       castSFX: {fileID: 0}
       hitSFX: {fileID: 0}
@@ -5007,7 +4944,7 @@ MonoBehaviour:
     category: 0
     range: 9
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -5036,6 +4973,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -5048,6 +4986,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -5085,6 +5024,7 @@ MonoBehaviour:
       statusValue: 0
       targetTag: 
       castVFX: {fileID: 0}
+      healVFX: {fileID: 0}
       hitVFX: {fileID: 0}
       castSFX: {fileID: 0}
       hitSFX: {fileID: 0}
@@ -5105,6 +5045,7 @@ MonoBehaviour:
       statusValue: 0
       targetTag: 
       castVFX: {fileID: 0}
+      healVFX: {fileID: 0}
       hitVFX: {fileID: 0}
       castSFX: {fileID: 0}
       hitSFX: {fileID: 0}
@@ -5125,6 +5066,7 @@ MonoBehaviour:
       statusValue: 0
       targetTag: 
       castVFX: {fileID: 0}
+      healVFX: {fileID: 0}
       hitVFX: {fileID: 0}
       castSFX: {fileID: 0}
       hitSFX: {fileID: 0}
@@ -5136,7 +5078,7 @@ MonoBehaviour:
     category: 0
     range: 10
     coneAngle: 55
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -5165,6 +5107,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -5177,6 +5120,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -5205,7 +5149,7 @@ MonoBehaviour:
     category: 0
     range: 10
     coneAngle: 55
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -5234,6 +5178,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -5246,6 +5191,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -5274,7 +5220,7 @@ MonoBehaviour:
     category: 0
     range: 10
     coneAngle: 55
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -5303,6 +5249,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -5315,6 +5262,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -5343,7 +5291,7 @@ MonoBehaviour:
     category: 0
     range: 10
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 3
     spawnTurret: 0
@@ -5372,6 +5320,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -5384,6 +5333,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -5412,7 +5362,7 @@ MonoBehaviour:
     category: 0
     range: 10
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 3
     spawnTurret: 0
@@ -5441,6 +5391,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -5453,6 +5404,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -5481,7 +5433,7 @@ MonoBehaviour:
     category: 0
     range: 10
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 3
     spawnTurret: 0
@@ -5510,6 +5462,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -5522,6 +5475,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -5550,7 +5504,7 @@ MonoBehaviour:
     category: 0
     range: 8
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 4
     spawnTurret: 0
@@ -5579,6 +5533,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -5591,6 +5546,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -5619,7 +5575,7 @@ MonoBehaviour:
     category: 0
     range: 8
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 4
     spawnTurret: 0
@@ -5648,6 +5604,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -5660,6 +5617,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -5688,7 +5646,7 @@ MonoBehaviour:
     category: 0
     range: 8
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 4
     spawnTurret: 0
@@ -5717,6 +5675,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -5729,6 +5688,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -5757,7 +5717,7 @@ MonoBehaviour:
     category: 0
     range: 9
     coneAngle: 50
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -5786,6 +5746,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -5798,6 +5759,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -5826,7 +5788,7 @@ MonoBehaviour:
     category: 0
     range: 9
     coneAngle: 50
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -5855,6 +5817,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -5867,6 +5830,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -5895,7 +5859,7 @@ MonoBehaviour:
     category: 0
     range: 9
     coneAngle: 50
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -5924,6 +5888,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -5936,6 +5901,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -5964,7 +5930,7 @@ MonoBehaviour:
     category: 0
     range: 8
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 3
     spawnTurret: 0
@@ -5993,6 +5959,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -6005,6 +5972,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -6033,7 +6001,7 @@ MonoBehaviour:
     category: 0
     range: 8
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 3
     spawnTurret: 0
@@ -6062,6 +6030,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -6074,6 +6043,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -6102,7 +6072,7 @@ MonoBehaviour:
     category: 0
     range: 8
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 3
     spawnTurret: 0
@@ -6131,6 +6101,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -6143,6 +6114,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -6171,7 +6143,7 @@ MonoBehaviour:
     category: 0
     range: 9
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 2
     spawnTurret: 0
@@ -6200,6 +6172,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -6212,6 +6185,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -6240,7 +6214,7 @@ MonoBehaviour:
     category: 0
     range: 9
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 2
     spawnTurret: 0
@@ -6269,6 +6243,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -6281,6 +6256,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -6309,7 +6285,7 @@ MonoBehaviour:
     category: 0
     range: 9
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 2
     spawnTurret: 0
@@ -6338,6 +6314,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -6350,6 +6327,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -6378,7 +6356,7 @@ MonoBehaviour:
     category: 0
     range: 5
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 2.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -6407,6 +6385,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -6419,6 +6398,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -6447,7 +6427,7 @@ MonoBehaviour:
     category: 0
     range: 5
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 2.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -6476,6 +6456,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -6488,6 +6469,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -6516,7 +6498,7 @@ MonoBehaviour:
     category: 0
     range: 5
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 2.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -6545,6 +6527,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -6557,6 +6540,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -6585,7 +6569,7 @@ MonoBehaviour:
     category: 2
     range: 0
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 6
     spawnTurret: 0
@@ -6614,6 +6598,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -6626,6 +6611,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -6654,7 +6640,7 @@ MonoBehaviour:
     category: 2
     range: 0
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 6
     spawnTurret: 0
@@ -6683,6 +6669,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -6695,6 +6682,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -6723,7 +6711,7 @@ MonoBehaviour:
     category: 2
     range: 0
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 6
     spawnTurret: 0
@@ -6752,6 +6740,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -6764,6 +6753,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -6792,7 +6782,7 @@ MonoBehaviour:
     category: 0
     range: 7
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 2
     indicatorSize: 1.5
     spawnTurret: 0
@@ -6821,6 +6811,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -6833,6 +6824,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -6861,7 +6853,7 @@ MonoBehaviour:
     category: 0
     range: 7
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 2
     indicatorSize: 1.5
     spawnTurret: 0
@@ -6890,6 +6882,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -6902,6 +6895,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -6930,7 +6924,7 @@ MonoBehaviour:
     category: 0
     range: 7
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 2
     indicatorSize: 1.5
     spawnTurret: 0
@@ -6959,6 +6953,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -6971,6 +6966,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -6999,7 +6995,7 @@ MonoBehaviour:
     category: 0
     range: 6
     coneAngle: 65
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -7028,6 +7024,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -7040,6 +7037,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -7068,7 +7066,7 @@ MonoBehaviour:
     category: 0
     range: 6
     coneAngle: 65
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -7097,6 +7095,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -7109,6 +7108,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -7137,7 +7137,7 @@ MonoBehaviour:
     category: 0
     range: 6
     coneAngle: 65
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -7166,6 +7166,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -7178,6 +7179,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -7206,7 +7208,7 @@ MonoBehaviour:
     category: 0
     range: 8
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 3
     spawnTurret: 0
@@ -7235,6 +7237,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -7247,6 +7250,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -7275,7 +7279,7 @@ MonoBehaviour:
     category: 0
     range: 8
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 3
     spawnTurret: 0
@@ -7304,6 +7308,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -7316,6 +7321,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -7344,7 +7350,7 @@ MonoBehaviour:
     category: 0
     range: 8
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 3
     spawnTurret: 0
@@ -7373,6 +7379,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -7385,6 +7392,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -7413,7 +7421,7 @@ MonoBehaviour:
     category: 0
     range: 7
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.2
     spawnTurret: 0
@@ -7442,6 +7450,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -7454,6 +7463,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -7482,7 +7492,7 @@ MonoBehaviour:
     category: 0
     range: 7
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.2
     spawnTurret: 0
@@ -7511,6 +7521,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -7523,6 +7534,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -7551,7 +7563,7 @@ MonoBehaviour:
     category: 0
     range: 7
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.2
     spawnTurret: 0
@@ -7580,6 +7592,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -7592,6 +7605,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -7620,7 +7634,7 @@ MonoBehaviour:
     category: 1
     range: 10
     coneAngle: 55
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -7649,6 +7663,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -7661,6 +7676,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -7689,7 +7705,7 @@ MonoBehaviour:
     category: 1
     range: 10
     coneAngle: 55
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -7718,6 +7734,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -7730,6 +7747,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -7758,7 +7776,7 @@ MonoBehaviour:
     category: 1
     range: 10
     coneAngle: 55
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -7787,6 +7805,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -7799,6 +7818,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -7827,7 +7847,7 @@ MonoBehaviour:
     category: 2
     range: 0
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 5
     spawnTurret: 0
@@ -7856,6 +7876,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -7868,6 +7889,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -7896,7 +7918,7 @@ MonoBehaviour:
     category: 2
     range: 0
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 5
     spawnTurret: 0
@@ -7925,6 +7947,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -7937,6 +7960,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -7965,7 +7989,7 @@ MonoBehaviour:
     category: 2
     range: 0
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 5
     spawnTurret: 0
@@ -7994,6 +8018,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -8006,6 +8031,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -8034,7 +8060,7 @@ MonoBehaviour:
     category: 0
     range: 9
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -8063,6 +8089,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -8075,6 +8102,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -8103,7 +8131,7 @@ MonoBehaviour:
     category: 0
     range: 9
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -8132,6 +8160,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -8144,6 +8173,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -8172,7 +8202,7 @@ MonoBehaviour:
     category: 0
     range: 9
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -8201,6 +8231,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -8213,6 +8244,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -8241,7 +8273,7 @@ MonoBehaviour:
     category: 0
     range: 10
     coneAngle: 55
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -8270,6 +8302,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -8282,6 +8315,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -8310,7 +8344,7 @@ MonoBehaviour:
     category: 0
     range: 10
     coneAngle: 55
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -8339,6 +8373,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -8351,6 +8386,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -8379,7 +8415,7 @@ MonoBehaviour:
     category: 0
     range: 10
     coneAngle: 55
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -8408,6 +8444,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -8420,6 +8457,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -8448,7 +8486,7 @@ MonoBehaviour:
     category: 0
     range: 10
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 3
     spawnTurret: 0
@@ -8477,6 +8515,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -8489,6 +8528,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -8517,7 +8557,7 @@ MonoBehaviour:
     category: 0
     range: 10
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 3
     spawnTurret: 0
@@ -8546,6 +8586,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -8558,6 +8599,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -8586,7 +8628,7 @@ MonoBehaviour:
     category: 0
     range: 10
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 3
     spawnTurret: 0
@@ -8615,6 +8657,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -8627,6 +8670,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -8655,7 +8699,7 @@ MonoBehaviour:
     category: 0
     range: 8
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 4
     spawnTurret: 0
@@ -8684,6 +8728,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -8696,6 +8741,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -8724,7 +8770,7 @@ MonoBehaviour:
     category: 0
     range: 8
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 4
     spawnTurret: 0
@@ -8753,6 +8799,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -8765,6 +8812,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -8793,7 +8841,7 @@ MonoBehaviour:
     category: 0
     range: 8
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 4
     spawnTurret: 0
@@ -8822,6 +8870,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -8834,6 +8883,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -8862,7 +8912,7 @@ MonoBehaviour:
     category: 0
     range: 9
     coneAngle: 50
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -8891,6 +8941,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -8903,6 +8954,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -8931,7 +8983,7 @@ MonoBehaviour:
     category: 0
     range: 9
     coneAngle: 50
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -8960,6 +9012,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -8972,6 +9025,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -9000,7 +9054,7 @@ MonoBehaviour:
     category: 0
     range: 9
     coneAngle: 50
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -9029,6 +9083,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -9041,6 +9096,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -9069,7 +9125,7 @@ MonoBehaviour:
     category: 0
     range: 8
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 3
     spawnTurret: 0
@@ -9098,6 +9154,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -9110,6 +9167,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -9138,7 +9196,7 @@ MonoBehaviour:
     category: 0
     range: 8
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 3
     spawnTurret: 0
@@ -9167,6 +9225,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -9179,6 +9238,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -9207,7 +9267,7 @@ MonoBehaviour:
     category: 0
     range: 8
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 3
     spawnTurret: 0
@@ -9236,6 +9296,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -9248,6 +9309,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -9276,7 +9338,7 @@ MonoBehaviour:
     category: 0
     range: 9
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 2
     spawnTurret: 0
@@ -9305,6 +9367,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -9317,6 +9380,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -9345,7 +9409,7 @@ MonoBehaviour:
     category: 0
     range: 9
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 2
     spawnTurret: 0
@@ -9374,6 +9438,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -9386,6 +9451,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -9414,7 +9480,7 @@ MonoBehaviour:
     category: 0
     range: 9
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 2
     spawnTurret: 0
@@ -9443,6 +9509,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -9455,6 +9522,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -9483,7 +9551,7 @@ MonoBehaviour:
     category: 0
     range: 5
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 2.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -9512,6 +9580,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -9524,6 +9593,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -9552,7 +9622,7 @@ MonoBehaviour:
     category: 0
     range: 5
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 2.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -9581,6 +9651,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -9593,6 +9664,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -9621,7 +9693,7 @@ MonoBehaviour:
     category: 0
     range: 5
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 2.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -9650,6 +9722,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -9662,6 +9735,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -9690,7 +9764,7 @@ MonoBehaviour:
     category: 2
     range: 0
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 6
     spawnTurret: 0
@@ -9719,6 +9793,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -9731,6 +9806,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -9759,7 +9835,7 @@ MonoBehaviour:
     category: 2
     range: 0
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 6
     spawnTurret: 0
@@ -9788,6 +9864,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -9800,6 +9877,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -9828,7 +9906,7 @@ MonoBehaviour:
     category: 2
     range: 0
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 6
     spawnTurret: 0
@@ -9857,6 +9935,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -9869,6 +9948,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -9897,7 +9977,7 @@ MonoBehaviour:
     category: 0
     range: 7
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 2
     indicatorSize: 1.5
     spawnTurret: 0
@@ -9926,6 +10006,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -9938,6 +10019,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -9966,7 +10048,7 @@ MonoBehaviour:
     category: 0
     range: 7
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 2
     indicatorSize: 1.5
     spawnTurret: 0
@@ -9995,6 +10077,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -10007,6 +10090,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -10035,7 +10119,7 @@ MonoBehaviour:
     category: 0
     range: 7
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 2
     indicatorSize: 1.5
     spawnTurret: 0
@@ -10064,6 +10148,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -10076,6 +10161,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -10104,7 +10190,7 @@ MonoBehaviour:
     category: 0
     range: 6
     coneAngle: 65
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -10133,6 +10219,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -10145,6 +10232,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -10173,7 +10261,7 @@ MonoBehaviour:
     category: 0
     range: 6
     coneAngle: 65
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -10202,6 +10290,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -10214,6 +10303,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -10242,7 +10332,7 @@ MonoBehaviour:
     category: 0
     range: 6
     coneAngle: 65
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -10271,6 +10361,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -10283,6 +10374,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -10311,7 +10403,7 @@ MonoBehaviour:
     category: 0
     range: 8
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 3
     spawnTurret: 0
@@ -10340,6 +10432,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -10352,6 +10445,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -10380,7 +10474,7 @@ MonoBehaviour:
     category: 0
     range: 8
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 3
     spawnTurret: 0
@@ -10409,6 +10503,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -10421,6 +10516,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -10449,7 +10545,7 @@ MonoBehaviour:
     category: 0
     range: 8
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 3
     spawnTurret: 0
@@ -10478,6 +10574,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -10490,6 +10587,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -10518,7 +10616,7 @@ MonoBehaviour:
     category: 0
     range: 7
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.2
     spawnTurret: 0
@@ -10547,6 +10645,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -10559,6 +10658,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -10587,7 +10687,7 @@ MonoBehaviour:
     category: 0
     range: 7
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.2
     spawnTurret: 0
@@ -10616,6 +10716,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -10628,6 +10729,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -10656,7 +10758,7 @@ MonoBehaviour:
     category: 0
     range: 7
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.2
     spawnTurret: 0
@@ -10685,6 +10787,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -10697,6 +10800,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -10725,7 +10829,7 @@ MonoBehaviour:
     category: 1
     range: 10
     coneAngle: 55
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -10754,6 +10858,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -10766,6 +10871,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -10794,7 +10900,7 @@ MonoBehaviour:
     category: 1
     range: 10
     coneAngle: 55
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -10823,6 +10929,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -10835,6 +10942,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -10863,7 +10971,7 @@ MonoBehaviour:
     category: 1
     range: 10
     coneAngle: 55
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -10892,6 +11000,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -10904,6 +11013,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -10932,7 +11042,7 @@ MonoBehaviour:
     category: 2
     range: 0
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 5
     spawnTurret: 0
@@ -10961,6 +11071,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -10973,6 +11084,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -11001,7 +11113,7 @@ MonoBehaviour:
     category: 2
     range: 0
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 5
     spawnTurret: 0
@@ -11030,6 +11142,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -11042,6 +11155,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -11070,7 +11184,7 @@ MonoBehaviour:
     category: 2
     range: 0
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 5
     spawnTurret: 0
@@ -11099,6 +11213,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -11111,6 +11226,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -11139,7 +11255,7 @@ MonoBehaviour:
     category: 0
     range: 9
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -11168,6 +11284,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -11180,6 +11297,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -11208,7 +11326,7 @@ MonoBehaviour:
     category: 0
     range: 9
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -11237,6 +11355,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -11249,6 +11368,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -11277,7 +11397,7 @@ MonoBehaviour:
     category: 0
     range: 9
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -11306,6 +11426,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -11318,6 +11439,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -11346,7 +11468,7 @@ MonoBehaviour:
     category: 0
     range: 10
     coneAngle: 55
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -11375,6 +11497,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 7606620699271223679, guid: 5aa2236667d208e41a28e0f79695320a, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 1828176872806910, guid: 64891a0eb28db934898420d80ca07cb3, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -11387,6 +11510,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 1
     statusDuration: 0.5
     statusValue: 0
@@ -11415,7 +11539,7 @@ MonoBehaviour:
     category: 0
     range: 10
     coneAngle: 55
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -11444,6 +11568,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 7606620699271223679, guid: a482790e02aaa7949919e907d04061b0, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 1947871717301538, guid: a990e3ac1318b834488c784d851f42a9, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -11456,6 +11581,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 3
     statusDuration: 4
     statusValue: 4
@@ -11484,7 +11610,7 @@ MonoBehaviour:
     category: 0
     range: 10
     coneAngle: 55
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -11513,6 +11639,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 1956197547661106, guid: f293a2dcc753a4a489fefe7f8f312d69, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 1121192042590650, guid: e1b08032bec16ba4eb1ae23cbd572664, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -11525,6 +11652,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 4
     statusDuration: 3
     statusValue: 0.25
@@ -11553,7 +11681,7 @@ MonoBehaviour:
     category: 0
     range: 10
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 3
     spawnTurret: 0
@@ -11582,6 +11710,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 4533992852024952465, guid: 5ebefd38fe1dbce4990790a0add9f65a, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 3266835628973167763, guid: 99c92a1b2b2906945bf3b9abc6590151, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -11594,6 +11723,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 1
     statusDuration: 0.7
     statusValue: 0
@@ -11622,7 +11752,7 @@ MonoBehaviour:
     category: 0
     range: 10
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 3
     spawnTurret: 0
@@ -11651,6 +11781,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 2707303645313174804, guid: 3ac741c58ee37a941b5408ec58f21743, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 1277326047212212, guid: 34cd452c8ebeb7e42830ade065f09ee6, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -11663,6 +11794,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 3
     statusDuration: 4
     statusValue: 4
@@ -11691,7 +11823,7 @@ MonoBehaviour:
     category: 0
     range: 10
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 3
     spawnTurret: 0
@@ -11720,6 +11852,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 3266835628973167763, guid: 99c92a1b2b2906945bf3b9abc6590151, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 4749980201479958301, guid: a4cbca814b838a5458720cd2f8d6a501, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -11732,6 +11865,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 4
     statusDuration: 3
     statusValue: 0.25
@@ -11760,7 +11894,7 @@ MonoBehaviour:
     category: 0
     range: 8
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 4
     spawnTurret: 0
@@ -11789,6 +11923,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 1538599107982412, guid: 37ab7e60d7b792c4ead4feb01381c6cc, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 1538599107982412, guid: 37ab7e60d7b792c4ead4feb01381c6cc, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -11801,6 +11936,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 3
     statusValue: 0.35
@@ -11829,7 +11965,7 @@ MonoBehaviour:
     category: 0
     range: 8
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 4
     spawnTurret: 0
@@ -11858,6 +11994,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 1377279482138388, guid: 653866134638b354ca265558d783dd1d, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 1820680284854294, guid: 1a1c02facd51d87458dcaa3a761e2c03, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -11870,6 +12007,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 5
     statusDuration: 2.5
     statusValue: 0
@@ -11898,7 +12036,7 @@ MonoBehaviour:
     category: 0
     range: 8
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 4
     spawnTurret: 0
@@ -11927,6 +12065,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 1749743417103026, guid: 023252a6b6c5a214b97b148758506fd2, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 7843366240102593674, guid: bfed7a9fe64f03f4ab32c9a946a4f647, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -11939,6 +12078,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 5
     statusValue: 0.5
@@ -11967,7 +12107,7 @@ MonoBehaviour:
     category: 0
     range: 9
     coneAngle: 50
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -11996,6 +12136,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 1051704587376508, guid: fffb77091d2311b4bb70c69cbd77ef57, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 1341869769842038, guid: 8b7a1ffda5bb7474b8fae646c45ce7b4, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -12008,6 +12149,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 1
     statusDuration: 0.5
     statusValue: 0
@@ -12036,7 +12178,7 @@ MonoBehaviour:
     category: 0
     range: 9
     coneAngle: 50
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -12065,6 +12207,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 1626987590987328, guid: a0db8e7ecdf01174db2270f85ec0a739, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 1240250018707908, guid: 5656e7ea1f1a75d4c895547ec2b824b3, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -12077,6 +12220,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 3
     statusValue: 0.3
@@ -12105,7 +12249,7 @@ MonoBehaviour:
     category: 0
     range: 9
     coneAngle: 50
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -12134,6 +12278,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 1547757601392324, guid: 6f672a31584a6a748912a49c1dce2f0c, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 1000012909287652, guid: abb9f519b142e304d9c45b56afa768bc, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -12146,6 +12291,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 3
     statusDuration: 5
     statusValue: 4
@@ -12174,7 +12320,7 @@ MonoBehaviour:
     category: 0
     range: 8
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 3
     spawnTurret: 0
@@ -12203,6 +12349,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 1314945738539566, guid: 32c9fd11a72259d45aa26ae41c34c5aa, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 1341869769842038, guid: 8b7a1ffda5bb7474b8fae646c45ce7b4, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -12215,6 +12362,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 1
     statusDuration: 0.8
     statusValue: 0
@@ -12243,7 +12391,7 @@ MonoBehaviour:
     category: 0
     range: 8
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 3
     spawnTurret: 0
@@ -12272,6 +12420,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 1314945738539566, guid: 32c9fd11a72259d45aa26ae41c34c5aa, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 1344314377593938, guid: 9e03786a9517b604d8e930182607a128, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -12284,6 +12433,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 4
     statusValue: 0.35
@@ -12312,7 +12462,7 @@ MonoBehaviour:
     category: 0
     range: 8
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 3
     spawnTurret: 0
@@ -12341,6 +12491,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 1314945738539566, guid: 32c9fd11a72259d45aa26ae41c34c5aa, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 1314945738539566, guid: 32c9fd11a72259d45aa26ae41c34c5aa, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -12353,6 +12504,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 4
     statusDuration: 4
     statusValue: 0.3
@@ -12381,7 +12533,7 @@ MonoBehaviour:
     category: 0
     range: 9
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 2
     spawnTurret: 0
@@ -12410,6 +12562,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 1626987590987328, guid: a0db8e7ecdf01174db2270f85ec0a739, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 1051704587376508, guid: fffb77091d2311b4bb70c69cbd77ef57, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -12422,6 +12575,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 5
     statusDuration: 2
     statusValue: 0
@@ -12450,7 +12604,7 @@ MonoBehaviour:
     category: 0
     range: 9
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 2
     spawnTurret: 0
@@ -12479,6 +12633,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 1547757601392324, guid: 6f672a31584a6a748912a49c1dce2f0c, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 1000010675638318, guid: a3768c8a9d1b90d4bb0eb0e4bdbe730c, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -12491,6 +12646,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 5
     statusDuration: 3
     statusValue: 0
@@ -12519,7 +12675,7 @@ MonoBehaviour:
     category: 0
     range: 9
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 2
     spawnTurret: 0
@@ -12548,6 +12704,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 1626987590987328, guid: a0db8e7ecdf01174db2270f85ec0a739, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 1240250018707908, guid: 5656e7ea1f1a75d4c895547ec2b824b3, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -12560,6 +12717,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 5
     statusDuration: 4
     statusValue: 0
@@ -12588,7 +12746,7 @@ MonoBehaviour:
     category: 0
     range: 5
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 2.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -12617,6 +12775,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 1314945738539566, guid: 32c9fd11a72259d45aa26ae41c34c5aa, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 1892351807075712, guid: 44be68b4fc4366142a9cd1ae1f761ea4, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -12629,6 +12788,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 1
     statusDuration: 0.7
     statusValue: 0
@@ -12657,7 +12817,7 @@ MonoBehaviour:
     category: 0
     range: 5
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 2.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -12686,6 +12846,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 8661651070266030821, guid: bae3e9361960e3147818c0da5e584df3, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 1341869769842038, guid: 8b7a1ffda5bb7474b8fae646c45ce7b4, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -12698,6 +12859,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 4
     statusDuration: 3
     statusValue: 0.25
@@ -12726,7 +12888,7 @@ MonoBehaviour:
     category: 0
     range: 5
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 2.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -12755,6 +12917,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 5263261513851132598, guid: 870a10c1f420abb4598b34344a9e7823, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 1314945738539566, guid: 32c9fd11a72259d45aa26ae41c34c5aa, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -12767,6 +12930,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 4
     statusValue: 0.4
@@ -12795,7 +12959,7 @@ MonoBehaviour:
     category: 1
     range: 0
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 6
     spawnTurret: 0
@@ -12824,6 +12988,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 1951465474858694, guid: f61a463d2bbcb974cbc52cc78089f173, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 8550103265853490525, guid: 10f20a501ddb3db4db094749bb054e68, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -12836,6 +13001,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -12864,7 +13030,7 @@ MonoBehaviour:
     category: 1
     range: 0
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 6
     spawnTurret: 0
@@ -12893,6 +13059,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 1361995951083618, guid: acd1463ce2d63c34daa4daaaaab28fe4, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 6226639424814228509, guid: aa77297fca95b7346a94d76cf84fe635, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -12905,6 +13072,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -12933,7 +13101,7 @@ MonoBehaviour:
     category: 2
     range: 0
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 6
     spawnTurret: 0
@@ -12962,6 +13130,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 5263261513851132598, guid: 870a10c1f420abb4598b34344a9e7823, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 1892351807075712, guid: 44be68b4fc4366142a9cd1ae1f761ea4, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -12974,6 +13143,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 1
     statusDuration: 1
     statusValue: 0
@@ -13002,7 +13172,7 @@ MonoBehaviour:
     category: 0
     range: 7
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 2
     indicatorSize: 1.5
     spawnTurret: 0
@@ -13031,6 +13201,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 8661651070266030821, guid: bae3e9361960e3147818c0da5e584df3, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 1892351807075712, guid: 44be68b4fc4366142a9cd1ae1f761ea4, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -13043,6 +13214,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 1
     statusDuration: 0.8
     statusValue: 0
@@ -13071,7 +13243,7 @@ MonoBehaviour:
     category: 0
     range: 7
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 2
     indicatorSize: 1.5
     spawnTurret: 0
@@ -13100,6 +13272,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 5263261513851132598, guid: 870a10c1f420abb4598b34344a9e7823, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 1341869769842038, guid: 8b7a1ffda5bb7474b8fae646c45ce7b4, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -13112,6 +13285,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 3
     statusValue: 0.35
@@ -13140,7 +13314,7 @@ MonoBehaviour:
     category: 0
     range: 7
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 2
     indicatorSize: 1.5
     spawnTurret: 0
@@ -13169,6 +13343,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 1121192042590650, guid: e1b08032bec16ba4eb1ae23cbd572664, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 5263261513851132598, guid: 870a10c1f420abb4598b34344a9e7823, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -13181,6 +13356,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 4
     statusDuration: 4
     statusValue: 0.3
@@ -13209,7 +13385,7 @@ MonoBehaviour:
     category: 0
     range: 6
     coneAngle: 65
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -13238,6 +13414,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 1105111623985532, guid: d03268a4406450646bbcdef70ee8ea3d, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 1892351807075712, guid: 44be68b4fc4366142a9cd1ae1f761ea4, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -13250,6 +13427,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 1
     statusDuration: 0.6
     statusValue: 0
@@ -13278,7 +13456,7 @@ MonoBehaviour:
     category: 0
     range: 6
     coneAngle: 65
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -13307,6 +13485,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 1664554866138106, guid: cdf5105e83ab35f4e929972c34b34ed3, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 1000011945391522, guid: 78b71003e8b357d4bbf89c8b5e5e4f0e, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -13319,6 +13498,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 3
     statusDuration: 4
     statusValue: 4
@@ -13347,7 +13527,7 @@ MonoBehaviour:
     category: 0
     range: 6
     coneAngle: 65
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -13376,6 +13556,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 1684764806622204, guid: 3822f73d30b33274cbe39de907c35d29, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 1051704587376508, guid: fffb77091d2311b4bb70c69cbd77ef57, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -13388,6 +13569,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 4
     statusDuration: 4
     statusValue: 0.25
@@ -13416,7 +13598,7 @@ MonoBehaviour:
     category: 0
     range: 8
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 3
     spawnTurret: 0
@@ -13445,6 +13627,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 1547757601392324, guid: 6f672a31584a6a748912a49c1dce2f0c, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 1547757601392324, guid: 6f672a31584a6a748912a49c1dce2f0c, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -13457,6 +13640,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 3
     statusDuration: 4
     statusValue: 3
@@ -13485,7 +13669,7 @@ MonoBehaviour:
     category: 0
     range: 8
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 3
     spawnTurret: 0
@@ -13514,6 +13698,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 1269120730060968, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 1547757601392324, guid: 6f672a31584a6a748912a49c1dce2f0c, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -13526,6 +13711,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 3
     statusDuration: 6
     statusValue: 5
@@ -13554,7 +13740,7 @@ MonoBehaviour:
     category: 0
     range: 8
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 3
     spawnTurret: 0
@@ -13583,6 +13769,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 1901902437216624, guid: 3bdca15d736d48f409ccf70e68bf79de, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 1547757601392324, guid: 6f672a31584a6a748912a49c1dce2f0c, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -13595,6 +13782,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 4
     statusValue: 0.4
@@ -13623,7 +13811,7 @@ MonoBehaviour:
     category: 0
     range: 7
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.2
     spawnTurret: 0
@@ -13652,6 +13840,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 1105111623985532, guid: d03268a4406450646bbcdef70ee8ea3d, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 1901902437216624, guid: 3bdca15d736d48f409ccf70e68bf79de, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -13664,6 +13853,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 1
     statusDuration: 0.8
     statusValue: 0
@@ -13692,7 +13882,7 @@ MonoBehaviour:
     category: 0
     range: 7
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.2
     spawnTurret: 0
@@ -13721,6 +13911,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 1664554866138106, guid: cdf5105e83ab35f4e929972c34b34ed3, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 1235240895896398, guid: 3fdbf782d6900074fb425dbc4c92ba9c, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -13733,6 +13924,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 4
     statusDuration: 4
     statusValue: 0.3
@@ -13761,7 +13953,7 @@ MonoBehaviour:
     category: 0
     range: 7
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.2
     spawnTurret: 0
@@ -13790,6 +13982,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 1741568361362846, guid: 4db85d1e064bd874cbfb92849ed76f3e, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 1235240895896398, guid: 3fdbf782d6900074fb425dbc4c92ba9c, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -13802,6 +13995,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -13830,7 +14024,7 @@ MonoBehaviour:
     category: 1
     range: 10
     coneAngle: 55
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -13859,6 +14053,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 6226639424814228509, guid: aa77297fca95b7346a94d76cf84fe635, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 8550103265853490525, guid: 10f20a501ddb3db4db094749bb054e68, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -13871,6 +14066,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -13899,7 +14095,7 @@ MonoBehaviour:
     category: 1
     range: 10
     coneAngle: 55
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -13928,6 +14124,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 1374770465800164, guid: d0e33492ce1ba064291b3ff95ce32e4e, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 1775406099119076, guid: 379785de5e39005469c875710d3cc5a7, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -13940,6 +14137,7 @@ MonoBehaviour:
     hotTickAmount: 5
     hotTicks: 3
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -13968,7 +14166,7 @@ MonoBehaviour:
     category: 1
     range: 10
     coneAngle: 55
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -13997,6 +14195,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 2309628055276507911, guid: 5dc06ed64db520147912484d5ba21615, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 6226639424814228509, guid: aa77297fca95b7346a94d76cf84fe635, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -14009,6 +14208,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -14037,7 +14237,7 @@ MonoBehaviour:
     category: 2
     range: 0
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 5
     spawnTurret: 0
@@ -14066,6 +14266,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 2309628055276507911, guid: 5dc06ed64db520147912484d5ba21615, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 1361995951083618, guid: acd1463ce2d63c34daa4daaaaab28fe4, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -14078,6 +14279,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -14106,7 +14308,7 @@ MonoBehaviour:
     category: 1
     range: 0
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 5
     spawnTurret: 0
@@ -14135,6 +14337,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 1361995951083618, guid: acd1463ce2d63c34daa4daaaaab28fe4, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 6226639424814228509, guid: aa77297fca95b7346a94d76cf84fe635, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -14147,6 +14350,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -14175,7 +14379,7 @@ MonoBehaviour:
     category: 1
     range: 0
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 5
     spawnTurret: 0
@@ -14204,6 +14408,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 1951465474858694, guid: f61a463d2bbcb974cbc52cc78089f173, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 2309628055276507911, guid: 5dc06ed64db520147912484d5ba21615, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -14216,6 +14421,7 @@ MonoBehaviour:
     hotTickAmount: 10
     hotTicks: 5
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -14244,7 +14450,7 @@ MonoBehaviour:
     category: 0
     range: 9
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -14273,6 +14479,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 3281665843732006339, guid: bd2fe1eb2e3ba454088c57397144535f, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 8550103265853490525, guid: 10f20a501ddb3db4db094749bb054e68, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -14285,6 +14492,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 1
     statusDuration: 0.8
     statusValue: 0
@@ -14313,7 +14521,7 @@ MonoBehaviour:
     category: 0
     range: 9
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -14342,6 +14550,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 3281665843732006339, guid: bd2fe1eb2e3ba454088c57397144535f, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 1901245927194888, guid: bb98861c48ad2024ca93498c7dd93a6c, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -14354,6 +14563,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 3
     statusValue: 0.35
@@ -14382,7 +14592,7 @@ MonoBehaviour:
     category: 0
     range: 9
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -14411,6 +14621,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 1329845292236604, guid: 9bba9cf244c53c5439505dfc96fdd11c, type: 3}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 1121192042590650, guid: e1b08032bec16ba4eb1ae23cbd572664, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -14423,6 +14634,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 4
     statusDuration: 4
     statusValue: 0.3
@@ -14443,23 +14655,23 @@ MonoBehaviour:
     pulseVFXLifetime: 0
     deployablePrefab: {fileID: 0}
     variants: []
-  - abilityName: Holy Sacrament
-    description: Place a holy dish on the ground damaging enemies and healing alies
+  - abilityName: Holy Ground
+    description: Bless the ground in a location healing allies and damaging foes
     variantOnly: 0
     variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
     shape: 0
-    category: 0
-    range: 10
+    category: 1
+    range: 20
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 10
     spawnTurret: 0
     turretPrefab: {fileID: 0}
-    cooldown: 3
-    manaCost: 0
+    cooldown: 10
+    manaCost: 30
     icon: {fileID: 21300000, guid: d5a737419a8c8984f801831a4a6df992, type: 3}
-    castTime: 0.6
+    castTime: 1
     marauderCastAnimation: {fileID: -203655887218126122, guid: 29fdfd97b07a4a34ba7f81be61d0965a, type: 3}
     moveCasterToTarget: 0
     instantMovement: 0
@@ -14478,9 +14690,10 @@ MonoBehaviour:
     targetTag: Enemy
     chargedTint: {r: 0, g: 0, b: 0, a: 0}
     fireVisual: 0
-    castVFX: {fileID: 5501582568964338960, guid: 57cb85dbb9caf894eb9ba40b53ee2a5c, type: 3}
+    castVFX: {fileID: 3564616578696156242, guid: 5baf520d693412341969ea58fd4d62b0, type: 3}
     castingVFX: {fileID: 7003859763675930989, guid: 9860f4dd1ea3cb642bf80c02eb3be913, type: 3}
-    hitVFX: {fileID: 6633059331430029136, guid: cb1f3abdae72c0e46af78111865f3fa7, type: 3}
+    healVFX: {fileID: 6633059331430029136, guid: cb1f3abdae72c0e46af78111865f3fa7, type: 3}
+    hitVFX: {fileID: 7242445543629226806, guid: 8e065c77fcd69024b8c808cc3106a0bc, type: 3}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 0}
@@ -14491,7 +14704,8 @@ MonoBehaviour:
     healAmount: 0
     hotTickAmount: 10
     hotTicks: 5
-    hotInterval: 1
+    hotInterval: 0.5
+    usePulseHealing: 1
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -14506,9 +14720,81 @@ MonoBehaviour:
     pullStopDistance: 1.25
     usePulseDamage: 1
     pulseCount: 5
-    pulseInterval: 1
-    pulseRadius: 1
+    pulseInterval: 0.5
+    pulseRadius: 5
     pulseDamage: 10
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Ringing Clap
+    description: Heavenly Hand join together dealing heavy damage and stunning for
+      2 seconds
+    variantOnly: 0
+    variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
+    shape: 2
+    category: 0
+    range: 10
+    coneAngle: 60
+    useFixedRange: 1
+    rectWidth: 5
+    indicatorSize: 1.5
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 15
+    manaCost: 15
+    icon: {fileID: 21300000, guid: 781b89c0ec968e64fb0855495bd49698, type: 3}
+    castTime: 0.6
+    marauderCastAnimation: {fileID: -203655887218126122, guid: a1b819d495970ba4ca9ee99c5a59fd33, type: 3}
+    moveCasterToTarget: 0
+    instantMovement: 0
+    movementTiming: 0
+    moveToSpeed: 14
+    fixedMovementDuration: 0.9
+    movementArcHeight: 0
+    resolveEffectsOnLanding: 0
+    animationLandingPoint: 0.8
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 50
+    damageDelay: 0.3
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 2868578033870059823, guid: fa57d7043f79a724882fa84213614297, type: 3}
+    castingVFX: {fileID: 5098401545737662111, guid: 6c0ecb00300466145bb35aeaee7c040f, type: 3}
+    healVFX: {fileID: 0}
+    hitVFX: {fileID: 7242445543629226806, guid: 8e065c77fcd69024b8c808cc3106a0bc, type: 3}
+    castVFXAtCaster: 0
+    hitVFXFollowsTarget: 0
+    castSFX: {fileID: 0}
+    hitSFX: {fileID: 0}
+    sfxVolume: 0.85
+    shieldAbsorb: 0
+    shieldDuration: 0
+    healAmount: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    usePulseHealing: 0
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    crowdControlType: 0
+    pullDestination: 0
+    pullSpeed: 8
+    pullStopDistance: 1.25
+    usePulseDamage: 0
+    pulseCount: 0
+    pulseInterval: 0
+    pulseRadius: 0
+    pulseDamage: 0
     pulseVFXLifetime: 0
     deployablePrefab: {fileID: 0}
     variants: []
@@ -14522,7 +14808,7 @@ MonoBehaviour:
     category: 0
     range: 4
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -14551,6 +14837,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -14563,6 +14850,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -14591,7 +14879,7 @@ MonoBehaviour:
     category: 0
     range: 4
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -14620,6 +14908,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -14632,6 +14921,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -14660,7 +14950,7 @@ MonoBehaviour:
     category: 0
     range: 4
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -14689,6 +14979,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -14701,6 +14992,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -14729,7 +15021,7 @@ MonoBehaviour:
     category: 0
     range: 4
     coneAngle: 60
-    useFixedConeRange: 0
+    useFixedRange: 0
     rectWidth: 1.5
     indicatorSize: 1.5
     spawnTurret: 0
@@ -14758,6 +15050,7 @@ MonoBehaviour:
     fireVisual: 0
     castVFX: {fileID: 0}
     castingVFX: {fileID: 0}
+    healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -14770,6 +15063,7 @@ MonoBehaviour:
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
+    usePulseHealing: 0
     statusEffect: 0
     statusDuration: 0
     statusValue: 0
@@ -14851,7 +15145,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 822480ea9951a9642bba896b0e3be732, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerAnimator
   combatCheckRadius: 10
   combatCheckInterval: 0.5
