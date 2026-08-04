@@ -14,5 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DropTable
   minGold: 1
   maxGold: 5
-  nothingWeight: 6
-  drops: []
+  nothingWeight: 0
+  drops:
+  - itemId: material_copper_shard
+    weight: 1
+    minQty: 1
+    maxQty: 1

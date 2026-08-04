@@ -382,7 +382,6 @@ GameObject:
   - component: {fileID: 1729007955}
   - component: {fileID: 1729007954}
   - component: {fileID: 1729007953}
-  - component: {fileID: 1729007962}
   m_Layer: 0
   m_Name: Gunda (7)
   m_TagString: Enemy
@@ -1527,7 +1526,6 @@ GameObject:
   - component: {fileID: 425618525}
   - component: {fileID: 425618524}
   - component: {fileID: 425618523}
-  - component: {fileID: 425618532}
   m_Layer: 0
   m_Name: Gunda (10)
   m_TagString: Enemy
@@ -3554,7 +3552,6 @@ GameObject:
   - component: {fileID: 779260450}
   - component: {fileID: 779260449}
   - component: {fileID: 779260448}
-  - component: {fileID: 779260457}
   m_Layer: 0
   m_Name: Gunda
   m_TagString: Enemy
@@ -6269,7 +6266,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::QuestGiver
   quests:
-  - {fileID: 11400000, guid: 63ad756fe2b945646b441c88c51692d1, type: 2}
   - {fileID: 11400000, guid: 447b36fdcb199ed4d92735500040b9f4, type: 2}
   markerAnchor: {fileID: 0}
   interactionRadius: 3
@@ -6896,19 +6892,6 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
---- !u!114 &425618532
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 104979450}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a05a8e74f20d9c140a8d904075f0896b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::QuestEnemyTarget
-  enemyTemplateId: gunda
 --- !u!1001 &431974466
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -9379,7 +9362,6 @@ GameObject:
   - component: {fileID: 608950341}
   - component: {fileID: 608950340}
   - component: {fileID: 608950339}
-  - component: {fileID: 608950348}
   m_Layer: 0
   m_Name: Gunda (6)
   m_TagString: Enemy
@@ -9668,19 +9650,6 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
---- !u!114 &608950348
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 608950338}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a05a8e74f20d9c140a8d904075f0896b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::QuestEnemyTarget
-  enemyTemplateId: gunda
 --- !u!1 &611725726
 GameObject:
   m_ObjectHideFlags: 0
@@ -9933,7 +9902,6 @@ GameObject:
   - component: {fileID: 718268579}
   - component: {fileID: 718268578}
   - component: {fileID: 718268577}
-  - component: {fileID: 718268586}
   m_Layer: 0
   m_Name: Gunda (2)
   m_TagString: Enemy
@@ -12351,19 +12319,6 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
---- !u!114 &718268586
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 622935297}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a05a8e74f20d9c140a8d904075f0896b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::QuestEnemyTarget
-  enemyTemplateId: gunda
 --- !u!1 &719276705
 GameObject:
   m_ObjectHideFlags: 0
@@ -13837,19 +13792,6 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
---- !u!114 &779260457
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 254854355}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a05a8e74f20d9c140a8d904075f0896b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::QuestEnemyTarget
-  enemyTemplateId: gunda
 --- !u!1 &779395068
 GameObject:
   m_ObjectHideFlags: 0
@@ -16612,7 +16554,6 @@ GameObject:
   - component: {fileID: 962020669}
   - component: {fileID: 962020668}
   - component: {fileID: 962020667}
-  - component: {fileID: 962020676}
   m_Layer: 0
   m_Name: Gunda (5)
   m_TagString: Enemy
@@ -16901,19 +16842,6 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
---- !u!114 &962020676
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 962020666}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a05a8e74f20d9c140a8d904075f0896b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::QuestEnemyTarget
-  enemyTemplateId: gunda
 --- !u!1 &962341196
 GameObject:
   m_ObjectHideFlags: 0
@@ -17659,7 +17587,6 @@ GameObject:
   - component: {fileID: 1830438478}
   - component: {fileID: 1830438477}
   - component: {fileID: 1830438476}
-  - component: {fileID: 1830438485}
   m_Layer: 0
   m_Name: Gunda (9)
   m_TagString: Enemy
@@ -18671,7 +18598,6 @@ GameObject:
   - component: {fileID: 1065202724}
   - component: {fileID: 1065202723}
   - component: {fileID: 1065202722}
-  - component: {fileID: 1065202731}
   m_Layer: 0
   m_Name: Gunda (11)
   m_TagString: Enemy
@@ -18960,19 +18886,6 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
---- !u!114 &1065202731
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1065202721}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a05a8e74f20d9c140a8d904075f0896b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::QuestEnemyTarget
-  enemyTemplateId: gunda
 --- !u!1 &1067401185
 GameObject:
   m_ObjectHideFlags: 0
@@ -27046,7 +26959,6 @@ GameObject:
   - component: {fileID: 1735396275}
   - component: {fileID: 1735396274}
   - component: {fileID: 1735396273}
-  - component: {fileID: 1735396282}
   m_Layer: 0
   m_Name: Gunda (3)
   m_TagString: Enemy
@@ -27269,7 +27181,6 @@ GameObject:
   - component: {fileID: 1629421052}
   - component: {fileID: 1629421051}
   - component: {fileID: 1629421050}
-  - component: {fileID: 1629421059}
   m_Layer: 0
   m_Name: Gunda (1)
   m_TagString: Enemy
@@ -27676,19 +27587,6 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
---- !u!114 &1629421059
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1622160552}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a05a8e74f20d9c140a8d904075f0896b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::QuestEnemyTarget
-  enemyTemplateId: gunda
 --- !u!1 &1632042524
 GameObject:
   m_ObjectHideFlags: 0
@@ -29314,19 +29212,6 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
---- !u!114 &1729007962
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 15159579}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a05a8e74f20d9c140a8d904075f0896b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::QuestEnemyTarget
-  enemyTemplateId: gunda
 --- !u!1 &1730608857
 GameObject:
   m_ObjectHideFlags: 0
@@ -29928,19 +29813,6 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
---- !u!114 &1735396282
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1602966615}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a05a8e74f20d9c140a8d904075f0896b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::QuestEnemyTarget
-  enemyTemplateId: gunda
 --- !u!1 &1737665648
 GameObject:
   m_ObjectHideFlags: 0
@@ -31202,19 +31074,6 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
---- !u!114 &1830438485
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1009646683}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a05a8e74f20d9c140a8d904075f0896b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::QuestEnemyTarget
-  enemyTemplateId: gunda
 --- !u!1001 &1831950628
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -36138,7 +35997,6 @@ GameObject:
   - component: {fileID: 2106758403}
   - component: {fileID: 2106758402}
   - component: {fileID: 2106758401}
-  - component: {fileID: 2106758410}
   m_Layer: 0
   m_Name: Gunda (8)
   m_TagString: Enemy
@@ -36427,19 +36285,6 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
---- !u!114 &2106758410
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2106758400}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a05a8e74f20d9c140a8d904075f0896b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::QuestEnemyTarget
-  enemyTemplateId: gunda
 --- !u!1 &2107229273
 GameObject:
   m_ObjectHideFlags: 0

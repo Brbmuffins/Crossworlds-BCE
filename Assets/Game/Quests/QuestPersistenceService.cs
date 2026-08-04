@@ -11,6 +11,18 @@ public static class QuestPersistenceService
 {
     static QuestPersistenceHost _host;
     static readonly HashSet<string> SyncedDefinitions = new(StringComparer.OrdinalIgnoreCase);
+    static readonly HashSet<string> DeletedQuestIds = new(StringComparer.OrdinalIgnoreCase);
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+    static void BootstrapDeletionSync()
+    {
+        QuestDeletionManifest manifest = Resources.Load<QuestDeletionManifest>("QuestDeletionManifest");
+        if (manifest?.questIds == null || manifest.questIds.Count == 0) return;
+        foreach (string questId in manifest.questIds)
+            if (!string.IsNullOrWhiteSpace(questId)) DeletedQuestIds.Add(questId.Trim());
+        if (!string.IsNullOrWhiteSpace(ServiceToken))
+            Host.StartCoroutine(SyncDeletionsWhenServerStarts());
+    }
 
     static string ServiceToken => Environment.GetEnvironmentVariable("CROSSWORLDS_GAME_SERVICE_TOKEN") ?? "";
 
@@ -45,6 +57,7 @@ public static class QuestPersistenceService
     public static void SyncDefinition(QuestDefinition definition)
     {
         if (!IsEnabled || definition == null || string.IsNullOrWhiteSpace(definition.questId)) return;
+        if (DeletedQuestIds.Contains(definition.questId)) return;
         string key = $"{definition.questId}:{Mathf.Max(1, definition.definitionVersion)}";
         if (!SyncedDefinitions.Add(key)) return;
         Host.StartCoroutine(PostJson("/api/game/quests/definitions", BuildDefinition(definition), null));
@@ -109,6 +122,15 @@ public static class QuestPersistenceService
         SendJson(path, "POST", json, onSuccess);
     static IEnumerator PutJson(string path, string json, Action onSuccess) =>
         SendJson(path, "PUT", json, onSuccess);
+
+    static IEnumerator SyncDeletionsWhenServerStarts()
+    {
+        while (!NetworkServer.active) yield return null;
+        foreach (string questId in DeletedQuestIds)
+            yield return SendJson(
+                $"/api/game/quests/definitions/{UnityWebRequest.EscapeURL(questId)}",
+                "DELETE", "{}", null);
+    }
 
     static IEnumerator SendJson(string path, string method, string json, Action onSuccess)
     {
