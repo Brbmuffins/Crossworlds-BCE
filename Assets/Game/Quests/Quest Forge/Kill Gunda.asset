@@ -24,7 +24,7 @@ MonoBehaviour:
   objectives:
   - type: 0
     targetId: gunda
-    description: Kill 10 Gunda
+    description: Kill Gunda
     requiredAmount: 10
     targetPrefab: {fileID: 1046127108768916309, guid: 5527bd3039124244bb353de92ea53cb5, type: 3}
   goldReward: 0
