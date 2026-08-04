@@ -39,7 +39,7 @@ public static class CharacterModelSwapper
     {
         new Entry { className = "Ironclad",    prefabPath = "Assets/Game/Game_Prefabs/Ironclad.prefab",    modelPath = "Assets/Game/3D Models/Heroes/Guardian/Guardian.fbx" },
         new Entry { className = "Shadowblade", prefabPath = "Assets/Game/Game_Prefabs/Shadowblade.prefab", modelPath = "Assets/Game/3D Models/Heroes/Bogar/Bogar.fbx" },
-        new Entry { className = "Cleric",      prefabPath = "Assets/Game/Game_Prefabs/Cleric.prefab",      modelPath = "Assets/Game/3D Models/Heroes/Brandalf/Brandalf.fbx" },
+        new Entry { className = "Cleric",      prefabPath = "Assets/Game/Game_Prefabs/Cleric.prefab",      modelPath = "Assets/Game/3D Models/Heroes/Brandalf/Brandalf.fbx", controllerPath = "Assets/Game/Animations/BrandalfAnimController.controller" },
         new Entry
         {
             className = "Arcanist",

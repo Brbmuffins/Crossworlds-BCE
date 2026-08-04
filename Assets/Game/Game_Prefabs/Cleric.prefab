@@ -22,6 +22,7 @@ GameObject:
   - component: {fileID: 2483979270693627920}
   - component: {fileID: 2874582690167707357}
   - component: {fileID: 5090370616919281560}
+  - component: {fileID: 9000000000000000100}
   m_Layer: 0
   m_Name: Cleric
   m_TagString: Player
@@ -14442,6 +14443,75 @@ MonoBehaviour:
     pulseVFXLifetime: 0
     deployablePrefab: {fileID: 0}
     variants: []
+  - abilityName: Holy Sacrament
+    description: Place a holy dish on the ground damaging enemies and healing alies
+    variantOnly: 0
+    variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
+    shape: 0
+    category: 0
+    range: 10
+    coneAngle: 60
+    useFixedConeRange: 0
+    rectWidth: 1.5
+    indicatorSize: 10
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 3
+    manaCost: 0
+    icon: {fileID: 21300000, guid: d5a737419a8c8984f801831a4a6df992, type: 3}
+    castTime: 0.6
+    marauderCastAnimation: {fileID: -203655887218126122, guid: 29fdfd97b07a4a34ba7f81be61d0965a, type: 3}
+    moveCasterToTarget: 0
+    instantMovement: 0
+    movementTiming: 0
+    moveToSpeed: 14
+    fixedMovementDuration: 0.9
+    movementArcHeight: 0
+    resolveEffectsOnLanding: 0
+    animationLandingPoint: 0.8
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 10
+    damageDelay: 0
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 5501582568964338960, guid: 57cb85dbb9caf894eb9ba40b53ee2a5c, type: 3}
+    castingVFX: {fileID: 7003859763675930989, guid: 9860f4dd1ea3cb642bf80c02eb3be913, type: 3}
+    hitVFX: {fileID: 6633059331430029136, guid: cb1f3abdae72c0e46af78111865f3fa7, type: 3}
+    castVFXAtCaster: 0
+    hitVFXFollowsTarget: 0
+    castSFX: {fileID: 0}
+    hitSFX: {fileID: 0}
+    sfxVolume: 0.85
+    shieldAbsorb: 0
+    shieldDuration: 0
+    healAmount: 0
+    hotTickAmount: 10
+    hotTicks: 5
+    hotInterval: 1
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    pullRadius: 0
+    pullDuration: 0
+    crowdControlType: 0
+    pullDestination: 0
+    pullSpeed: 8
+    pullStopDistance: 1.25
+    usePulseDamage: 1
+    pulseCount: 5
+    pulseInterval: 1
+    pulseRadius: 1
+    pulseDamage: 10
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
   equippedIndices: 00000000010000000200000003000000
   _equippedAbilities:
   - abilityName: Ability
@@ -14771,6 +14841,22 @@ MonoBehaviour:
   syncInterval: 0
   clientAuthority: 1
   animator: {fileID: 6668734831319278498}
+--- !u!114 &9000000000000000100
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5383663458828750495}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 822480ea9951a9642bba896b0e3be732, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerAnimator
+  combatCheckRadius: 10
+  combatCheckInterval: 0.5
+  baseMoveSpeed: 5
+  baseSprintSpeed: 9
 --- !u!1001 &1001645570320752179
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -14846,7 +14932,7 @@ PrefabInstance:
     - target: {fileID: 5866666021909216657, guid: b21f8f0500f20914ca0a8dd7dc86b589, type: 3}
       propertyPath: m_Controller
       value: 
-      objectReference: {fileID: 9100000, guid: 218529b102eab3c44847c505d2cfd011, type: 2}
+      objectReference: {fileID: 9100000, guid: 4f8e0c07fe2ce7542951e5ac93f2f38a, type: 2}
     - target: {fileID: 5866666021909216657, guid: b21f8f0500f20914ca0a8dd7dc86b589, type: 3}
       propertyPath: m_ApplyRootMotion
       value: 0

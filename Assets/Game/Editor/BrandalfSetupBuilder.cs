@@ -7,13 +7,13 @@ using UnityEngine;
 /// <summary>
 /// BrandalfSetupBuilder — BCE/Heroes/Setup Brandalf
 ///
-/// One-click setup to make Brandalf your playable Arcanist in Hub:
+/// One-click setup to make Brandalf your playable Cleric in Hub:
 ///
 ///   1. Builds BrandalfAnimController.controller using Brandalf's own animation
 ///      clips, mapped to the project's standard parameter names so PlayerAnimator,
 ///      CastAnimator, and PlayerMovement drive him out of the box.
 ///
-///   2. Patches the Arcanist prefab:
+///   2. Patches the Cleric prefab:
 ///        • Adds Brandalf.fbx as a child named "Model" (replaces any existing Model child)
 ///        • Assigns BrandalfAnimController to the Animator
 ///        • Sets Avatar from Brandalf.fbx (if a Humanoid avatar is embedded)
@@ -46,10 +46,10 @@ using UnityEngine;
 /// </summary>
 public static class BrandalfSetupBuilder
 {
-    const string HeroDir    = "Assets/Game/Heroes/Brandalf";
+    const string HeroDir    = "Assets/Game/3D Models/Heroes/Brandalf";
     const string OutDir     = "Assets/Game/Animations";
     const string CtrlPath   = "Assets/Game/Animations/BrandalfAnimController.controller";
-    const string PrefabPath = "Assets/Game/Prefabs/Arcanist.prefab";
+    const string PrefabPath = "Assets/Game/Game_Prefabs/Cleric.prefab";
 
     // Fallback packs for missing clips
     const string Brb   = "Assets/brbmuffins Swords/brbmuffins Sword Art/Animations/Animations_Starter_Pack";
@@ -65,18 +65,18 @@ public static class BrandalfSetupBuilder
         if (ctrl == null) return;
 
         // ── 2. Patch Arcanist prefab ──────────────────────────────────────────────
-        PatchArcanistPrefab(ctrl);
+        PatchClericPrefab(ctrl);
 
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
 
         EditorUtility.DisplayDialog("✅ Brandalf Ready",
-            "Brandalf wired into Arcanist prefab.\n\n" +
+            "Brandalf wired into Cleric prefab.\n\n" +
             "Controller: BrandalfAnimController.controller\n" +
-            "Mesh: Brandalf.fbx (child of Arcanist root)\n\n" +
+            "Mesh: Brandalf.fbx (child of Cleric root)\n\n" +
             "NEXT:\n" +
             "1. Run BCE/Hub World/Wire Combat Assets (Make Playable) if not done.\n" +
-            "2. Press Play — select Arcanist at character select.\n" +
+            "2. Press Play — select Cleric at character select.\n" +
             "3. Walk into the red zone to start fighting!",
             "Let's go!");
     }
@@ -111,7 +111,7 @@ public static class BrandalfSetupBuilder
             idle = FallbackClip("Movement/Idle.fbx");
 
         // Idle-combat pose: use magic1H as a looping ready stance, or fall back
-        AnimationClip idleCombat = magic1H ?? FallbackClip("Combat/IdleCombat.fbx") ?? idle;
+        AnimationClip idleCombat = FallbackClip("Combat/IdleCombat.fbx") ?? idle;
 
         // GetHit — Brandalf has no GetHit animation; use brbmuffins
         AnimationClip getHit = FallbackClip("Combat/GetHit.fbx");
@@ -141,6 +141,7 @@ public static class BrandalfSetupBuilder
         ctrl.AddParameter("dodge",         AnimatorControllerParameterType.Trigger);
         ctrl.AddParameter("GetHit",        AnimatorControllerParameterType.Trigger);
         ctrl.AddParameter("Death",         AnimatorControllerParameterType.Trigger);
+        ctrl.AddParameter("IsDead",        AnimatorControllerParameterType.Bool);
         ctrl.AddParameter("Attack",        AnimatorControllerParameterType.Trigger);
         ctrl.AddParameter("CastDamage",    AnimatorControllerParameterType.Trigger);
         ctrl.AddParameter("CastHeal",      AnimatorControllerParameterType.Trigger);
@@ -177,16 +178,17 @@ public static class BrandalfSetupBuilder
         FloatT(stIdleCbt, stRun, "Speed", 0.10f, isLess: false, dur: 0.12f);
 
         // Run → Idle
-        FloatT(stRun, stIdleCbt, "Speed", 0.05f, isLess: true, dur: 0.20f);
+        FloatBoolT(stRun, stIdle,    "Speed", 0.05f, true, "IsInCombat", false, 0.20f);
+        FloatBoolT(stRun, stIdleCbt, "Speed", 0.05f, true, "IsInCombat", true,  0.20f);
 
         // Run ↔ RunBackward
         BoolT(stRun,     stRunBack, "isBackwards", true,  0.10f);
         BoolT(stRunBack, stRun,     "isBackwards", false, 0.10f);
 
         // Jumps from Any State (Speed < 0.1 = standing, Speed > 0.1 = running)
-        AnyT(sm, stJump,     "Jump", 0.05f);
-        AnyT(sm, stRunJump,  "Jump", 0.05f, condition2Param: "isBackwards", condition2Mode: AnimatorConditionMode.IfNot);
-        AnyT(sm, stJumpBack, "Jump", 0.05f, condition2Param: "isBackwards", condition2Mode: AnimatorConditionMode.If);
+        JumpT(sm, stJump,     maxSpeed: 0.10f, backwards: false, standing: true);
+        JumpT(sm, stRunJump,  maxSpeed: 0.10f, backwards: false, standing: false);
+        JumpT(sm, stJumpBack, maxSpeed: 0.10f, backwards: true,  standing: false);
 
         // Jumps return to locomotion on exit
         ExitT(stJump,     stIdle,    0.85f, 0.15f);
@@ -209,7 +211,8 @@ public static class BrandalfSetupBuilder
         ExitT(stCastSup,   stIdleCbt, 0.85f, 0.15f);
         ExitT(stCastHeavy, stIdleCbt, 0.85f, 0.15f);
         if (stGetHit != null) ExitT(stGetHit, stIdleCbt, 0.70f, 0.15f);
-        // Death: no return
+        // Hold the death pose until PlayerAnimator reports that the player revived.
+        BoolT(stDeath, stIdle, "IsDead", false, 0.15f);
 
         EditorUtility.SetDirty(ctrl);
         AssetDatabase.SaveAssets();
@@ -220,11 +223,11 @@ public static class BrandalfSetupBuilder
 
     // ── Patch Arcanist prefab ─────────────────────────────────────────────────────
 
-    static void PatchArcanistPrefab(AnimatorController ctrl)
+    static void PatchClericPrefab(AnimatorController ctrl)
     {
         if (!System.IO.File.Exists(PrefabPath))
         {
-            Debug.LogWarning("[BCE] Arcanist.prefab not found — run BCE/Setup/4 first, then re-run.");
+            Debug.LogWarning("[BCE] Cleric.prefab not found — run BCE/Setup/4 first, then re-run.");
             return;
         }
 
@@ -247,18 +250,25 @@ public static class BrandalfSetupBuilder
             var root = scope.prefabContentsRoot;
             if (root.GetComponent<PlayerFallReset>() == null)
                 root.AddComponent<PlayerFallReset>();
+            if (root.GetComponent<PlayerAnimator>() == null)
+                root.AddComponent<PlayerAnimator>();
 
             // ── Remove any existing Model child ───────────────────────────────────
             var existing = root.transform.Find("Model");
+            GameObject modelGO;
             if (existing != null)
-                Object.DestroyImmediate(existing.gameObject);
-
-            // ── Instantiate Brandalf mesh as Model child ──────────────────────────
-            var modelGO = (GameObject)PrefabUtility.InstantiatePrefab(brandalfFbx, root.transform);
-            modelGO.name = "Model";
-            modelGO.transform.localPosition = Vector3.zero;
-            modelGO.transform.localRotation = Quaternion.identity;
-            modelGO.transform.localScale    = Vector3.one;
+            {
+                // Preserve Cleric-specific scale, placement, and prefab overrides.
+                modelGO = existing.gameObject;
+            }
+            else
+            {
+                modelGO = (GameObject)PrefabUtility.InstantiatePrefab(brandalfFbx, root.transform);
+                modelGO.name = "Model";
+                modelGO.transform.localPosition = Vector3.zero;
+                modelGO.transform.localRotation = Quaternion.identity;
+                modelGO.transform.localScale = Vector3.one;
+            }
 
             // ── Wire the Animator ─────────────────────────────────────────────────
             // Animator may be on the model root or embedded in the FBX hierarchy
@@ -276,7 +286,7 @@ public static class BrandalfSetupBuilder
             var rootMeshRenderer = root.GetComponent<MeshRenderer>();
             if (rootMeshRenderer != null) rootMeshRenderer.enabled = false;
 
-            Debug.Log("[BCE] Arcanist prefab patched → Brandalf.fbx nested as Model, BrandalfAnimController assigned.");
+            Debug.Log("[BCE] Cleric prefab patched → BrandalfAnimController assigned.");
         }
 
         AssetDatabase.ImportAsset(PrefabPath, ImportAssetOptions.ForceUpdate);
@@ -321,6 +331,32 @@ public static class BrandalfSetupBuilder
         t.hasExitTime = false;
         t.duration    = dur;
         t.AddCondition(isLess ? AnimatorConditionMode.Less : AnimatorConditionMode.Greater, threshold, param);
+    }
+
+    static void FloatBoolT(AnimatorState from, AnimatorState to, string floatParam,
+        float threshold, bool isLess, string boolParam, bool boolValue, float dur)
+    {
+        var t = from.AddTransition(to);
+        t.hasExitTime = false;
+        t.duration = dur;
+        t.AddCondition(isLess ? AnimatorConditionMode.Less : AnimatorConditionMode.Greater,
+            threshold, floatParam);
+        t.AddCondition(boolValue ? AnimatorConditionMode.If : AnimatorConditionMode.IfNot,
+            0, boolParam);
+    }
+
+    static void JumpT(AnimatorStateMachine sm, AnimatorState to, float maxSpeed,
+        bool backwards, bool standing)
+    {
+        var t = sm.AddAnyStateTransition(to);
+        t.hasExitTime = false;
+        t.duration = 0.05f;
+        t.canTransitionToSelf = false;
+        t.AddCondition(AnimatorConditionMode.If, 0, "Jump");
+        t.AddCondition(standing ? AnimatorConditionMode.Less : AnimatorConditionMode.Greater,
+            maxSpeed, "Speed");
+        t.AddCondition(backwards ? AnimatorConditionMode.If : AnimatorConditionMode.IfNot,
+            0, "isBackwards");
     }
 
     static void AnyT(AnimatorStateMachine sm, AnimatorState to, string trigger, float dur,
