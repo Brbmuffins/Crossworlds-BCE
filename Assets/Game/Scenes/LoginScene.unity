@@ -483,6 +483,7 @@ MonoBehaviour:
   - {fileID: 3025216037396716459, guid: 44452b237f1d98446bddbe045daca577, type: 3}
   - {fileID: 5626338383926506322, guid: 44452b237f1d98446bddbe045daca577, type: 3}
   - {fileID: 2670056168537545798, guid: 6474bf15ca8a33c41b9a1fca5a1c4f34, type: 3}
+  - {fileID: 2360249239558683541, guid: afa6b6c6fa2bf1d4781c7971f36a74c0, type: 3}
   exceptionsDisconnect: 1
   snapshotSettings:
     bufferTimeMultiplier: 2
@@ -525,6 +526,7 @@ MonoBehaviour:
   - {fileID: 3025216037396716459, guid: 44452b237f1d98446bddbe045daca577, type: 3}
   - {fileID: 5626338383926506322, guid: 44452b237f1d98446bddbe045daca577, type: 3}
   - {fileID: 2670056168537545798, guid: 6474bf15ca8a33c41b9a1fca5a1c4f34, type: 3}
+  - {fileID: 2360249239558683541, guid: afa6b6c6fa2bf1d4781c7971f36a74c0, type: 3}
   chatManagerPrefab: {fileID: 1000000000000000001, guid: 0b8a9bdc07f1a3146a8481bbae0fb2fe, type: 3}
   authServerURL: http://15.204.243.36:3000
 --- !u!114 &286295840

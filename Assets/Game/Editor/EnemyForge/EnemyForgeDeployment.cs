@@ -173,6 +173,12 @@ namespace Crossworlds.EditorTools.EnemyForge
             var enemyController = prefab.GetComponent<EnemyController>();
             if (enemyController != null && enemyController.projectilePrefab != null)
                 dependencies.Add(enemyController.projectilePrefab);
+            // Loot pickups are spawned by the server just like projectiles. They
+            // must be baked into the NetworkManager lists so a player build can
+            // resolve the assetId in the spawn message. Resources.LoadAll remains
+            // a fallback, but is not a deterministic Mirror registration path.
+            if (enemyController != null && enemyController.worldItemPrefab != null)
+                dependencies.Add(enemyController.worldItemPrefab);
 
             foreach (GameObject dependency in dependencies)
             {
@@ -190,8 +196,8 @@ namespace Crossworlds.EditorTools.EnemyForge
             }
             if (openedHere) EditorSceneManager.CloseScene(login, true);
             EditorUtility.DisplayDialog("Network Registration", changed
-                ? "The enemy and its projectile dependencies are now registered for Mirror runtime spawning."
-                : "The enemy and its projectile dependencies were already registered; no changes were needed.", "OK");
+                ? "The enemy and its projectile/loot dependencies are now registered for Mirror runtime spawning."
+                : "The enemy and its projectile/loot dependencies were already registered; no changes were needed.", "OK");
             return true;
         }
 
