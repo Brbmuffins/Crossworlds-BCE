@@ -89,7 +89,8 @@ public class PlayerListUI : MonoBehaviour
 
         // Don't intercept P while typing
         var sel = UnityEngine.EventSystems.EventSystem.current?.currentSelectedGameObject;
-        bool typing = sel != null && sel.GetComponent<TMPro.TMP_InputField>() != null;
+        bool typing = (sel != null && sel.GetComponent<TMPro.TMP_InputField>() != null)
+                   || (RodChatManager.Instance != null && RodChatManager.Instance.IsOpen);
 
         if (!typing && kb.pKey.wasPressedThisFrame)
             SetOpen(!_open);

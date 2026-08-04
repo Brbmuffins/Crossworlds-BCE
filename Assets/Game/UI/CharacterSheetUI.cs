@@ -231,6 +231,9 @@ public class CharacterSheetUI : MonoBehaviour
 
     static bool AnyInputFocused()
     {
+        if (RodChatManager.Instance != null && RodChatManager.Instance.IsOpen)
+            return true;
+
         foreach (var f in FindObjectsByType<TMP_InputField>(FindObjectsInactive.Exclude))
             if (f.isFocused) return true;
         return false;

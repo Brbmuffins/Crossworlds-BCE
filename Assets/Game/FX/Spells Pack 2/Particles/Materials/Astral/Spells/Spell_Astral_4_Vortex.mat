@@ -73,12 +73,14 @@ Material:
     - _Dither_Mask_Scale: 25
     - _Dither_Speed: 5
     - _DstBlend: 10
+    - _DstBlendAlpha: 10
     - _Noise_1_Scale: 12
     - _Noise_2_Scale: 5
     - _QueueControl: 0
     - _QueueOffset: 0
     - _Rotation_Speed: -3
     - _SrcBlend: 5
+    - _SrcBlendAlpha: 1
     - _Surface: 1
     - _Twirl_Strength: -25
     - _ZTest: 4

@@ -154,6 +154,7 @@ namespace Crossworlds.EditorTools.EnemyForge
         [Header("Rewards")]
         public DropTable dropTable;
         public GameObject worldItemPrefab;
+        public GameObject lootBeamPrefab;
 
         [Header("Lifecycle")]
         [Min(0f)] public float deadModelVisibleSeconds = 3f;
@@ -290,6 +291,7 @@ namespace Crossworlds.EditorTools.EnemyForge
                 tooCloseDistance = controller.tooCloseDistance;
                 dropTable = controller.dropTable;
                 worldItemPrefab = controller.worldItemPrefab;
+                lootBeamPrefab = controller.lootBeamPrefab;
                 deadModelVisibleSeconds = controller.deadModelVisibleSeconds;
                 respawnAfterDeath = controller.respawnAfterDeath;
                 respawnDelay = controller.respawnDelay;

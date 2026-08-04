@@ -226,6 +226,7 @@ namespace Crossworlds.EditorTools.EnemyForge
             controller.worldItemPrefab =
                 EnemyForgeLootPrefabUtility.ResolveNetworkReadyPickup(
                     d.worldItemPrefab);
+            controller.lootBeamPrefab = d.lootBeamPrefab;
             if (controller.worldItemPrefab != d.worldItemPrefab)
             {
                 d.worldItemPrefab = controller.worldItemPrefab;

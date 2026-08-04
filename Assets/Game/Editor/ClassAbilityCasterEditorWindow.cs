@@ -687,7 +687,7 @@ namespace Crossworlds.EditorTools
                 "shape",
                 "range",
                 "coneAngle",
-                "useFixedConeRange",
+                "useFixedRange",
                 "rectWidth",
                 "indicatorSize",
                 "targetTag");
@@ -717,7 +717,8 @@ namespace Crossworlds.EditorTools
                 "healAmount",
                 "hotTickAmount",
                 "hotTicks",
-                "hotInterval");
+                "hotInterval",
+                "usePulseHealing");
 
             DrawFieldGroup(
                 "STATUS & DURATION", ability,
@@ -738,6 +739,7 @@ namespace Crossworlds.EditorTools
                     "ADVANCED EFFECTS", ability,
                     "chainTargets",
                     "chainDamageFalloff",
+                    "chainRadius",
                     "usePulseDamage",
                     "pulseCount",
                     "pulseInterval",
@@ -751,6 +753,7 @@ namespace Crossworlds.EditorTools
                     "ADVANCED EFFECTS", ability,
                     "chainTargets",
                     "chainDamageFalloff",
+                    "chainRadius",
                     "pullRadius",
                     "pullDuration",
                     "usePulseDamage",
@@ -927,6 +930,8 @@ namespace Crossworlds.EditorTools
                 "castingVFX",
                 "castVFX",
                 "hitVFX",
+                "chainVFX",
+                "healVFX",
                 "spawnTurret",
                 "turretPrefab",
                 "deployablePrefab");
@@ -995,6 +1000,9 @@ namespace Crossworlds.EditorTools
                 GameObject hitVFX = ability
                     .FindPropertyRelative("hitVFX")
                     ?.objectReferenceValue as GameObject;
+                GameObject healVFX = ability
+                    .FindPropertyRelative("healVFX")
+                    ?.objectReferenceValue as GameObject;
                 GameObject deployable = ability
                     .FindPropertyRelative("deployablePrefab")
                     ?.objectReferenceValue as GameObject;
@@ -1008,6 +1016,7 @@ namespace Crossworlds.EditorTools
                     castingVFX,
                     castVFX,
                     hitVFX,
+                    healVFX,
                     deployable);
 
                 using (new EditorGUILayout.HorizontalScope())
@@ -1271,6 +1280,10 @@ namespace Crossworlds.EditorTools
                 ?.objectReferenceValue as GameObject;
             GameObject hit = ability.FindPropertyRelative("hitVFX")
                 ?.objectReferenceValue as GameObject;
+            GameObject chain = ability.FindPropertyRelative("chainVFX")
+                ?.objectReferenceValue as GameObject;
+            GameObject heal = ability.FindPropertyRelative("healVFX")
+                ?.objectReferenceValue as GameObject;
             GameObject deploy = ability
                 .FindPropertyRelative("deployablePrefab")
                 ?.objectReferenceValue as GameObject;
@@ -1279,6 +1292,8 @@ namespace Crossworlds.EditorTools
                 $"Casting: {(casting != null ? casting.name : "None")}   " +
                 $"Cast: {(cast != null ? cast.name : "None")}   " +
                 $"Hit: {(hit != null ? hit.name : "None")}   " +
+                $"Chain: {(chain != null ? chain.name : "None")}   " +
+                $"Heal: {(heal != null ? heal.name : "None")}   " +
                 $"Deploy: {(deploy != null ? deploy.name : "None")}";
             EditorGUILayout.LabelField(summary, EditorStyles.miniLabel);
         }
@@ -1302,6 +1317,10 @@ namespace Crossworlds.EditorTools
                     AssignVFX(ability, "castVFX", selectedVFX);
                 if (GUILayout.Button("→ Hit"))
                     AssignVFX(ability, "hitVFX", selectedVFX);
+                if (GUILayout.Button("Chain"))
+                    AssignVFX(ability, "chainVFX", selectedVFX);
+                if (GUILayout.Button("→ Heal"))
+                    AssignVFX(ability, "healVFX", selectedVFX);
                 if (GUILayout.Button("→ Deployable"))
                     AssignVFX(ability, "deployablePrefab", selectedVFX);
             }

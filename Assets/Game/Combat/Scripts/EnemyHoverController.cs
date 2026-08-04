@@ -108,9 +108,26 @@ public class EnemyHoverController : MonoBehaviour
             Collider collider = hits[i].collider;
             if (collider == null) continue;
 
-            Health health = collider.GetComponentInParent<Health>();
-            if (IsHoverableEnemy(health))
-                return health;
+            Health fallback = null;
+            Health[] candidates = collider.GetComponentsInParent<Health>(true);
+            for (int candidateIndex = 0; candidateIndex < candidates.Length; candidateIndex++)
+            {
+                Health health = candidates[candidateIndex];
+                if (!IsHoverableEnemy(health))
+                    continue;
+
+                // A few authored enemies contain nested Health components. Prefer
+                // the one whose player-facing identity was actually configured
+                // instead of falling back to a nearer prefab/object name.
+                if (!string.IsNullOrWhiteSpace(health.ConfiguredEnemyDisplayName))
+                    return health;
+
+                if (fallback == null)
+                    fallback = health;
+            }
+
+            if (fallback != null)
+                return fallback;
         }
 
         return null;

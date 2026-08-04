@@ -262,6 +262,9 @@ public class InventoryBagUI : MonoBehaviour
 
     static bool AnyInputFocused()
     {
+        if (RodChatManager.Instance != null && RodChatManager.Instance.IsOpen)
+            return true;
+
         foreach (var f in FindObjectsByType<TMP_InputField>(FindObjectsInactive.Exclude))
             if (f.isFocused) return true;
         return false;
@@ -333,14 +336,18 @@ public class InventoryBagUI : MonoBehaviour
 
         // Slot grid
         _slots = new SlotWidget[TOTAL_SLOTS];
-        float gridTop = panelH - 44f;
+        // Slots use a top-left anchor and pivot, so their Y positions must be
+        // negative offsets measured down from the top of the panel. The old
+        // calculation used bottom-up panel coordinates, which placed the grid
+        // above the visible bag layout.
+        const float gridTopInset = 44f;
 
         for (int i = 0; i < TOTAL_SLOTS; i++)
         {
             int col = i % COLS;
             int row = i / COLS;
             float x = SLOT_GAP + col * (SLOT_SIZE + SLOT_GAP);
-            float y = gridTop - SLOT_GAP - row * (SLOT_SIZE + SLOT_GAP) - SLOT_SIZE;
+            float y = -(gridTopInset + SLOT_GAP + row * (SLOT_SIZE + SLOT_GAP));
 
             int captured = i;
             _slots[i] = new SlotWidget(pRt, x, y, SLOT_SIZE, () => OnSlotClicked(captured));

@@ -2,13 +2,11 @@ using Mirror;
 using UnityEngine;
 
 /// <summary>
-/// ClericAnimationDriver — drives the Cleric's Animator from velocity and
-/// hooks AbilityCaster heal casts to trigger ClericHealVFX.
+/// ClericAnimationDriver — drives the Cleric's Animator from velocity.
 ///
 /// Works in tandem with:
-///   • CastAnimator  — fires CastHeal / CastDamage / CastSupport triggers
+///   • CastAnimator  — owns ability-cast animation playback
 ///   • PlayerAnimator — handles GetHit / Death / IsInCombat / Speed
-///   • ClericHealVFX  — particle burst on heal (called from here on the server)
 ///
 /// Attach to: Cleric prefab root. Runs only on the local client.
 /// </summary>
@@ -25,17 +23,11 @@ public class ClericAnimationDriver : NetworkBehaviour
     [Tooltip("Sprint speed — animator Speed reaches 1.5 here")]
     public float baseSprintSpeed = 9f;
 
-    [Header("References")]
-    public AbilityCaster abilityCaster;
-    public ClericHealVFX healVFX;
-
     // ── Private ───────────────────────────────────────────────────────────────
     private Rigidbody _rb;
-    private bool      _hooked;
     private bool      _hasSpeedParam;   // controller actually declares "Speed"
 
-    static readonly int SpeedHash     = Animator.StringToHash("Speed");
-    static readonly int CastHealHash  = Animator.StringToHash("CastHeal");
+    static readonly int SpeedHash = Animator.StringToHash("Speed");
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -50,41 +42,6 @@ public class ClericAnimationDriver : NetworkBehaviour
         if (animator != null && animator.runtimeAnimatorController != null)
             foreach (var p in animator.parameters)
                 if (p.nameHash == SpeedHash) { _hasSpeedParam = true; break; }
-
-        HookAbilityCaster();
-    }
-
-    void OnDestroy() => UnhookAbilityCaster();
-
-    // ── Heal cast hook ────────────────────────────────────────────────────────
-
-    void HookAbilityCaster()
-    {
-        if (_hooked || abilityCaster == null) return;
-        abilityCaster.OnHealCast += HandleHealCast;
-        _hooked = true;
-    }
-
-    void UnhookAbilityCaster()
-    {
-        if (!_hooked || abilityCaster == null) return;
-        abilityCaster.OnHealCast -= HandleHealCast;
-        _hooked = false;
-    }
-
-    void HandleHealCast()
-    {
-        // Trigger animation locally
-        if (animator != null) animator.SetTrigger(CastHealHash);
-
-        // Tell server to broadcast VFX to all clients
-        if (isLocalPlayer) CmdRequestHealVFX();
-    }
-
-    [Command]
-    void CmdRequestHealVFX()
-    {
-        healVFX?.TriggerHealVFX();
     }
 
     // ── Speed parameter ───────────────────────────────────────────────────────

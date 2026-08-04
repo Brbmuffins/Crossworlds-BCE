@@ -37,7 +37,7 @@ public static class ClassPoolBuilder
 
         CreatePool("Cleric",
             availableIndices: new[] { 0,1,2,3,4,5,6,7,23,24,25,26,27,28,35,36,53,54,55 },
-            defaultEquipped:  new[] { 35,36,26,28 });        // Healing Cone, Mending Beam, Sacred Aegis, Temporal Grace
+            defaultEquipped:  new[] { 0,1,2,3 });            // First four abilities authored in the Cleric spellbook
 
         CreatePool("Night Hunter",
             availableIndices: new[] { 0,1,2,3,4,5,6,7,29,30,31,32,33,50,51,52 },

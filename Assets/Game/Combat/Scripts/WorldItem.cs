@@ -20,6 +20,9 @@ public class WorldItem : NetworkBehaviour
     [SyncVar]
     public int quantity = 1;
 
+    [SyncVar(hook = nameof(OnLootRarityChanged))]
+    public ItemRarity lootRarity = ItemRarity.Common;
+
     [Header("Float / Spin")]
     public float floatSpeed     = 1.3f;
     public float floatAmplitude = 0.18f;
@@ -27,6 +30,8 @@ public class WorldItem : NetworkBehaviour
 
     // Glow light — auto-created in Start(), no Inspector assignment required.
     private Light _glowLight;
+    private GameObject _lootBeamInstance;
+    private GameObject _lootVisualInstance;
 
     private Vector3 _origin;
     private bool    _pickedUp = false;
@@ -168,19 +173,182 @@ public class WorldItem : NetworkBehaviour
 
     void OnItemIdChanged(string _, string newVal) => ApplyRarityGlow(newVal);
 
-    void ApplyRarityGlow(string id)
+    /// <summary>
+    /// Attaches one local visual beam to this synchronized pickup. The beam is
+    /// parented to the WorldItem so it follows the floating loot and is removed
+    /// automatically when the pickup's network identity is destroyed.
+    /// </summary>
+    public void AttachLootBeam(GameObject beamPrefab)
     {
-        if (_glowLight == null) return;
-        _glowLight.color = GetRarityColor(id);
+#if UNITY_EDITOR || !UNITY_SERVER
+        if (beamPrefab == null || _lootBeamInstance != null)
+            return;
+
+        _lootBeamInstance = Instantiate(
+            beamPrefab,
+            transform.position,
+            Quaternion.identity,
+            transform);
+        _lootBeamInstance.name = $"{beamPrefab.name} (Loot Beam)";
+        _lootBeamInstance.transform.localPosition = Vector3.zero;
+        foreach (Collider beamCollider in
+                 _lootBeamInstance.GetComponentsInChildren<Collider>(true))
+            beamCollider.enabled = false;
+        ApplyLootBeamColor(GetRarityColor(itemId, lootRarity));
+#endif
     }
 
-    public static Color GetRarityColor(string id)
+    /// <summary>
+    /// Replaces the pickup wrapper's default Visual child with the model
+    /// authored on the matching DropEntry. The model stays local visual data;
+    /// the WorldItem root remains the single networked pickup identity.
+    /// </summary>
+    public void AttachLootVisual(GameObject visualPrefab)
+    {
+#if UNITY_EDITOR || !UNITY_SERVER
+        if (visualPrefab == null || _lootVisualInstance != null)
+            return;
+
+        Transform defaultVisual = transform.Find("Visual");
+        if (defaultVisual != null)
+            defaultVisual.gameObject.SetActive(false);
+
+        _lootVisualInstance = Instantiate(
+            visualPrefab,
+            transform.position,
+            transform.rotation,
+            transform);
+        _lootVisualInstance.name = $"{visualPrefab.name} (Loot Visual)";
+        _lootVisualInstance.transform.localPosition = Vector3.zero;
+        _lootVisualInstance.transform.localRotation = Quaternion.identity;
+
+        foreach (Collider visualCollider in
+                 _lootVisualInstance.GetComponentsInChildren<Collider>(true))
+            visualCollider.enabled = false;
+#endif
+    }
+
+    public void AttachLootPresentation(
+        GameObject visualPrefab,
+        GameObject beamPrefab)
+    {
+        AttachLootVisual(visualPrefab);
+        AttachLootBeam(beamPrefab);
+    }
+
+    void ApplyRarityGlow(string id)
+    {
+        Color rarityColor = GetRarityColor(id, lootRarity);
+        if (_glowLight != null)
+            _glowLight.color = rarityColor;
+        ApplyLootBeamColor(rarityColor);
+    }
+
+    void OnLootRarityChanged(ItemRarity _, ItemRarity newRarity)
+    {
+        ApplyRarityGlow(itemId);
+    }
+
+    void ApplyLootBeamColor(Color color)
+    {
+#if UNITY_EDITOR || !UNITY_SERVER
+        if (_lootBeamInstance == null)
+            return;
+
+        foreach (ParticleSystem particles in
+                 _lootBeamInstance.GetComponentsInChildren<ParticleSystem>(true))
+        {
+            ParticleSystem.MainModule main = particles.main;
+            main.startColor = TintParticleColor(main.startColor, color);
+        }
+
+        foreach (Light beamLight in
+                 _lootBeamInstance.GetComponentsInChildren<Light>(true))
+            beamLight.color = color;
+
+        foreach (TrailRenderer trail in
+                 _lootBeamInstance.GetComponentsInChildren<TrailRenderer>(true))
+            trail.colorGradient = TintGradient(trail.colorGradient, color);
+
+        foreach (LineRenderer line in
+                 _lootBeamInstance.GetComponentsInChildren<LineRenderer>(true))
+            line.colorGradient = TintGradient(line.colorGradient, color);
+#endif
+    }
+
+#if UNITY_EDITOR || !UNITY_SERVER
+    static ParticleSystem.MinMaxGradient TintParticleColor(
+        ParticleSystem.MinMaxGradient source,
+        Color tint)
+    {
+        switch (source.mode)
+        {
+            case ParticleSystemGradientMode.TwoColors:
+                return new ParticleSystem.MinMaxGradient(
+                    TintColor(source.colorMin, tint),
+                    TintColor(source.colorMax, tint));
+            case ParticleSystemGradientMode.Gradient:
+                return new ParticleSystem.MinMaxGradient(
+                    TintGradient(source.gradient, tint));
+            case ParticleSystemGradientMode.TwoGradients:
+                return new ParticleSystem.MinMaxGradient(
+                    TintGradient(source.gradientMin, tint),
+                    TintGradient(source.gradientMax, tint));
+            case ParticleSystemGradientMode.RandomColor:
+                return new ParticleSystem.MinMaxGradient(
+                    TintGradient(source.gradient, tint));
+            default:
+                return new ParticleSystem.MinMaxGradient(
+                    TintColor(source.color, tint));
+        }
+    }
+
+    static Gradient TintGradient(Gradient source, Color tint)
+    {
+        if (source == null)
+            return new Gradient();
+
+        GradientColorKey[] colorKeys = source.colorKeys;
+        for (int i = 0; i < colorKeys.Length; i++)
+            colorKeys[i].color = TintColor(colorKeys[i].color, tint);
+
+        var result = new Gradient();
+        result.mode = source.mode;
+        result.SetKeys(colorKeys, source.alphaKeys);
+        return result;
+    }
+
+    static Color TintColor(Color source, Color tint)
+    {
+        float brightness = Mathf.Max(source.r, Mathf.Max(source.g, source.b));
+        return new Color(
+            tint.r * brightness,
+            tint.g * brightness,
+            tint.b * brightness,
+            source.a * tint.a);
+    }
+#endif
+
+    public static Color GetRarityColor(string id) =>
+        GetRarityColor(id, ItemRarity.Common);
+
+    public static Color GetRarityColor(string id, ItemRarity rarity)
     {
         if (string.IsNullOrEmpty(id))                    return ColorCommon;
         if (id.StartsWith("gold:"))                      return ColorGold;
-        if (id.Contains("epic"))                         return ColorEpic;
-        if (id.Contains("iron") || id.Contains("rare"))  return ColorRare;
-        if (id.Contains("bar")  || id.Contains("uncommon")) return ColorUncommon;
+        switch (rarity)
+        {
+            case ItemRarity.Legendary: return new Color(1f, 0.6f, 0.1f);
+            case ItemRarity.Epic:      return ColorEpic;
+            case ItemRarity.Rare:      return ColorRare;
+            case ItemRarity.Uncommon:  return ColorUncommon;
+        }
+
+        // Preserve the existing naming-convention fallback for older tables
+        // that have not authored the new rarity field yet.
+        if (id.Contains("epic")) return ColorEpic;
+        if (id.Contains("iron") || id.Contains("rare")) return ColorRare;
+        if (id.Contains("bar") || id.Contains("uncommon")) return ColorUncommon;
         return ColorCommon;
     }
 }

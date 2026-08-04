@@ -79,6 +79,8 @@ public class EnemyController : NetworkBehaviour
     [Header("Drops")]
     public DropTable  dropTable;
     public GameObject worldItemPrefab;
+    [Tooltip("Optional VFX attached to each spawned WorldItem. The WorldItem recolors it to match the dropped item's rarity and destroys it automatically when collected.")]
+    public GameObject lootBeamPrefab;
 
     // ── DB Template ID ────────────────────────────────────────────────────────────
     // Must match an id in the enemy_templates DB table (e.g. "grunt_basic").
@@ -1188,12 +1190,91 @@ public class EnemyController : NetworkBehaviour
         Vector3 offset = Random.insideUnitSphere * 1.2f;
         offset.y = 0.5f;
 
+        DropEntry dropEntry = null;
+        if (!itemId.StartsWith("gold:") && dropTable != null)
+            dropTable.TryGetEntry(itemId, out dropEntry);
+
         var wi   = Instantiate(worldItemPrefab, transform.position + offset, Quaternion.identity);
         var comp = wi.GetComponent<WorldItem>();
-        if (comp != null) { comp.itemId = itemId; comp.quantity = qty; }
+        if (comp != null)
+        {
+            comp.itemId = itemId;
+            comp.quantity = qty;
+            comp.lootRarity = dropEntry != null
+                ? dropEntry.ResolvedRarity
+                : ItemRarity.Common;
+        }
         ZoneScene.PlaceWith(wi, gameObject);   // drop belongs to the zone the enemy died in
-        if (NetworkServer.active) NetworkServer.Spawn(wi);
+        if (NetworkServer.active)
+        {
+            NetworkServer.Spawn(wi);
+
+            if (wi.TryGetComponent(out NetworkIdentity worldItemIdentity))
+                RpcAttachLootPresentation(worldItemIdentity.netId, itemId);
+        }
+#if UNITY_EDITOR || !UNITY_SERVER
+        else
+        {
+            AttachLootPresentation(comp, itemId);
+        }
+#endif
     }
+
+    [ClientRpc]
+    void RpcAttachLootPresentation(uint worldItemNetId, string itemId)
+    {
+#if UNITY_EDITOR || !UNITY_SERVER
+        StartCoroutine(AttachLootPresentationWhenReady(
+            worldItemNetId,
+            itemId));
+#endif
+    }
+
+#if UNITY_EDITOR || !UNITY_SERVER
+    IEnumerator AttachLootPresentationWhenReady(
+        uint worldItemNetId,
+        string itemId)
+    {
+        // Spawn messages and RPCs share the reliable channel, so the item will
+        // normally be available immediately. The short retry also covers host
+        // startup and additive-zone observer timing.
+        float timeoutAt = Time.unscaledTime + 2f;
+        while (Time.unscaledTime <= timeoutAt)
+        {
+            if (NetworkClient.spawned.TryGetValue(
+                    worldItemNetId,
+                    out NetworkIdentity worldItemIdentity))
+            {
+                AttachLootPresentation(
+                    worldItemIdentity.GetComponent<WorldItem>(),
+                    itemId);
+                yield break;
+            }
+
+            yield return null;
+        }
+
+        Debug.LogWarning(
+            $"[LOOT] {name}: could not find spawned WorldItem netId={worldItemNetId} to attach its loot presentation.",
+            this);
+    }
+
+    void AttachLootPresentation(WorldItem worldItem, string itemId)
+    {
+        if (worldItem == null)
+            return;
+
+        GameObject visualPrefab = null;
+        if (!itemId.StartsWith("gold:") &&
+            dropTable != null &&
+            dropTable.TryGetEntry(itemId, out DropEntry entry))
+            visualPrefab = entry.ResolvedWorldVisualPrefab;
+
+        worldItem.AttachLootPresentation(
+            visualPrefab,
+            lootBeamPrefab);
+    }
+#endif
 
     IEnumerator RespawnAtSpawnPoint()
     {

@@ -108,7 +108,8 @@ namespace Crossworlds.EditorTools.EnemyForge
                 "aggroWhenDamaged", "attackRange", "attackInterval", "damage", "combatTurnSpeed",
                 "projectilePrefab", "preferredRange", "tooCloseDistance");
             DrawCastAttackSection(serialized);
-            DrawPropertySection(serialized, "Rewards", ref showRewards, "dropTable", "worldItemPrefab");
+            DrawPropertySection(serialized, "Rewards", ref showRewards,
+                "dropTable", "worldItemPrefab", "lootBeamPrefab");
             DrawPropertySection(serialized, "Lifecycle", ref showLifecycle,
                 "deadModelVisibleSeconds", "respawnAfterDeath", "respawnDelay", "corpseGroundOffset");
             DrawPropertySection(serialized, "SFX", ref showSfx,
