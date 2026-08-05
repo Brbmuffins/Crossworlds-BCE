@@ -54,15 +54,6 @@ public class GmConsole : MonoBehaviour
     }
 
     // ── GM allowlist ──────────────────────────────────────────────────────
-    static readonly HashSet<string> GM_USERS = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-    {
-        "DevPlayer",
-        "brbmuffins",
-        "ForYurHealth",
-        "YaDingusMD",
-        "SleepyBoySteve",
-    };
-
     // ── UI ────────────────────────────────────────────────────────────────
     Canvas          _canvas;
     GameObject      _panel;
@@ -152,8 +143,7 @@ public class GmConsole : MonoBehaviour
 
     bool IsGM()
     {
-        string user = PlayerPrefs.GetString("username", "");
-        return GM_USERS.Contains(user);
+        return CharacterClassAvailability.IsCurrentUserGm();
     }
 
     void TryFindPlayer()
@@ -223,6 +213,8 @@ public class GmConsole : MonoBehaviour
             case "pos":     CmdPos();          break;
             case "players": CmdPlayers();      break;
             case "goto":    CmdGoto(parts);    break;
+            // Deliberately omitted from help: GM-only pre-release roster macro.
+            case "unlockroster": CmdUnlockRoster(); break;
             case "clear":   _history.Clear(); _log.text = ""; break;
             case "help":    CmdHelp();         break;
             default:        Log($"<color=#f87171>Unknown command: {cmd}. Type 'help'.</color>"); break;
@@ -408,6 +400,17 @@ public class GmConsole : MonoBehaviour
         Log(_noclipActive
             ? "<color=#4ade80>Noclip ON — colliders disabled</color>"
             : "<color=#94a3b8>Noclip OFF — colliders restored</color>");
+    }
+
+    void CmdUnlockRoster()
+    {
+        if (!CharacterClassAvailability.TryEnableTestingOverride())
+        {
+            Log("<color=#f87171>Roster override denied.</color>");
+            return;
+        }
+
+        Log("<color=#4ade80>Pre-release roster unlocked for this session.</color>");
     }
 
     void CmdHelp()

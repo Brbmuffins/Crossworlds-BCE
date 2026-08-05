@@ -1,4 +1,6 @@
+using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Text;
 using Mirror;
 using UnityEngine;
@@ -68,6 +70,7 @@ public class CharacterSelectUI : MonoBehaviour
     Image[]           _classBtnBg;
     Button            _deployBtn;
     TextMeshProUGUI   _deployLabel;
+    TextMeshProUGUI[] _availabilityBadges;
 
     // ── Palette ───────────────────────────────────────────────────────────────
     static readonly Color BgDeep     = new Color(0.04f, 0.03f, 0.08f, 1.00f);
@@ -85,6 +88,7 @@ public class CharacterSelectUI : MonoBehaviour
 
     void Start()
     {
+        CharacterClassAvailability.AvailabilityChanged += RefreshAvailability;
         EnsureSingleEventSystem();
         BuildPreview();
         BuildUI();
@@ -113,6 +117,7 @@ public class CharacterSelectUI : MonoBehaviour
 
     void OnDestroy()
     {
+        CharacterClassAvailability.AvailabilityChanged -= RefreshAvailability;
         if (_rt != null) { _rt.Release(); Destroy(_rt); }
     }
 
@@ -278,6 +283,7 @@ public class CharacterSelectUI : MonoBehaviour
 
         // Class buttons highlight
         UpdateClassButtons(d);
+        RefreshAvailability();
 
         // 3D preview
         if (_previewInstance != null) Destroy(_previewInstance);
@@ -520,6 +526,7 @@ public class CharacterSelectUI : MonoBehaviour
 
         _classBtns  = new Button[characters.Length];
         _classBtnBg = new Image[characters.Length];
+        _availabilityBadges = new TextMeshProUGUI[characters.Length];
 
         float BTN_H = 78f;
         float yOff  = 44f;
@@ -561,6 +568,12 @@ public class CharacterSelectUI : MonoBehaviour
             role.color     = new Color(0.48f, 0.47f, 0.45f, 1f);
             role.alignment = TextAlignmentOptions.TopLeft;
             RectSet(role.rectTransform, 14f, 35f, LEFT_W - 20f, 16f, top: true);
+
+            var badge = MkTMP(rt, "Availability", "IN DEVELOPMENT", 8f, FontStyles.Bold);
+            badge.color = new Color(0.82f, 0.64f, 0.34f, 1f);
+            badge.alignment = TextAlignmentOptions.TopLeft;
+            RectSet(badge.rectTransform, 14f, 55f, LEFT_W - 20f, 14f, top: true);
+            _availabilityBadges[i] = badge;
 
             _classBtns[i].onClick.AddListener(() => ShowClass(ci));
         }
@@ -863,6 +876,12 @@ public class CharacterSelectUI : MonoBehaviour
     public void Play()
     {
         int idx = Mathf.Clamp(_sel, 0, (characters?.Length ?? 1) - 1);
+        if (!CharacterClassAvailability.IsPlayable(idx))
+        {
+            RefreshAvailability();
+            Debug.LogWarning("[CharSel] Deploy blocked: selected class is still in development.");
+            return;
+        }
         PlayerPrefs.SetInt("SelectedCharacter", idx);
         PlayerPrefs.Save();
 
@@ -962,8 +981,31 @@ public class CharacterSelectUI : MonoBehaviour
 
     void ResetDeployButton(string label)
     {
-        if (_deployBtn)   _deployBtn.interactable = true;
-        if (_deployLabel) _deployLabel.text = label;
+        if (_deployBtn)   _deployBtn.interactable = CharacterClassAvailability.IsPlayable(_sel);
+        if (_deployLabel) _deployLabel.text = CharacterClassAvailability.IsPlayable(_sel)
+            ? label
+            : "IN DEVELOPMENT";
+    }
+
+    public void RefreshAvailability()
+    {
+        bool selectedPlayable = CharacterClassAvailability.IsPlayable(_sel);
+        if (_deployBtn) _deployBtn.interactable = selectedPlayable;
+        if (_deployLabel) _deployLabel.text = selectedPlayable ? "DEPLOY" : "IN DEVELOPMENT";
+
+        if (_availabilityBadges == null) return;
+        for (int i = 0; i < _availabilityBadges.Length; i++)
+        {
+            if (_availabilityBadges[i] == null) continue;
+            bool normallyLocked = i == 1 || i == 2;
+            _availabilityBadges[i].gameObject.SetActive(normallyLocked);
+            _availabilityBadges[i].text = CharacterClassAvailability.IsPlayable(i)
+                ? "GM TEST BUILD"
+                : "IN DEVELOPMENT";
+            _availabilityBadges[i].color = CharacterClassAvailability.IsPlayable(i)
+                ? new Color(0.45f, 0.82f, 0.65f, 1f)
+                : new Color(0.82f, 0.64f, 0.34f, 1f);
+        }
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -1038,4 +1080,46 @@ public class CharacterSelectUI : MonoBehaviour
 
     [System.Serializable]
     class CharacterApiResponse { public int id; public int class_index; }
+}
+
+/// <summary>
+/// Central policy for classes that are visible for preview but not ready to deploy.
+/// The testing override intentionally lasts only for the current app session.
+/// </summary>
+public static class CharacterClassAvailability
+{
+    static readonly HashSet<int> UnplayableClassIndices = new HashSet<int> { 1, 2 };
+
+    static readonly HashSet<string> GmUsers = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+    {
+        "DevPlayer",
+        "brbmuffins",
+        "ForYurHealth",
+        "YaDingusMD",
+        "SleepyBoySteve",
+    };
+
+    public static event Action AvailabilityChanged;
+
+    public static bool TestingOverrideEnabled { get; private set; }
+
+    public static bool IsPlayable(int classIndex)
+    {
+        return TestingOverrideEnabled || !UnplayableClassIndices.Contains(classIndex);
+    }
+
+    public static bool IsCurrentUserGm()
+    {
+        return GmUsers.Contains(PlayerPrefs.GetString("username", ""));
+    }
+
+    public static bool TryEnableTestingOverride()
+    {
+        if (!IsCurrentUserGm()) return false;
+        if (TestingOverrideEnabled) return true;
+
+        TestingOverrideEnabled = true;
+        AvailabilityChanged?.Invoke();
+        return true;
+    }
 }
