@@ -61,6 +61,8 @@ public class InventoryManager : MonoBehaviour
 
     public void OnItemPickedUp(string itemId, int qty)
     {
+        if (string.IsNullOrWhiteSpace(itemId) || qty <= 0) return;
+
         if (itemId.StartsWith("gold:"))
         {
             if (int.TryParse(itemId.Substring(5), out int gold))
@@ -71,19 +73,42 @@ public class InventoryManager : MonoBehaviour
             return;
         }
 
-        var existing = _slots.Find(s => s.item_id == itemId && s.equipped == 0);
-        if (existing != null)
+        LootItemDefinition definition = LootItemCatalog.Find(itemId);
+        bool stackable = definition == null || definition.stackable;
+        int maxStack = stackable
+            ? Mathf.Max(1, definition != null ? definition.maxStackSize : 99)
+            : 1;
+        int remaining = qty;
+
+        if (stackable)
         {
-            existing.quantity += qty;
-        }
-        else
-        {
-            int next = FindNextFreeSlot();
-            if (next < 0) { Debug.LogWarning($"[LOOT] Inventory full — {itemId} dropped"); return; }
-            _slots.Add(new InventorySlot { slot_index = next, item_id = itemId, quantity = qty, equipped = 0 });
+            foreach (var slot in _slots)
+            {
+                if (remaining <= 0) break;
+                if (slot.item_id != itemId || slot.equipped != 0 || slot.quantity >= maxStack) continue;
+                int added = Mathf.Min(remaining, maxStack - slot.quantity);
+                slot.quantity += added;
+                remaining -= added;
+            }
         }
 
-        Debug.Log($"[LOOT] Picked up {qty}x {itemId}");
+        while (remaining > 0)
+        {
+            int next = FindNextFreeSlot();
+            if (next < 0)
+            {
+                Debug.LogWarning($"[LOOT] Inventory full — {remaining}x {itemId} could not be stored");
+                break;
+            }
+            int added = Mathf.Min(remaining, maxStack);
+            _slots.Add(new InventorySlot
+                { slot_index = next, item_id = itemId, quantity = added, equipped = 0 });
+            remaining -= added;
+        }
+
+        int stored = qty - remaining;
+        if (stored <= 0) return;
+        Debug.Log($"[LOOT] Picked up {stored}x {itemId}");
         StartCoroutine(SaveInventory());
     }
 

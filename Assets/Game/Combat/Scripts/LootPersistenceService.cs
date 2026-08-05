@@ -56,7 +56,9 @@ public static class LootPersistenceService
             itemType = ItemTypeName(definition.databaseItemType),
             iconId = string.IsNullOrWhiteSpace(definition.iconId) ? null : definition.iconId,
             sellValue = Mathf.Max(0, definition.sellValue),
-            crafted = definition.crafted
+            crafted = definition.crafted,
+            stackable = definition.stackable,
+            maxStackSize = definition.stackable ? Mathf.Max(1, definition.maxStackSize) : 1
         };
         string json = JsonUtility.ToJson(dto);
         using var request = new UnityWebRequest(
@@ -99,8 +101,8 @@ public static class LootPersistenceService
     sealed class LootDefinitionDto
     {
         public string itemId, displayName, rarity, itemType, iconId;
-        public int sellValue;
-        public bool crafted;
+        public int sellValue, maxStackSize;
+        public bool crafted, stackable;
     }
 }
 

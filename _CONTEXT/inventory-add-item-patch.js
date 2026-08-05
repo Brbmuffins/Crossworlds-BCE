@@ -29,24 +29,29 @@ app.post('/api/inventory/add-item', requireJWT, async (req, res) => {
 
   // Validate item exists
   const [[item]] = await db.promise().query(
-    'SELECT id FROM items WHERE id = ?', [itemId]
+    'SELECT id, stackable, max_stack_size FROM items WHERE id = ?', [itemId]
   );
   if (!item)
     return res.json({ success: false, error: `Unknown item: ${itemId}` });
 
-  // Try to stack on existing slot
-  const [[existing]] = await db.promise().query(
-    'SELECT slot_index, quantity FROM inventory WHERE character_id = ? AND item_id = ? LIMIT 1',
-    [characterId, itemId]
-  );
+  const stackable = item.stackable !== 0;
+  const maxStack = stackable ? Math.max(parseInt(item.max_stack_size, 10) || 99, 1) : 1;
+  let remaining = qty;
 
-  if (existing) {
-    const newQty = existing.quantity + qty;
-    await db.promise().query(
-      'UPDATE inventory SET quantity = ? WHERE character_id = ? AND slot_index = ?',
-      [newQty, characterId, existing.slot_index]
+  if (stackable) {
+    const [existingStacks] = await db.promise().query(
+      'SELECT slot_index, quantity FROM inventory WHERE character_id = ? AND item_id = ? AND equipped = 0 AND quantity < ? ORDER BY slot_index',
+      [characterId, itemId, maxStack]
     );
-    return res.json({ success: true, data: { slot_index: existing.slot_index, quantity: newQty, stacked: true } });
+    for (const existing of existingStacks) {
+      if (remaining <= 0) break;
+      const added = Math.min(remaining, maxStack - existing.quantity);
+      await db.promise().query(
+        'UPDATE inventory SET quantity = ? WHERE character_id = ? AND slot_index = ?',
+        [existing.quantity + added, characterId, existing.slot_index]
+      );
+      remaining -= added;
+    }
   }
 
   // Find first empty slot (scan 0–23)
@@ -55,17 +60,26 @@ app.post('/api/inventory/add-item', requireJWT, async (req, res) => {
     [characterId]
   );
   const usedSlots = new Set(slots.map(r => r.slot_index));
-  let emptySlot = 0;
-  while (usedSlots.has(emptySlot) && emptySlot < 24) emptySlot++;
+  while (remaining > 0) {
+    let emptySlot = 0;
+    while (usedSlots.has(emptySlot) && emptySlot < 24) emptySlot++;
+    if (emptySlot >= 24) break;
 
-  if (emptySlot >= 24)
+    const added = Math.min(remaining, maxStack);
+    await db.promise().query(
+      'INSERT INTO inventory (character_id, slot_index, item_id, quantity, equipped) VALUES (?, ?, ?, ?, 0)',
+      [characterId, emptySlot, itemId, added]
+    );
+    usedSlots.add(emptySlot);
+    remaining -= added;
+  }
+
+  const stored = qty - remaining;
+  if (stored <= 0)
     return res.json({ success: false, error: 'Inventory is full' });
 
-  await db.promise().query(
-    'INSERT INTO inventory (character_id, slot_index, item_id, quantity, equipped) VALUES (?, ?, ?, ?, 0)',
-    [characterId, emptySlot, itemId, qty]
-  );
-
-  console.log(`[GATHER] char ${characterId} received ${qty}x ${itemId} → slot ${emptySlot}`);
-  return res.json({ success: true, data: { slot_index: emptySlot, quantity: qty, stacked: false } });
+  return res.json({
+    success: remaining === 0,
+    data: { stored, rejected: remaining }
+  });
 });

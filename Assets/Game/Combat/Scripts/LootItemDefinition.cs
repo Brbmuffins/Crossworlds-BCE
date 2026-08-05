@@ -46,6 +46,12 @@ public class LootItemDefinition : ScriptableObject
     [Tooltip("Whether the database should mark this item as craft-produced.")]
     public bool crafted;
 
-    [Tooltip("Model shown in the world for this item, such as a sword, material, or chest. Colliders on this visual are disabled when attached to the pickup.")]
+    [Tooltip("Allow multiple copies of this item to share one inventory slot.")]
+    public bool stackable = true;
+
+    [Min(1), Tooltip("Maximum quantity held in one slot. Ignored when Stackable is disabled.")]
+    public int maxStackSize = 99;
+
+    [Tooltip("Optional item-specific model shown on the world pickup, such as a sword or chest. Leave empty for inventory-only items to use the enemy's assigned generic pickup prefab. Colliders on this visual are disabled when attached.")]
     public GameObject worldVisualPrefab;
 }

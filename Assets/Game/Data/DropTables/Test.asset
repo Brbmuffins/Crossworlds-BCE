@@ -16,7 +16,13 @@ MonoBehaviour:
   maxGold: 5
   nothingWeight: 0
   drops:
-  - itemId: material_copper_shard
+  - itemDefinition: {fileID: 0}
+    itemId: material_copper_shard
     weight: 1
+    minQty: 1
+    maxQty: 1
+  - itemDefinition: {fileID: 11400000, guid: 7ed1e2a1cdf959a42b82dc019971cdba, type: 2}
+    itemId: 
+    weight: 0
     minQty: 1
     maxQty: 1

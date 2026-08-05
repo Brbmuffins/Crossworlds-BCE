@@ -64,8 +64,16 @@ namespace Crossworlds.EditorTools.LootForge
             Draw(serialized, "rarity", "Rarity");
             Draw(serialized, "sellValue", "Sell Value");
             Draw(serialized, "crafted", "Crafted Item");
+            Draw(serialized, "stackable", "Stackable");
+            if (serialized.FindProperty("stackable").boolValue)
+                Draw(serialized, "maxStackSize", "Maximum Stack Size");
             Draw(serialized, "inventoryIcon", "Inventory Icon");
             Draw(serialized, "worldVisualPrefab", "World Visual Prefab");
+            EditorGUILayout.HelpBox(
+                "World Visual Prefab is optional. Leave it empty for inventory-only items such as tickets, " +
+                "wood, crafting materials, or consumables. The enemy's assigned network-ready pickup prefab " +
+                "will be used as the world representation.",
+                MessageType.None);
             serialized.ApplyModifiedProperties();
 
             if (definition.inventoryIcon != null)
@@ -210,10 +218,12 @@ namespace Crossworlds.EditorTools.LootForge
                 issues.Add("The live database supports Common, Uncommon, Rare, or Epic rarity; Legendary is not supported.");
             if (definition.inventoryIcon == null)
                 issues.Add("Inventory Icon is required.");
-            if (definition.worldVisualPrefab == null ||
+            if (definition.worldVisualPrefab != null &&
                 !PrefabUtility.IsPartOfPrefabAsset(definition.worldVisualPrefab))
-                issues.Add("World Visual Prefab must be a prefab asset from the Project window.");
+                issues.Add("When assigned, World Visual Prefab must be a prefab asset from the Project window.");
             if (definition.sellValue < 0) issues.Add("Sell Value cannot be negative.");
+            if (definition.stackable && definition.maxStackSize < 1)
+                issues.Add("Maximum Stack Size must be at least 1.");
             if (dropTableRequired && dropTable == null) issues.Add("Select an existing Drop Table.");
 
             foreach (string guid in AssetDatabase.FindAssets("t:LootItemDefinition"))
