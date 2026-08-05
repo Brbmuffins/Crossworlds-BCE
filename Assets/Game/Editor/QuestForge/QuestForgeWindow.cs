@@ -700,6 +700,13 @@ public sealed class QuestForgeWindow : EditorWindow
     void ConfigureObject()
     {
         GameObject selected = SelectedOrWarn(); if (selected == null) return;
+        if (EditorUtility.IsPersistent(selected))
+        {
+            EditorUtility.DisplayDialog("Quest Forge",
+                "Select an object instance in the Scene hierarchy. Quest Forge will not attach quest interaction data directly to a reusable prefab asset.",
+                "OK");
+            return;
+        }
         QuestInteractableTarget target = selected.GetComponent<QuestInteractableTarget>() ??
                                          Undo.AddComponent<QuestInteractableTarget>(selected);
         target.targetId = Slug(selected.name);
@@ -709,6 +716,13 @@ public sealed class QuestForgeWindow : EditorWindow
     void ConfigureArea()
     {
         GameObject selected = SelectedOrWarn(); if (selected == null) return;
+        if (EditorUtility.IsPersistent(selected))
+        {
+            EditorUtility.DisplayDialog("Quest Forge",
+                "Select an area instance in the Scene hierarchy. Quest Forge will not attach quest area data directly to a reusable prefab asset.",
+                "OK");
+            return;
+        }
         Collider collider = selected.GetComponent<Collider>();
         if (collider == null) collider = Undo.AddComponent<BoxCollider>(selected);
         Undo.RecordObject(collider, "Configure Quest Area");

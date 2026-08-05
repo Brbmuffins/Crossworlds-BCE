@@ -17,6 +17,7 @@ public sealed class InventoryBagUI : MonoBehaviour
     public static InventoryBagUI Instance => _instance;
 
     InventoryBagView _view;
+    InventoryWindowDragHandle _dragHandle;
     InventorySlotData[] _data = new InventorySlotData[TotalSlots];
     InventoryFilter _filter;
     bool _open;
@@ -77,6 +78,7 @@ public sealed class InventoryBagUI : MonoBehaviour
         }
         _view = Instantiate(prefab, transform);
         _view.name = "InventoryWindow";
+        _dragHandle = _view.GetComponentInChildren<InventoryWindowDragHandle>(true);
         _view.Initialize(HidePanel, SetFilter, OnSlotClicked, OnSlotEnter, OnSlotExit);
     }
 
@@ -88,6 +90,7 @@ public sealed class InventoryBagUI : MonoBehaviour
         _view.gameObject.SetActive(_open);
         if (_open)
         {
+            _dragHandle?.ApplySavedPosition();
             RefreshGold();
             StartCoroutine(FetchInventory());
         }
