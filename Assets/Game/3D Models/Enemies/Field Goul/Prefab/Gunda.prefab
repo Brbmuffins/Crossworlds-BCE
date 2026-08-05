@@ -149,7 +149,7 @@ GameObject:
   - component: {fileID: 8340484662746655627}
   - component: {fileID: 2297194005434568617}
   m_Layer: 0
-  m_Name: Gunda (4)
+  m_Name: Gunda
   m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

@@ -306,7 +306,7 @@ MonoBehaviour:
   effectiveCriticalStrikeDamageMultiplier: 1.5
   effectiveDamageReduction: 0
   effectiveMaxMana: 200
-  currentMana: 2
+  currentMana: 200
   effectiveHp5: 0
   effectiveMp5: 25
   effectiveMoveSpeedMultiplier: 1
@@ -522,7 +522,7 @@ MonoBehaviour:
     indicatorSize: 5
     spawnTurret: 0
     turretPrefab: {fileID: 0}
-    cooldown: 2
+    cooldown: 0
     manaCost: 10
     icon: {fileID: 21300000, guid: 11b244da10d941340a9f3c6838e55716, type: 3}
     castTime: 1
