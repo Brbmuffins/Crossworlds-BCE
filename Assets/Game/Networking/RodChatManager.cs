@@ -177,6 +177,12 @@ public class RodChatManager : NetworkBehaviour
         if (target != null) TargetGrantQuestReward(target, gold, xp, itemId ?? "", itemQuantity);
     }
 
+    [Server]
+    public void ServerRefreshQuestRewards(NetworkConnectionToClient target)
+    {
+        if (target != null) TargetRefreshQuestRewards(target);
+    }
+
     [TargetRpc]
     void TargetReceiveQuestState(NetworkConnection target, string json)
     {
@@ -191,6 +197,15 @@ public class RodChatManager : NetworkBehaviour
     {
 #if UNITY_EDITOR || !UNITY_SERVER
         QuestLocalRuntime.ClientGrantReward(gold, xp, itemId, itemQuantity);
+#endif
+    }
+
+    [TargetRpc]
+    void TargetRefreshQuestRewards(NetworkConnection target)
+    {
+#if UNITY_EDITOR || !UNITY_SERVER
+        PlayerProgressManager.Local?.Refresh();
+        InventoryBagUI.Refresh();
 #endif
     }
 

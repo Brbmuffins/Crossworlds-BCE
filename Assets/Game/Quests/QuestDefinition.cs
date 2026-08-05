@@ -33,6 +33,8 @@ public static class QuestTargetId
 [Serializable]
 public sealed class QuestObjectiveDefinition
 {
+    [HideInInspector, Tooltip("Stable persistence key. Quest Forge assigns this automatically; do not reuse it.")]
+    public string objectiveId;
     public QuestObjectiveType type;
     [Tooltip("Enemy template ID, inventory item ID, object ID, or area ID.")]
     public string targetId;
@@ -47,8 +49,11 @@ public sealed class QuestDefinition : ScriptableObject
 {
     [Header("Identity")]
     public string questId = "quest_new";
+    [Min(1), Tooltip("Increment when a deployed quest changes incompatibly with saved progress.")]
+    public int definitionVersion = 1;
     public string title = "New Quest";
     [TextArea(2, 5)] public string description;
+    [Min(1)] public int minimumLevel = 1;
     public bool objectivesMustBeCompletedInOrder;
 
     [Header("Dialogue")]

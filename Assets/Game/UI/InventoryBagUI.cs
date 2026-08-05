@@ -262,6 +262,9 @@ public class InventoryBagUI : MonoBehaviour
 
     static bool AnyInputFocused()
     {
+        if (RodChatManager.Instance != null && RodChatManager.Instance.IsOpen)
+            return true;
+
         foreach (var f in FindObjectsByType<TMP_InputField>(FindObjectsInactive.Exclude))
             if (f.isFocused) return true;
         return false;
@@ -333,14 +336,18 @@ public class InventoryBagUI : MonoBehaviour
 
         // Slot grid
         _slots = new SlotWidget[TOTAL_SLOTS];
-        float gridTop = panelH - 44f;
+        // Slots use a top-left anchor and pivot, so their Y positions must be
+        // negative offsets measured down from the top of the panel. The old
+        // calculation used bottom-up panel coordinates, which placed the grid
+        // above the visible bag layout.
+        const float gridTopInset = 44f;
 
         for (int i = 0; i < TOTAL_SLOTS; i++)
         {
             int col = i % COLS;
             int row = i / COLS;
             float x = SLOT_GAP + col * (SLOT_SIZE + SLOT_GAP);
-            float y = gridTop - SLOT_GAP - row * (SLOT_SIZE + SLOT_GAP) - SLOT_SIZE;
+            float y = -(gridTopInset + SLOT_GAP + row * (SLOT_SIZE + SLOT_GAP));
 
             int captured = i;
             _slots[i] = new SlotWidget(pRt, x, y, SLOT_SIZE, () => OnSlotClicked(captured));
@@ -454,6 +461,7 @@ public class InventoryBagUI : MonoBehaviour
             _currentItemId    = null;
             _bg.color         = EmptyColor;
             _icon.color       = new Color(1f, 1f, 1f, 0f);
+            _icon.sprite      = null;
             _qty.text         = "";
             _equipBadge.gameObject.SetActive(false);
 #if UNITY_EDITOR || !UNITY_SERVER
@@ -465,8 +473,10 @@ public class InventoryBagUI : MonoBehaviour
         {
             _currentItemId = itemId;
             _bg.color = equipped ? EquippedColor : FilledColor;
-            // Icon: colour-code by rarity prefix until we have a sprite atlas
-            _icon.color = RarityColor(itemId);
+            LootItemDefinition definition = LootItemCatalog.Find(itemId);
+            _icon.sprite = definition != null ? definition.inventoryIcon : null;
+            _icon.preserveAspect = true;
+            _icon.color = _icon.sprite != null ? Color.white : RarityColor(itemId);
             _qty.text   = qty > 1 ? qty.ToString() : "";
             _equipBadge.gameObject.SetActive(equipped);
         }
