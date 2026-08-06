@@ -147,7 +147,6 @@ GameObject:
   - component: {fileID: 5425423173228415393}
   - component: {fileID: 8174897947564323128}
   - component: {fileID: 8340484662746655627}
-  - component: {fileID: 2297194005434568617}
   m_Layer: 0
   m_Name: Gunda
   m_TagString: Enemy
@@ -170,7 +169,6 @@ Transform:
   m_Children:
   - {fileID: 5304982457742645627}
   - {fileID: 2941190772561986232}
-  - {fileID: 8294873117937396164}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 136.922, z: 0}
 --- !u!95 &5857688048310145366
@@ -455,21 +453,6 @@ MonoBehaviour:
   syncInterval: 0
   clientAuthority: 0
   animator: {fileID: 5857688048310145366}
---- !u!114 &2297194005434568617
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1046127108768916309}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2b7a904c1cc764b4da3928375477e43d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::QuestInteractableTarget
-  targetId: gunda_(4)
-  promptText: Press E to interact
-  interactionRadius: 3
 --- !u!1 &1211626105655372265
 GameObject:
   m_ObjectHideFlags: 0
@@ -856,37 +839,6 @@ Transform:
   m_Children:
   - {fileID: 2512286749569351733}
   m_Father: {fileID: 2432390373932982279}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &2923144946560512683
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 8294873117937396164}
-  m_Layer: 0
-  m_Name: QuestArea_gunda_(4)_discovery
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &8294873117937396164
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2923144946560512683}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 418632165541263855}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &3005916898819436864
 GameObject:
