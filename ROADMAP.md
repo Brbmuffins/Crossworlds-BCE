@@ -66,6 +66,17 @@ conversation: it names its files, acceptance criteria, and dependencies. Tasks m
 > 1 behind origin (`65138e5e` "Darkwood changes - Marauder VFX updates") — pull/push
 > via GitHub Desktop, not CLI. `tools/deploy-server.sh` is RETIRED; CI deploys to
 > numbered `/game/<runid>/` dirs (see CLAUDE.md). Unity is 6000.4.11f1 (not 6000.4.10f1).
+>
+> **Progression framework 2026-08-05:** Unity now refreshes the canonical character
+> record after each accepted `/api/combat/kill`, uses the consistent
+> `100 × targetLevel^1.5` display curve, and applies authenticated STR/AGI/INT/VIT to
+> server-owned `CharacterStats` SyncVars at spawn. Mob XP is derived from enemy level
+> (`10 × level + 5`) and a broad reward category: grunt ×1, brute ×1.5, elite ×2,
+> boss ×5. Per-monster XP catalog rows are not required.
+> Follow-up fixed the missing `/api/combat/hit` bridge (which caused the VPS hit gate
+> to reject every kill), added accepted-reward `+XP` HUD feedback, and sends the
+> server level/category plus a per-spawn network instance ID. Gunda is grunt; the
+> Darkwood Ogre is brute. The matching auth-server contract still needs VPS deployment.
 > The `#if !UNITY_SERVER` guards described in the 1.5 note above were the *bare* form;
 > the required convention is `#if UNITY_EDITOR || !UNITY_SERVER`, and the 8 remaining
 > bare guards (HeroCosmeticApplier, StatusEffectHUD, ShieldValueHUD, GoldHUD,

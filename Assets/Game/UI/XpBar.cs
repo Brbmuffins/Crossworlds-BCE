@@ -31,10 +31,12 @@ public class XpBar : MonoBehaviour
     Image            _fillBg;
     TextMeshProUGUI  _levelText;
     TextMeshProUGUI  _xpText;
+    TextMeshProUGUI  _gainText;
     CanvasGroup      _cg;
 
     float _displayFraction = 0f;
     float _targetFraction  = 0f;
+    Coroutine _gainRoutine;
 
     const int   CanvasOrder       = 99;
     const float ActionBarXpWidth  = 530f;
@@ -88,6 +90,7 @@ public class XpBar : MonoBehaviour
         {
             PlayerProgressManager.Local.OnDataRefreshed -= OnRefreshed;
             PlayerProgressManager.Local.OnLevelUp       -= OnLevelUp;
+            PlayerProgressManager.Local.OnXpGained      -= OnXpGained;
         }
     }
 
@@ -103,8 +106,10 @@ public class XpBar : MonoBehaviour
     {
         PlayerProgressManager.Local.OnDataRefreshed -= OnRefreshed;
         PlayerProgressManager.Local.OnLevelUp       -= OnLevelUp;
+        PlayerProgressManager.Local.OnXpGained      -= OnXpGained;
         PlayerProgressManager.Local.OnDataRefreshed += OnRefreshed;
         PlayerProgressManager.Local.OnLevelUp       += OnLevelUp;
+        PlayerProgressManager.Local.OnXpGained      += OnXpGained;
     }
 
     void Update()
@@ -130,6 +135,34 @@ public class XpBar : MonoBehaviour
         _displayFraction = 0f;
         _levelText.text = $"Lv {newLevel}";
         StartCoroutine(LevelUpFlash());
+    }
+
+    void OnXpGained(int amount)
+    {
+        if (amount <= 0 || _gainText == null) return;
+        if (_gainRoutine != null) StopCoroutine(_gainRoutine);
+        _gainRoutine = StartCoroutine(ShowXpGain(amount));
+    }
+
+    IEnumerator ShowXpGain(int amount)
+    {
+        _gainText.text = $"+{amount} XP";
+        RectTransform rt = _gainText.rectTransform;
+        Vector2 start = new Vector2(0f, 22f);
+        Color color = new Color(0.82f, 0.62f, 1f, 1f);
+        float duration = 1.35f;
+
+        for (float t = 0f; t < duration; t += Time.deltaTime)
+        {
+            float p = Mathf.Clamp01(t / duration);
+            rt.anchoredPosition = start + Vector2.up * (24f * p);
+            color.a = 1f - Mathf.Clamp01((p - 0.55f) / 0.45f);
+            _gainText.color = color;
+            yield return null;
+        }
+
+        _gainText.text = "";
+        _gainRoutine = null;
     }
 
     IEnumerator LevelUpFlash()
@@ -242,6 +275,21 @@ public class XpBar : MonoBehaviour
         _xpText.alignment = TextAlignmentOptions.Center;
         _xpText.raycastTarget = false;
         StretchFull(xpGO.GetComponent<RectTransform>());
+
+        var gainGO = new GameObject("XpGainText", typeof(RectTransform), typeof(TextMeshProUGUI));
+        gainGO.transform.SetParent(container.transform, false);
+        _gainText = gainGO.GetComponent<TextMeshProUGUI>();
+        _gainText.text = "";
+        _gainText.fontSize = 16f;
+        _gainText.fontStyle = FontStyles.Bold;
+        _gainText.alignment = TextAlignmentOptions.Center;
+        _gainText.raycastTarget = false;
+        var gainRt = gainGO.GetComponent<RectTransform>();
+        gainRt.anchorMin = new Vector2(0f, 1f);
+        gainRt.anchorMax = new Vector2(1f, 1f);
+        gainRt.pivot = new Vector2(0.5f, 0f);
+        gainRt.anchoredPosition = new Vector2(0f, 22f);
+        gainRt.sizeDelta = new Vector2(0f, 26f);
     }
 
     static void StretchFull(RectTransform rt)

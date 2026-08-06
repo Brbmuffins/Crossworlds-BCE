@@ -171,20 +171,24 @@ public class CombatSessionTracker : MonoBehaviour
     }
 
     // ── HTTP POST ─────────────────────────────────────────────────────────────
-    public void PostKill(int characterId, string enemyTemplateId, string token)
+    public void PostKill(int characterId, int enemyLevel, EnemyController.RewardCategory enemyCategory,
+        uint enemyInstanceId, string token)
     {
-        if (characterId <= 0 || string.IsNullOrEmpty(enemyTemplateId) || string.IsNullOrEmpty(token))
+        if (characterId <= 0 || enemyLevel <= 0 || string.IsNullOrEmpty(token))
             return;
 
-        StartCoroutine(PostKillRoutine(characterId, enemyTemplateId, token));
+        StartCoroutine(PostKillRoutine(characterId, enemyLevel, enemyCategory, enemyInstanceId, token));
     }
 
-    IEnumerator PostKillRoutine(int characterId, string enemyTemplateId, string token)
+    IEnumerator PostKillRoutine(int characterId, int enemyLevel,
+        EnemyController.RewardCategory enemyCategory, uint enemyInstanceId, string token)
     {
         string body = JsonUtility.ToJson(new KillRequest
         {
             characterId = characterId,
-            enemyTemplateId = enemyTemplateId
+            enemyLevel = enemyLevel,
+            enemyCategory = enemyCategory.ToString().ToLowerInvariant(),
+            enemyInstanceId = enemyInstanceId
         });
 
         using var req = new UnityWebRequest($"{ServerConfig.AuthBaseUrl}/api/combat/kill", "POST");
@@ -196,9 +200,14 @@ public class CombatSessionTracker : MonoBehaviour
         yield return req.SendWebRequest();
 
         if (req.result != UnityWebRequest.Result.Success)
-            Debug.LogWarning($"[COMBAT] kill POST failed: {req.error}");
+            Debug.LogWarning($"[COMBAT] kill POST failed ({req.responseCode}): {req.error} {req.downloadHandler.text}");
         else
-            Debug.Log($"[COMBAT] kill posted: char={characterId} enemy={enemyTemplateId}");
+        {
+            Debug.Log($"[COMBAT] kill posted: char={characterId} level={enemyLevel} category={enemyCategory}");
+            // The kill endpoint owns XP, level/stat allocation, and gold. Pull the
+            // resulting canonical character record instead of calculating rewards here.
+            PlayerProgressManager.Local?.ApplyKillReward(req.downloadHandler.text);
+        }
     }
 
     IEnumerator PostSessionStats()
@@ -279,7 +288,9 @@ public class CombatSessionTracker : MonoBehaviour
     class KillRequest
     {
         public int characterId;
-        public string enemyTemplateId;
+        public int enemyLevel;
+        public string enemyCategory;
+        public uint enemyInstanceId;
     }
 }
 #endif

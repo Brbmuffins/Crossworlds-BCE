@@ -13,12 +13,9 @@ using UnityEngine.Networking;
 /// API: GET /character (reuses existing endpoint — returns level, xp, gold, stats)
 ///      POST /api/character/save-progress
 ///
-/// PROGRESSION CANON (read before wiring power to this): character level/xp here is
-/// a SEPARATE track from combat power. Per CharacterStats' design pillar ("no
-/// leveling — every bonus comes from equipped gear"), combat power comes from GEAR +
-/// HERO MASTERY only. Do NOT feed this level into CharacterStats or ability scaling.
-/// Whether character level should stay cosmetic, be repurposed, or be retired is an
-/// open design decision (see Docs/reviews/code-review-2026-07-04.md, finding #4).
+/// Character XP and primary stats are persisted by the account API. The API remains
+/// authoritative for kill rewards and level-up stat allocation; this component refreshes
+/// that state for the HUD. Combat stats are applied by the dedicated server at spawn.
 /// </summary>
 public class PlayerProgressManager : MonoBehaviour
 {
@@ -39,7 +36,7 @@ public class PlayerProgressManager : MonoBehaviour
     // ── Data (read by UI) ─────────────────────────────────────────────────────
     public int   Level   { get; private set; } = 1;
     public int   Xp      { get; private set; } = 0;
-    public int   XpToNext{ get; private set; } = 100;
+    public int   XpToNext{ get; private set; } = XpForLevel(2);
     public int   Gold    { get; private set; } = 0;
     public int   StatStr { get; private set; } = 5;
     public int   StatAgi { get; private set; } = 5;
@@ -61,11 +58,13 @@ public class PlayerProgressManager : MonoBehaviour
     // ── Events ────────────────────────────────────────────────────────────────
     public event Action OnDataRefreshed;   // any stat changed
     public event Action<int> OnLevelUp;    // fired with new level
+    public event Action<int> OnXpGained;   // accepted server kill reward
 
     // ── Internal ──────────────────────────────────────────────────────────────
     int    _characterId = -1;
     string _jwt         = "";
     bool   _fetching    = false;
+    bool   _refreshQueued;
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
     void Start()  { StartCoroutine(WaitForLocalPlayer()); }
@@ -127,7 +126,35 @@ public class PlayerProgressManager : MonoBehaviour
     public void SaveProgress() => StartCoroutine(PostProgress());
 
     /// <summary>Force a refresh from server.</summary>
-    public void Refresh() => StartCoroutine(FetchProgress());
+    public void Refresh()
+    {
+        if (_fetching)
+        {
+            _refreshQueued = true;
+            return;
+        }
+        StartCoroutine(FetchProgress());
+    }
+
+    /// <summary>Display an accepted server reward, then pull the canonical totals.</summary>
+    public void ApplyKillReward(string responseJson)
+    {
+        int xpGained = 0;
+        try
+        {
+            var response = JsonUtility.FromJson<KillRewardResponse>(responseJson);
+            xpGained = response != null && response.data != null
+                ? response.data.xpGained
+                : response?.xpGained ?? 0;
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning($"[PROGRESS] Could not parse kill reward: {e.Message}");
+        }
+
+        if (xpGained > 0) OnXpGained?.Invoke(xpGained);
+        Refresh();
+    }
 
     // ── Fetch from server ─────────────────────────────────────────────────────
     IEnumerator FetchProgress()
@@ -142,10 +169,13 @@ public class PlayerProgressManager : MonoBehaviour
         yield return req.SendWebRequest();
 
         _fetching = false;
+        bool runQueuedRefresh = _refreshQueued;
+        _refreshQueued = false;
 
         if (req.result != UnityWebRequest.Result.Success)
         {
             Debug.LogWarning($"[PROGRESS] Fetch failed: {req.error}");
+            if (runQueuedRefresh) Refresh();
             yield break;
         }
 
@@ -159,7 +189,9 @@ public class PlayerProgressManager : MonoBehaviour
             var r = JsonUtility.FromJson<CharacterFetchResponse>(rawText);
             int prevLevel = Level;
             Level    = Mathf.Max(1, r.level);
-            Xp       = r.xp;
+            // Production names the DB/API field "experience"; retain the legacy
+            // "xp" fallback so older development responses remain readable.
+            Xp       = Mathf.Max(r.experience, r.xp);
             XpToNext = XpForLevel(Level + 1);
             Gold     = r.gold;
             StatStr  = r.stat_str;
@@ -174,6 +206,8 @@ public class PlayerProgressManager : MonoBehaviour
         {
             Debug.LogWarning($"[PROGRESS] Parse error: {e.Message}");
         }
+
+        if (runQueuedRefresh) Refresh();
     }
 
     // ── Save to server ────────────────────────────────────────────────────────
@@ -187,6 +221,7 @@ public class PlayerProgressManager : MonoBehaviour
             characterId = _characterId,
             level       = Level,
             xp          = Xp,
+            experience  = Xp,
             gold        = Gold,
             stat_str    = StatStr,
             stat_agi    = StatAgi,
@@ -226,11 +261,18 @@ public class PlayerProgressManager : MonoBehaviour
     // ── JSON shapes ───────────────────────────────────────────────────────────
     [Serializable] class CharacterFetchResponse
     {
-        public int level, xp, gold, stat_str, stat_agi, stat_int, stat_vit;
+        public int level, experience, xp, gold, stat_str, stat_agi, stat_int, stat_vit;
     }
 
     [Serializable] class SaveProgressRequest
     {
-        public int characterId, level, xp, gold, stat_str, stat_agi, stat_int, stat_vit;
+        public int characterId, level, experience, xp, gold, stat_str, stat_agi, stat_int, stat_vit;
+    }
+
+    [Serializable] class KillRewardData { public int xpGained; }
+    [Serializable] class KillRewardResponse
+    {
+        public int xpGained;
+        public KillRewardData data;
     }
 }

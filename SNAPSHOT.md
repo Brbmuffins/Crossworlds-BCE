@@ -111,8 +111,8 @@ Dev bypass: in-editor, JWT `"dev"` skips the auth server entirely
 | Waves/arena | `WaveSpawner` (16 Mirror attrs), `WaveManager`, `ArenaSessionController`, `WaveChest`, `WorldBossController` (28 attrs) | Server coroutine loops; SyncVars for HUD |
 | Abilities | `AbilityCaster` + serializable `AbilityDef` (data-driven: shape, charge, chain, pull, shield, deployable), per-class handlers (`DashHandler`, `StealthHandler`, `SiegeModeHandler`, `IronTetherHandler`, …), deployables (`DeployableManager`, `PhaseRelayDeployable`, `BastionNode`, …), `SnapshotSystem` | Mixed — Commands→server effects; needs per-file review before hardening |
 | Class passives | `Characters/Scripts/Passive*` (BountySystem, PhaseCharge, ThreatProtocol, TriageLoop, Overengineered) + `ClassPassive`, `ClassAbilityPool` | Mostly server |
-| Persistence singletons (client-side REST) | `Systems/InventoryManager`, `UI/PlayerProgressManager`, `Systems/ItemCatalogManager`, `Systems/HeroMasteryManager`, `Combat/Scripts/CombatSessionTracker` | **Client-initiated** HTTP with PlayerPrefs JWT — see §4 |
-| Loot | `DropTable` (ScriptableObject weighted rolls), `WorldItem` (net-spawned pickup), `WaveChest` | Server rolls/spawns; pickup → client `InventoryManager` → `POST /api/inventory/save` |
+| Persistence singletons (client-side REST) | `Systems/InventoryManager`, `UI/PlayerProgressManager`, `Systems/ItemCatalogManager`, `Systems/HeroMasteryManager`, `Combat/Scripts/CombatSessionTracker` | Client-initiated HTTP with JWT; kill XP/gold is API-awarded and refreshed into the HUD |
+| Loot/rewards | `DropTable` (ScriptableObject weighted rolls), `WorldItem` (net-spawned pickup), `WaveChest` | Server rolls/spawns; authenticated damage opens a per-instance API hit gate; XP derives from enemy level + grunt/brute/elite/boss category; accepted kill response drives XP refresh/popup |
 | UI | ~30 scripts (bag, crafting, XP bar, boss bar, radar, status HUD, GM console…) | Client |
 | Editor tooling | `Editor/` builders (`RodHubSceneBuilder`, `EnemyBuilder`, `WorldBossBuilder`, `BrandalfSetupBuilder`, `BuildScript`, …) | Editor-only, generates scenes/prefabs — load-bearing for reproducibility |
 

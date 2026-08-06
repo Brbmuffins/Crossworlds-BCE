@@ -16,6 +16,11 @@ public class CharacterStatsEditor : Editor
     SerializedProperty _baseMoveSpeedBonusPct;
     SerializedProperty _baseCooldownReduction;
     SerializedProperty _baseHealBonusPct;
+    SerializedProperty _primaryStatDamagePctPerPoint;
+    SerializedProperty _strengthDamagePctPerPoint;
+    SerializedProperty _maxHealthPerVitality;
+    SerializedProperty _maxManaPerIntelligence;
+    SerializedProperty _moveSpeedPctPerAgility;
     SerializedProperty _effectiveMaxHealthBonus;
     SerializedProperty _effectiveDamageMultiplier;
     SerializedProperty _effectiveCriticalStrikeChance;
@@ -42,6 +47,11 @@ public class CharacterStatsEditor : Editor
         _baseMoveSpeedBonusPct = serializedObject.FindProperty("baseMoveSpeedBonusPct");
         _baseCooldownReduction = serializedObject.FindProperty("baseCooldownReduction");
         _baseHealBonusPct = serializedObject.FindProperty("baseHealBonusPct");
+        _primaryStatDamagePctPerPoint = serializedObject.FindProperty("primaryStatDamagePctPerPoint");
+        _strengthDamagePctPerPoint = serializedObject.FindProperty("strengthDamagePctPerPoint");
+        _maxHealthPerVitality = serializedObject.FindProperty("maxHealthPerVitality");
+        _maxManaPerIntelligence = serializedObject.FindProperty("maxManaPerIntelligence");
+        _moveSpeedPctPerAgility = serializedObject.FindProperty("moveSpeedPctPerAgility");
         _effectiveMaxHealthBonus = serializedObject.FindProperty("effectiveMaxHealthBonus");
         _effectiveDamageMultiplier = serializedObject.FindProperty("effectiveDamageMultiplier");
         _effectiveCriticalStrikeChance = serializedObject.FindProperty("effectiveCriticalStrikeChance");
@@ -81,6 +91,14 @@ public class CharacterStatsEditor : Editor
         EditorGUILayout.PropertyField(_baseMoveSpeedBonusPct, new GUIContent("Move Speed Bonus"));
         EditorGUILayout.PropertyField(_baseCooldownReduction, new GUIContent("Cooldown Reduction"));
         EditorGUILayout.PropertyField(_baseHealBonusPct, new GUIContent("Heal Bonus"));
+
+        EditorGUILayout.Space(8f);
+        EditorGUILayout.LabelField("Level Progression Tuning", EditorStyles.boldLabel);
+        EditorGUILayout.PropertyField(_primaryStatDamagePctPerPoint, new GUIContent("Primary Stat Damage / Point"));
+        EditorGUILayout.PropertyField(_strengthDamagePctPerPoint, new GUIContent("Strength Damage / Point"));
+        EditorGUILayout.PropertyField(_maxHealthPerVitality, new GUIContent("Max Health / Vitality"));
+        EditorGUILayout.PropertyField(_maxManaPerIntelligence, new GUIContent("Max Mana / Intelligence"));
+        EditorGUILayout.PropertyField(_moveSpeedPctPerAgility, new GUIContent("Move Speed / Agility"));
 
         EditorGUILayout.Space(8f);
         EditorGUILayout.LabelField("Runtime Readouts", EditorStyles.boldLabel);

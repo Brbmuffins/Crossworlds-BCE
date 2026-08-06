@@ -173,6 +173,7 @@ namespace Crossworlds.EditorTools.EnemyForge
             controller.allowOfflineSimulation = false;
             controller.enemyForgeRuntimeProfileVersion = EnemyController.EnemyForgeRuntimeProfileVersion;
             controller.enemyTemplateId = d.templateId.Trim();
+            controller.rewardCategory = d.rewardCategory;
             controller.aggroRadius = d.aggroRadius;
             controller.leashRadius = d.leashRadius;
             controller.enableRoaming = d.enableRoaming;

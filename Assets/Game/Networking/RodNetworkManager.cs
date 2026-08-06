@@ -392,6 +392,17 @@ public class RodNetworkManager : NetworkManager
             identity.characterId = auth != null ? auth.characterId : -1;
         }
 
+        // Apply account-owned progression before the player enters combat. Production
+        // values came from the server's authenticated GET /character request; the client
+        // cannot choose them in CreatePlayerMessage.
+        if (auth != null && auth.fromDB)
+        {
+            var stats = player.GetComponent<CharacterStats>();
+            if (stats != null)
+                stats.SetProgressionStats(classIndex, auth.level,
+                    auth.statStr, auth.statAgi, auth.statInt, auth.statVit);
+        }
+
         // Attach position saver — saves back to DB on disconnect or app quit
         if (auth != null && auth.characterId > 0)
         {

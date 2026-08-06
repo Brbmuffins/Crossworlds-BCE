@@ -109,7 +109,18 @@ namespace Crossworlds.EditorTools.EnemyForge
                 "projectilePrefab", "preferredRange", "tooCloseDistance");
             DrawCastAttackSection(serialized);
             DrawPropertySection(serialized, "Rewards", ref showRewards,
-                "dropTable", "worldItemPrefab", "lootBeamPrefab");
+                "rewardCategory", "dropTable", "worldItemPrefab", "lootBeamPrefab");
+            if (showRewards)
+            {
+                int level = Mathf.Max(1, serialized.FindProperty("enemyLevel").intValue);
+                var category = (EnemyController.RewardCategory)
+                    serialized.FindProperty("rewardCategory").enumValueIndex;
+                int xp = Mathf.RoundToInt((10 * level + 5) * RewardMultiplier(category));
+                EditorGUILayout.HelpBox(
+                    $"Character XP preview: {xp} XP (level {level} {category.ToString().ToLowerInvariant()}). " +
+                    "The account server remains authoritative.",
+                    MessageType.Info);
+            }
             DrawPropertySection(serialized, "Lifecycle", ref showLifecycle,
                 "deadModelVisibleSeconds", "respawnAfterDeath", "respawnDelay", "corpseGroundOffset");
             DrawPropertySection(serialized, "SFX", ref showSfx,
@@ -117,6 +128,17 @@ namespace Crossworlds.EditorTools.EnemyForge
                 "attackImpactSfx", "getHitSfx", "deathSfx", "sfxVolume",
                 "sfxPitchVariation", "sfxMinDistance", "sfxMaxDistance");
             serialized.ApplyModifiedProperties();
+        }
+
+        static float RewardMultiplier(EnemyController.RewardCategory category)
+        {
+            return category switch
+            {
+                EnemyController.RewardCategory.Brute => 1.5f,
+                EnemyController.RewardCategory.Elite => 2f,
+                EnemyController.RewardCategory.Boss => 5f,
+                _ => 1f
+            };
         }
 
         static void DrawPropertySection(SerializedObject serialized, string title, ref bool expanded, params string[] properties)

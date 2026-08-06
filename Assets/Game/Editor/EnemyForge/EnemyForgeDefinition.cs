@@ -152,6 +152,8 @@ namespace Crossworlds.EditorTools.EnemyForge
         public bool cancelOpeningCastIfTargetInvalid = true;
 
         [Header("Rewards")]
+        [Tooltip("XP multiplier category applied to the enemy level by the account server.")]
+        public EnemyController.RewardCategory rewardCategory = EnemyController.RewardCategory.Grunt;
         public DropTable dropTable;
         public GameObject worldItemPrefab;
         public GameObject lootBeamPrefab;
@@ -171,6 +173,7 @@ namespace Crossworlds.EditorTools.EnemyForge
             switch (archetype)
             {
                 case EnemyForgeArchetype.Ranged:
+                    rewardCategory = EnemyController.RewardCategory.Grunt;
                     maxHealth = 40f; moveSpeed = 3.5f; stoppingDistance = 4f;
                     aggroRadius = 15f; leashRadius = 30f;
                     attackRange = 15f; attackInterval = 2f; damage = 10f;
@@ -185,11 +188,13 @@ namespace Crossworlds.EditorTools.EnemyForge
                     heavyMinCooldown = 0f; heavyMaxCooldown = 0f; heavyDamageMultiplier = 2.2f;
                     break;
                 case EnemyForgeArchetype.Elite:
+                    rewardCategory = EnemyController.RewardCategory.Elite;
                     maxHealth = 300f; moveSpeed = 3.8f; stoppingDistance = 1.8f;
                     attackRange = 2f; attackInterval = 2f; damage = 28f;
                     heavyMinCooldown = 8f; heavyMaxCooldown = 14f; heavyDamageMultiplier = 3f;
                     break;
                 default:
+                    rewardCategory = EnemyController.RewardCategory.Grunt;
                     maxHealth = 60f; moveSpeed = 4.5f; stoppingDistance = 1.2f;
                     attackRange = 1.5f; attackInterval = 1.5f; damage = 12f;
                     heavyMinCooldown = 12f; heavyMaxCooldown = 20f; heavyDamageMultiplier = 2f;
@@ -241,6 +246,7 @@ namespace Crossworlds.EditorTools.EnemyForge
             if (controller != null)
             {
                 if (!string.IsNullOrWhiteSpace(controller.enemyTemplateId)) templateId = controller.enemyTemplateId;
+                rewardCategory = controller.rewardCategory;
                 aggroRadius = controller.aggroRadius;
                 leashRadius = controller.leashRadius;
                 enableRoaming = controller.enableRoaming;

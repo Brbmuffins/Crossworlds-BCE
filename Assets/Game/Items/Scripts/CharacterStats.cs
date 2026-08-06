@@ -7,7 +7,7 @@ using UnityEngine.Events;
 // from inspector baselines, mastery, and temporary effects until server-backed
 // gear stats are wired in.
 [RequireComponent(typeof(Health))]
-public class CharacterStats : MonoBehaviour
+public class CharacterStats : NetworkBehaviour
 {
     const float MaxCooldownReduction = 0.6f;
 
@@ -46,6 +46,18 @@ public class CharacterStats : MonoBehaviour
 
     [Tooltip("Healing output bonus. 0.10 = +10% healing.")]
     [SerializeField] private float baseHealBonusPct = 0f;
+
+    [Header("Level Progression Tuning")]
+    [Tooltip("Outgoing damage gained per point in the class primary stat above its starting value.")]
+    [SerializeField, Min(0f)] private float primaryStatDamagePctPerPoint = 0.01f;
+    [Tooltip("Additional outgoing damage gained per Strength point above the starting value of 5.")]
+    [SerializeField, Min(0f)] private float strengthDamagePctPerPoint = 0.005f;
+    [Tooltip("Flat max health gained per Vitality point above the starting value of 10.")]
+    [SerializeField, Min(0f)] private float maxHealthPerVitality = 5f;
+    [Tooltip("Maximum mana gained per Intelligence point above the starting value of 5.")]
+    [SerializeField, Min(0f)] private float maxManaPerIntelligence = 2f;
+    [Tooltip("Movement speed gained per Agility point above the starting value of 5.")]
+    [SerializeField, Min(0f)] private float moveSpeedPctPerAgility = 0.0025f;
 
     [Header("Runtime Readouts")]
     [Tooltip("Current flat max health bonus after base and mastery bonuses.")]
@@ -108,6 +120,19 @@ public class CharacterStats : MonoBehaviour
     private float _masteryCdrPct;
     private float _masteryMaxHpPct;
 
+    // Persistent level/stat overlay. Values are supplied by the authenticated character
+    // record, never by the client's class-selection message.
+    [SyncVar(hook = nameof(OnProgressionValueChanged))] private int _progressionClassIndex;
+    [SyncVar(hook = nameof(OnProgressionValueChanged))] private int _progressionLevel = 1;
+    [SyncVar(hook = nameof(OnProgressionValueChanged))] private int _progressionStr = 5;
+    [SyncVar(hook = nameof(OnProgressionValueChanged))] private int _progressionAgi = 5;
+    [SyncVar(hook = nameof(OnProgressionValueChanged))] private int _progressionInt = 5;
+    [SyncVar(hook = nameof(OnProgressionValueChanged))] private int _progressionVit = 10;
+    private float _progressionDamagePct;
+    private float _progressionMaxHealth;
+    private float _progressionMaxMana;
+    private float _progressionMoveSpeedPct;
+
     // Temporary channels, driven by active effects.
     private float _temporaryCDR;
     private float _temporaryDmgPct;
@@ -123,6 +148,49 @@ public class CharacterStats : MonoBehaviour
         _masteryCdrPct   = cdrPct;
         _masteryMaxHpPct = maxHpPct;
         Recalculate();
+    }
+
+    /// <summary>Apply primary stats loaded from the authenticated account character.</summary>
+    [Server]
+    public void SetProgressionStats(int classIndex, int level, int strength, int agility,
+        int intelligence, int vitality)
+    {
+        _progressionClassIndex = Mathf.Clamp(classIndex, 0, 4);
+        _progressionLevel = Mathf.Max(1, level);
+        _progressionStr = Mathf.Max(0, strength);
+        _progressionAgi = Mathf.Max(0, agility);
+        _progressionInt = Mathf.Max(0, intelligence);
+        _progressionVit = Mathf.Max(0, vitality);
+
+        RecalculateProgressionBonuses();
+        Recalculate();
+    }
+
+    void OnProgressionValueChanged(int _, int __)
+    {
+        RecalculateProgressionBonuses();
+        Recalculate();
+    }
+
+    void RecalculateProgressionBonuses()
+    {
+        int primaryValue = _progressionClassIndex switch
+        {
+            0 => _progressionInt, // Marauder (legacy Engineer)
+            1 => _progressionVit, // Ironclad (legacy Guardian)
+            2 => _progressionAgi, // Shadowblade / Night Hunter
+            3 => _progressionInt, // Cleric
+            4 => _progressionInt, // Arcanist
+            _ => _progressionStr
+        };
+        int primaryBaseline = _progressionClassIndex == 1 ? 10 : 5;
+
+        _progressionDamagePct =
+            Mathf.Max(0, primaryValue - primaryBaseline) * primaryStatDamagePctPerPoint +
+            Mathf.Max(0, _progressionStr - 5) * strengthDamagePctPerPoint;
+        _progressionMaxHealth = Mathf.Max(0, _progressionVit - 10) * maxHealthPerVitality;
+        _progressionMaxMana = Mathf.Max(0, _progressionInt - 5) * maxManaPerIntelligence;
+        _progressionMoveSpeedPct = Mathf.Max(0, _progressionAgi - 5) * moveSpeedPctPerAgility;
     }
 
     public void AddTemporaryCDR(float delta)
@@ -179,15 +247,15 @@ public class CharacterStats : MonoBehaviour
 
         float masteryHpFlat = _health != null ? _health.BaseMaxHealth * _masteryMaxHpPct : 0f;
 
-        MaxHealthBonus = Mathf.Max(0f, baseMaxHealthBonus) + masteryHpFlat;
-        DamageMultiplier = Mathf.Max(0f, 1f + baseDamageBonusPct + _masteryDmgPct + _temporaryDmgPct);
+        MaxHealthBonus = Mathf.Max(0f, baseMaxHealthBonus) + masteryHpFlat + _progressionMaxHealth;
+        DamageMultiplier = Mathf.Max(0f, 1f + baseDamageBonusPct + _progressionDamagePct + _masteryDmgPct + _temporaryDmgPct);
         CriticalStrikeChance = Mathf.Clamp01(baseCriticalStrikeChance);
         CriticalStrikeDamageMultiplier = Mathf.Max(1f, baseCriticalStrikeDamageMultiplier);
         DamageReduction = Mathf.Clamp01(baseDamageReduction);
-        MaxMana = Mathf.Max(0f, baseMaxMana);
+        MaxMana = Mathf.Max(0f, baseMaxMana + _progressionMaxMana);
         Hp5 = Mathf.Max(0f, baseHp5);
         Mp5 = Mathf.Max(0f, baseMp5);
-        MoveSpeedMultiplier = Mathf.Max(0f, 1f + baseMoveSpeedBonusPct);
+        MoveSpeedMultiplier = Mathf.Max(0f, 1f + baseMoveSpeedBonusPct + _progressionMoveSpeedPct);
         CooldownReduction = Mathf.Clamp(baseCooldownReduction + _masteryCdrPct, 0f, MaxCooldownReduction);
         HealMultiplier = Mathf.Max(0f, 1f + baseHealBonusPct + _masteryHealPct);
 

@@ -28,7 +28,9 @@ namespace Crossworlds.EditorTools.EnemyForge
                 issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Warning,
                     "Player tag selected: the prefab still uses EnemyController combat behavior, but other enemies may recognize it as a player target."));
             if (string.IsNullOrWhiteSpace(d.templateId)) issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Error, "Template ID is required."));
-            if (d.enemyLevel < 0) issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Error, "Enemy Level cannot be negative."));
+            if (d.enemyLevel < 1) issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Error, "Enemy Level must be at least 1 for character XP rewards."));
+            if (!System.Enum.IsDefined(typeof(EnemyController.RewardCategory), d.rewardCategory))
+                issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Error, "Select a valid XP reward category."));
             if (string.IsNullOrWhiteSpace(d.outputFolder) || !d.outputFolder.StartsWith("Assets/")) issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Error, "Output folder must be inside Assets/."));
             if (d.attackRange < d.stoppingDistance) issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Warning, "Attack range is smaller than the NavMesh stopping distance."));
             if (d.stoppingDistance < d.agentRadius)
@@ -136,13 +138,18 @@ namespace Crossworlds.EditorTools.EnemyForge
             var issues = new List<EnemyForgeIssue>();
             if (prefab == null) return issues;
             if (prefab.GetComponent<NetworkIdentity>() == null) issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Error, "NetworkIdentity is missing."));
-            if (prefab.GetComponent<Health>() == null) issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Error, "Health is missing."));
+            var health = prefab.GetComponent<Health>();
+            if (health == null) issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Error, "Health is missing."));
+            else if (health.EnemyLevel < 1)
+                issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Error, "Enemy Level must be at least 1 for character XP rewards."));
             if (!prefab.CompareTag("Enemy") && !prefab.CompareTag("Player"))
                 issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Error,
                     "The prefab root must use either the Enemy or Player tag. Deploy will apply the selected Enemy Forge root tag."));
             var enemyController = prefab.GetComponent<EnemyController>();
             if (enemyController == null) issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Error, "EnemyController is missing."));
-            else if (enemyController.enemyForgeRuntimeProfileVersion < EnemyController.EnemyForgeRuntimeProfileVersion)
+            else if (!System.Enum.IsDefined(typeof(EnemyController.RewardCategory), enemyController.rewardCategory))
+                issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Error, "EnemyController has an invalid XP reward category."));
+            if (enemyController != null && enemyController.enemyForgeRuntimeProfileVersion < EnemyController.EnemyForgeRuntimeProfileVersion)
                 issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Warning,
                     $"This prefab uses Enemy Forge runtime profile {enemyController.enemyForgeRuntimeProfileVersion}. Deploy once to upgrade it to profile {EnemyController.EnemyForgeRuntimeProfileVersion}."));
             if (enemyController != null && enemyController.isRanged)

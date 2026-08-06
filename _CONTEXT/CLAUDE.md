@@ -115,8 +115,8 @@ GET  /api/character/stats/:characterId   — requireJWT; returns {base,bonus,tot
 
 GET  /api/enemies                        — NO AUTH; all enemy_templates rows (Unity arena load)
 GET  /api/enemies/:id                    — NO AUTH; single enemy by id
-POST /api/combat/hit                     — requireJWT; {characterId, enemyTemplateId, damageDealt} — validates + sanity cap (damage_max×3); logs only, no persistent state
-POST /api/combat/kill                    — requireJWT; {characterId, enemyTemplateId} — awards xp_reward + random gold, calls rollDbLoot atomically; returns {xpGained, goldGained, itemDropped}
+POST /api/combat/hit                     — requireJWT; {characterId, enemyLevel, enemyCategory, enemyInstanceId, damageDealt} — opens the per-instance hit gate
+POST /api/combat/kill                    — requireJWT; {characterId, enemyLevel, enemyCategory, enemyInstanceId} — calculates level/category XP atomically; returns {xpGained, goldGained, itemDropped}
 
 GET  /api/maintenance/status             — NO AUTH; {maintenance:bool}
 GET  /api/broadcast/pending              — NO AUTH; returns + marks delivered
@@ -148,12 +148,20 @@ const KILL_COOLDOWN_MS =  2_000  // min 2s between any two kills per character
 ```
 
 ### Hit gate (`recentHits` Map)
-- **Key:** `` `${charId}:${enemyTemplateId}` ``
+- **Key:** `` `${accountId}:${charId}:${enemyInstanceId}` ``
 - **Written by:** `POST /api/combat/hit` — sets key → `Date.now()`
 - **Read by:** `POST /api/combat/kill` — must find key with age < `HIT_WINDOW_MS`
-- **Consumed:** entry is deleted on kill; the next kill of the same enemy type requires a fresh hit
+- **Consumed:** entry is deleted on kill; the same spawned instance cannot reward twice without a fresh hit
 - **Reject:** HTTP 400 `"no recent hit on this enemy recorded"`
 - **Cleanup:** `setInterval` prunes entries older than `HIT_WINDOW_MS` every 60s
+
+### Character XP calculation
+- Validate `enemyLevel` as an integer from 1–100.
+- Validate `enemyCategory` against `grunt`, `brute`, `elite`, `boss`.
+- Base XP is `10 × enemyLevel + 5`.
+- Multipliers: grunt `1`, brute `1.5`, elite `2`, boss `5`.
+- Award `Math.round(baseXp × multiplier)`. Never accept an XP amount from Unity.
+- `enemyInstanceId` is an anti-duplicate key, not a monster/template identifier.
 
 ### Kill rate limiter (`lastKillTime` Map)
 - **Key:** `charId`
@@ -164,17 +172,17 @@ const KILL_COOLDOWN_MS =  2_000  // min 2s between any two kills per character
 
 ### Execution order inside `POST /api/combat/kill`
 1. JWT + character ownership check
-2. Enemy template lookup (404 if unknown id)
+2. Validate level, category, and instance ID (400 if invalid)
 3. **Rate limiter check** (429 if too fast)
 4. **Hit gate check** (400 if no recent hit)
 5. Delete hit gate entry, record kill timestamp
-6. Transaction: award XP + gold + `rollDbLoot()` + `INSERT gold_transactions`
+6. Transaction: calculate/award XP, apply the existing level-up loop, and award any separately configured gold/loot
 7. Return `{xpGained, goldGained, itemDropped}`
 
 ### Caveats and Phase 2 gaps
 - **In-process only** — both Maps are cleared on `crossworlds-auth` restart. Acceptable for alpha; a crash or deploy resets gates. A motivated player can kill → restart server (if they have access) → kill again without the gate.
 - **No server-side player HP** — EnemyAI deals damage only on the Unity client; a hacked client can ignore it. Phase 2: move player HP tracking to server.
-- **No per-run enemy instance deduplication** — the same `enemyTemplateId` can be killed multiple times in one arena run; only the rate limiter throttles it. Phase 2: arena session token with per-instance enemy IDs.
+- **Instance IDs are scoped to a Unity server process** — combine them with a future arena session token before relying on them across multiple simultaneous game-server processes.
 - **No arena session tracking** — server can't tell which arena instance a kill came from. Phase 2: issue a session token on portal entry, validate on kill.
 
 ---

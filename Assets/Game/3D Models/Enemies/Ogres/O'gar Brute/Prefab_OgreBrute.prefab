@@ -189,7 +189,7 @@ MonoBehaviour:
   enemyHealthBarFixedHeight: 1
   showEnemyHoverInfo: 1
   enemyDisplayName: 
-  enemyLevel: 0
+  enemyLevel: 5
   autoRespawnPlayers: 1
   playerRespawnDelay: 10
   playerRespawnHealthPercent: 1
@@ -306,7 +306,8 @@ MonoBehaviour:
   tooCloseDistance: 3
   dropTable: {fileID: 0}
   worldItemPrefab: {fileID: 0}
-  enemyTemplateId: 
+  rewardCategory: 1
+  enemyTemplateId: prefab_ogrebrute
   deadModelVisibleSeconds: 15
   respawnAfterDeath: 1
   respawnDelay: 30

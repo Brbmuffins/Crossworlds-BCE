@@ -150,6 +150,11 @@ public class RodNetworkAuthenticator : NetworkAuthenticator
             jwt         = msg.jwt,
             classIndex  = Mathf.Clamp(character.class_index, 0, 4),
             characterId = character.id,
+            level       = Mathf.Max(1, character.level),
+            statStr     = Mathf.Max(0, character.stat_str),
+            statAgi     = Mathf.Max(0, character.stat_agi),
+            statInt     = Mathf.Max(0, character.stat_int),
+            statVit     = Mathf.Max(0, character.stat_vit),
             spawnX      = character.pos_x,
             spawnY      = character.pos_y,
             spawnZ      = character.pos_z,
@@ -224,6 +229,11 @@ public class RodNetworkAuthenticator : NetworkAuthenticator
     {
         public int    id;
         public int    class_index;
+        public int    level;
+        public int    stat_str;
+        public int    stat_agi;
+        public int    stat_int;
+        public int    stat_vit;
         public string class_name;
         public float  pos_x;
         public float  pos_y;
@@ -247,6 +257,8 @@ public partial class RodPlayerAuth
     public string jwt;
     public int    classIndex;
     public int    characterId;  // DB row id — used when saving position on disconnect
+    public int    level;
+    public int    statStr, statAgi, statInt, statVit;
     public float  spawnX, spawnY, spawnZ;
     public string zone;         // scene the player logged out in (ROADMAP 6.2); always a real
                                 // zone name — NormalizeZone collapses unknown/legacy values to Hub

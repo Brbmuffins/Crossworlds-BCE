@@ -18,9 +18,10 @@ using Mirror;
 [RequireComponent(typeof(NavMeshAgent))]
 public class EnemyController : NetworkBehaviour
 {
-    public const int EnemyForgeRuntimeProfileVersion = 27;
+    public const int EnemyForgeRuntimeProfileVersion = 28;
 
     public enum EnemyState { Idle, Chase, Attack, Dead }
+    public enum RewardCategory : byte { Grunt, Brute, Elite, Boss }
 
     [SyncVar(hook = nameof(OnStateChanged))]
     public EnemyState state = EnemyState.Idle;
@@ -82,11 +83,11 @@ public class EnemyController : NetworkBehaviour
     [Tooltip("Optional VFX attached to each spawned WorldItem. The WorldItem recolors it to match the dropped item's rarity and destroys it automatically when collected.")]
     public GameObject lootBeamPrefab;
 
-    // ── DB Template ID ────────────────────────────────────────────────────────────
-    // Must match an id in the enemy_templates DB table (e.g. "grunt_basic").
-    // Used by PostCombatKill to award XP/gold via POST /api/combat/kill.
-    // Assign in the Inspector on each prefab after running seed_arena_content_2026-07-06.sql.
+    // ── Server reward identity ────────────────────────────────────────────────────
     [Header("Server")]
+    [Tooltip("Broad combat category used with the Health enemy level to calculate server-owned XP. Grunt x1, Brute x1.5, Elite x2, Boss x5.")]
+    public RewardCategory rewardCategory = RewardCategory.Grunt;
+    [Tooltip("Optional content/loot identifier. Character XP no longer depends on a database row for each monster.")]
     public string enemyTemplateId = "grunt_basic";
 
     [Header("Death / Respawn")]
@@ -150,6 +151,7 @@ public class EnemyController : NetworkBehaviour
     private readonly List<bool> _corpseRendererUpdateModes = new List<bool>();
     private readonly Collider[] _aggroHits = new Collider[64];
     float _locomotionMovingUntil;
+    float _lastDamageTaken;
 
     bool HasSimulationAuthority => NetworkServer.active ||
         (allowOfflineSimulation && !NetworkClient.active && !NetworkServer.active);
@@ -496,6 +498,7 @@ public class EnemyController : NetworkBehaviour
 
     void OnDamageTakenServer(float amount)
     {
+        _lastDamageTaken = Mathf.Max(0f, amount);
         if (amount > 0f && state != EnemyState.Dead)
             PlayGetHitAnimation();
     }
@@ -697,16 +700,75 @@ public class EnemyController : NetworkBehaviour
 
     void OnDamagedByServer(GameObject source)
     {
-        if (!aggroWhenDamaged || state == EnemyState.Dead || _returningHome) return;
-
-        Transform attacker = ResolvePlayerTransform(source);
+        Transform sourceAttacker = ResolvePlayerTransform(source);
+        Transform attacker = sourceAttacker;
         if (attacker == null)
             attacker = FindNearestPlayer(Mathf.Max(aggroRadius, retaliationRadius));
 
         if (attacker == null) return;
 
+        // Only attribute API progress when Health supplied an actual player source.
+        // The nearest-player fallback is for aggro behavior, not reward ownership.
+        if (sourceAttacker != null)
+            ReportAuthenticatedHit(sourceAttacker, _lastDamageTaken);
+
+        if (!aggroWhenDamaged || state == EnemyState.Dead || _returningHome) return;
+
         SetAggroTarget(attacker);
     }
+
+    [Server]
+    void ReportAuthenticatedHit(Transform attacker, float damageDealt)
+    {
+        if (attacker == null) return;
+
+        NetworkIdentity attackerIdentity = attacker.GetComponentInParent<NetworkIdentity>();
+        NetworkConnectionToClient owner = attackerIdentity != null
+            ? attackerIdentity.connectionToClient
+            : null;
+        if (owner == null) return;
+
+        int enemyLevel = _health != null ? Mathf.Max(1, _health.EnemyLevel) : 1;
+        TargetPostCombatHit(owner, enemyLevel, (byte)rewardCategory, netId, Mathf.Max(1f, damageDealt));
+    }
+
+    [TargetRpc]
+    void TargetPostCombatHit(NetworkConnectionToClient target, int enemyLevel, byte categoryValue,
+        uint enemyInstanceId, float damageDealt)
+    {
+#if UNITY_EDITOR || !UNITY_SERVER
+        if (NetworkClient.localPlayer == null) return;
+        PlayerIdentity identity = NetworkClient.localPlayer.GetComponent<PlayerIdentity>();
+        string token = AuthManager.Token;
+        if (identity == null || identity.characterId <= 0 || string.IsNullOrEmpty(token)) return;
+
+        RewardCategory category = System.Enum.IsDefined(typeof(RewardCategory), categoryValue)
+            ? (RewardCategory)categoryValue
+            : RewardCategory.Grunt;
+        StartCoroutine(PostCombatHit(identity.characterId, enemyLevel, category,
+            enemyInstanceId, damageDealt, token));
+#endif
+    }
+
+#if UNITY_EDITOR || !UNITY_SERVER
+    IEnumerator PostCombatHit(int characterId, int enemyLevel, RewardCategory category,
+        uint enemyInstanceId, float damageDealt, string token)
+    {
+        string url = $"{ServerConfig.AuthBaseUrl}/api/combat/hit";
+        string categoryName = category.ToString().ToLowerInvariant();
+        string body = $"{{\"characterId\":{characterId},\"enemyLevel\":{Mathf.Max(1, enemyLevel)},\"enemyCategory\":\"{categoryName}\",\"enemyInstanceId\":{enemyInstanceId},\"damageDealt\":{damageDealt.ToString(System.Globalization.CultureInfo.InvariantCulture)}}}";
+
+        using var req = new UnityEngine.Networking.UnityWebRequest(url, "POST");
+        req.uploadHandler = new UnityEngine.Networking.UploadHandlerRaw(System.Text.Encoding.UTF8.GetBytes(body));
+        req.downloadHandler = new UnityEngine.Networking.DownloadHandlerBuffer();
+        req.SetRequestHeader("Content-Type", "application/json");
+        req.SetRequestHeader("Authorization", $"Bearer {token}");
+        yield return req.SendWebRequest();
+
+        if (req.result != UnityEngine.Networking.UnityWebRequest.Result.Success)
+            Debug.LogWarning($"[COMBAT] hit POST failed ({req.responseCode}): {req.error} {req.downloadHandler.text}");
+    }
+#endif
 
     Transform ResolvePlayerTransform(GameObject source)
     {
@@ -1111,8 +1173,11 @@ public class EnemyController : NetworkBehaviour
         // Notify clients of the kill so the LOCAL client can POST /api/combat/kill
         // with its own JWT. The server doesn't hold player JWTs — client-initiated
         // kill reports with the hit-gate anti-exploit design is the correct pattern.
-        if (NetworkServer.active && !string.IsNullOrEmpty(enemyTemplateId))
-            RpcNotifyEnemyKilled(enemyTemplateId);
+        if (NetworkServer.active)
+        {
+            int enemyLevel = _health != null ? Mathf.Max(1, _health.EnemyLevel) : 1;
+            RpcNotifyEnemyKilled(enemyLevel, (byte)rewardCategory, netId);
+        }
 
         if (!respawnAfterDeath)
         {
@@ -1136,7 +1201,7 @@ public class EnemyController : NetworkBehaviour
     /// report — remote clients ignore it (their own kills fire their own reports).
     /// </summary>
     [ClientRpc]
-    void RpcNotifyEnemyKilled(string templateId)
+    void RpcNotifyEnemyKilled(int enemyLevel, byte categoryValue, uint enemyInstanceId)
     {
 #if UNITY_EDITOR || !UNITY_SERVER
         // Only the local (owning) client sends the API call to avoid duplicate reports.
@@ -1148,20 +1213,25 @@ public class EnemyController : NetworkBehaviour
         int    charId = pi.characterId;
         string token  = AuthManager.Token;
         if (charId <= 0 || string.IsNullOrEmpty(token)) return;
+        RewardCategory category = System.Enum.IsDefined(typeof(RewardCategory), categoryValue)
+            ? (RewardCategory)categoryValue
+            : RewardCategory.Grunt;
 
         // Kick off via CombatSessionTracker if available (it batches and retries);
         // otherwise fire directly.
         var tracker = CombatSessionTracker.Local;
         if (tracker != null)
-            tracker.PostKill(charId, templateId, token);
+            tracker.PostKill(charId, enemyLevel, category, enemyInstanceId, token);
         else
-            StartCoroutine(DirectPostKill(charId, templateId, token));
+            StartCoroutine(DirectPostKill(charId, enemyLevel, category, enemyInstanceId, token));
     }
 
-    System.Collections.IEnumerator DirectPostKill(int charId, string templateId, string token)
+    System.Collections.IEnumerator DirectPostKill(int charId, int enemyLevel,
+        RewardCategory category, uint enemyInstanceId, string token)
     {
         string url  = $"{ServerConfig.AuthBaseUrl}/api/combat/kill";
-        string body = $"{{\"characterId\":{charId},\"enemyTemplateId\":\"{templateId}\"}}";
+        string categoryName = category.ToString().ToLowerInvariant();
+        string body = $"{{\"characterId\":{charId},\"enemyLevel\":{Mathf.Max(1, enemyLevel)},\"enemyCategory\":\"{categoryName}\",\"enemyInstanceId\":{enemyInstanceId}}}";
 
         using var req = new UnityEngine.Networking.UnityWebRequest(url, "POST");
         req.uploadHandler   = new UnityEngine.Networking.UploadHandlerRaw(
@@ -1173,9 +1243,12 @@ public class EnemyController : NetworkBehaviour
         yield return req.SendWebRequest();
 
         if (req.result != UnityEngine.Networking.UnityWebRequest.Result.Success)
-            Debug.LogWarning($"[COMBAT] kill POST failed: {req.error}");
+            Debug.LogWarning($"[COMBAT] kill POST failed ({req.responseCode}): {req.error} {req.downloadHandler.text}");
         else
-            Debug.Log($"[COMBAT] kill posted: char={charId} enemy={templateId}");
+        {
+            Debug.Log($"[COMBAT] kill posted: char={charId} level={enemyLevel} category={categoryName}");
+            PlayerProgressManager.Local?.ApplyKillReward(req.downloadHandler.text);
+        }
 #endif
     }
 
