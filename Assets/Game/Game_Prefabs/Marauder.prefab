@@ -340,7 +340,7 @@ MonoBehaviour:
     damageDelay: 0
     maxChargeDamage: 0
     maxChargeSizeMultiplier: 0
-    targetTag: 
+    targetTag: Enemy
     chargedTint: {r: 0, g: 0, b: 0, a: 0}
     fireVisual: 0
     castVFX: {fileID: 0}
