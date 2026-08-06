@@ -1,6 +1,7 @@
 using Mirror;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 // ═══════════════════════════════════════════════════════════════════════════
 //  PlayerNameplate
@@ -25,8 +26,8 @@ public class PlayerNameplate : MonoBehaviour
     const float HeightOffset    = 2.4f;   // world units above transform.position
     const float FadeStartDist   = 20f;
     const float FadeEndDist     = 40f;
-    const float NameFontSize    = 3.2f;
-    const float ClassFontSize   = 2.2f;
+    const float NameFontSize    = 26f;
+    const float ClassFontSize   = 17f;
 
     static readonly Color[] ClassColors =
     {
@@ -55,6 +56,8 @@ public class PlayerNameplate : MonoBehaviour
     void Start()
     {
         _cam = Camera.main?.transform;
+        if (_canvas != null && _cam != null)
+            _canvas.worldCamera = _cam.GetComponent<Camera>();
         Refresh();
     }
 
@@ -112,6 +115,7 @@ public class PlayerNameplate : MonoBehaviour
         _canvas = cgo.GetComponent<Canvas>();
         _canvas.renderMode   = RenderMode.WorldSpace;
         _canvas.sortingOrder = 10;
+        cgo.AddComponent<GraphicRaycaster>();
 
         // Scale the world-space canvas down to a readable but not giant size
         var rt = _canvas.GetComponent<RectTransform>();
@@ -119,8 +123,22 @@ public class PlayerNameplate : MonoBehaviour
         cgo.transform.localScale = Vector3.one * 0.01f; // 1 pixel = 0.01 world unit
 
         _cg = cgo.GetComponent<CanvasGroup>();
-        _cg.blocksRaycasts = false; // nameplates never intercept mouse input
-        _cg.interactable   = false;
+        _cg.blocksRaycasts = true;
+        _cg.interactable   = true;
+
+        // Transparent click surface behind the labels. This turns the existing
+        // nameplate into the remote-player interaction icon without requiring a
+        // collider or competing with world targeting raycasts.
+        var clickSurface = new GameObject("InteractionButton",
+            typeof(RectTransform), typeof(Image), typeof(Button));
+        clickSurface.transform.SetParent(rt, false);
+        var clickRt = clickSurface.GetComponent<RectTransform>();
+        clickRt.anchorMin = Vector2.zero;
+        clickRt.anchorMax = Vector2.one;
+        clickRt.offsetMin = clickRt.offsetMax = Vector2.zero;
+        var clickImage = clickSurface.GetComponent<Image>();
+        clickImage.color = new Color(0f, 0f, 0f, 0.001f);
+        clickSurface.GetComponent<Button>().onClick.AddListener(OpenInteractionMenu);
 
         // Name label
         _nameText = MakeLabel(rt, "NameLabel",
@@ -166,8 +184,17 @@ public class PlayerNameplate : MonoBehaviour
         // Outline for readability against any background
         tmp.outlineWidth = 0.2f;
         tmp.outlineColor = new Color32(0, 0, 0, 200);
+        tmp.raycastTarget = false;
 
         return tmp;
+    }
+
+    void OpenInteractionMenu()
+    {
+#if UNITY_EDITOR || !UNITY_SERVER
+        if (_id != null && !_id.isLocalPlayer)
+            PlayerInteractionUI.Show(_id);
+#endif
     }
 }
 

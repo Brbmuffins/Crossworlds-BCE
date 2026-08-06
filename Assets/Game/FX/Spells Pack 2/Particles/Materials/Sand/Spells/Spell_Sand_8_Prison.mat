@@ -144,6 +144,7 @@ Material:
     - _Dither_Mask_Scale: 15
     - _Dither_Speed: 15
     - _DstBlend: 10
+    - _DstBlendAlpha: 10
     - _EMISSION: 0
     - _ENUM: 1
     - _FOAM_DISTORTION: 0
@@ -167,6 +168,7 @@ Material:
     - _Shadows_Opacity: 0.78
     - _Smothness: 0.8
     - _SrcBlend: 5
+    - _SrcBlendAlpha: 1
     - _Surface: 1
     - _Trail_Mode: 0
     - _UVMode: 1

@@ -1,0 +1,352 @@
+CROSSWORLDS BCE — CHARACTER XP SYSTEM BACKEND HANDOFF
+=====================================================
+
+Objective
+---------
+
+The XP framework moves combat rewards away from client-calculated values. Unity
+reports verifiable enemy facts, while the backend calculates and persists XP,
+levels, stats, gold, and loot atomically.
+
+The client must never send an xpGained value for combat kills.
+
+
+Authoritative data
+------------------
+
+The characters table is expected to contain:
+
+  id
+  account_id
+  level
+  experience
+  gold
+  stat_str
+  stat_agi
+  stat_int
+  stat_vit
+
+Important: the production column is "experience", not "xp".
+
+Unity retains a legacy "xp" response fallback, but the backend should use
+"experience".
+
+
+Enemy reward model
+------------------
+
+Every enemy carries two reward properties:
+
+  enemyLevel: integer, 1–100
+  enemyCategory: grunt | brute | elite | boss
+
+The category is configured through EnemyController.rewardCategory. The level
+comes from Health.EnemyLevel. Enemy Forge writes and validates both values.
+
+Combat XP is calculated as:
+
+  const XP_MULTIPLIER = Object.freeze({
+    grunt: 1,
+    brute: 1.5,
+    elite: 2,
+    boss: 5,
+  });
+
+  function calculateKillXp(enemyLevel, enemyCategory) {
+    if (!Number.isInteger(enemyLevel) || enemyLevel < 1 || enemyLevel > 100) {
+      throw new Error("invalid enemy level");
+    }
+
+    const multiplier = XP_MULTIPLIER[enemyCategory];
+    if (multiplier === undefined) {
+      throw new Error("invalid enemy category");
+    }
+
+    return Math.round((10 * enemyLevel + 5) * multiplier);
+  }
+
+Expected values:
+
+  Basic grunt, level 1, grunt: 15 XP
+  Basic grunt, level 2, grunt: 25 XP
+  Gunda, level 4, grunt: 45 XP
+  Ogre Brute, level 5, brute: 83 XP
+  Level 5 elite: 110 XP
+  Level 5 boss: 275 XP
+
+This removes the dependency on an enemy_templates.xp_reward row.
+
+
+Combat hit request
+------------------
+
+When server-authoritative Health registers player damage, EnemyController
+resolves the owning Mirror connection and sends a TargetRpc to that player.
+
+That client submits:
+
+  POST /api/combat/hit
+  Authorization: Bearer <JWT>
+  Content-Type: application/json
+
+  {
+    "characterId": 42,
+    "enemyLevel": 5,
+    "enemyCategory": "brute",
+    "enemyInstanceId": 1234,
+    "damageDealt": 18.5
+  }
+
+enemyInstanceId is the Mirror netId of that spawned enemy. It is an
+anti-duplicate instance key, not a persistent template ID.
+
+The backend must:
+
+  1. Authenticate the JWT.
+  2. Confirm characterId belongs to the authenticated account.
+  3. Validate level, category, instance ID, and damage.
+  4. Record a recent-hit gate keyed by:
+
+       `${accountId}:${characterId}:${enemyInstanceId}`
+
+The recorded entry should include:
+
+  {
+    timestamp,
+    enemyLevel,
+    enemyCategory
+  }
+
+Recommended hit lifetime:
+
+  const HIT_WINDOW_MS = 30_000;
+
+
+Combat kill request
+-------------------
+
+After an enemy dies, Unity submits:
+
+  POST /api/combat/kill
+  Authorization: Bearer <JWT>
+  Content-Type: application/json
+
+  {
+    "characterId": 42,
+    "enemyLevel": 5,
+    "enemyCategory": "brute",
+    "enemyInstanceId": 1234
+  }
+
+The request contains no XP amount.
+
+Required backend execution order:
+
+  1. Validate JWT.
+  2. Confirm character ownership.
+  3. Validate enemyLevel as an integer from 1–100.
+  4. Validate enemyCategory.
+  5. Validate enemyInstanceId.
+  6. Check the per-character kill-rate limit.
+  7. Find a matching recent-hit entry.
+  8. Confirm its recorded level and category match the kill request.
+  9. Confirm the hit is no more than 30 seconds old.
+ 10. Consume the hit entry.
+ 11. Calculate XP on the backend.
+ 12. In one database transaction:
+       - Add XP.
+       - Run the level-up loop.
+       - Allocate level-up stats.
+       - Award configured gold.
+       - Roll and persist loot, if applicable.
+       - Commit all changes together.
+ 13. Return the reward and canonical progression values.
+
+Recommended response:
+
+  {
+    "success": true,
+    "data": {
+      "xpGained": 83,
+      "goldGained": 12,
+      "itemDropped": null,
+      "level": 6,
+      "experience": 140,
+      "stat_str": 8,
+      "stat_agi": 7,
+      "stat_int": 5,
+      "stat_vit": 9
+    }
+  }
+
+The current Unity client reads data.xpGained, then fetches /character to obtain
+canonical totals. It also supports a legacy top-level xpGained field.
+
+
+Anti-exploit behavior
+---------------------
+
+Recent-hit gate:
+
+A kill without a recent matching hit should return:
+
+  HTTP 400 Bad Request
+
+  {
+    "success": false,
+    "error": "no recent hit on this enemy recorded"
+  }
+
+The hit entry must be consumed after one successful kill so the same instance
+cannot reward twice.
+
+Kill cooldown:
+
+  const KILL_COOLDOWN_MS = 2_000;
+
+The key is the character ID, across every enemy type.
+
+A violation should return:
+
+  HTTP 429 Too Many Requests
+
+  {
+    "success": false,
+    "error": "kill confirmed too quickly"
+  }
+
+The current maps are documented as in-process alpha protections. They reset
+whenever the auth service restarts.
+
+
+Client progression cache
+------------------------
+
+PlayerProgressManager.cs is a client-side persistent singleton used by the HUD
+and character sheet. It caches:
+
+  Level
+  Xp
+  XpToNext
+  Gold
+  StatStr
+  StatAgi
+  StatInt
+  StatVit
+
+On player spawn and scene load, it calls:
+
+  GET /character
+  Authorization: Bearer <JWT>
+
+Expected progression fields:
+
+  {
+    "level": 6,
+    "experience": 140,
+    "gold": 250,
+    "stat_str": 8,
+    "stat_agi": 7,
+    "stat_int": 5,
+    "stat_vit": 9
+  }
+
+It publishes these client events:
+
+  OnDataRefreshed
+  OnLevelUp
+  OnXpGained
+
+The XP bar and character UI consume those events. After a successful kill
+response, the client emits the XP-gained presentation event and refreshes
+/character.
+
+The client's display threshold is currently:
+
+  Mathf.RoundToInt(100f * Mathf.Pow(level, 1.5f))
+
+The backend's level-up loop must use the same curve unless the API starts
+returning an authoritative xpToNext value.
+
+
+Non-combat XP
+-------------
+
+PlayerProgressManager.AwardXp() still exists for local systems such as quest
+rewards. It calculates progression locally and can call:
+
+  POST /api/character/save-progress
+
+That endpoint currently accepts:
+
+  {
+    "characterId": 42,
+    "level": 6,
+    "experience": 140,
+    "xp": 140,
+    "gold": 250,
+    "stat_str": 8,
+    "stat_agi": 7,
+    "stat_int": 5,
+    "stat_vit": 9
+  }
+
+This is a remaining trust weakness. Long term, quests, gathering, and other XP
+sources should receive dedicated server-authoritative award endpoints. The
+generic save endpoint should not permit clients to arbitrarily increase level,
+experience, gold, or stats.
+
+Combat kills already avoid that path.
+
+
+Important current client defect
+-------------------------------
+
+There is one significant issue explaining the repeated HTTP 400 kill errors in
+the recent Unity log.
+
+Hits are correctly delivered only to the attacking player through
+TargetPostCombatHit. However, death notification currently uses:
+
+  RpcNotifyEnemyKilled(...)
+
+That is a ClientRpc, so every connected client may submit /api/combat/kill for
+the same enemy using their own character ID. Players without the matching hit
+gate are correctly rejected by the backend.
+
+The backend should continue rejecting those requests. Do not weaken the hit
+gate to accommodate them.
+
+The Unity correction should be to send the kill notification only to the
+credited killer's connection, likely through a TargetRpc, or otherwise include
+server-verified killer attribution before allowing a client to post the kill.
+
+
+Backend acceptance tests
+------------------------
+
+  1. Hit and kill a level-4 grunt: xpGained is 45.
+  2. Hit and kill a level-5 brute: xpGained is 83.
+  3. Kill without a recent hit: rejected with HTTP 400.
+  4. Reuse a consumed enemy instance: rejected.
+  5. Change the category between hit and kill: rejected.
+  6. Change the level between hit and kill: rejected.
+  7. Submit level 0 or 101: rejected.
+  8. Submit an unknown category: rejected.
+  9. Submit another account's character ID: rejected.
+ 10. Submit two successful kills inside two seconds: second returns HTTP 429.
+ 11. Cross a level threshold: XP remainder, level, and stats commit atomically.
+ 12. Confirm no enemy_templates row is required to calculate character XP.
+ 13. Confirm /character immediately returns the updated canonical totals.
+
+
+Relevant Unity and contract files
+---------------------------------
+
+  Assets/Game/UI/PlayerProgressManager.cs
+  Assets/Game/Combat/Scripts/EnemyController.cs
+  Assets/Game/Combat/Scripts/CombatSessionTracker.cs
+  Assets/Game/Combat/Scripts/Health.cs
+  _CONTEXT/LEVEL_CATEGORY_XP_CONTRACT.md
+  _CONTEXT/CLAUDE.md
+
