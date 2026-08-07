@@ -335,6 +335,7 @@ MonoBehaviour:
     instantCast: 0
     castTime: 0
     marauderCastAnimation: {fileID: -203655887218126122, guid: 94f4aa9d1cdbf404ca2cb7a44372b5d4, type: 3}
+    animationPlaybackSpeed: 1
     moveCasterToTarget: 1
     instantMovement: 0
     movementTiming: 1
@@ -411,6 +412,7 @@ MonoBehaviour:
     instantCast: 0
     castTime: 0
     marauderCastAnimation: {fileID: -203655887218126122, guid: a07905759d0f2224ea985b91bc803968, type: 3}
+    animationPlaybackSpeed: 1
     moveCasterToTarget: 0
     instantMovement: 0
     movementTiming: 0
@@ -486,6 +488,7 @@ MonoBehaviour:
     instantCast: 1
     castTime: 0
     marauderCastAnimation: {fileID: -203655887218126122, guid: bde48b7107dde2d43b9e048b2572ea36, type: 3}
+    animationPlaybackSpeed: 1.5
     moveCasterToTarget: 0
     instantMovement: 0
     movementTiming: 0
@@ -562,6 +565,7 @@ MonoBehaviour:
     instantCast: 0
     castTime: 0.6
     marauderCastAnimation: {fileID: 0}
+    animationPlaybackSpeed: 1
     moveCasterToTarget: 0
     instantMovement: 0
     movementTiming: 0
@@ -636,6 +640,7 @@ MonoBehaviour:
     instantCast: 0
     castTime: 0.6
     marauderCastAnimation: {fileID: 0}
+    animationPlaybackSpeed: 1
     moveCasterToTarget: 0
     instantMovement: 0
     movementTiming: 0
@@ -710,6 +715,7 @@ MonoBehaviour:
     instantCast: 0
     castTime: 0.6
     marauderCastAnimation: {fileID: 0}
+    animationPlaybackSpeed: 1
     moveCasterToTarget: 0
     instantMovement: 0
     movementTiming: 0
@@ -784,6 +790,7 @@ MonoBehaviour:
     instantCast: 0
     castTime: 0.6
     marauderCastAnimation: {fileID: 0}
+    animationPlaybackSpeed: 1
     moveCasterToTarget: 0
     instantMovement: 0
     movementTiming: 0
