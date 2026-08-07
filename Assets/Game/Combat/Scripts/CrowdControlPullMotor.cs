@@ -75,6 +75,11 @@ public sealed class CrowdControlPullMotor : MonoBehaviour
         activePull = StartCoroutine(PullRoutine());
     }
 
+    public void CancelPull()
+    {
+        StopActivePull();
+    }
+
     void CaptureMovementState()
     {
         agent = GetComponent<NavMeshAgent>();

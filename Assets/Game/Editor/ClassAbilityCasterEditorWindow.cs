@@ -730,11 +730,11 @@ namespace Crossworlds.EditorTools
 
             SerializedProperty crowdControl =
                 ability.FindPropertyRelative("crowdControlType");
-            bool usesSpellbookPull = crowdControl != null &&
-                crowdControl.enumValueIndex ==
-                (int)AbilityCrowdControlType.Pull;
+            bool usesSpellbookCrowdControl = crowdControl != null &&
+                crowdControl.enumValueIndex !=
+                (int)AbilityCrowdControlType.None;
 
-            if (usesSpellbookPull)
+            if (usesSpellbookCrowdControl)
             {
                 DrawFieldGroup(
                     "ADVANCED EFFECTS", ability,
@@ -781,22 +781,32 @@ namespace Crossworlds.EditorTools
                     return;
 
                 EditorGUILayout.PropertyField(controlType);
-                if (controlType.enumValueIndex !=
+                if (controlType.enumValueIndex ==
                     (int)AbilityCrowdControlType.Pull)
-                    return;
-
-                EditorGUILayout.PropertyField(
-                    ability.FindPropertyRelative(
-                        "pullDestination"));
-                EditorGUILayout.PropertyField(
-                    ability.FindPropertyRelative(
-                        "pullDuration"));
-                EditorGUILayout.PropertyField(
-                    ability.FindPropertyRelative(
-                        "pullSpeed"));
-                EditorGUILayout.PropertyField(
-                    ability.FindPropertyRelative(
-                        "pullStopDistance"));
+                {
+                    EditorGUILayout.PropertyField(
+                        ability.FindPropertyRelative(
+                            "pullDestination"));
+                    EditorGUILayout.PropertyField(
+                        ability.FindPropertyRelative(
+                            "pullDuration"));
+                    EditorGUILayout.PropertyField(
+                        ability.FindPropertyRelative(
+                            "pullSpeed"));
+                    EditorGUILayout.PropertyField(
+                        ability.FindPropertyRelative(
+                            "pullStopDistance"));
+                }
+                else if (controlType.enumValueIndex ==
+                    (int)AbilityCrowdControlType.KnockUp)
+                {
+                    EditorGUILayout.PropertyField(
+                        ability.FindPropertyRelative(
+                            "knockUpHeight"));
+                    EditorGUILayout.PropertyField(
+                        ability.FindPropertyRelative(
+                            "knockUpDuration"));
+                }
             }
         }
 

@@ -13,7 +13,12 @@ using UnityEditor;
 public enum AbilityShape { Circle, Cone, Rectangle }
 public enum AbilityCategory { Damage, Heal, Support }
 public enum AbilityMovementTiming { ConstantSpeed, FixedDuration }
-public enum AbilityCrowdControlType { None, Pull }
+public enum AbilityCrowdControlType
+{
+    None = 0,
+    Pull = 1,
+    KnockUp = 2
+}
 public enum AbilityPullDestination { CastPoint, ConeApex }
 
 /// <summary>
@@ -233,6 +238,12 @@ public class AbilityDef
     [Min(0f)]
     [Tooltip("Targets stop this far from the pull point to prevent collider stacking and jitter.")]
     public float pullStopDistance = 1.25f;
+    [Min(0.1f)]
+    [Tooltip("Maximum vertical height, in metres, reached by targets affected by Knock Up.")]
+    public float knockUpHeight = 2.5f;
+    [Min(0.1f)]
+    [Tooltip("Total time, in seconds, for affected targets to rise and land.")]
+    public float knockUpDuration = 0.8f;
 
     [Header("Pulse Damage")]
     [UnityEngine.Serialization.FormerlySerializedAs("overridePulseSettings")]
@@ -5209,13 +5220,25 @@ public class AbilityCaster : NetworkBehaviour
         crowdControlPoint = castPoint;
 
         if (ability == null ||
-            ability.crowdControlType != AbilityCrowdControlType.Pull ||
+            ability.crowdControlType == AbilityCrowdControlType.None ||
             indicator == null)
             return false;
 
         // Gameplay resolves on the server in networked sessions. Offline editor
         // play has neither side active and is intentionally allowed through.
         if (NetworkClient.active && !NetworkServer.active)
+            return false;
+
+        if (ability.crowdControlType == AbilityCrowdControlType.KnockUp)
+        {
+            ApplyKnockUpToTargets(
+                ability,
+                indicator,
+                castOrigin);
+            return true;
+        }
+
+        if (ability.crowdControlType != AbilityCrowdControlType.Pull)
             return false;
 
         crowdControlPoint =
@@ -5294,6 +5317,47 @@ public class AbilityCaster : NetworkBehaviour
         return true;
     }
 
+    void ApplyKnockUpToTargets(
+        AbilityDef ability,
+        GameObject indicator,
+        Vector3 castOrigin)
+    {
+        var hits = new System.Collections.Generic.List<Collider>();
+        CollectHitsForAbilityShape(
+            ability,
+            indicator,
+            castOrigin,
+            ability.targetTag,
+            hits);
+
+        float height = Mathf.Max(0.1f, ability.knockUpHeight);
+        float duration = Mathf.Max(0.1f, ability.knockUpDuration);
+        var launched = new System.Collections.Generic.HashSet<Health>();
+        foreach (Collider hit in hits)
+        {
+            if (!TryGetMatchingHealth(
+                    hit,
+                    ability.targetTag,
+                    out Health health) ||
+                !launched.Add(health) ||
+                IsCrowdControlImmune(health))
+                continue;
+
+            CrowdControlKnockUpMotor motor =
+                health.GetComponent<CrowdControlKnockUpMotor>();
+            if (motor == null)
+            {
+                motor = health.gameObject.AddComponent<
+                    CrowdControlKnockUpMotor>();
+            }
+
+            motor.BeginKnockUp(
+                height,
+                duration,
+                gameObject);
+        }
+    }
+
     System.Collections.IEnumerator PullTargetsEnteringZone(
         AbilityDef ability,
         Vector3 centre,
@@ -5349,6 +5413,9 @@ public class AbilityCaster : NetworkBehaviour
     {
         if (health == null || !health.IsAlive)
             return;
+
+        health.GetComponent<CrowdControlKnockUpMotor>()
+            ?.CancelKnockUp();
 
         CrowdControlPullMotor motor =
             health.GetComponent<CrowdControlPullMotor>();
