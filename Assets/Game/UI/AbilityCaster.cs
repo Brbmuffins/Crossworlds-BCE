@@ -196,6 +196,9 @@ public class AbilityDef
 
     [Header("Heal")]
     public float healAmount = 0f;          // Field Repair single-target heal
+    [Min(0f)]
+    [Tooltip("Seconds to wait after locking in a target before applying this spell's direct healing.")]
+    public float healingDelay = 0f;
 
     [Header("Heal over Time")]
     public float hotTickAmount = 0f;
@@ -4544,7 +4547,8 @@ public class AbilityCaster : NetworkBehaviour
         Vector3 centre,
         float radius,
         float healAmount,
-        GameObject healVFX)
+        GameObject healVFX,
+        float healingDelay = 0f)
     {
         Collider[] hits = ZonePhysics.OverlapSphere(
             gameObject,
@@ -4560,11 +4564,90 @@ public class AbilityCaster : NetworkBehaviour
                 continue;
 
             healed.Add(health);
-            float healthBefore = health.currentHealth;
-            health.Heal(healAmount);
-            if (health.currentHealth > healthBefore)
-                EmitHealVFX(healVFX, health);
+            ResolveAbilityHeal(
+                health,
+                healAmount,
+                healVFX,
+                healingDelay);
         }
+    }
+
+    void ResolveAbilityHeal(
+        Health target,
+        float healAmount,
+        GameObject healVFX,
+        float healingDelay,
+        bool showFloatingText = false,
+        bool critical = false)
+    {
+        if (target == null || healAmount <= 0f)
+            return;
+
+        if (healingDelay > 0f)
+        {
+            StartCoroutine(ApplyDelayedAbilityHeal(
+                target,
+                healAmount,
+                healVFX,
+                healingDelay,
+                showFloatingText,
+                critical));
+            return;
+        }
+
+        ApplyResolvedAbilityHeal(
+            target,
+            healAmount,
+            healVFX,
+            showFloatingText,
+            critical);
+    }
+
+    System.Collections.IEnumerator ApplyDelayedAbilityHeal(
+        Health target,
+        float healAmount,
+        GameObject healVFX,
+        float healingDelay,
+        bool showFloatingText,
+        bool critical)
+    {
+        yield return new WaitForSeconds(Mathf.Max(0f, healingDelay));
+        ApplyResolvedAbilityHeal(
+            target,
+            healAmount,
+            healVFX,
+            showFloatingText,
+            critical);
+    }
+
+    void ApplyResolvedAbilityHeal(
+        Health target,
+        float healAmount,
+        GameObject healVFX,
+        bool showFloatingText,
+        bool critical)
+    {
+        if (target == null || !target.IsAlive)
+            return;
+
+        float healthBefore = target.currentHealth;
+        target.Heal(healAmount);
+        float restoredHealth = target.currentHealth - healthBefore;
+        if (restoredHealth <= 0f)
+            return;
+
+        EmitHealVFX(healVFX, target);
+#if UNITY_EDITOR || !UNITY_SERVER
+        if (showFloatingText)
+        {
+            FloatingDamageText.SpawnAnchored(
+                target.GetFloatingNumberWorldPosition(),
+                restoredHealth,
+                critical
+                    ? FloatingDamageText.DamageType.HealCrit
+                    : FloatingDamageText.DamageType.Heal);
+        }
+#endif
     }
 
     // Ground rings are flat gameplay areas. Query a slightly taller sphere so
@@ -4752,8 +4835,11 @@ public class AbilityCaster : NetworkBehaviour
             if (!col.CompareTag("Player")) continue;
             Health h = col.GetComponent<Health>();
             if (h == null || h == _health) continue;
-            h.Heal(healAmt);
-            EmitHealVFX(ability.healVFX, h);
+            ResolveAbilityHeal(
+                h,
+                healAmt,
+                ability.healVFX,
+                ability.healingDelay);
             col.GetComponent<StatusEffectManager>()?.RemoveAll();   // clears 1 debuff
             EmitHitVFX(ability.hitVFX, col.transform.position + Vector3.up);
             break;
@@ -5217,7 +5303,12 @@ public class AbilityCaster : NetworkBehaviour
             ? indicator.transform.position
             : transform.position;
         float radius = Mathf.Max(0f, ability.indicatorSize * 0.5f);
-        ApplyPulseHealing(center, radius, ability.healAmount, ability.healVFX);
+        ApplyPulseHealing(
+            center,
+            radius,
+            ability.healAmount,
+            ability.healVFX,
+            ability.healingDelay);
     }
 
     void ApplyRectangleDamage(AbilityDef ability, GameObject indicator, float damage)
@@ -5315,10 +5406,11 @@ public class AbilityCaster : NetworkBehaviour
 
             if (ability.healAmount > 0f)
             {
-                float healthBefore = health.currentHealth;
-                health.Heal(ability.healAmount);
-                if (health.currentHealth > healthBefore)
-                    EmitHealVFX(ability.healVFX, health);
+                ResolveAbilityHeal(
+                    health,
+                    ability.healAmount,
+                    ability.healVFX,
+                    ability.healingDelay);
             }
 
             if (ability.shieldAbsorb > 0f)
@@ -5652,28 +5744,31 @@ public class AbilityCaster : NetworkBehaviour
                 {
                     // Zone 1: HPS / Instant Burst
                     float healVal = (ability.healAmount > 0f ? ability.healAmount : 25f) * 1.5f;
-                    targetHealth.Heal(healVal);
-                    EmitHealVFX(ability.healVFX, targetHealth);
+                    ResolveAbilityHeal(
+                        targetHealth,
+                        healVal,
+                        ability.healVFX,
+                        ability.healingDelay,
+                        showFloatingText: true,
+                        critical: true);
                     EmitHitVFX(ability.hitVFX, hitPos);
-#if UNITY_EDITOR || !UNITY_SERVER
-                    FloatingDamageText.SpawnAnchored(floatingTextPos, healVal, FloatingDamageText.DamageType.HealCrit);
-#endif
                 }
                 else if (fraction <= 0.66f)
                 {
                     // Zone 2: HoT / Healing over Time
                     float instantHeal = (ability.healAmount > 0f ? ability.healAmount : 25f) * 0.5f;
-                    targetHealth.Heal(instantHeal);
-                    EmitHealVFX(ability.healVFX, targetHealth);
+                    ResolveAbilityHeal(
+                        targetHealth,
+                        instantHeal,
+                        ability.healVFX,
+                        ability.healingDelay,
+                        showFloatingText: true);
 
                     float tickAmount = (ability.healAmount > 0f ? ability.healAmount : 25f) * 0.25f;
                     StartCoroutine(ApplyHealOverTime(
                         targetHealth, tickAmount, 5, 1f, ability.healVFX));
 
                     EmitHitVFX(ability.hitVFX, hitPos);
-#if UNITY_EDITOR || !UNITY_SERVER
-                    FloatingDamageText.SpawnAnchored(floatingTextPos, instantHeal, FloatingDamageText.DamageType.Heal);
-#endif
                 }
                 else
                 {
@@ -7814,11 +7909,12 @@ public class AbilityCaster : NetworkBehaviour
 
         if (ability.healAmount > 0f)
         {
-            health.Heal(ability.healAmount);
-            EmitHealVFX(healVfxPrefab, health);
-#if UNITY_EDITOR || !UNITY_SERVER
-            FloatingDamageText.SpawnAnchored(floatingTextPos, ability.healAmount, FloatingDamageText.DamageType.Heal);
-#endif
+            ResolveAbilityHeal(
+                health,
+                ability.healAmount,
+                healVfxPrefab,
+                ability.healingDelay,
+                showFloatingText: true);
             playedHitVfx = true;
         }
 

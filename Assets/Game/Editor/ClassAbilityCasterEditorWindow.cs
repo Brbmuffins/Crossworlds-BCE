@@ -716,6 +716,7 @@ namespace Crossworlds.EditorTools
                 "shieldAbsorb",
                 "shieldDuration",
                 "healAmount",
+                "healingDelay",
                 "hotTickAmount",
                 "hotTicks",
                 "hotInterval",
