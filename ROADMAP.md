@@ -86,6 +86,8 @@ conversation: it names its files, acceptance criteria, and dependencies. Tasks m
 > it consistently to live preview, ordinary casts, variants, and movement casts.
 > Spell Forge crowd control now includes an authored Knock Up type with configurable
 > height and duration; server-side target movement is synchronized to clients.
+> Chargeable circle damage and its pulse sequence now share the committed visual
+> radius, fixing Screaming Flames' hit area at larger charge sizes.
 > The `#if !UNITY_SERVER` guards described in the 1.5 note above were the *bare* form;
 > the required convention is `#if UNITY_EDITOR || !UNITY_SERVER`, and the 8 remaining
 > bare guards (HeroCosmeticApplier, StatusEffectHUD, ShieldValueHUD, GoldHUD,

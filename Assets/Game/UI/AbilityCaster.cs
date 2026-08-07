@@ -253,7 +253,7 @@ public class AbilityDef
     [Min(0)] public int pulseCount = 0;
     [Tooltip("Seconds between each pulse. Leave at 0 to use the default 1 second.")]
     [Min(0f)] public float pulseInterval = 0f;
-    [Tooltip("Damage radius for each pulse. Leave at 0 to use half of the spell indicator size.")]
+    [Tooltip("Damage radius for each pulse. Leave at 0 to use half of the spell indicator size. Chargeable circle spells automatically use their committed damage-zone radius so every pulse matches the visible zone.")]
     [Min(0f)] public float pulseRadius = 0f;
     [Tooltip("Damage dealt by each pulse before character damage bonuses. Leave at 0 to use this spell's Damage value.")]
     [Min(0f)] public float pulseDamage = 0f;
@@ -3774,7 +3774,11 @@ public class AbilityCaster : NetworkBehaviour
 
         if (!usesChainDamage && ability.shape == AbilityShape.Circle && ability.damage > 0f && !IsArcaneStep(ability) && !IsVoidMaw(ability))
         {
-            ApplyCircleDamage(ability, indicator, damageMultiplier);
+            ApplyCircleDamage(
+                ability,
+                indicator,
+                aimTime,
+                damageMultiplier);
         }
 
         // Non-variant healing circles use Heal Amount as an optional initial
@@ -3848,7 +3852,11 @@ public class AbilityCaster : NetworkBehaviour
                 ability.sfxVolume);
 #endif
         DispatchAbility(ability, castPoint, damageMultiplier);
-        StartPulseEffectsIfNeeded(ability, pulsePoint, damageMultiplier);
+        StartPulseEffectsIfNeeded(
+            ability,
+            pulsePoint,
+            aimTime,
+            damageMultiplier);
     }
 
     [Command]
@@ -4308,10 +4316,20 @@ public class AbilityCaster : NetworkBehaviour
 
     // ── New ability methods ──────────────────────────────────────
 
-    void StartPulseEffectsIfNeeded(AbilityDef ability, Vector3 centre, float damageMultiplier)
+    void StartPulseEffectsIfNeeded(
+        AbilityDef ability,
+        Vector3 centre,
+        float aimTime,
+        float damageMultiplier)
     {
         if (ShouldRunPulseDamage(ability))
-            StartCoroutine(PulseDamage(ability, centre, damageMultiplier));
+        {
+            StartCoroutine(PulseDamage(
+                ability,
+                centre,
+                aimTime,
+                damageMultiplier));
+        }
 
         // Pulse healing intentionally shares the authored ground-ring radius,
         // but uses the HoT amount/count/interval and always targets allies.
@@ -4340,13 +4358,20 @@ public class AbilityCaster : NetworkBehaviour
             ability.hotTickAmount > 0f;
     }
 
-    System.Collections.IEnumerator PulseDamage(AbilityDef ability, Vector3 centre, float damageMultiplier)
+    System.Collections.IEnumerator PulseDamage(
+        AbilityDef ability,
+        Vector3 centre,
+        float aimTime,
+        float damageMultiplier)
     {
         int pulseCount = GetPulseCount(ability, GetDefaultPulseCount(ability));
         if (pulseCount <= 0)
             yield break;
 
-        float radius = GetPulseRadius(ability, GetDefaultPulseRadius(ability));
+        float radius = ability.shape == AbilityShape.Circle &&
+            ability.chargeable
+            ? GetCircleDamageRadius(ability, aimTime)
+            : GetPulseRadius(ability, GetDefaultPulseRadius(ability));
         float damage = GetPulseDamage(ability, GetDefaultPulseDamage(ability), damageMultiplier);
         float interval = GetPulseInterval(ability, GetDefaultPulseInterval(ability));
         float vfxLifetime = GetPulseVFXLifetime(ability, GetDefaultPulseVFXLifetime(ability));
@@ -4364,7 +4389,9 @@ public class AbilityCaster : NetworkBehaviour
         int pulseCount = Mathf.Max(0, ability.hotTicks);
         float healAmount = Mathf.Max(0f, ability.hotTickAmount);
         float interval = Mathf.Max(0.1f, ability.hotInterval);
-        float radius = GetPulseRadius(ability, GetDefaultPulseRadius(ability));
+        float radius = GetPulseRadius(
+            ability,
+            GetDefaultPulseRadius(ability));
 
         for (int pulse = 0; pulse < pulseCount; pulse++)
         {
@@ -5116,10 +5143,14 @@ public class AbilityCaster : NetworkBehaviour
         return classPool.className == "Marauder" ? 3 : 1;
     }
 
-    void ApplyCircleDamage(AbilityDef ability, GameObject indicator, float damageMultiplier = 1f)
+    void ApplyCircleDamage(
+        AbilityDef ability,
+        GameObject indicator,
+        float aimTime,
+        float damageMultiplier = 1f)
     {
         Vector3 center = indicator != null ? indicator.transform.position : transform.position;
-        float radius = Mathf.Max(0f, ability.indicatorSize * 0.5f);
+        float radius = GetCircleDamageRadius(ability, aimTime);
         Collider[] hits = ZonePhysics.OverlapSphere(
             gameObject,
             center,
@@ -5135,6 +5166,20 @@ public class AbilityCaster : NetworkBehaviour
 
             ResolveDirectAbilityHit(ability, health, ability.damage * damageMultiplier);
         }
+    }
+
+    float GetCircleDamageRadius(AbilityDef ability, float aimTime)
+    {
+        if (ability == null)
+            return 0f;
+
+        float chargeSizeMultiplier = Mathf.Lerp(
+            1f,
+            ability.maxChargeSizeMultiplier,
+            GetChargeFraction(ability, aimTime));
+        return Mathf.Max(
+            0f,
+            ability.indicatorSize * 0.5f * chargeSizeMultiplier);
     }
 
     void ApplyCircleHealing(AbilityDef ability, GameObject indicator)
@@ -7562,7 +7607,11 @@ public class AbilityCaster : NetworkBehaviour
             SpawnTurret(effectAbility, indicator.transform.position);
 
         DispatchAbility(effectAbility, castPoint, damageMultiplier);
-        StartPulseEffectsIfNeeded(effectAbility, pulsePoint, damageMultiplier);
+        StartPulseEffectsIfNeeded(
+            effectAbility,
+            pulsePoint,
+            aimTime,
+            damageMultiplier);
     }
 
     bool HasBrokenMigratedVariantPayloads(AbilityDef ability)
