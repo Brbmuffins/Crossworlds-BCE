@@ -85,7 +85,9 @@ public class Health : NetworkBehaviour
     public UnityEvent<GameObject>   onKilledBy;         // who dealt the killing blow (for BountySystem)
 
     // ── Shield ────────────────────────────────────────────────────
+    [SyncVar]
     private float _shieldRemaining = 0f;
+    private float _shieldExpiry = 0f;
     public  bool  HasShield      => _shieldRemaining > 0f;
     public  float ShieldRemaining => _shieldRemaining;
 
@@ -222,18 +224,38 @@ public class Health : NetworkBehaviour
         // Clear expired absorption
         if (_absorbing && Time.time >= _absorptionExpiry)
             _absorbing = false;
+
+        // A duration of zero means the shield remains until its absorb pool is
+        // depleted. Timed shields expire authoritatively on the server.
+        if (_shieldRemaining > 0f &&
+            _shieldExpiry > 0f &&
+            Time.time >= _shieldExpiry)
+        {
+            _shieldRemaining = 0f;
+            _shieldExpiry = 0f;
+        }
     }
 
     // ── Public API ────────────────────────────────────────────────
 
-    public void ApplyShield(float amount)
+    public void ApplyShield(float amount, float duration = 0f)
     {
-        if (!CanMutateCombatState()) return;
-        float shieldAmount = Mathf.Max(0f, amount);
-        if (shieldAmount <= 0f) return;
+        TryApplyShield(amount, duration);
+    }
 
-        _shieldRemaining = Mathf.Max(_shieldRemaining, shieldAmount);
+    public bool TryApplyShield(float amount, float duration = 0f)
+    {
+        if (!CanMutateCombatState()) return false;
+        float shieldAmount = Mathf.Max(0f, amount);
+        if (shieldAmount <= 0f || shieldAmount < _shieldRemaining)
+            return false;
+
+        _shieldRemaining = shieldAmount;
+        _shieldExpiry = duration > 0f
+            ? Time.time + duration
+            : 0f;
         ShowShieldFeedback(shieldAmount);
+        return true;
     }
 
     // ── Invulnerability (Dodge Roll i-frames) ────────────────────
@@ -286,6 +308,8 @@ public class Health : NetworkBehaviour
             float absorbed = Mathf.Min(_shieldRemaining, amount);
             _shieldRemaining -= absorbed;
             amount -= absorbed;
+            if (_shieldRemaining <= 0f)
+                _shieldExpiry = 0f;
         }
 
         if (amount <= 0f) return;
@@ -400,6 +424,7 @@ public class Health : NetworkBehaviour
     public void GrowShield(float amount)
     {
         if (!CanMutateCombatState()) return;
+        if (_shieldRemaining <= 0f) return;
         float shieldBefore = _shieldRemaining;
         _shieldRemaining = Mathf.Min(
             _shieldRemaining + Mathf.Max(0f, amount),

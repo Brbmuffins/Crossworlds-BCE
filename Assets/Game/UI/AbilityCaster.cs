@@ -78,6 +78,8 @@ public class AbilityVariant
     [HideInInspector]
     public GameObject hitVFX;
     [HideInInspector]
+    public GameObject shieldVFX;
+    [HideInInspector]
     public AudioClip castSFX;
     [HideInInspector]
     public AudioClip hitSFX;
@@ -174,6 +176,8 @@ public class AbilityDef
     [Tooltip("VFX played on each ally when this spell restores health. Heal-over-time spells play it on each successful tick.")]
     public GameObject healVFX;
     public GameObject hitVFX;
+    [Tooltip("Persistent VFX attached to a shielded target. It ends when Shield Duration expires or the absorb pool is depleted.")]
+    public GameObject shieldVFX;
     [Tooltip("Optional connector VFX spawned between each pair of chain targets. Prefabs with children named 'Cast Position' and 'Hit Position' have those endpoints placed on the two targets.")]
     public GameObject chainVFX;
     [Tooltip("Spawn the cast VFX at the caster instead of the spell's destination or the far edge of its cone.")]
@@ -192,6 +196,8 @@ public class AbilityDef
 
     [Header("Shield")]
     public float shieldAbsorb   = 0f;
+    [Min(0f)]
+    [Tooltip("Seconds before the shield and its Shield VFX expire. Use 0 to keep both active until the absorb pool is depleted.")]
     public float shieldDuration = 0f;
 
     [Header("Heal")]
@@ -616,8 +622,6 @@ public class AbilityCaster : NetworkBehaviour
     public static Vector3 AimDirection    { get; private set; }
     private float[] cooldownTimers = new float[4];
 
-    private GameObject activeShieldVFX;
-    private float shieldVFXTimer = 0f;
     private GameObject activeCastingVFX;
 
     // Variant zone selection — updated every frame while aiming, snapshotted at commit.
@@ -1360,16 +1364,6 @@ public class AbilityCaster : NetworkBehaviour
         {
             if (cooldownTimers[i] > 0f)
                 cooldownTimers[i] -= Time.deltaTime;
-        }
-
-        if (activeShieldVFX != null)
-        {
-            shieldVFXTimer -= Time.deltaTime;
-            if (shieldVFXTimer <= 0f)
-            {
-                Destroy(activeShieldVFX);
-                activeShieldVFX = null;
-            }
         }
 
         if (!ShouldProcessLocalInput())
@@ -3259,6 +3253,87 @@ public class AbilityCaster : NetworkBehaviour
         }
     }
 
+    void ApplyAbilityShield(
+        AbilityDef ability,
+        Health target,
+        GameObject shieldVFXPrefab = null,
+        float shieldAmountOverride = 0f)
+    {
+        if (ability == null || target == null)
+            return;
+
+        float shieldAmount = shieldAmountOverride > 0f
+            ? shieldAmountOverride
+            : ability.shieldAbsorb;
+        if (shieldAmount <= 0f)
+            return;
+
+        if (!target.TryApplyShield(
+                shieldAmount,
+                ability.shieldDuration))
+            return;
+
+        EmitShieldVFX(
+            shieldVFXPrefab != null
+                ? shieldVFXPrefab
+                : ability.shieldVFX,
+            target,
+            ability.shieldDuration);
+    }
+
+    void EmitShieldVFX(
+        GameObject shieldVFXPrefab,
+        Health target,
+        float duration)
+    {
+        if (shieldVFXPrefab == null || target == null)
+            return;
+
+        if (NetworkServer.active)
+        {
+            int spellbookIndex = ResolveShieldVfxIndex(shieldVFXPrefab);
+            NetworkIdentity targetIdentity = target.netIdentity;
+            if (spellbookIndex >= 0 &&
+                targetIdentity != null &&
+                targetIdentity.netId != 0)
+            {
+                RpcPlayAttachedShieldVFX(
+                    spellbookIndex,
+                    targetIdentity.netId,
+                    Mathf.Max(0f, duration));
+            }
+        }
+        else if (!NetworkClient.active)
+        {
+            SpawnAttachedShieldVFX(
+                shieldVFXPrefab,
+                target,
+                duration);
+        }
+    }
+
+    void SpawnAttachedShieldVFX(
+        GameObject shieldVFXPrefab,
+        Health target,
+        float duration)
+    {
+#if UNITY_EDITOR || !UNITY_SERVER
+        if (shieldVFXPrefab == null || target == null)
+            return;
+
+        GameObject fx = CreateAttachedVFX(
+            shieldVFXPrefab,
+            target.transform,
+            Vector3.zero);
+        if (fx == null)
+            return;
+
+        ShieldVFXLifetime lifetime =
+            fx.AddComponent<ShieldVFXLifetime>();
+        lifetime.Bind(target, duration);
+#endif
+    }
+
     // Resolves the spell that owns a hit VFX prefab and plays its hit SFX. Used only
     // on the offline path — networked hits carry the SFX inside RpcPlayHitVFX instead.
     void PlayHitSFXFor(GameObject hitVFXPrefab, Vector3 position)
@@ -3462,6 +3537,21 @@ public class AbilityCaster : NetworkBehaviour
         return -1;
     }
 
+    int ResolveShieldVfxIndex(GameObject shieldVFXPrefab)
+    {
+        if (shieldVFXPrefab == null || spellbook == null)
+            return -1;
+
+        for (int i = 0; i < spellbook.Length; i++)
+        {
+            if (spellbook[i] != null &&
+                spellbook[i].shieldVFX == shieldVFXPrefab)
+                return i;
+        }
+
+        return -1;
+    }
+
     [ClientRpc]
     void RpcPlayHitVFX(int spellbookIndex, Vector3 position, float lifetime, int variantIndex)
     {
@@ -3529,6 +3619,35 @@ public class AbilityCaster : NetworkBehaviour
             ? targetHealth.transform
             : targetIdentity.transform;
         SpawnAttachedVFX(ability.healVFX, target, localOffset, lifetime);
+#endif
+    }
+
+    [ClientRpc]
+    void RpcPlayAttachedShieldVFX(
+        int spellbookIndex,
+        uint targetNetId,
+        float duration)
+    {
+        if (spellbookIndex < 0 || spellbookIndex >= spellbook.Length)
+            return;
+        AbilityDef ability = spellbook[spellbookIndex];
+        if (ability == null)
+            return;
+#if UNITY_EDITOR || !UNITY_SERVER
+        if (!NetworkClient.spawned.TryGetValue(
+                targetNetId,
+                out NetworkIdentity targetIdentity))
+            return;
+
+        Health targetHealth =
+            targetIdentity.GetComponentInChildren<Health>();
+        if (targetHealth == null)
+            return;
+
+        SpawnAttachedShieldVFX(
+            ability.shieldVFX,
+            targetHealth,
+            duration);
 #endif
     }
 
@@ -4309,7 +4428,7 @@ public class AbilityCaster : NetworkBehaviour
                 break;
 
             case "Sacred Aegis":
-                CastAdaptiveShield(castPoint);
+                CastAdaptiveShield(ability, castPoint);
                 break;
 
             case "Dispel":
@@ -5169,7 +5288,7 @@ public class AbilityCaster : NetworkBehaviour
         }
     }
 
-    void CastAdaptiveShield(Vector3 castPoint)
+    void CastAdaptiveShield(AbilityDef ability, Vector3 castPoint)
     {
         // Apply a 20-absorb shield to nearest ally that grows as they take hits.
         Collider[] hits = ZonePhysics.OverlapSphere(gameObject, castPoint, 2f);
@@ -5178,9 +5297,19 @@ public class AbilityCaster : NetworkBehaviour
             if (!col.CompareTag("Player")) continue;
             Health h = col.GetComponent<Health>();
             if (h == null) continue;
-            h.ApplyShield(20f);
+            float authoredAbsorb = ability.shieldAbsorb;
+            if (authoredAbsorb <= 0f)
+                authoredAbsorb = 20f;
+            ApplyAbilityShield(
+                ability,
+                h,
+                shieldAmountOverride: authoredAbsorb);
             // Subscribe to grow shield on each hit for 8s
-            StartCoroutine(AdaptiveShieldRoutine(h, 8f));
+            StartCoroutine(AdaptiveShieldRoutine(
+                h,
+                ability.shieldDuration > 0f
+                    ? ability.shieldDuration
+                    : 8f));
             return;
         }
     }
@@ -5414,7 +5543,7 @@ public class AbilityCaster : NetworkBehaviour
             }
 
             if (ability.shieldAbsorb > 0f)
-                health.ApplyShield(ability.shieldAbsorb);
+                ApplyAbilityShield(ability, health);
 
             EmitAbilityHitVFX(
                 ability,
@@ -5773,7 +5902,10 @@ public class AbilityCaster : NetworkBehaviour
                 {
                     // Zone 3: Bubble / Shield
                     float shieldAmount = ability.shieldAbsorb > 0f ? ability.shieldAbsorb : 30f;
-                    targetHealth.ApplyShield(shieldAmount);
+                    ApplyAbilityShield(
+                        ability,
+                        targetHealth,
+                        shieldAmountOverride: shieldAmount);
 
                     EmitHitVFX(ability.hitVFX, hitPos);
                 }
@@ -5850,18 +5982,7 @@ public class AbilityCaster : NetworkBehaviour
     {
         Health health = GetComponent<Health>();
         if (health != null)
-            health.ApplyShield(ability.shieldAbsorb);
-
-        // Remove any existing shield VFX before spawning new one
-        if (activeShieldVFX != null)
-            Destroy(activeShieldVFX);
-
-        if (ability.castVFX != null)
-        {
-            activeShieldVFX = Instantiate(ability.castVFX, transform.position, Quaternion.identity, transform);
-            activeShieldVFX.transform.localPosition = Vector3.zero;
-            shieldVFXTimer = ability.shieldDuration > 0f ? ability.shieldDuration : 5f;
-        }
+            ApplyAbilityShield(ability, health);
     }
 
     void SpawnTurret(AbilityDef ability, Vector3 position)
@@ -6472,6 +6593,7 @@ public class AbilityCaster : NetworkBehaviour
             || variant.castVFX != null
             || variant.healVFX != null
             || variant.hitVFX != null
+            || variant.shieldVFX != null
             || variant.castSFX != null
             || variant.hitSFX != null
             || (variant.indicatorTint.a > 0f && !IsDefaultLegacyVariantTint(variant.indicatorTint));
@@ -6528,6 +6650,7 @@ public class AbilityCaster : NetworkBehaviour
         payload.castVFX = variant.castVFX;
         payload.healVFX = variant.healVFX;
         payload.hitVFX = variant.hitVFX;
+        payload.shieldVFX = variant.shieldVFX;
         payload.castSFX = variant.castSFX;
         payload.hitSFX = variant.hitSFX;
         payload.sfxVolume = owner.sfxVolume;
@@ -6565,6 +6688,7 @@ public class AbilityCaster : NetworkBehaviour
         variant.castVFX = null;
         variant.healVFX = null;
         variant.hitVFX = null;
+        variant.shieldVFX = null;
         variant.castSFX = null;
         variant.hitSFX = null;
     }
@@ -7736,6 +7860,7 @@ public class AbilityCaster : NetworkBehaviour
 
         GameObject hitVfxPrefab = effectAbility.hitVFX != null ? effectAbility.hitVFX : selectorAbility.hitVFX;
         GameObject healVfxPrefab = effectAbility.healVFX != null ? effectAbility.healVFX : selectorAbility.healVFX;
+        GameObject shieldVfxPrefab = effectAbility.shieldVFX != null ? effectAbility.shieldVFX : selectorAbility.shieldVFX;
         bool usesChainDamage = UsesChainDamage(effectAbility);
 
         if (indicator != null && HasDirectPayload(effectAbility) && !usesChainDamage)
@@ -7748,6 +7873,7 @@ public class AbilityCaster : NetworkBehaviour
                     hit,
                     hitVfxPrefab,
                     healVfxPrefab,
+                    shieldVfxPrefab,
                     damageMultiplier,
                     aimTime);
         }
@@ -7891,6 +8017,7 @@ public class AbilityCaster : NetworkBehaviour
         Collider hit,
         GameObject hitVfxPrefab,
         GameObject healVfxPrefab,
+        GameObject shieldVfxPrefab,
         float damageMultiplier,
         float aimTime)
     {
@@ -7933,7 +8060,10 @@ public class AbilityCaster : NetworkBehaviour
 
         if (ability.shieldAbsorb > 0f)
         {
-            health.ApplyShield(ability.shieldAbsorb);
+            ApplyAbilityShield(
+                ability,
+                health,
+                shieldVfxPrefab);
             playedHitVfx = true;
         }
 
@@ -7993,6 +8123,80 @@ public class AbilityCaster : NetworkBehaviour
     }
 
 }
+
+#if UNITY_EDITOR || !UNITY_SERVER
+internal sealed class ShieldVFXLifetime : MonoBehaviour
+{
+    static readonly Dictionary<int, ShieldVFXLifetime> ActiveByTarget =
+        new Dictionary<int, ShieldVFXLifetime>();
+
+    Health target;
+    int targetInstanceId;
+    float expiresAt = float.PositiveInfinity;
+    float depletionCheckStartsAt;
+    bool observedActiveShield;
+
+    public void Bind(Health shieldTarget, float duration)
+    {
+        target = shieldTarget;
+        if (target == null)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
+        targetInstanceId = target.GetInstanceID();
+        if (ActiveByTarget.TryGetValue(
+                targetInstanceId,
+                out ShieldVFXLifetime previous) &&
+            previous != null &&
+            previous != this)
+        {
+            Destroy(previous.gameObject);
+        }
+
+        ActiveByTarget[targetInstanceId] = this;
+        observedActiveShield = target.HasShield;
+        depletionCheckStartsAt = Time.time + 0.5f;
+        expiresAt = duration > 0f
+            ? Time.time + duration
+            : float.PositiveInfinity;
+    }
+
+    void Update()
+    {
+        if (target == null || Time.time >= expiresAt)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
+        if (target.HasShield)
+            observedActiveShield = true;
+
+        if (!target.HasShield &&
+            (observedActiveShield ||
+             Time.time >= depletionCheckStartsAt))
+        {
+            Destroy(gameObject);
+        }
+    }
+
+    void OnDestroy()
+    {
+        if (targetInstanceId == 0)
+            return;
+
+        if (ActiveByTarget.TryGetValue(
+                targetInstanceId,
+                out ShieldVFXLifetime active) &&
+            active == this)
+        {
+            ActiveByTarget.Remove(targetInstanceId);
+        }
+    }
+}
+#endif
 
 internal class ConeAimData : MonoBehaviour
 {

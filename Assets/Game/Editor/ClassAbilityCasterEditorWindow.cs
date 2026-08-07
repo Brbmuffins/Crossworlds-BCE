@@ -945,6 +945,7 @@ namespace Crossworlds.EditorTools
                 "hitVFX",
                 "chainVFX",
                 "healVFX",
+                "shieldVFX",
                 "spawnTurret",
                 "turretPrefab",
                 "deployablePrefab");
@@ -1019,6 +1020,9 @@ namespace Crossworlds.EditorTools
                 GameObject healVFX = ability
                     .FindPropertyRelative("healVFX")
                     ?.objectReferenceValue as GameObject;
+                GameObject shieldVFX = ability
+                    .FindPropertyRelative("shieldVFX")
+                    ?.objectReferenceValue as GameObject;
                 GameObject deployable = ability
                     .FindPropertyRelative("deployablePrefab")
                     ?.objectReferenceValue as GameObject;
@@ -1034,6 +1038,7 @@ namespace Crossworlds.EditorTools
                     castVFX,
                     hitVFX,
                     healVFX,
+                    shieldVFX,
                     deployable);
 
                 using (new EditorGUILayout.HorizontalScope())
@@ -1306,6 +1311,8 @@ namespace Crossworlds.EditorTools
                 ?.objectReferenceValue as GameObject;
             GameObject heal = ability.FindPropertyRelative("healVFX")
                 ?.objectReferenceValue as GameObject;
+            GameObject shield = ability.FindPropertyRelative("shieldVFX")
+                ?.objectReferenceValue as GameObject;
             GameObject deploy = ability
                 .FindPropertyRelative("deployablePrefab")
                 ?.objectReferenceValue as GameObject;
@@ -1316,6 +1323,7 @@ namespace Crossworlds.EditorTools
                 $"Hit: {(hit != null ? hit.name : "None")}   " +
                 $"Chain: {(chain != null ? chain.name : "None")}   " +
                 $"Heal: {(heal != null ? heal.name : "None")}   " +
+                $"Shield: {(shield != null ? shield.name : "None")}   " +
                 $"Deploy: {(deploy != null ? deploy.name : "None")}";
             EditorGUILayout.LabelField(summary, EditorStyles.miniLabel);
         }
@@ -1343,6 +1351,8 @@ namespace Crossworlds.EditorTools
                     AssignVFX(ability, "chainVFX", selectedVFX);
                 if (GUILayout.Button("→ Heal"))
                     AssignVFX(ability, "healVFX", selectedVFX);
+                if (GUILayout.Button("→ Shield"))
+                    AssignVFX(ability, "shieldVFX", selectedVFX);
                 if (GUILayout.Button("→ Deployable"))
                     AssignVFX(ability, "deployablePrefab", selectedVFX);
             }

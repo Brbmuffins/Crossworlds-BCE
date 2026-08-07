@@ -22,6 +22,7 @@ namespace Crossworlds.EditorTools
         GameObject castInstance;
         GameObject hitInstance;
         GameObject healInstance;
+        GameObject shieldInstance;
         GameObject deployableInstance;
         GameObject ground;
         GameObject targetMarker;
@@ -35,6 +36,7 @@ namespace Crossworlds.EditorTools
         GameObject castSource;
         GameObject hitSource;
         GameObject healSource;
+        GameObject shieldSource;
         GameObject deployableSource;
         AnimationClip castAnimation;
         float animationPlaybackSpeed = 1f;
@@ -46,6 +48,7 @@ namespace Crossworlds.EditorTools
         bool castTriggered;
         bool hitTriggered;
         bool healTriggered;
+        bool shieldTriggered;
         bool deployableTriggered;
         float previewTime;
         float sequenceDuration = 4f;
@@ -72,6 +75,7 @@ namespace Crossworlds.EditorTools
             GameObject nextCastVFX,
             GameObject nextHitVFX,
             GameObject nextHealVFX,
+            GameObject nextShieldVFX,
             GameObject nextDeployable)
         {
             if (Matches(
@@ -85,6 +89,7 @@ namespace Crossworlds.EditorTools
                 nextCastVFX,
                 nextHitVFX,
                 nextHealVFX,
+                nextShieldVFX,
                 nextDeployable))
                 return;
 
@@ -100,6 +105,7 @@ namespace Crossworlds.EditorTools
             castSource = nextCastVFX;
             hitSource = nextHitVFX;
             healSource = nextHealVFX;
+            shieldSource = nextShieldVFX;
             deployableSource = nextDeployable;
             BuildStage();
         }
@@ -124,6 +130,7 @@ namespace Crossworlds.EditorTools
             AdvanceEffect(castInstance, delta);
             AdvanceEffect(hitInstance, delta);
             AdvanceEffect(healInstance, delta);
+            AdvanceEffect(shieldInstance, delta);
             AdvanceEffect(deployableInstance, delta);
 
             if (previewTime >= nextBoundsUpdate)
@@ -198,11 +205,13 @@ namespace Crossworlds.EditorTools
             castTriggered = false;
             hitTriggered = false;
             healTriggered = false;
+            shieldTriggered = false;
             deployableTriggered = false;
             DeactivateEffect(castingInstance);
             DeactivateEffect(castInstance);
             DeactivateEffect(hitInstance);
             DeactivateEffect(healInstance);
+            DeactivateEffect(shieldInstance);
             DeactivateEffect(deployableInstance);
             StartCharacterAnimation();
             ActivateEffect(castingInstance);
@@ -213,6 +222,7 @@ namespace Crossworlds.EditorTools
                 SetEffectPause(castInstance, true);
                 SetEffectPause(hitInstance, true);
                 SetEffectPause(healInstance, true);
+                SetEffectPause(shieldInstance, true);
                 SetEffectPause(deployableInstance, true);
             }
             stageBounds = CalculateStageBounds();
@@ -225,6 +235,7 @@ namespace Crossworlds.EditorTools
             SetEffectPause(castInstance, !playing);
             SetEffectPause(hitInstance, !playing);
             SetEffectPause(healInstance, !playing);
+            SetEffectPause(shieldInstance, !playing);
             SetEffectPause(deployableInstance, !playing);
             lastUpdate = EditorApplication.timeSinceStartup;
         }
@@ -245,6 +256,7 @@ namespace Crossworlds.EditorTools
             castInstance = null;
             hitInstance = null;
             healInstance = null;
+            shieldInstance = null;
             deployableInstance = null;
             ground = null;
             targetMarker = null;
@@ -254,6 +266,7 @@ namespace Crossworlds.EditorTools
             castSource = null;
             hitSource = null;
             healSource = null;
+            shieldSource = null;
             deployableSource = null;
             castAnimation = null;
             animationPlaybackSpeed = 1f;
@@ -279,6 +292,7 @@ namespace Crossworlds.EditorTools
             GameObject nextCastVFX,
             GameObject nextHitVFX,
             GameObject nextHealVFX,
+            GameObject nextShieldVFX,
             GameObject nextDeployable)
         {
             return preview != null &&
@@ -296,6 +310,7 @@ namespace Crossworlds.EditorTools
                    castSource == nextCastVFX &&
                    hitSource == nextHitVFX &&
                    healSource == nextHealVFX &&
+                   shieldSource == nextShieldVFX &&
                    deployableSource == nextDeployable;
         }
 
@@ -312,6 +327,7 @@ namespace Crossworlds.EditorTools
             GameObject nextCast = castSource;
             GameObject nextHit = hitSource;
             GameObject nextHeal = healSource;
+            GameObject nextShield = shieldSource;
             GameObject nextDeployable = deployableSource;
 
             Clear();
@@ -327,6 +343,7 @@ namespace Crossworlds.EditorTools
             castSource = nextCast;
             hitSource = nextHit;
             healSource = nextHeal;
+            shieldSource = nextShield;
             deployableSource = nextDeployable;
 
             if (characterSource == null) return;
@@ -380,6 +397,11 @@ namespace Crossworlds.EditorTools
                 healSource,
                 "Spellbook_HealVFX",
                 targetPosition + Vector3.up * 0.5f,
+                false);
+            shieldInstance = CreateStageObject(
+                shieldSource,
+                "Spellbook_ShieldVFX",
+                targetPosition,
                 false);
             deployableInstance = CreateStageObject(
                 deployableSource,
@@ -591,6 +613,13 @@ namespace Crossworlds.EditorTools
                 healTriggered = true;
                 ActivateEffect(healInstance);
             }
+
+            if (!shieldTriggered &&
+                previewTime >= castTime + HitDelay)
+            {
+                shieldTriggered = true;
+                ActivateEffect(shieldInstance);
+            }
         }
 
         static void ActivateEffect(GameObject root)
@@ -743,6 +772,8 @@ namespace Crossworlds.EditorTools
                 hitInstance, ref bounds, ref found);
             EncapsulateRenderers(
                 healInstance, ref bounds, ref found);
+            EncapsulateRenderers(
+                shieldInstance, ref bounds, ref found);
             EncapsulateRenderers(
                 deployableInstance, ref bounds, ref found);
 
