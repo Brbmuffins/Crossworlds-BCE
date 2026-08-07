@@ -329,7 +329,7 @@ MonoBehaviour:
     indicatorSize: 15
     spawnTurret: 0
     turretPrefab: {fileID: 0}
-    cooldown: 0
+    cooldown: 10
     manaCost: 0
     icon: {fileID: 21300000, guid: b2a3a45fda3b8774aa4c547c4297bd28, type: 3}
     instantCast: 0
@@ -357,6 +357,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 1751917841625684442, guid: fd473c4be118b1e45a7a4c3ae8d705d7, type: 3}
+    shieldVFX: {fileID: 0}
     chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -366,6 +367,7 @@ MonoBehaviour:
     shieldAbsorb: 0
     shieldDuration: 0
     healAmount: 0
+    healingDelay: 0
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 0
@@ -436,6 +438,7 @@ MonoBehaviour:
     castingVFX: {fileID: 3741179141638421292, guid: e31102c820f3d534e8cb8321756eecfd, type: 3}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 5702081643239173938, guid: c4e024e869935d4439fbc6a3aa5c6020, type: 3}
+    shieldVFX: {fileID: 0}
     chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 1
@@ -445,6 +448,7 @@ MonoBehaviour:
     shieldAbsorb: 0
     shieldDuration: 0
     healAmount: 0
+    healingDelay: 0
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
@@ -479,7 +483,7 @@ MonoBehaviour:
     variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
     shape: 1
     category: 0
-    range: 4
+    range: 8
     coneAngle: 60
     useFixedRange: 1
     rectWidth: 1.5
@@ -514,6 +518,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 4669621928147992323, guid: 84d591399945da04c85ad388ca83cbb9, type: 3}
+    shieldVFX: {fileID: 0}
     chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -523,6 +528,7 @@ MonoBehaviour:
     shieldAbsorb: 0
     shieldDuration: 0
     healAmount: 0
+    healingDelay: 0
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
@@ -592,6 +598,7 @@ MonoBehaviour:
     castingVFX: {fileID: 49446824548611423, guid: 3012ba52ddf57bf4a89233107b62ba71, type: 3}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 2622972293011808333, guid: 0edc58dcac2f3f648b88f4198ffa5b46, type: 3}
+    shieldVFX: {fileID: 0}
     chainVFX: {fileID: 0}
     castVFXAtCaster: 1
     hitVFXFollowsTarget: 0
@@ -601,6 +608,7 @@ MonoBehaviour:
     shieldAbsorb: 0
     shieldDuration: 0
     healAmount: 0
+    healingDelay: 0
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
@@ -671,6 +679,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    shieldVFX: {fileID: 0}
     chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -680,6 +689,7 @@ MonoBehaviour:
     shieldAbsorb: 0
     shieldDuration: 0
     healAmount: 0
+    healingDelay: 0
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
@@ -748,6 +758,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    shieldVFX: {fileID: 0}
     chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -757,6 +768,7 @@ MonoBehaviour:
     shieldAbsorb: 0
     shieldDuration: 0
     healAmount: 0
+    healingDelay: 0
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
@@ -825,6 +837,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    shieldVFX: {fileID: 0}
     chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -834,6 +847,7 @@ MonoBehaviour:
     shieldAbsorb: 0
     shieldDuration: 0
     healAmount: 0
+    healingDelay: 0
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
@@ -902,6 +916,7 @@ MonoBehaviour:
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 0}
+    shieldVFX: {fileID: 0}
     chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -911,6 +926,7 @@ MonoBehaviour:
     shieldAbsorb: 0
     shieldDuration: 0
     healAmount: 0
+    healingDelay: 0
     hotTickAmount: 0
     hotTicks: 0
     hotInterval: 1
