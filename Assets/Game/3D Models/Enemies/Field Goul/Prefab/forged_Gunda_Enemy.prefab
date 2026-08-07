@@ -89,6 +89,10 @@ PrefabInstance:
       value: 0.8
       objectReference: {fileID: 0}
     - target: {fileID: 4113607730127671070, guid: 7d58e2ca87a1a1e47930db2b695dfa13, type: 3}
+      propertyPath: lootBeamPrefab
+      value: 
+      objectReference: {fileID: 3621047873860463696, guid: fb3b9b0b33d48c64c8c11e01dbe71caa, type: 3}
+    - target: {fileID: 4113607730127671070, guid: 7d58e2ca87a1a1e47930db2b695dfa13, type: 3}
       propertyPath: enemyTemplateId
       value: gunda_basic
       objectReference: {fileID: 0}
@@ -114,7 +118,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4113607730127671070, guid: 7d58e2ca87a1a1e47930db2b695dfa13, type: 3}
       propertyPath: enemyForgeRuntimeProfileVersion
-      value: 27
+      value: 28
       objectReference: {fileID: 0}
     - target: {fileID: 4113607730127671070, guid: 7d58e2ca87a1a1e47930db2b695dfa13, type: 3}
       propertyPath: 'attackAnimationImpactDelays.Array.data[0]'
