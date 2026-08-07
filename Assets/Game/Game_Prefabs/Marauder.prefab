@@ -332,6 +332,7 @@ MonoBehaviour:
     cooldown: 0
     manaCost: 0
     icon: {fileID: 21300000, guid: b2a3a45fda3b8774aa4c547c4297bd28, type: 3}
+    instantCast: 0
     castTime: 0
     marauderCastAnimation: {fileID: -203655887218126122, guid: 94f4aa9d1cdbf404ca2cb7a44372b5d4, type: 3}
     moveCasterToTarget: 1
@@ -407,6 +408,7 @@ MonoBehaviour:
     cooldown: 8
     manaCost: 20
     icon: {fileID: 21300000, guid: 34e6f6c3392496b43ac53611bdd9b593, type: 3}
+    instantCast: 0
     castTime: 0
     marauderCastAnimation: {fileID: -203655887218126122, guid: a07905759d0f2224ea985b91bc803968, type: 3}
     moveCasterToTarget: 0
@@ -478,11 +480,12 @@ MonoBehaviour:
     indicatorSize: 1.5
     spawnTurret: 0
     turretPrefab: {fileID: 0}
-    cooldown: 3
-    manaCost: 0
+    cooldown: 0.5
+    manaCost: 5
     icon: {fileID: 21300000, guid: d520463c6ea6a9340811452d2a5cfe83, type: 3}
-    castTime: 0.6
-    marauderCastAnimation: {fileID: 0}
+    instantCast: 1
+    castTime: 0
+    marauderCastAnimation: {fileID: -203655887218126122, guid: bde48b7107dde2d43b9e048b2572ea36, type: 3}
     moveCasterToTarget: 0
     instantMovement: 0
     movementTiming: 0
@@ -500,10 +503,10 @@ MonoBehaviour:
     targetTag: Enemy
     chargedTint: {r: 0, g: 0, b: 0, a: 0}
     fireVisual: 0
-    castVFX: {fileID: 0}
+    castVFX: {fileID: 9167577437533287470, guid: 27e6dced4db01684086133a107437c49, type: 3}
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
-    hitVFX: {fileID: 0}
+    hitVFX: {fileID: 4669621928147992323, guid: 84d591399945da04c85ad388ca83cbb9, type: 3}
     chainVFX: {fileID: 0}
     castVFXAtCaster: 0
     hitVFXFollowsTarget: 0
@@ -556,6 +559,7 @@ MonoBehaviour:
     cooldown: 3
     manaCost: 0
     icon: {fileID: 0}
+    instantCast: 0
     castTime: 0.6
     marauderCastAnimation: {fileID: 0}
     moveCasterToTarget: 0
@@ -629,6 +633,7 @@ MonoBehaviour:
     cooldown: 3
     manaCost: 0
     icon: {fileID: 0}
+    instantCast: 0
     castTime: 0.6
     marauderCastAnimation: {fileID: 0}
     moveCasterToTarget: 0
@@ -702,6 +707,7 @@ MonoBehaviour:
     cooldown: 3
     manaCost: 0
     icon: {fileID: 0}
+    instantCast: 0
     castTime: 0.6
     marauderCastAnimation: {fileID: 0}
     moveCasterToTarget: 0
@@ -775,6 +781,7 @@ MonoBehaviour:
     cooldown: 3
     manaCost: 0
     icon: {fileID: 0}
+    instantCast: 0
     castTime: 0.6
     marauderCastAnimation: {fileID: 0}
     moveCasterToTarget: 0

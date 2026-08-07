@@ -122,6 +122,9 @@ public class AbilityDef
     [MarauderAnimationClip]
     [Tooltip("Optional class-compatible animation clip played when this spell is committed.")]
     public AnimationClip marauderCastAnimation;
+    [Range(0.1f, 3f)]
+    [Tooltip("Playback-speed multiplier for the assigned cast animation. 1 is normal speed, 0.5 is half speed, and 2 is double speed. Movement spells apply this after synchronizing the animation to landing.")]
+    public float animationPlaybackSpeed = 1f;
 
     [Header("Caster Movement")]
     [Tooltip("Move the caster to the clicked ability location when this spell resolves.")]
@@ -1632,7 +1635,8 @@ public class AbilityCaster : NetworkBehaviour
         AbilityDef animationAbility = GetVariantPayload(ability, variantIndex) ?? ability;
         castAnimator?.PlayCast(
             animationAbility.category,
-            animationAbility.marauderCastAnimation);
+            animationAbility.marauderCastAnimation,
+            Mathf.Max(0.01f, animationAbility.animationPlaybackSpeed));
     }
 
     void BroadcastCommittedCastAnimation(AbilityDef ability, int variantIndex)
@@ -3994,7 +3998,9 @@ public class AbilityCaster : NetworkBehaviour
         if (movementAbility == null)
             return;
 
-        float playbackSpeed = 1f;
+        float playbackSpeed = Mathf.Max(
+            0.01f,
+            movementAbility.animationPlaybackSpeed);
         AnimationClip clip =
             movementAbility.marauderCastAnimation;
         if (clip != null && movementDuration > 0.01f)
@@ -4003,7 +4009,7 @@ public class AbilityCaster : NetworkBehaviour
                 movementAbility.animationLandingPoint,
                 0.1f,
                 1f);
-            playbackSpeed =
+            playbackSpeed *=
                 clip.length * landingPoint /
                 movementDuration;
         }
@@ -6213,6 +6219,7 @@ public class AbilityCaster : NetworkBehaviour
         payload.manaCost = owner.manaCost;
         payload.castTime = owner.castTime;
         payload.marauderCastAnimation = owner.marauderCastAnimation;
+        payload.animationPlaybackSpeed = owner.animationPlaybackSpeed;
         payload.moveCasterToTarget = owner.moveCasterToTarget;
         payload.instantMovement = owner.instantMovement;
         payload.movementTiming = owner.movementTiming;

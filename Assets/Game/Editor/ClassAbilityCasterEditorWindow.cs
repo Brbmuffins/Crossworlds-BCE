@@ -805,7 +805,8 @@ namespace Crossworlds.EditorTools
             DrawFieldGroup(
                 "CAST", ability,
                 "castTime",
-                "marauderCastAnimation");
+                "marauderCastAnimation",
+                "animationPlaybackSpeed");
         }
 
         void DrawMovementLogistics(SerializedProperty ability)
@@ -983,6 +984,9 @@ namespace Crossworlds.EditorTools
                 AnimationClip castAnimation = ability
                     .FindPropertyRelative("marauderCastAnimation")
                     ?.objectReferenceValue as AnimationClip;
+                float animationPlaybackSpeed = ability
+                    .FindPropertyRelative("animationPlaybackSpeed")
+                    ?.floatValue ?? 1f;
                 AbilityCategory category = (AbilityCategory)(
                     ability.FindPropertyRelative("category")
                         ?.intValue ?? 0);
@@ -1011,6 +1015,7 @@ namespace Crossworlds.EditorTools
                 spellPreview.EnsureSpell(
                     prefabAsset,
                     castAnimation,
+                    animationPlaybackSpeed,
                     category,
                     castTime,
                     range,

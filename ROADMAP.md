@@ -82,6 +82,8 @@ conversation: it names its files, acceptance criteria, and dependencies. Tasks m
 > spell skip the aim/confirm decision phase and snapshot the current cursor aim on
 > hotkey press. Normal cast time, animation, cost, cooldown, server authority, and
 > effects still apply; Spell Forge and player spellbook UI expose the delivery mode.
+> The Animation tab also exposes a per-spell playback-speed multiplier and applies
+> it consistently to live preview, ordinary casts, variants, and movement casts.
 > The `#if !UNITY_SERVER` guards described in the 1.5 note above were the *bare* form;
 > the required convention is `#if UNITY_EDITOR || !UNITY_SERVER`, and the 8 remaining
 > bare guards (HeroCosmeticApplier, StatusEffectHUD, ShieldValueHUD, GoldHUD,
