@@ -37,7 +37,10 @@ public sealed class InventoryBagView : MonoBehaviour
     static readonly Color FilledSlot = new Color32(40, 55, 48, 225);
 
     public void Initialize(Action close, Action<InventoryFilter> filter, Action<int> click,
-        Action<int, PointerEventData> enter, Action exit)
+        Action<int, PointerEventData> enter, Action exit,
+        Action<int, PointerEventData> beginDrag,
+        Action<int, PointerEventData> drag,
+        Action<int, PointerEventData> endDrag)
     {
         closeButton.onClick.AddListener(() => close());
         allTab.onClick.AddListener(() => filter(InventoryFilter.All));
@@ -53,8 +56,17 @@ public sealed class InventoryBagView : MonoBehaviour
             onEnter.callback.AddListener(data => enter(index, (PointerEventData)data));
             var onExit = new EventTrigger.Entry { eventID = EventTriggerType.PointerExit };
             onExit.callback.AddListener(_ => exit());
+            var onBeginDrag = new EventTrigger.Entry { eventID = EventTriggerType.BeginDrag };
+            onBeginDrag.callback.AddListener(data => beginDrag(index, (PointerEventData)data));
+            var onDrag = new EventTrigger.Entry { eventID = EventTriggerType.Drag };
+            onDrag.callback.AddListener(data => drag(index, (PointerEventData)data));
+            var onEndDrag = new EventTrigger.Entry { eventID = EventTriggerType.EndDrag };
+            onEndDrag.callback.AddListener(data => endDrag(index, (PointerEventData)data));
             trigger.triggers.Add(onEnter);
             trigger.triggers.Add(onExit);
+            trigger.triggers.Add(onBeginDrag);
+            trigger.triggers.Add(onDrag);
+            trigger.triggers.Add(onEndDrag);
         }
         SetActiveFilter(InventoryFilter.All);
     }
