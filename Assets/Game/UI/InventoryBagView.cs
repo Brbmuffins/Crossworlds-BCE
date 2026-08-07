@@ -14,6 +14,7 @@ public sealed class InventoryBagView : MonoBehaviour
     {
         public Button button;
         public Image background;
+        public Outline rarityOutline;
         public Image icon;
         public Image equippedMarker;
         public TextMeshProUGUI quantity;
@@ -78,9 +79,34 @@ public sealed class InventoryBagView : MonoBehaviour
         slot.icon.sprite = sprite;
         slot.icon.preserveAspect = true;
         slot.icon.color = sprite != null ? Color.white : (count > 0 ? rarity : Color.clear);
-        slot.background.color = count > 0 ? FilledSlot : EmptySlot;
+        if (count > 0)
+        {
+            Color neon = NeonRarity(rarity);
+            slot.background.color = Color.Lerp(FilledSlot, neon, 0.16f);
+            if (slot.rarityOutline != null)
+            {
+                neon.a = 0.96f;
+                slot.rarityOutline.effectColor = neon;
+                slot.rarityOutline.effectDistance = new Vector2(2f, -2f);
+            }
+        }
+        else
+        {
+            slot.background.color = EmptySlot;
+            if (slot.rarityOutline != null) slot.rarityOutline.effectColor = Color.clear;
+        }
         slot.quantity.text = count > 1 ? count.ToString() : "";
         slot.equippedMarker.gameObject.SetActive(equipped);
+    }
+
+    static Color NeonRarity(Color rarity)
+    {
+        float max = Mathf.Max(rarity.r, Mathf.Max(rarity.g, rarity.b));
+        float min = Mathf.Min(rarity.r, Mathf.Min(rarity.g, rarity.b));
+        if (max - min < 0.18f) return new Color(1f, 1f, 1f, 1f);
+        if (rarity.g > rarity.r && rarity.g > rarity.b) return new Color(0.2f, 1f, 0.3f, 1f);
+        if (rarity.r > 0.45f && rarity.b > 0.65f) return new Color(0.82f, 0.16f, 1f, 1f);
+        return new Color(0.12f, 0.55f, 1f, 1f);
     }
 
     public void SetActiveFilter(InventoryFilter filter)
