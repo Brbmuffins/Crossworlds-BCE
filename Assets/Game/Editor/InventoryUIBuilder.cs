@@ -9,8 +9,7 @@ using UnityEngine.UI;
 public static class InventoryUIBuilder
 {
     const string PrefabPath = "Assets/Game/UI/Resources/Inventory/InventoryWindow.prefab";
-    const string MarblePath = "Assets/Game/UI/Resources/Inventory/marble-gold-border.png";
-    const string ElvenPath = "Assets/Game/UI/Resources/Inventory/elven-inventory-background.png";
+    const string GothicPanelPath = "Assets/Game/UI/Resources/Inventory/inventory-gothic-panel-clean.png";
     const string CoinsPath = "Assets/Game/UI/Resources/Inventory/gold-coins.png";
 
     static InventoryUIBuilder()
@@ -21,11 +20,9 @@ public static class InventoryUIBuilder
     [MenuItem("BCE/Setup/Rebuild Inventory UI")]
     public static void Rebuild()
     {
-        ConfigureSprite(MarblePath);
-        ConfigureSprite(ElvenPath);
+        ConfigureSprite(GothicPanelPath);
         ConfigureSprite(CoinsPath);
-        AssetDatabase.ImportAsset(MarblePath, ImportAssetOptions.ForceUpdate);
-        AssetDatabase.ImportAsset(ElvenPath, ImportAssetOptions.ForceUpdate);
+        AssetDatabase.ImportAsset(GothicPanelPath, ImportAssetOptions.ForceUpdate);
         AssetDatabase.ImportAsset(CoinsPath, ImportAssetOptions.ForceUpdate);
 
         var root = new GameObject("InventoryWindow", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster), typeof(InventoryBagView));
@@ -42,21 +39,10 @@ public static class InventoryUIBuilder
         scaler.matchWidthOrHeight = 0.5f;
 
         var panel = Rect("Panel", root.transform, new Vector2(0.5f, 0.5f), new Vector2(500f, 620f));
-        var marble = panel.gameObject.AddComponent<Image>();
-        marble.sprite = AssetDatabase.LoadAssetAtPath<Sprite>(MarblePath);
-        marble.type = Image.Type.Simple;
-        marble.color = Color.white;
-
-        var inner = Rect("ElvenCrest", panel, new Vector2(0.5f, 1f), new Vector2(58f, 58f));
-        inner.anchoredPosition = new Vector2(0f, -54f);
-        var innerImage = inner.gameObject.AddComponent<Image>();
-        innerImage.sprite = AssetDatabase.LoadAssetAtPath<Sprite>(ElvenPath);
-        innerImage.type = Image.Type.Simple;
-        innerImage.color = new Color(1f, 1f, 1f, 0.16f);
-        innerImage.raycastTarget = false;
-
-        var wash = Stretch("IvoryWash", panel, 12f);
-        wash.gameObject.AddComponent<Image>().color = new Color32(255, 251, 240, 72);
+        var gothicPanel = panel.gameObject.AddComponent<Image>();
+        gothicPanel.sprite = AssetDatabase.LoadAssetAtPath<Sprite>(GothicPanelPath);
+        gothicPanel.type = Image.Type.Simple;
+        gothicPanel.color = Color.white;
 
         var dragArea = Rect("DragArea", panel, new Vector2(0.5f, 1f), new Vector2(420f, 76f));
         dragArea.anchoredPosition = new Vector2(-18f, -48f);
@@ -132,7 +118,10 @@ public static class InventoryUIBuilder
 
     static void EnsurePrefab()
     {
-        Rebuild();
+        // Never overwrite an approved/customized inventory whenever Unity opens or
+        // a batch build starts. The menu command remains the explicit rebuild path.
+        if (AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath) == null)
+            Rebuild();
     }
 
     static void ConfigureSprite(string path)

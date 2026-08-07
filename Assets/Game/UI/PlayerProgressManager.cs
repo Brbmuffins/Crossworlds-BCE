@@ -143,9 +143,23 @@ public class PlayerProgressManager : MonoBehaviour
         try
         {
             var response = JsonUtility.FromJson<KillRewardResponse>(responseJson);
-            xpGained = response != null && response.data != null
-                ? response.data.xpGained
-                : response?.xpGained ?? 0;
+            var reward = response != null ? response.data : null;
+            xpGained = reward != null ? reward.xpGained : response?.xpGained ?? 0;
+
+            // New servers return the canonical post-kill progression state. Apply it
+            // immediately so the XP bar and level-up feedback do not wait on a GET.
+            if (reward != null && reward.level > 0)
+            {
+                int previousLevel = Level;
+                Level = reward.level;
+                Xp = Mathf.Max(0, reward.experience);
+                XpToNext = reward.xpToNext > 0
+                    ? reward.xpToNext
+                    : XpForLevel(Level + 1);
+                Gold = Mathf.Max(0, reward.gold);
+                OnDataRefreshed?.Invoke();
+                if (Level > previousLevel) OnLevelUp?.Invoke(Level);
+            }
         }
         catch (Exception e)
         {
@@ -269,7 +283,11 @@ public class PlayerProgressManager : MonoBehaviour
         public int characterId, level, experience, xp, gold, stat_str, stat_agi, stat_int, stat_vit;
     }
 
-    [Serializable] class KillRewardData { public int xpGained; }
+    [Serializable] class KillRewardData
+    {
+        public int xpGained, goldGained, level, experience, xpToNext, gold;
+        public bool leveledUp;
+    }
     [Serializable] class KillRewardResponse
     {
         public int xpGained;

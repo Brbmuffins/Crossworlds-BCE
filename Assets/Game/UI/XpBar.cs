@@ -36,7 +36,7 @@ public class XpBar : MonoBehaviour
 
     float _displayFraction = 0f;
     float _targetFraction  = 0f;
-    Coroutine _gainRoutine;
+    int _activeGainCount;
 
     const int   CanvasOrder       = 99;
     const float ActionBarXpWidth  = 530f;
@@ -140,15 +140,20 @@ public class XpBar : MonoBehaviour
     void OnXpGained(int amount)
     {
         if (amount <= 0 || _gainText == null) return;
-        if (_gainRoutine != null) StopCoroutine(_gainRoutine);
-        _gainRoutine = StartCoroutine(ShowXpGain(amount));
+
+        // Give every confirmed kill its own label. Rapid kills therefore stack
+        // briefly instead of replacing an earlier reward before it can fade.
+        var gain = Instantiate(_gainText, _gainText.transform.parent);
+        gain.gameObject.name = "XpGainText_Floating";
+        gain.gameObject.SetActive(true);
+        StartCoroutine(ShowXpGain(gain, amount, _activeGainCount++));
     }
 
-    IEnumerator ShowXpGain(int amount)
+    IEnumerator ShowXpGain(TextMeshProUGUI gain, int amount, int stackIndex)
     {
-        _gainText.text = $"+{amount} XP";
-        RectTransform rt = _gainText.rectTransform;
-        Vector2 start = new Vector2(0f, 22f);
+        gain.text = $"+{amount} XP";
+        RectTransform rt = gain.rectTransform;
+        Vector2 start = new Vector2(0f, 22f + Mathf.Min(stackIndex, 3) * 18f);
         Color color = new Color(0.82f, 0.62f, 1f, 1f);
         float duration = 1.35f;
 
@@ -157,12 +162,12 @@ public class XpBar : MonoBehaviour
             float p = Mathf.Clamp01(t / duration);
             rt.anchoredPosition = start + Vector2.up * (24f * p);
             color.a = 1f - Mathf.Clamp01((p - 0.55f) / 0.45f);
-            _gainText.color = color;
+            gain.color = color;
             yield return null;
         }
 
-        _gainText.text = "";
-        _gainRoutine = null;
+        Destroy(gain.gameObject);
+        _activeGainCount = Mathf.Max(0, _activeGainCount - 1);
     }
 
     IEnumerator LevelUpFlash()
