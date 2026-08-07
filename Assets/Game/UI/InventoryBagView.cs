@@ -14,6 +14,7 @@ public sealed class InventoryBagView : MonoBehaviour
     {
         public Button button;
         public Image background;
+        public Outline rarityOutline;
         public Image icon;
         public Image equippedMarker;
         public TextMeshProUGUI quantity;
@@ -37,7 +38,10 @@ public sealed class InventoryBagView : MonoBehaviour
     static readonly Color FilledSlot = new Color32(40, 55, 48, 225);
 
     public void Initialize(Action close, Action<InventoryFilter> filter, Action<int> click,
-        Action<int, PointerEventData> enter, Action exit)
+        Action<int, PointerEventData> enter, Action exit,
+        Action<int, PointerEventData> beginDrag,
+        Action<int, PointerEventData> drag,
+        Action<int, PointerEventData> endDrag)
     {
         closeButton.onClick.AddListener(() => close());
         allTab.onClick.AddListener(() => filter(InventoryFilter.All));
@@ -53,8 +57,17 @@ public sealed class InventoryBagView : MonoBehaviour
             onEnter.callback.AddListener(data => enter(index, (PointerEventData)data));
             var onExit = new EventTrigger.Entry { eventID = EventTriggerType.PointerExit };
             onExit.callback.AddListener(_ => exit());
+            var onBeginDrag = new EventTrigger.Entry { eventID = EventTriggerType.BeginDrag };
+            onBeginDrag.callback.AddListener(data => beginDrag(index, (PointerEventData)data));
+            var onDrag = new EventTrigger.Entry { eventID = EventTriggerType.Drag };
+            onDrag.callback.AddListener(data => drag(index, (PointerEventData)data));
+            var onEndDrag = new EventTrigger.Entry { eventID = EventTriggerType.EndDrag };
+            onEndDrag.callback.AddListener(data => endDrag(index, (PointerEventData)data));
             trigger.triggers.Add(onEnter);
             trigger.triggers.Add(onExit);
+            trigger.triggers.Add(onBeginDrag);
+            trigger.triggers.Add(onDrag);
+            trigger.triggers.Add(onEndDrag);
         }
         SetActiveFilter(InventoryFilter.All);
     }
@@ -66,9 +79,34 @@ public sealed class InventoryBagView : MonoBehaviour
         slot.icon.sprite = sprite;
         slot.icon.preserveAspect = true;
         slot.icon.color = sprite != null ? Color.white : (count > 0 ? rarity : Color.clear);
-        slot.background.color = count > 0 ? FilledSlot : EmptySlot;
+        if (count > 0)
+        {
+            Color neon = NeonRarity(rarity);
+            slot.background.color = Color.Lerp(FilledSlot, neon, 0.16f);
+            if (slot.rarityOutline != null)
+            {
+                neon.a = 0.96f;
+                slot.rarityOutline.effectColor = neon;
+                slot.rarityOutline.effectDistance = new Vector2(2f, -2f);
+            }
+        }
+        else
+        {
+            slot.background.color = EmptySlot;
+            if (slot.rarityOutline != null) slot.rarityOutline.effectColor = Color.clear;
+        }
         slot.quantity.text = count > 1 ? count.ToString() : "";
         slot.equippedMarker.gameObject.SetActive(equipped);
+    }
+
+    static Color NeonRarity(Color rarity)
+    {
+        float max = Mathf.Max(rarity.r, Mathf.Max(rarity.g, rarity.b));
+        float min = Mathf.Min(rarity.r, Mathf.Min(rarity.g, rarity.b));
+        if (max - min < 0.18f) return new Color(1f, 1f, 1f, 1f);
+        if (rarity.g > rarity.r && rarity.g > rarity.b) return new Color(0.2f, 1f, 0.3f, 1f);
+        if (rarity.r > 0.45f && rarity.b > 0.65f) return new Color(0.82f, 0.16f, 1f, 1f);
+        return new Color(0.12f, 0.55f, 1f, 1f);
     }
 
     public void SetActiveFilter(InventoryFilter filter)

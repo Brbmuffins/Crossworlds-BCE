@@ -23,6 +23,10 @@ public sealed class InventoryBagUI : MonoBehaviour
     bool _open;
     bool _loading;
     bool _progressSubscribed;
+    bool _deleting;
+    Image _dragIcon;
+    GameObject _deleteConfirmation;
+    InventorySlotData _pendingDelete;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     static void Bootstrap()
@@ -79,7 +83,8 @@ public sealed class InventoryBagUI : MonoBehaviour
         _view = Instantiate(prefab, transform);
         _view.name = "InventoryWindow";
         _dragHandle = _view.GetComponentInChildren<InventoryWindowDragHandle>(true);
-        _view.Initialize(HidePanel, SetFilter, OnSlotClicked, OnSlotEnter, OnSlotExit);
+        _view.Initialize(HidePanel, SetFilter, OnSlotClicked, OnSlotEnter, OnSlotExit,
+            OnSlotBeginDrag, OnSlotDrag, OnSlotEndDrag);
     }
 
     void Toggle()
@@ -101,6 +106,8 @@ public sealed class InventoryBagUI : MonoBehaviour
     {
         _open = false;
         ItemTooltipUI.Instance?.Hide();
+        ClearDragIcon();
+        CloseDeleteConfirmation();
         if (_view != null) _view.gameObject.SetActive(false);
     }
 
@@ -212,6 +219,176 @@ public sealed class InventoryBagUI : MonoBehaviour
 
     void OnSlotExit() => ItemTooltipUI.Instance?.Hide();
 
+    void OnSlotBeginDrag(int visibleIndex, PointerEventData eventData)
+    {
+        if (_deleting || _deleteConfirmation != null) return;
+        var slot = VisibleSlot(visibleIndex);
+        if (slot == null) return;
+
+        ItemTooltipUI.Instance?.Hide();
+        ClearDragIcon();
+        var definition = LootItemCatalog.Find(slot.item_id);
+        var go = new GameObject("DraggedInventoryItem", typeof(RectTransform), typeof(CanvasGroup), typeof(Image));
+        go.transform.SetParent(_view.transform, false);
+        go.transform.SetAsLastSibling();
+        var rect = go.GetComponent<RectTransform>();
+        rect.sizeDelta = new Vector2(58f, 58f);
+        _dragIcon = go.GetComponent<Image>();
+        _dragIcon.sprite = definition != null ? definition.inventoryIcon : null;
+        _dragIcon.preserveAspect = true;
+        _dragIcon.color = _dragIcon.sprite != null ? Color.white : LootItemCatalog.RarityColor(ResolveRarity(slot));
+        go.GetComponent<CanvasGroup>().blocksRaycasts = false;
+        rect.position = eventData.position;
+    }
+
+    void OnSlotDrag(int visibleIndex, PointerEventData eventData)
+    {
+        if (_dragIcon != null) _dragIcon.rectTransform.position = eventData.position;
+    }
+
+    void OnSlotEndDrag(int visibleIndex, PointerEventData eventData)
+    {
+        var slot = VisibleSlot(visibleIndex);
+        ClearDragIcon();
+        if (slot == null || _dragHandle == null || _dragHandle.panel == null) return;
+        if (RectTransformUtility.RectangleContainsScreenPoint(_dragHandle.panel, eventData.position, eventData.pressEventCamera))
+            return;
+
+        if (ResolveRarity(slot) == ItemRarity.Common)
+            StartCoroutine(DeleteSlot(slot));
+        else
+            ShowDeleteConfirmation(slot);
+    }
+
+    ItemRarity ResolveRarity(InventorySlotData slot)
+    {
+        var definition = LootItemCatalog.Find(slot.item_id);
+        if (definition != null) return definition.rarity;
+        return Enum.TryParse(slot.rarity, true, out ItemRarity rarity) ? rarity : ItemRarity.Common;
+    }
+
+    void ClearDragIcon()
+    {
+        if (_dragIcon != null) Destroy(_dragIcon.gameObject);
+        _dragIcon = null;
+    }
+
+    void ShowDeleteConfirmation(InventorySlotData slot)
+    {
+        CloseDeleteConfirmation();
+        _pendingDelete = slot;
+
+        var overlay = new GameObject("DeleteItemConfirmation", typeof(RectTransform), typeof(Image));
+        overlay.transform.SetParent(_view.transform, false);
+        overlay.transform.SetAsLastSibling();
+        var overlayRect = overlay.GetComponent<RectTransform>();
+        overlayRect.anchorMin = Vector2.zero;
+        overlayRect.anchorMax = Vector2.one;
+        overlayRect.offsetMin = overlayRect.offsetMax = Vector2.zero;
+        overlay.GetComponent<Image>().color = new Color(0f, 0f, 0f, 0.62f);
+        _deleteConfirmation = overlay;
+
+        var box = new GameObject("Dialog", typeof(RectTransform), typeof(Image));
+        box.transform.SetParent(overlay.transform, false);
+        var boxRect = box.GetComponent<RectTransform>();
+        boxRect.anchorMin = boxRect.anchorMax = new Vector2(0.5f, 0.5f);
+        boxRect.sizeDelta = new Vector2(430f, 180f);
+        box.GetComponent<Image>().color = new Color(0.055f, 0.045f, 0.07f, 0.98f);
+
+        var message = CreateDialogText("Message", box.transform,
+            "Are you sure you want to delete this item?", 22f, FontStyles.Bold);
+        var messageRect = message.rectTransform;
+        messageRect.anchorMin = new Vector2(0f, 0.42f);
+        messageRect.anchorMax = new Vector2(1f, 1f);
+        messageRect.offsetMin = new Vector2(28f, 0f);
+        messageRect.offsetMax = new Vector2(-28f, -18f);
+
+        CreateDialogButton("Cancel", box.transform, new Vector2(-92f, 30f), CloseDeleteConfirmation,
+            new Color(0.22f, 0.20f, 0.25f, 1f));
+        CreateDialogButton("Delete", box.transform, new Vector2(92f, 30f), ConfirmDelete,
+            new Color(0.58f, 0.12f, 0.12f, 1f));
+    }
+
+    TextMeshProUGUI CreateDialogText(string name, Transform parent, string value, float fontSize, FontStyles style)
+    {
+        var go = new GameObject(name, typeof(RectTransform), typeof(TextMeshProUGUI));
+        go.transform.SetParent(parent, false);
+        var text = go.GetComponent<TextMeshProUGUI>();
+        text.text = value;
+        text.fontSize = fontSize;
+        text.fontStyle = style;
+        text.color = new Color(0.95f, 0.82f, 0.42f, 1f);
+        text.alignment = TextAlignmentOptions.Center;
+        text.raycastTarget = false;
+        return text;
+    }
+
+    void CreateDialogButton(string label, Transform parent, Vector2 position, Action action, Color color)
+    {
+        var go = new GameObject(label + "Button", typeof(RectTransform), typeof(Image), typeof(Button));
+        go.transform.SetParent(parent, false);
+        var rect = go.GetComponent<RectTransform>();
+        rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0f);
+        rect.pivot = new Vector2(0.5f, 0f);
+        rect.anchoredPosition = position;
+        rect.sizeDelta = new Vector2(150f, 42f);
+        var image = go.GetComponent<Image>();
+        image.color = color;
+        var button = go.GetComponent<Button>();
+        button.targetGraphic = image;
+        button.onClick.AddListener(() => action());
+        var text = CreateDialogText("Label", go.transform, label, 18f, FontStyles.Bold);
+        text.color = Color.white;
+        text.rectTransform.anchorMin = Vector2.zero;
+        text.rectTransform.anchorMax = Vector2.one;
+        text.rectTransform.offsetMin = text.rectTransform.offsetMax = Vector2.zero;
+    }
+
+    void ConfirmDelete()
+    {
+        var slot = _pendingDelete;
+        CloseDeleteConfirmation();
+        if (slot != null) StartCoroutine(DeleteSlot(slot));
+    }
+
+    void CloseDeleteConfirmation()
+    {
+        if (_deleteConfirmation != null) Destroy(_deleteConfirmation);
+        _deleteConfirmation = null;
+        _pendingDelete = null;
+    }
+
+    IEnumerator DeleteSlot(InventorySlotData slot)
+    {
+        if (_deleting || slot == null) yield break;
+        string characterId = GetCharacterId();
+        if (string.IsNullOrEmpty(characterId)) yield break;
+        _deleting = true;
+        _view.SetStatus("Deleting item...");
+        string token = !string.IsNullOrEmpty(AuthManager.Token) ? AuthManager.Token : PlayerPrefs.GetString("jwt_token", "");
+        string body = $"{{\"characterId\":{characterId},\"slot_index\":{slot.slot_index}}}";
+        using var request = new UnityWebRequest($"{ServerConfig.AuthBaseUrl}/api/inventory/delete", "POST");
+        request.uploadHandler = new UploadHandlerRaw(System.Text.Encoding.UTF8.GetBytes(body));
+        request.downloadHandler = new DownloadHandlerBuffer();
+        request.SetRequestHeader("Content-Type", "application/json");
+        request.SetRequestHeader("Authorization", $"Bearer {token}");
+        yield return request.SendWebRequest();
+        _deleting = false;
+
+        if (request.result == UnityWebRequest.Result.Success)
+        {
+            if (slot.slot_index >= 0 && slot.slot_index < _data.Length) _data[slot.slot_index] = null;
+            RenderSlots();
+            _view.SetStatus("");
+            StartCoroutine(FetchInventory());
+        }
+        else
+        {
+            string message = request.downloadHandler != null ? request.downloadHandler.text : request.error;
+            _view.SetStatus($"Delete failed: {message}");
+        }
+    }
+
     IEnumerator PostEquip(InventorySlotData slot, bool equip)
     {
         string characterId = GetCharacterId();
@@ -283,7 +460,14 @@ public sealed class InventoryBagUI : MonoBehaviour
     }
 
     [Serializable] sealed class InventoryResponse { public bool success; public string error; public InventorySlotData[] data; }
-    [Serializable] sealed class InventorySlotData { public int slot_index; public string item_id; public int quantity; public int equipped; }
+    [Serializable] sealed class InventorySlotData
+    {
+        public int slot_index;
+        public string item_id;
+        public int quantity;
+        public int equipped;
+        public string rarity;
+    }
     [Serializable] sealed class SavePayload { public int characterId; public List<InventorySlotData> slots; }
 }
 #endif

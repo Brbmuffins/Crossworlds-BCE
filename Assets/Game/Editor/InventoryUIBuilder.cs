@@ -49,9 +49,6 @@ public static class InventoryUIBuilder
         dragArea.gameObject.AddComponent<Image>().color = new Color(1f, 1f, 1f, 0f);
         dragArea.gameObject.AddComponent<InventoryWindowDragHandle>().panel = panel;
 
-        var title = Text("Title", panel, "Inventory", 31f, FontStyles.Bold, new Color32(77, 58, 29, 255),
-            new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(52f, -82f), new Vector2(-52f, -30f), TextAlignmentOptions.Center);
-        title.raycastTarget = false;
         var close = Button("Close", panel, "×", new Vector2(1f, 1f), new Vector2(-46f, -48f), new Vector2(34f, 34f));
 
         var all = Tab("All", panel, new Vector2(55f, -112f), 110f);
@@ -59,17 +56,22 @@ public static class InventoryUIBuilder
         var materials = Tab("Materials", panel, new Vector2(335f, -112f), 110f);
 
         var slots = new InventoryBagView.Slot[24];
-        const float size = 91f;
-        const float gap = 8f;
+        const float slotWidth = 94f;
+        const float slotHeight = 64f;
+        const float gap = 4f;
         for (int i = 0; i < slots.Length; i++)
         {
             int column = i % 4;
             int row = i / 4;
-            var slot = Rect($"Slot_{i:00}", panel, new Vector2(0f, 1f), new Vector2(size, 61f));
+            var slot = Rect($"Slot_{i:00}", panel, new Vector2(0f, 1f), new Vector2(slotWidth, slotHeight));
             slot.pivot = new Vector2(0f, 1f);
-            slot.anchoredPosition = new Vector2(55f + column * (size + gap), -146f - row * 64f);
+            slot.anchoredPosition = new Vector2(55f + column * (slotWidth + gap), -146f - row * (slotHeight + gap));
             var bg = slot.gameObject.AddComponent<Image>();
             bg.color = new Color32(25, 38, 35, 185);
+            var rarityOutline = slot.gameObject.AddComponent<Outline>();
+            rarityOutline.effectColor = Color.clear;
+            rarityOutline.effectDistance = new Vector2(2f, -2f);
+            rarityOutline.useGraphicAlpha = true;
             var button = slot.gameObject.AddComponent<Button>();
             button.targetGraphic = bg;
 
@@ -84,7 +86,15 @@ public static class InventoryUIBuilder
             equipped.anchoredPosition = new Vector2(-5f, -5f);
             equipped.gameObject.AddComponent<Image>().color = new Color32(48, 184, 87, 255);
             equipped.gameObject.SetActive(false);
-            slots[i] = new InventoryBagView.Slot { button = button, background = bg, icon = icon, equippedMarker = equipped.GetComponent<Image>(), quantity = qty };
+            slots[i] = new InventoryBagView.Slot
+            {
+                button = button,
+                background = bg,
+                rarityOutline = rarityOutline,
+                icon = icon,
+                equippedMarker = equipped.GetComponent<Image>(),
+                quantity = qty
+            };
         }
 
         var footerLine = Rect("FooterLine", panel, new Vector2(0.5f, 0f), new Vector2(390f, 1f));
