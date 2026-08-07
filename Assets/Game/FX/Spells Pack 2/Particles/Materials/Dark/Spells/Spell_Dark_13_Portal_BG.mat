@@ -69,6 +69,7 @@ Material:
     - _Cull: 2
     - _Custom_Data: 0
     - _DstBlend: 10
+    - _DstBlendAlpha: 10
     - _Float: 1
     - _Mix: 0.4
     - _Noise_1_Length_Scale: 2
@@ -85,6 +86,7 @@ Material:
     - _Soft_Particle: 1
     - _Speed: 2
     - _SrcBlend: 5
+    - _SrcBlendAlpha: 1
     - _Surface: 1
     - _Time_Mode: 1
     - _ZTest: 4
