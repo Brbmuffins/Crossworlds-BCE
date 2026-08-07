@@ -37,6 +37,7 @@ namespace Crossworlds.EditorTools
         GameObject healSource;
         GameObject deployableSource;
         AnimationClip castAnimation;
+        float animationPlaybackSpeed = 1f;
         AbilityCategory category;
         float castTime;
         float range;
@@ -57,12 +58,13 @@ namespace Crossworlds.EditorTools
 
         public string AnimationLabel =>
             castAnimation != null
-                ? castAnimation.name
+                ? $"{castAnimation.name}  •  {animationPlaybackSpeed:0.##}x"
                 : $"{category} Cast Animation";
 
         public void EnsureSpell(
             GameObject nextCharacter,
             AnimationClip nextAnimation,
+            float nextAnimationPlaybackSpeed,
             AbilityCategory nextCategory,
             float nextCastTime,
             float nextRange,
@@ -75,6 +77,7 @@ namespace Crossworlds.EditorTools
             if (Matches(
                 nextCharacter,
                 nextAnimation,
+                nextAnimationPlaybackSpeed,
                 nextCategory,
                 nextCastTime,
                 nextRange,
@@ -87,6 +90,9 @@ namespace Crossworlds.EditorTools
 
             characterSource = nextCharacter;
             castAnimation = nextAnimation;
+            animationPlaybackSpeed = Mathf.Max(
+                0.01f,
+                nextAnimationPlaybackSpeed);
             category = nextCategory;
             castTime = Mathf.Max(0f, nextCastTime);
             range = Mathf.Max(0f, nextRange);
@@ -250,6 +256,7 @@ namespace Crossworlds.EditorTools
             healSource = null;
             deployableSource = null;
             castAnimation = null;
+            animationPlaybackSpeed = 1f;
             previewTime = 0f;
             lastUpdate = 0d;
             stageBounds =
@@ -264,6 +271,7 @@ namespace Crossworlds.EditorTools
         bool Matches(
             GameObject nextCharacter,
             AnimationClip nextAnimation,
+            float nextAnimationPlaybackSpeed,
             AbilityCategory nextCategory,
             float nextCastTime,
             float nextRange,
@@ -276,6 +284,9 @@ namespace Crossworlds.EditorTools
             return preview != null &&
                    characterSource == nextCharacter &&
                    castAnimation == nextAnimation &&
+                   Mathf.Approximately(
+                       animationPlaybackSpeed,
+                       Mathf.Max(0.01f, nextAnimationPlaybackSpeed)) &&
                    category == nextCategory &&
                    Mathf.Approximately(
                        castTime, Mathf.Max(0f, nextCastTime)) &&
@@ -292,6 +303,8 @@ namespace Crossworlds.EditorTools
         {
             GameObject nextCharacter = characterSource;
             AnimationClip nextAnimation = castAnimation;
+            float nextAnimationPlaybackSpeed =
+                animationPlaybackSpeed;
             AbilityCategory nextCategory = category;
             float nextCastTime = castTime;
             float nextRange = range;
@@ -305,6 +318,8 @@ namespace Crossworlds.EditorTools
 
             characterSource = nextCharacter;
             castAnimation = nextAnimation;
+            animationPlaybackSpeed =
+                nextAnimationPlaybackSpeed;
             category = nextCategory;
             castTime = nextCastTime;
             range = nextRange;
@@ -378,7 +393,8 @@ namespace Crossworlds.EditorTools
                 4f,
                 castTime + 2.5f,
                 castAnimation != null
-                    ? castAnimation.length + 0.5f
+                    ? castAnimation.length /
+                        animationPlaybackSpeed + 0.5f
                     : 0f);
             Replay();
         }
@@ -497,6 +513,8 @@ namespace Crossworlds.EditorTools
                 AnimationClipPlayable clipPlayable =
                     AnimationClipPlayable.Create(
                         animationGraph, castAnimation);
+                clipPlayable.SetSpeed(
+                    animationPlaybackSpeed);
                 clipPlayable.SetApplyFootIK(true);
                 clipPlayable.SetApplyPlayableIK(true);
                 AnimationPlayableOutput output =

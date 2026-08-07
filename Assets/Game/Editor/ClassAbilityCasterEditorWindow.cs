@@ -696,6 +696,7 @@ namespace Crossworlds.EditorTools
 
             DrawFieldGroup(
                 "TIMING & COST", ability,
+                "instantCast",
                 "cooldown",
                 "manaCost");
 
@@ -804,7 +805,8 @@ namespace Crossworlds.EditorTools
             DrawFieldGroup(
                 "CAST", ability,
                 "castTime",
-                "marauderCastAnimation");
+                "marauderCastAnimation",
+                "animationPlaybackSpeed");
         }
 
         void DrawMovementLogistics(SerializedProperty ability)
@@ -982,6 +984,9 @@ namespace Crossworlds.EditorTools
                 AnimationClip castAnimation = ability
                     .FindPropertyRelative("marauderCastAnimation")
                     ?.objectReferenceValue as AnimationClip;
+                float animationPlaybackSpeed = ability
+                    .FindPropertyRelative("animationPlaybackSpeed")
+                    ?.floatValue ?? 1f;
                 AbilityCategory category = (AbilityCategory)(
                     ability.FindPropertyRelative("category")
                         ?.intValue ?? 0);
@@ -1010,6 +1015,7 @@ namespace Crossworlds.EditorTools
                 spellPreview.EnsureSpell(
                     prefabAsset,
                     castAnimation,
+                    animationPlaybackSpeed,
                     category,
                     castTime,
                     range,
@@ -1239,6 +1245,8 @@ namespace Crossworlds.EditorTools
                 ability.FindPropertyRelative("cooldown");
             SerializedProperty mana =
                 ability.FindPropertyRelative("manaCost");
+            SerializedProperty instantCast =
+                ability.FindPropertyRelative("instantCast");
             SerializedProperty movesCaster =
                 ability.FindPropertyRelative("moveCasterToTarget");
             SerializedProperty instantMovement =
@@ -1265,6 +1273,9 @@ namespace Crossworlds.EditorTools
 
             return
                 $"{categoryName}" +
+                (instantCast?.boolValue == true
+                    ? "  •  Instant Cast"
+                    : "") +
                 (string.IsNullOrEmpty(movementLabel)
                     ? ""
                     : $"  •  {movementLabel}") +

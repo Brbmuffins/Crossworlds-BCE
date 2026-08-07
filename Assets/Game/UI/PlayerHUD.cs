@@ -901,8 +901,8 @@ public class PlayerHUD : MonoBehaviour
                 : ability.abilityName.ToUpperInvariant();
         _abilityTooltipStats.text =
             remaining > 0.05f
-                ? $"COOLDOWN  {remaining:0.#}s / {cooldown:0.#}s     MANA  {mana:0.#}"
-                : $"COOLDOWN  {cooldown:0.#}s     MANA  {mana:0.#}";
+                ? $"{(ability.instantCast ? "INSTANT CAST     " : "")}COOLDOWN  {remaining:0.#}s / {cooldown:0.#}s     MANA  {mana:0.#}"
+                : $"{(ability.instantCast ? "INSTANT CAST     " : "")}COOLDOWN  {cooldown:0.#}s     MANA  {mana:0.#}";
         _abilityTooltipDescription.text =
             string.IsNullOrWhiteSpace(ability.description)
                 ? "No description authored yet."
@@ -1279,7 +1279,8 @@ public class PlayerHUD : MonoBehaviour
                         : ab.range <= 0f                     ? "SELF"
                         :                                      "AoE";
         string variantBadge = hasVariants ? $"  |  {CountValidVariants(ab)} ZONES" : "";
-        var cat = Lbl(cardRt, "Cat", $"{delivery}  |  {ab.category.ToString().ToUpper()}{variantBadge}", 10f);
+        string instantCastBadge = ab.instantCast ? "  |  INSTANT CAST" : "";
+        var cat = Lbl(cardRt, "Cat", $"{delivery}  |  {ab.category.ToString().ToUpper()}{variantBadge}{instantCastBadge}", 10f);
         cat.color     = CategoryTint(ab.category);
         cat.fontStyle = FontStyles.Bold;
         cat.rectTransform.anchorMin = new Vector2(0.35f, 0.44f);
