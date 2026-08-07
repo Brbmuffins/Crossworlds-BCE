@@ -3929,19 +3929,33 @@ public class AbilityCaster : NetworkBehaviour
                 damageMultiplier);
         }
 
+        bool usesTargetedCircleSupport =
+            !isVariantSpell &&
+            ability.shape == AbilityShape.Circle &&
+            indicator != null &&
+            ability.range > 0f &&
+            (ability.category == AbilityCategory.Heal ||
+             ability.category == AbilityCategory.Support) &&
+            (ability.healAmount > 0f || ability.shieldAbsorb > 0f);
+
         // Non-variant healing circles use Heal Amount as an optional initial
         // burst. Repeating ground healing is handled separately by the
         // explicit Use Pulse Healing setting below.
-        if (!isVariantSpell && ability.shape == AbilityShape.Circle && ability.healAmount > 0f)
+        if (usesTargetedCircleSupport)
+        {
+            ApplyCircleSupportEffects(ability, indicator);
+        }
+        else if (!isVariantSpell && ability.shape == AbilityShape.Circle && ability.healAmount > 0f)
         {
             ApplyCircleHealing(ability, indicator);
         }
 
         // Variant spells handle shields via their BUBBLE zone, while targeted
-        // cone support applies its shield to each resolved ally.
+        // cone/circle support applies its shield to each resolved ally.
         if (ability.shieldAbsorb > 0f &&
             (ability.variants == null || ability.variants.Length == 0) &&
-            !usesTargetedConeSupport)
+            !usesTargetedConeSupport &&
+            !usesTargetedCircleSupport)
             CastMagicShield(ability);
 
         if (ability.spawnTurret && indicator != null)
@@ -5438,6 +5452,43 @@ public class AbilityCaster : NetworkBehaviour
             ability.healAmount,
             ability.healVFX,
             ability.healingDelay);
+    }
+
+    void ApplyCircleSupportEffects(AbilityDef ability, GameObject indicator)
+    {
+        Vector3 center = indicator.transform.position;
+        float radius = Mathf.Max(0f, ability.indicatorSize * 0.5f);
+        Collider[] hits = ZonePhysics.OverlapSphere(
+            gameObject,
+            center,
+            PulsePhysicsQueryRadius(radius));
+        var affected = new System.Collections.Generic.HashSet<Health>();
+
+        foreach (Collider hit in hits)
+        {
+            if (!TryGetMatchingHealth(hit, ability.targetTag, out Health health) ||
+                !IsWithinHorizontalPulseRadius(health.transform.position, center, radius) ||
+                !affected.Add(health))
+                continue;
+
+            if (ability.healAmount > 0f)
+            {
+                ResolveAbilityHeal(
+                    health,
+                    ability.healAmount,
+                    ability.healVFX,
+                    ability.healingDelay);
+            }
+
+            if (ability.shieldAbsorb > 0f)
+                ApplyAbilityShield(ability, health);
+
+            EmitAbilityHitVFX(
+                ability,
+                health,
+                Vector3.up * 0.5f,
+                4f);
+        }
     }
 
     void ApplyRectangleDamage(AbilityDef ability, GameObject indicator, float damage)
