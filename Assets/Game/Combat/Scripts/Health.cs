@@ -229,7 +229,11 @@ public class Health : NetworkBehaviour
     public void ApplyShield(float amount)
     {
         if (!CanMutateCombatState()) return;
-        _shieldRemaining = Mathf.Max(_shieldRemaining, amount);
+        float shieldAmount = Mathf.Max(0f, amount);
+        if (shieldAmount <= 0f) return;
+
+        _shieldRemaining = Mathf.Max(_shieldRemaining, shieldAmount);
+        ShowShieldFeedback(shieldAmount);
     }
 
     // ── Invulnerability (Dodge Roll i-frames) ────────────────────
@@ -396,7 +400,11 @@ public class Health : NetworkBehaviour
     public void GrowShield(float amount)
     {
         if (!CanMutateCombatState()) return;
-        _shieldRemaining = Mathf.Min(_shieldRemaining + amount, 80f);
+        float shieldBefore = _shieldRemaining;
+        _shieldRemaining = Mathf.Min(
+            _shieldRemaining + Mathf.Max(0f, amount),
+            80f);
+        ShowShieldFeedback(_shieldRemaining - shieldBefore);
     }
 
     public void SetSimpleEnemyRespawnEnabled(bool enabled)
@@ -840,6 +848,17 @@ public class Health : NetworkBehaviour
             SpawnHealNumber(amount, numberPosition);
     }
 
+    void ShowShieldFeedback(float amount)
+    {
+        if (!showFloatingNumbers || amount <= 0f) return;
+
+        Vector3 numberPosition = GetFloatingNumberWorldPosition();
+        if (CanRpcCombatFeedback())
+            RpcShowShieldNumber(amount, numberPosition);
+        else if (!NetworkClient.active || NetworkServer.active)
+            SpawnShieldNumber(amount, numberPosition);
+    }
+
     public Vector3 GetFloatingNumberWorldPosition()
     {
         if (isPlayer || !IsEnemyLikeForHud())
@@ -898,6 +917,12 @@ public class Health : NetworkBehaviour
         SpawnHealNumber(amount, worldPosition);
     }
 
+    [ClientRpc]
+    void RpcShowShieldNumber(float amount, Vector3 worldPosition)
+    {
+        SpawnShieldNumber(amount, worldPosition);
+    }
+
     static void SpawnDamageNumber(float amount, Vector3 worldPosition, bool damageAgainstPlayer, bool isCritical)
     {
 #if UNITY_EDITOR || !UNITY_SERVER
@@ -916,6 +941,13 @@ public class Health : NetworkBehaviour
     {
 #if UNITY_EDITOR || !UNITY_SERVER
         FloatingDamageText.SpawnAnchored(worldPosition, amount, FloatingDamageText.DamageType.Heal);
+#endif
+    }
+
+    static void SpawnShieldNumber(float amount, Vector3 worldPosition)
+    {
+#if UNITY_EDITOR || !UNITY_SERVER
+        FloatingDamageText.SpawnAnchored(worldPosition, amount, FloatingDamageText.DamageType.Shield);
 #endif
     }
 

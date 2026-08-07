@@ -5722,7 +5722,6 @@ public class AbilityCaster : NetworkBehaviour
             if (targetHealth == null) continue;
 
             Vector3 hitPos = targetHealth.transform.position + Vector3.up * 0.5f;
-            Vector3 floatingTextPos = targetHealth.GetFloatingNumberWorldPosition();
             Vector3 toTarget = targetHealth.transform.position - castOrigin;
             toTarget.y = 0;
 
@@ -5777,9 +5776,6 @@ public class AbilityCaster : NetworkBehaviour
                     targetHealth.ApplyShield(shieldAmount);
 
                     EmitHitVFX(ability.hitVFX, hitPos);
-#if UNITY_EDITOR || !UNITY_SERVER
-                    FloatingDamageText.SpawnAnchored(floatingTextPos, shieldAmount, FloatingDamageText.DamageType.Shield);
-#endif
                 }
             }
             else
@@ -7938,9 +7934,6 @@ public class AbilityCaster : NetworkBehaviour
         if (ability.shieldAbsorb > 0f)
         {
             health.ApplyShield(ability.shieldAbsorb);
-#if UNITY_EDITOR || !UNITY_SERVER
-            FloatingDamageText.SpawnAnchored(floatingTextPos, ability.shieldAbsorb, FloatingDamageText.DamageType.Shield);
-#endif
             playedHitVfx = true;
         }
 
