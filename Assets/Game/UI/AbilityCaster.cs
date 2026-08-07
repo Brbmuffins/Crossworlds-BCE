@@ -113,6 +113,8 @@ public class AbilityDef
     public Sprite icon;
 
     [Header("Spell Timing")]
+    [Tooltip("Cast immediately when the ability key is pressed. Skips the targeting/confirmation phase and snapshots the current cursor aim, but still respects Cast Time, mana, cooldown, animation, and server validation.")]
+    public bool instantCast = false;
     [Tooltip("Seconds after committing the aim before this spell fires. Moving during this window cancels the cast without starting cooldown.")]
     [Min(0f)] public float castTime = 0.6f;
 
@@ -3283,6 +3285,15 @@ public class AbilityCaster : NetworkBehaviour
             return true;
         }
 
+        if (ability.instantCast)
+        {
+            if (heldAbilityIndex != -1)
+                CancelAim();
+
+            BeginInstantCast(slot, ability);
+            return true;
+        }
+
         if (heldAbilityIndex == slot)
         {
             CancelAim();
@@ -3305,6 +3316,61 @@ public class AbilityCaster : NetworkBehaviour
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
         return true;
+    }
+
+    void BeginInstantCast(int slot, AbilityDef ability)
+    {
+        aimTimer = 0f;
+        _activeVariantIndex = 0;
+        _currentAimFraction = 0f;
+
+        // Zero-range abilities are self-casts. A target proxy would otherwise be
+        // pushed out to minimumAimDistance by the normal cursor-aim calculation.
+        GameObject indicator = ability.range > 0f
+            ? CreateIndicator(ability)
+            : null;
+        if (indicator != null)
+        {
+            // Build the same authoritative cast snapshot used by confirmed casts,
+            // but never expose the decision-phase visuals to the player.
+            UpdateIndicatorTransform(ability, indicator, 0f);
+            HideIndicatorVisuals(indicator);
+        }
+
+        int variantIndex = ResolveInstantCastVariant(ability);
+        DestroyRangeRing();
+        BeginCommittedCast(slot, ability, indicator, 0f, variantIndex);
+
+        IsAimingLocally = false;
+        heldAbilityIndex = -1;
+        activeIndicator = null;
+        _activeVariantIndex = 0;
+        _currentAimFraction = 0f;
+    }
+
+    int ResolveInstantCastVariant(AbilityDef ability)
+    {
+        if (ability?.variants == null || ability.variants.Length == 0)
+            return 0;
+
+        GetAimData(ability, out _, out float aimDistance);
+        float aimFraction = ability.range > 0f
+            ? Mathf.Clamp01(aimDistance / ability.range)
+            : 0f;
+        return Mathf.Clamp(
+            Mathf.FloorToInt(aimFraction * ability.variants.Length),
+            0,
+            ability.variants.Length - 1);
+    }
+
+    static void HideIndicatorVisuals(GameObject indicator)
+    {
+        if (indicator == null) return;
+
+        foreach (Renderer renderer in indicator.GetComponentsInChildren<Renderer>(true))
+            renderer.enabled = false;
+        foreach (DecalProjector decal in indicator.GetComponentsInChildren<DecalProjector>(true))
+            decal.enabled = false;
     }
 
     void EmitAttachedHitVFX(

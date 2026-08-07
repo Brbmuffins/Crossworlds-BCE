@@ -696,6 +696,7 @@ namespace Crossworlds.EditorTools
 
             DrawFieldGroup(
                 "TIMING & COST", ability,
+                "instantCast",
                 "cooldown",
                 "manaCost");
 
@@ -1239,6 +1240,8 @@ namespace Crossworlds.EditorTools
                 ability.FindPropertyRelative("cooldown");
             SerializedProperty mana =
                 ability.FindPropertyRelative("manaCost");
+            SerializedProperty instantCast =
+                ability.FindPropertyRelative("instantCast");
             SerializedProperty movesCaster =
                 ability.FindPropertyRelative("moveCasterToTarget");
             SerializedProperty instantMovement =
@@ -1265,6 +1268,9 @@ namespace Crossworlds.EditorTools
 
             return
                 $"{categoryName}" +
+                (instantCast?.boolValue == true
+                    ? "  •  Instant Cast"
+                    : "") +
                 (string.IsNullOrEmpty(movementLabel)
                     ? ""
                     : $"  •  {movementLabel}") +
