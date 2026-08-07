@@ -3737,8 +3737,12 @@ public class AbilityCaster : NetworkBehaviour
             ResolveReferencedVariantCast(ability, referencedAbility, indicator, aimTime, damageMultiplier, castOrigin);
             return;
         }
-        else if (ability.abilityName == "Healing Cone" || ability.abilityName == "Mending Beam" ||
-            ability.abilityName == "Conflagration Cone" || ability.abilityName == "Ember Beam")
+        bool usesSweetSpotEffects =
+            ability.abilityName == "Healing Cone" ||
+            ability.abilityName == "Mending Beam" ||
+            ability.abilityName == "Conflagration Cone" ||
+            ability.abilityName == "Ember Beam";
+        if (usesSweetSpotEffects)
         {
             ApplySweetSpotEffects(ability, indicator, damageMultiplier, castOrigin);
         }
@@ -3772,6 +3776,28 @@ public class AbilityCaster : NetworkBehaviour
 #endif
         }
 
+        bool usesTargetedConeSupport =
+            !isVariantSpell &&
+            !usesSweetSpotEffects &&
+            ability.shape == AbilityShape.Cone &&
+            indicator != null &&
+            (ability.category == AbilityCategory.Heal ||
+             ability.category == AbilityCategory.Support) &&
+            (ability.healAmount > 0f || ability.shieldAbsorb > 0f);
+        if (usesTargetedConeSupport)
+        {
+            float chargeFraction = GetChargeFraction(ability, aimTime);
+            float coneScale = ability.useFixedRange
+                ? Mathf.Lerp(1f, ability.maxChargeSizeMultiplier, chargeFraction)
+                : indicator.transform.localScale.x;
+            float coneRange = ability.range * coneScale;
+            ApplyConeSupportEffects(
+                ability,
+                indicator,
+                coneRange,
+                castOrigin);
+        }
+
         if (!usesChainDamage && ability.shape == AbilityShape.Circle && ability.damage > 0f && !IsArcaneStep(ability) && !IsVoidMaw(ability))
         {
             ApplyCircleDamage(
@@ -3789,8 +3815,11 @@ public class AbilityCaster : NetworkBehaviour
             ApplyCircleHealing(ability, indicator);
         }
 
-        // Variant spells handle shields via their BUBBLE zone; skip the self-shield path.
-        if (ability.shieldAbsorb > 0f && (ability.variants == null || ability.variants.Length == 0))
+        // Variant spells handle shields via their BUBBLE zone, while targeted
+        // cone support applies its shield to each resolved ally.
+        if (ability.shieldAbsorb > 0f &&
+            (ability.variants == null || ability.variants.Length == 0) &&
+            !usesTargetedConeSupport)
             CastMagicShield(ability);
 
         if (ability.spawnTurret && indicator != null)
@@ -5252,6 +5281,54 @@ public class AbilityCaster : NetworkBehaviour
 
             damaged.Add(health);
             ResolveDirectAbilityHit(ability, health, damage);
+        }
+    }
+
+    void ApplyConeSupportEffects(
+        AbilityDef ability,
+        GameObject indicator,
+        float coneRange,
+        Vector3 castOrigin)
+    {
+        Collider[] hits = ZonePhysics.OverlapSphere(
+            gameObject,
+            castOrigin,
+            coneRange);
+        var affected = new System.Collections.Generic.HashSet<Health>();
+
+        foreach (Collider hit in hits)
+        {
+            if (!TryGetMatchingHealth(hit, ability.targetTag, out Health health) ||
+                affected.Contains(health))
+                continue;
+
+            Vector3 toHit = health.transform.position - castOrigin;
+            toHit.y = 0f;
+            if (toHit.sqrMagnitude < 0.0001f)
+                continue;
+
+            float angle = Vector3.Angle(indicator.transform.forward, toHit);
+            if (angle > ability.coneAngle * 0.5f)
+                continue;
+
+            affected.Add(health);
+
+            if (ability.healAmount > 0f)
+            {
+                float healthBefore = health.currentHealth;
+                health.Heal(ability.healAmount);
+                if (health.currentHealth > healthBefore)
+                    EmitHealVFX(ability.healVFX, health);
+            }
+
+            if (ability.shieldAbsorb > 0f)
+                health.ApplyShield(ability.shieldAbsorb);
+
+            EmitAbilityHitVFX(
+                ability,
+                health,
+                Vector3.up * 0.5f,
+                4f);
         }
     }
 
