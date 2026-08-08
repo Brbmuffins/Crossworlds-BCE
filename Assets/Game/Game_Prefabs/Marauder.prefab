@@ -514,13 +514,13 @@ MonoBehaviour:
     targetTag: Enemy
     chargedTint: {r: 0, g: 0, b: 0, a: 0}
     fireVisual: 0
-    castVFX: {fileID: 9167577437533287470, guid: 27e6dced4db01684086133a107437c49, type: 3}
+    castVFX: {fileID: 8073838851761814696, guid: 7811a5eb991cdce41ad578a078338694, type: 3}
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
     hitVFX: {fileID: 4669621928147992323, guid: 84d591399945da04c85ad388ca83cbb9, type: 3}
     shieldVFX: {fileID: 0}
     chainVFX: {fileID: 0}
-    castVFXAtCaster: 0
+    castVFXAtCaster: 1
     hitVFXFollowsTarget: 0
     castSFX: {fileID: 0}
     hitSFX: {fileID: 0}

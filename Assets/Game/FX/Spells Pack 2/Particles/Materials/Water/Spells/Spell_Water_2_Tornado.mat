@@ -151,7 +151,7 @@ Material:
     - _Dissolve_Invert_Direction: 1
     - _Dissolve_Scale: 80
     - _DstBlend: 10
-    - _DstBlendAlpha: 0
+    - _DstBlendAlpha: 10
     - _EnvironmentReflections: 1
     - _FOAM_DISTORTION: 1
     - _FRESNEL: 1
