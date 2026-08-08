@@ -704,6 +704,8 @@ namespace Crossworlds.EditorTools
                 "DAMAGE & CHARGE", ability,
                 "damage",
                 "damageDelay",
+                "secondaryDamage",
+                "secondaryDamageDelay",
                 "chargeable",
                 "maxChargeTime",
                 "maxChargeDamage",

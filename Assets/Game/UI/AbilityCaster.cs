@@ -162,6 +162,12 @@ public class AbilityDef
     [Min(0f)]
     [Tooltip("Seconds to wait after locking in a target before applying this spell's damage.")]
     public float damageDelay = 0f;
+    [Min(0f)]
+    [Tooltip("Optional second damage hit dealt to the same locked targets. This is a fixed base amount before character damage bonuses and does not scale with charge.")]
+    public float secondaryDamage = 0f;
+    [Min(0f)]
+    [Tooltip("Seconds after cast resolution to apply Secondary Damage. This timing is independent of Damage Delay.")]
+    public float secondaryDamageDelay = 0f;
     public float maxChargeDamage = 10f;
     public float maxChargeSizeMultiplier = 1.8f;
     public string targetTag = "Enemy";
@@ -3880,22 +3886,32 @@ public class AbilityCaster : NetworkBehaviour
         if (!isVariantSpell && usesChainDamage)
             CastChainDamage(ability, indicator, castOrigin, damageMultiplier, aimTime);
 
-        if (!isVariantSpell && !usesChainDamage && ability.shape == AbilityShape.Rectangle && ability.damage > 0f && indicator != null)
+        if (!isVariantSpell && !usesChainDamage && ability.shape == AbilityShape.Rectangle && HasDirectDamage(ability) && indicator != null)
         {
             float chargeFraction = GetChargeFraction(ability, aimTime);
-            float damage = Mathf.Lerp(ability.damage, ability.maxChargeDamage, chargeFraction) * damageMultiplier;
-            ApplyRectangleDamage(ability, indicator, damage);
+            float damage = ability.damage > 0f
+                ? Mathf.Lerp(ability.damage, ability.maxChargeDamage, chargeFraction) * damageMultiplier
+                : 0f;
+            ApplyRectangleDamage(ability, indicator, damage, damageMultiplier);
         }
 
-        if (!isVariantSpell && !usesChainDamage && ability.shape == AbilityShape.Cone && ability.damage > 0f && indicator != null)
+        if (!isVariantSpell && !usesChainDamage && ability.shape == AbilityShape.Cone && HasDirectDamage(ability) && indicator != null)
         {
             float chargeFraction = GetChargeFraction(ability, aimTime);
-            float damage = Mathf.Lerp(ability.damage, ability.maxChargeDamage, chargeFraction) * damageMultiplier;
+            float damage = ability.damage > 0f
+                ? Mathf.Lerp(ability.damage, ability.maxChargeDamage, chargeFraction) * damageMultiplier
+                : 0f;
             float coneScale = ability.useFixedRange
                 ? Mathf.Lerp(1f, ability.maxChargeSizeMultiplier, chargeFraction)
                 : indicator.transform.localScale.x;
             float coneRange = ability.range * coneScale;
-            ApplyConeDamage(ability, indicator, damage, coneRange, castOrigin);
+            ApplyConeDamage(
+                ability,
+                indicator,
+                damage,
+                coneRange,
+                castOrigin,
+                damageMultiplier);
 
 #if UNITY_EDITOR || !UNITY_SERVER
             if (ability.fireVisual)
@@ -3925,7 +3941,7 @@ public class AbilityCaster : NetworkBehaviour
                 castOrigin);
         }
 
-        if (!usesChainDamage && ability.shape == AbilityShape.Circle && ability.damage > 0f && !IsArcaneStep(ability) && !IsVoidMaw(ability))
+        if (!usesChainDamage && ability.shape == AbilityShape.Circle && HasDirectDamage(ability) && !IsArcaneStep(ability) && !IsVoidMaw(ability))
         {
             ApplyCircleDamage(
                 ability,
@@ -4838,22 +4854,37 @@ public class AbilityCaster : NetworkBehaviour
         health.TakeDamage(finalDamage, gameObject, wasCritical);
     }
 
-    void ResolveDirectAbilityHit(AbilityDef ability, Health health, float damage)
+    void ResolveDirectAbilityHit(
+        AbilityDef ability,
+        Health health,
+        float damage,
+        float secondaryDamage)
     {
         if (ability == null || health == null) return;
 
         Vector3 hitWorldOffset = Vector3.up * 0.5f;
-        float vfxLifetime = Mathf.Max(4f, ability.damageDelay + 0.5f);
+        float latestDamageDelay = secondaryDamage > 0f
+            ? Mathf.Max(ability.damageDelay, ability.secondaryDamageDelay)
+            : ability.damageDelay;
+        float vfxLifetime = Mathf.Max(4f, latestDamageDelay + 0.5f);
 
-        if (ability.damageDelay > 0f)
-        {
-            EmitAbilityHitVFX(ability, health, hitWorldOffset, vfxLifetime);
-            StartCoroutine(DealDelayedAbilityDamage(health, damage, ability.damageDelay));
-            return;
-        }
-
-        DealAbilityDamage(health, damage);
+        ResolveAbilityDamage(health, damage, ability.damageDelay);
+        ResolveAbilityDamage(
+            health,
+            secondaryDamage,
+            ability.secondaryDamageDelay);
         EmitAbilityHitVFX(ability, health, hitWorldOffset, vfxLifetime);
+    }
+
+    void ResolveAbilityDamage(Health health, float damage, float delay)
+    {
+        if (health == null || !health.IsAlive || damage <= 0f)
+            return;
+
+        if (delay > 0f)
+            StartCoroutine(DealDelayedAbilityDamage(health, damage, delay));
+        else
+            DealAbilityDamage(health, damage);
     }
 
     void EmitAbilityHitVFX(
@@ -5064,7 +5095,7 @@ public class AbilityCaster : NetworkBehaviour
 
     static bool UsesChainDamage(AbilityDef ability)
     {
-        if (ability == null || ability.damage <= 0f)
+        if (!HasDirectDamage(ability))
             return false;
 
         // Forked Lightning predates the serialized chain fields. Keep its old
@@ -5110,14 +5141,22 @@ public class AbilityCaster : NetworkBehaviour
             visited.Add(current);
 
             Vector3 currentPoint = current.transform.position;
-            ResolveDirectAbilityHit(ability, current, Mathf.Max(1f, damage));
+            float primaryDamage = ability.damage > 0f
+                ? Mathf.Max(1f, damage)
+                : 0f;
+            ResolveDirectAbilityHit(
+                ability,
+                current,
+                primaryDamage,
+                ability.secondaryDamage * damageMultiplier);
             EmitChainVFX(
                 ability,
                 previousPoint + Vector3.up * 0.8f,
                 currentPoint + Vector3.up * 0.8f);
 
             previousPoint = currentPoint;
-            damage = Mathf.Max(1f, damage - falloff);
+            if (ability.damage > 0f)
+                damage = Mathf.Max(1f, damage - falloff);
             current = FindNearestUnvisitedHealth(
                 currentPoint,
                 jumpRadius,
@@ -5427,7 +5466,11 @@ public class AbilityCaster : NetworkBehaviour
                 !damaged.Add(health))
                 continue;
 
-            ResolveDirectAbilityHit(ability, health, ability.damage * damageMultiplier);
+            ResolveDirectAbilityHit(
+                ability,
+                health,
+                ability.damage * damageMultiplier,
+                ability.secondaryDamage * damageMultiplier);
         }
     }
 
@@ -5496,7 +5539,11 @@ public class AbilityCaster : NetworkBehaviour
         }
     }
 
-    void ApplyRectangleDamage(AbilityDef ability, GameObject indicator, float damage)
+    void ApplyRectangleDamage(
+        AbilityDef ability,
+        GameObject indicator,
+        float damage,
+        float damageMultiplier)
     {
         RectangleAimData rectData = indicator.GetComponent<RectangleAimData>();
         Vector3 center;
@@ -5533,11 +5580,21 @@ public class AbilityCaster : NetworkBehaviour
             if (!TryGetMatchingHealth(hit, ability.targetTag, out Health health) || !damaged.Add(health))
                 continue;
 
-            ResolveDirectAbilityHit(ability, health, damage);
+            ResolveDirectAbilityHit(
+                ability,
+                health,
+                damage,
+                ability.secondaryDamage * damageMultiplier);
         }
     }
 
-    void ApplyConeDamage(AbilityDef ability, GameObject indicator, float damage, float coneRange, Vector3 castOrigin)
+    void ApplyConeDamage(
+        AbilityDef ability,
+        GameObject indicator,
+        float damage,
+        float coneRange,
+        Vector3 castOrigin,
+        float damageMultiplier)
     {
         Collider[] hits = ZonePhysics.OverlapSphere(gameObject, castOrigin, coneRange);
         var damaged = new System.Collections.Generic.HashSet<Health>();
@@ -5556,7 +5613,11 @@ public class AbilityCaster : NetworkBehaviour
             if (angle > ability.coneAngle / 2f) continue;
 
             damaged.Add(health);
-            ResolveDirectAbilityHit(ability, health, damage);
+            ResolveDirectAbilityHit(
+                ability,
+                health,
+                damage,
+                ability.secondaryDamage * damageMultiplier);
         }
     }
 
@@ -8008,13 +8069,19 @@ public class AbilityCaster : NetworkBehaviour
     static bool HasDirectPayload(AbilityDef ability)
     {
         if (ability == null) return false;
-        return ability.damage > 0f
+        return HasDirectDamage(ability)
             || ability.healAmount > 0f
             || (!ability.usePulseHealing &&
                 ability.hotTicks > 0 &&
                 ability.hotTickAmount > 0f)
             || ability.shieldAbsorb > 0f
             || ability.statusDuration > 0f;
+    }
+
+    static bool HasDirectDamage(AbilityDef ability)
+    {
+        return ability != null &&
+            (ability.damage > 0f || ability.secondaryDamage > 0f);
     }
 
     void CollectHitsForAbilityShape(AbilityDef shapeAbility, GameObject indicator, Vector3 castOrigin, string targetTag, System.Collections.Generic.List<Collider> hits)
@@ -8123,13 +8190,20 @@ public class AbilityCaster : NetworkBehaviour
             playedHitVfx = true;
         }
 
-        if (ability.damage > 0f)
+        if (HasDirectDamage(ability))
         {
             float chargeFraction = GetChargeFraction(ability, aimTime);
-            float damage = ability.chargeable
+            float damage = ability.damage > 0f && ability.chargeable
                 ? Mathf.Lerp(ability.damage, ability.maxChargeDamage, chargeFraction)
                 : ability.damage;
-            DealAbilityDamage(health, damage * damageMultiplier);
+            ResolveAbilityDamage(
+                health,
+                damage * damageMultiplier,
+                ability.damageDelay);
+            ResolveAbilityDamage(
+                health,
+                ability.secondaryDamage * damageMultiplier,
+                ability.secondaryDamageDelay);
             playedHitVfx = true;
         }
 

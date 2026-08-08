@@ -1307,6 +1307,14 @@ public class PlayerHUD : MonoBehaviour
                 sb.Append($"<color=#ff6b4a>Damage</color> {ab.damage:0}-{ab.maxChargeDamage:0}  <i><color=#94a3b8>hold to charge</color></i>\n");
             else if (ab.damage > 0f)
                 sb.Append($"<color=#ff6b4a>Damage</color> {ab.damage:0}\n");
+            if (ab.secondaryDamage > 0f)
+            {
+                sb.Append(
+                    $"<color=#ff936b>Secondary Damage</color> {ab.secondaryDamage:0}");
+                if (ab.secondaryDamageDelay > 0f)
+                    sb.Append($" | {ab.secondaryDamageDelay:0.##}s delay");
+                sb.Append("\n");
+            }
             if (ab.healAmount > 0f)
                 sb.Append($"<color=#39e67a>Heal</color> +{ab.healAmount:0}\n");
             if (ab.shieldAbsorb > 0f)
@@ -1408,6 +1416,7 @@ public class PlayerHUD : MonoBehaviour
         sb.Append($"<color=#f6c453>Variants</color> {BuildVariantNameList(ab, caster)}\n");
 
         bool hasDamage = false;
+        bool hasSecondaryDamage = false;
         bool hasHeal = false;
         bool hasHot = false;
         bool hasShield = false;
@@ -1415,6 +1424,8 @@ public class PlayerHUD : MonoBehaviour
         bool hasMana = false;
         float minDamage = float.MaxValue;
         float maxDamage = 0f;
+        float minSecondaryDamage = float.MaxValue;
+        float maxSecondaryDamage = 0f;
         float minMana = float.MaxValue;
         float maxMana = 0f;
         float maxHeal = 0f;
@@ -1429,6 +1440,7 @@ public class PlayerHUD : MonoBehaviour
             if (payload == null) continue;
 
             float damage = payload.damage;
+            float secondaryDamage = payload.secondaryDamage;
             float heal = payload.healAmount;
             float hotTickAmount = payload.hotTickAmount;
             int hotTicks = payload.hotTicks;
@@ -1446,6 +1458,17 @@ public class PlayerHUD : MonoBehaviour
                 hasDamage = true;
                 minDamage = Mathf.Min(minDamage, damage);
                 maxDamage = Mathf.Max(maxDamage, damage);
+            }
+
+            if (secondaryDamage > 0f)
+            {
+                hasSecondaryDamage = true;
+                minSecondaryDamage = Mathf.Min(
+                    minSecondaryDamage,
+                    secondaryDamage);
+                maxSecondaryDamage = Mathf.Max(
+                    maxSecondaryDamage,
+                    secondaryDamage);
             }
 
             if (heal > 0f)
@@ -1480,6 +1503,14 @@ public class PlayerHUD : MonoBehaviour
         {
             if (wrote) sb.Append("  ");
             sb.Append($"<color=#ff6b4a>Damage</color> {FormatRange(minDamage, maxDamage)}");
+            wrote = true;
+        }
+        if (hasSecondaryDamage)
+        {
+            if (wrote) sb.Append("  ");
+            sb.Append(
+                $"<color=#ff936b>Secondary</color> " +
+                FormatRange(minSecondaryDamage, maxSecondaryDamage));
             wrote = true;
         }
         if (hasHeal)
