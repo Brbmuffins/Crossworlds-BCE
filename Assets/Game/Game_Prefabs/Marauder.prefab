@@ -348,6 +348,8 @@ MonoBehaviour:
     maxChargeTime: 0
     damage: 40
     damageDelay: 0
+    secondaryDamage: 0
+    secondaryDamageDelay: 0
     maxChargeDamage: 0
     maxChargeSizeMultiplier: 0
     targetTag: Enemy
@@ -429,6 +431,8 @@ MonoBehaviour:
     maxChargeTime: 2
     damage: 40
     damageDelay: 0
+    secondaryDamage: 0
+    secondaryDamageDelay: 0
     maxChargeDamage: 60
     maxChargeSizeMultiplier: 2
     targetTag: Enemy
@@ -509,6 +513,8 @@ MonoBehaviour:
     maxChargeTime: 1.5
     damage: 10
     damageDelay: 0
+    secondaryDamage: 10
+    secondaryDamageDelay: 3.5
     maxChargeDamage: 10
     maxChargeSizeMultiplier: 1.8
     targetTag: Enemy
@@ -589,6 +595,8 @@ MonoBehaviour:
     maxChargeTime: 1.5
     damage: 30
     damageDelay: 0
+    secondaryDamage: 0
+    secondaryDamageDelay: 0
     maxChargeDamage: 10
     maxChargeSizeMultiplier: 1.8
     targetTag: Enemy
@@ -670,6 +678,8 @@ MonoBehaviour:
     maxChargeTime: 1.5
     damage: 10
     damageDelay: 0
+    secondaryDamage: 0
+    secondaryDamageDelay: 0
     maxChargeDamage: 10
     maxChargeSizeMultiplier: 1.8
     targetTag: Enemy
@@ -749,6 +759,8 @@ MonoBehaviour:
     maxChargeTime: 1.5
     damage: 10
     damageDelay: 0
+    secondaryDamage: 0
+    secondaryDamageDelay: 0
     maxChargeDamage: 10
     maxChargeSizeMultiplier: 1.8
     targetTag: Enemy
@@ -828,6 +840,8 @@ MonoBehaviour:
     maxChargeTime: 1.5
     damage: 10
     damageDelay: 0
+    secondaryDamage: 0
+    secondaryDamageDelay: 0
     maxChargeDamage: 10
     maxChargeSizeMultiplier: 1.8
     targetTag: Enemy
@@ -907,6 +921,8 @@ MonoBehaviour:
     maxChargeTime: 1.5
     damage: 10
     damageDelay: 0
+    secondaryDamage: 0
+    secondaryDamageDelay: 0
     maxChargeDamage: 10
     maxChargeSizeMultiplier: 1.8
     targetTag: Enemy
