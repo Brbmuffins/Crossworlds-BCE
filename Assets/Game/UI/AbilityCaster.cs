@@ -3140,6 +3140,11 @@ public class AbilityCaster : NetworkBehaviour
         if (prefab != null && prefab.name == "Ice freeze skill")
             return requestedRotation * prefab.transform.rotation;
 
+        // This asset is authored along +X, so its visible forward points right
+        // when spawned with the spell's normal +Z aim rotation.
+        if (prefab != null && prefab.name == "Spell_Storm_9")
+            return requestedRotation * Quaternion.Euler(0f, -90f, 0f);
+
         return requestedRotation;
     }
 

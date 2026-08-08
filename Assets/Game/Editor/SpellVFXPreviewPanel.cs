@@ -434,7 +434,9 @@ namespace Crossworlds.EditorTools
             instance.name = instanceName;
             instance.hideFlags = HideFlags.HideAndDontSave;
             instance.transform.position = position;
-            instance.transform.rotation = Quaternion.identity;
+            instance.transform.rotation = source.name == "Spell_Storm_9"
+                ? Quaternion.Euler(0f, -90f, 0f)
+                : Quaternion.identity;
 
             foreach (MonoBehaviour behaviour in
                 instance.GetComponentsInChildren<
