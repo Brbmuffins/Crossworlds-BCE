@@ -34248,7 +34248,7 @@ MonoBehaviour:
   m_DecalLayerMask: 1
   m_ScaleMode: 1
   m_Offset: {x: 8.1, y: 0, z: 0}
-  m_Size: {x: 19, y: 29, z: 1}
+  m_Size: {x: 19, y: 29, z: 8}
   m_FadeFactor: 1
 --- !u!114 &3036353045754310366
 MonoBehaviour:
