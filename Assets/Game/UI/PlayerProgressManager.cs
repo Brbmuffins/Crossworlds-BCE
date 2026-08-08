@@ -167,6 +167,11 @@ public class PlayerProgressManager : MonoBehaviour
         }
 
         if (xpGained > 0) OnXpGained?.Invoke(xpGained);
+        // Kill loot is inserted directly into the authoritative inventory by the
+        // auth server. Refresh the bag's server-backed snapshot so an already-open
+        // inventory immediately reflects the drop without adding it locally (and
+        // potentially duplicating it).
+        InventoryBagUI.Refresh();
         Refresh();
     }
 

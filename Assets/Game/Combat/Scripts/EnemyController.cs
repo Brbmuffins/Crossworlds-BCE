@@ -1166,18 +1166,20 @@ public class EnemyController : NetworkBehaviour
             }
         }
 
-        float remainingDeadModelTime = Mathf.Max(0f, deadModelVisibleSeconds - 0.4f);
-        if (remainingDeadModelTime > 0f)
-            yield return new WaitForSeconds(remainingDeadModelTime);
-
         // Notify clients of the kill so the LOCAL client can POST /api/combat/kill
         // with its own JWT. The server doesn't hold player JWTs — client-initiated
         // kill reports with the hit-gate anti-exploit design is the correct pattern.
+        // Do this before the corpse-visibility wait so XP feedback is not delayed by
+        // long death animations or forged enemies whose corpse timer is 15 seconds.
         if (NetworkServer.active)
         {
             int enemyLevel = _health != null ? Mathf.Max(1, _health.EnemyLevel) : 1;
             RpcNotifyEnemyKilled(enemyLevel, (byte)rewardCategory, netId);
         }
+
+        float remainingDeadModelTime = Mathf.Max(0f, deadModelVisibleSeconds - 0.4f);
+        if (remainingDeadModelTime > 0f)
+            yield return new WaitForSeconds(remainingDeadModelTime);
 
         if (!respawnAfterDeath)
         {

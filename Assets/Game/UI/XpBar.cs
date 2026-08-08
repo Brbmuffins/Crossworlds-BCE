@@ -153,14 +153,17 @@ public class XpBar : MonoBehaviour
     {
         gain.text = $"+{amount} XP";
         RectTransform rt = gain.rectTransform;
-        Vector2 start = new Vector2(0f, 22f + Mathf.Min(stackIndex, 3) * 18f);
+        Vector2 start = new Vector2(0f, 22f + Mathf.Min(stackIndex, 7) * 24f);
+        Vector3 baseScale = rt.localScale;
         Color color = new Color(0.82f, 0.62f, 1f, 1f);
-        float duration = 1.35f;
+        float duration = 1.5f;
 
         for (float t = 0f; t < duration; t += Time.deltaTime)
         {
             float p = Mathf.Clamp01(t / duration);
-            rt.anchoredPosition = start + Vector2.up * (24f * p);
+            float eased = Mathf.SmoothStep(0f, 1f, p);
+            rt.anchoredPosition = start + Vector2.up * (38f * eased);
+            rt.localScale = baseScale * Mathf.Lerp(1.85f, 0.75f, eased);
             color.a = 1f - Mathf.Clamp01((p - 0.55f) / 0.45f);
             gain.color = color;
             yield return null;
