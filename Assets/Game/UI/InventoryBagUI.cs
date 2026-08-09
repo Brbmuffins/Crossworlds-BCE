@@ -22,6 +22,7 @@ public sealed class InventoryBagUI : MonoBehaviour
     InventoryFilter _filter;
     bool _open;
     bool _loading;
+    bool _refreshQueued;
     bool _progressSubscribed;
     bool _deleting;
     Image _dragIcon;
@@ -69,7 +70,13 @@ public sealed class InventoryBagUI : MonoBehaviour
 
     public static void Refresh()
     {
-        if (_instance != null) _instance.StartCoroutine(_instance.FetchInventory());
+        if (_instance == null) return;
+        if (_instance._loading)
+        {
+            _instance._refreshQueued = true;
+            return;
+        }
+        _instance.StartCoroutine(_instance.FetchInventory());
     }
 
     void CreateView()
@@ -157,6 +164,11 @@ public sealed class InventoryBagUI : MonoBehaviour
             catch (Exception exception) { _view.SetStatus($"Parse error: {exception.Message}"); }
         }
         _loading = false;
+        if (_refreshQueued)
+        {
+            _refreshQueued = false;
+            StartCoroutine(FetchInventory());
+        }
     }
 
     void RenderSlots()
