@@ -21383,6 +21383,63 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 2016614761}
   m_SourcePrefab: {fileID: 100100000, guid: 7088a8cc314675341a5835a3d261e651, type: 3}
+--- !u!1001 &802951272822768951
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 2522938193359108142, guid: 04a20218a0649b446b42964074c6c157, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -117.02172
+      objectReference: {fileID: 0}
+    - target: {fileID: 2522938193359108142, guid: 04a20218a0649b446b42964074c6c157, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 60.08
+      objectReference: {fileID: 0}
+    - target: {fileID: 2522938193359108142, guid: 04a20218a0649b446b42964074c6c157, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -1168.0692
+      objectReference: {fileID: 0}
+    - target: {fileID: 2522938193359108142, guid: 04a20218a0649b446b42964074c6c157, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2522938193359108142, guid: 04a20218a0649b446b42964074c6c157, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2522938193359108142, guid: 04a20218a0649b446b42964074c6c157, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2522938193359108142, guid: 04a20218a0649b446b42964074c6c157, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2522938193359108142, guid: 04a20218a0649b446b42964074c6c157, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2522938193359108142, guid: 04a20218a0649b446b42964074c6c157, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2522938193359108142, guid: 04a20218a0649b446b42964074c6c157, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2902735195551507092, guid: 04a20218a0649b446b42964074c6c157, type: 3}
+      propertyPath: m_Name
+      value: omen sword
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 04a20218a0649b446b42964074c6c157, type: 3}
 --- !u!1001 &1718760428592433345
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -22187,3 +22244,4 @@ SceneRoots:
   - {fileID: 2729386046611359045}
   - {fileID: 2027375116}
   - {fileID: 6358928271676025275}
+  - {fileID: 802951272822768951}

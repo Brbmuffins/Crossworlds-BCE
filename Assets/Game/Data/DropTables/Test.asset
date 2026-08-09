@@ -21,3 +21,8 @@ MonoBehaviour:
     weight: 1
     minQty: 1
     maxQty: 1
+  - itemDefinition: {fileID: 11400000, guid: b68d44a4da47c6d4fb58658953341aed, type: 2}
+    itemId: 
+    weight: 9
+    minQty: 1
+    maxQty: 1

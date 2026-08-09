@@ -171,7 +171,9 @@ public class PlayerProgressManager : MonoBehaviour
         // auth server. Refresh the bag's server-backed snapshot so an already-open
         // inventory immediately reflects the drop without adding it locally (and
         // potentially duplicating it).
+#if UNITY_EDITOR || !UNITY_SERVER
         InventoryBagUI.Refresh();
+#endif
         Refresh();
     }
 
