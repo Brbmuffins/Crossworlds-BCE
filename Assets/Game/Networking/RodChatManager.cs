@@ -658,24 +658,10 @@ public class RodChatManager : NetworkBehaviour
         if (!Mathf.Approximately(_gmSpeedMultiplier, 1f))
             ApplyGmSpeed();
 
-        if (!_gmFlyActive || _gmRigidbody == null)
-            return;
-
-        _gmRigidbody.useGravity = false;
-
-        float vertical = 0f;
-        var keyboard = Keyboard.current;
-        if (keyboard != null)
-        {
-            if (keyboard.spaceKey.isPressed)
-                vertical += 1f;
-            if (keyboard.leftCtrlKey.isPressed || keyboard.rightCtrlKey.isPressed || keyboard.cKey.isPressed)
-                vertical -= 1f;
-        }
-
-        float verticalSpeed = Mathf.Max(6f, _gmBaseMoveSpeed * Mathf.Max(1f, _gmSpeedMultiplier));
-        Vector3 velocity = _gmRigidbody.linearVelocity;
-        _gmRigidbody.linearVelocity = new Vector3(velocity.x, vertical * verticalSpeed, velocity.z);
+        // TargetSetGmFly can arrive before the local player finishes spawning.
+        // Apply the state as soon as the player controller becomes available.
+        if (_gmFlyActive && _gmMovement != null && !_gmMovement.GmFlightEnabled)
+            _gmMovement.SetGmFlightEnabled(true);
     }
 
     void ApplyGmMovementState()
@@ -685,16 +671,17 @@ public class RodChatManager : NetworkBehaviour
 
         ApplyGmSpeed();
 
+        if (_gmMovement != null)
+        {
+            _gmMovement.SetGmFlightEnabled(_gmFlyActive);
+            return;
+        }
+
         if (_gmRigidbody == null)
             return;
 
         _gmRigidbody.useGravity = !_gmFlyActive;
-        if (!_gmFlyActive)
-        {
-            Vector3 velocity = _gmRigidbody.linearVelocity;
-            if (velocity.y > 0f)
-                _gmRigidbody.linearVelocity = new Vector3(velocity.x, 0f, velocity.z);
-        }
+        _gmRigidbody.linearVelocity = Vector3.zero;
     }
 
     void ApplyGmSpeed()

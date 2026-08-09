@@ -156,7 +156,9 @@ public static class GmCommandRouter
 
         auth.gmFlyEnabled = enabled;
         chat.TargetSetGmFly(sender, enabled);
-        chat.SendGmFeedback(sender, enabled ? "Fly ON. Space rises, Ctrl descends." : "Fly OFF.");
+        chat.SendGmFeedback(sender, enabled
+            ? "Fly ON. WASD moves, Space rises, Ctrl/C descends, Shift boosts. Release the controls to stop."
+            : "Fly OFF.");
         Debug.Log($"[GM] {auth.username} set fly={enabled}.");
     }
 

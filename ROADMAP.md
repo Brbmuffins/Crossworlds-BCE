@@ -88,6 +88,11 @@ conversation: it names its files, acceptance criteria, and dependencies. Tasks m
 > height and duration; server-side target movement is synchronized to clients.
 > Chargeable circle damage and its pulse sequence now share the committed visual
 > radius, fixing Screaming Flames' hit area at larger charge sizes.
+>
+> **GM flight controls 2026-08-09:** Both authenticated `/fly` and the local GM
+> console now use one Rigidbody flight mode in `PlayerMovement`. WASD provides
+> horizontal flight, Space rises, Ctrl/C descends, Shift boosts, and releasing
+> controls stops immediately instead of preserving airborne inertia.
 > The `#if !UNITY_SERVER` guards described in the 1.5 note above were the *bare* form;
 > the required convention is `#if UNITY_EDITOR || !UNITY_SERVER`, and the 8 remaining
 > bare guards (HeroCosmeticApplier, StatusEffectHUD, ShieldValueHUD, GoldHUD,

@@ -60,8 +60,12 @@ public class PlayerMovement : NetworkBehaviour
     private bool wantsMove = false;
     private bool jumpRequested = false;
     private float currentSpeed;
+    private bool gmFlightEnabled = false;
+    private float gmFlightVerticalInput = 0f;
     private float movementLockUntil = -1f;
     private Coroutine abilityMovementRoutine;
+
+    public bool GmFlightEnabled => gmFlightEnabled;
 
     void Start()
     {
@@ -168,6 +172,32 @@ public class PlayerMovement : NetworkBehaviour
         movementLocked = true;
         ClearMovementIntent();
         StopHorizontalMotion();
+    }
+
+    /// <summary>
+    /// Enables responsive GM free-flight on the locally controlled player.
+    /// Flight remains Rigidbody-driven so NetworkTransform continues to replicate it.
+    /// </summary>
+    public void SetGmFlightEnabled(bool enabled)
+    {
+        gmFlightEnabled = enabled;
+        gmFlightVerticalInput = 0f;
+        jumpRequested = false;
+
+        if (rb == null)
+            rb = GetComponent<Rigidbody>();
+        if (rb == null)
+            return;
+
+        rb.useGravity = !enabled;
+        rb.linearVelocity = Vector3.zero;
+        rb.angularVelocity = Vector3.zero;
+
+        if (enabled)
+        {
+            isGrounded = false;
+            SetAnimBool("isGrounded", false);
+        }
     }
 
     /// <summary>
@@ -324,19 +354,33 @@ public class PlayerMovement : NetworkBehaviour
             return;
         }
 
+        var keyboard = Keyboard.current;
+        if (keyboard == null)
+        {
+            ClearMovementIntent();
+            return;
+        }
+
         Vector2 input = Vector2.zero;
 
-        bool pressingW = Keyboard.current.wKey.isPressed;
-        bool pressingS = Keyboard.current.sKey.isPressed;
-        bool pressingA = Keyboard.current.aKey.isPressed;
-        bool pressingD = Keyboard.current.dKey.isPressed;
+        bool pressingW = keyboard.wKey.isPressed;
+        bool pressingS = keyboard.sKey.isPressed;
+        bool pressingA = keyboard.aKey.isPressed;
+        bool pressingD = keyboard.dKey.isPressed;
 
         if (pressingW) input.y += 1;
         if (pressingS) input.y -= 1;
         if (pressingA) input.x -= 1;
         if (pressingD) input.x += 1;
 
-        bool isSprinting = Keyboard.current.leftShiftKey.isPressed && input.sqrMagnitude > 0 && !pressingS;
+        gmFlightVerticalInput = gmFlightEnabled
+            ? (keyboard.spaceKey.isPressed ? 1f : 0f) -
+              (keyboard.leftCtrlKey.isPressed || keyboard.rightCtrlKey.isPressed || keyboard.cKey.isPressed ? 1f : 0f)
+            : 0f;
+
+        bool hasFlightInput = gmFlightEnabled && !Mathf.Approximately(gmFlightVerticalInput, 0f);
+        bool isSprinting = keyboard.leftShiftKey.isPressed &&
+                           (input.sqrMagnitude > 0 || hasFlightInput) && !pressingS;
         bool isMoving = input.sqrMagnitude > 0;
         bool isBackwards = useBackwardMovementAnimation && pressingS && !pressingW;
 
@@ -344,7 +388,7 @@ public class PlayerMovement : NetworkBehaviour
         SetAnimBool("isSprinting", isSprinting);
         SetAnimBool("isBackwards", isBackwards);
 
-        if (Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame && isGrounded)
+        if (!gmFlightEnabled && keyboard.spaceKey.wasPressedThisFrame && isGrounded)
         {
             jumpRequested = true;
         }
@@ -354,9 +398,9 @@ public class PlayerMovement : NetworkBehaviour
         if (stats != null) currentSpeed *= stats.MoveSpeedMultiplier;   // gear/attunement bonus
 
         // ── Dodge roll input (Left Alt or V) ─────────────────────
-        bool dodgePressed = Keyboard.current.leftAltKey.wasPressedThisFrame
-                         || Keyboard.current.vKey.wasPressedThisFrame;
-        if (dodgePressed && _dodgeCharges > 0 && !_isDodging)
+        bool dodgePressed = keyboard.leftAltKey.wasPressedThisFrame
+                         || keyboard.vKey.wasPressedThisFrame;
+        if (!gmFlightEnabled && dodgePressed && _dodgeCharges > 0 && !_isDodging)
         {
             StartCoroutine(DodgeRoutine());
         }
@@ -397,6 +441,8 @@ public class PlayerMovement : NetworkBehaviour
         {
             ClearMovementIntent();
             StopHorizontalMotion();
+            if (gmFlightEnabled)
+                rb.linearVelocity = Vector3.zero;
             return;
         }
 
@@ -407,6 +453,8 @@ public class PlayerMovement : NetworkBehaviour
         {
             ClearMovementIntent();
             StopHorizontalMotion();
+            if (gmFlightEnabled)
+                rb.linearVelocity = Vector3.zero;
             return;
         }
 
@@ -427,7 +475,18 @@ public class PlayerMovement : NetworkBehaviour
             rb.AddForce(Vector3.up * jumpForce, ForceMode.VelocityChange);
         }
 
-        if (!_isDodging)
+        if (gmFlightEnabled)
+        {
+            Vector3 horizontalVelocity = wantsMove
+                ? moveDirection * currentSpeed
+                : Vector3.zero;
+            float verticalSpeed = Mathf.Max(6f, currentSpeed);
+            rb.linearVelocity = new Vector3(
+                horizontalVelocity.x,
+                gmFlightVerticalInput * verticalSpeed,
+                horizontalVelocity.z);
+        }
+        else if (!_isDodging)
         {
             Vector3 velocity = rb.linearVelocity;
             if (wantsMove)
@@ -530,6 +589,7 @@ public class PlayerMovement : NetworkBehaviour
     {
         wantsMove = false;
         jumpRequested = false;
+        gmFlightVerticalInput = 0f;
         SetAnimBool("isMoving", false);
         SetAnimBool("isSprinting", false);
         SetAnimBool("isBackwards", false);
@@ -638,7 +698,8 @@ public class PlayerMovement : NetworkBehaviour
 
     private void OnCollisionEnter(Collision collision)
     {
-        if (collision.gameObject.CompareTag("Ground") || HasWalkableContact(collision))
+        if (!gmFlightEnabled &&
+            (collision.gameObject.CompareTag("Ground") || HasWalkableContact(collision)))
         {
             isGrounded = true;
             SetAnimBool("isGrounded", true);
@@ -647,7 +708,8 @@ public class PlayerMovement : NetworkBehaviour
 
     private void OnCollisionStay(Collision collision)
     {
-        if (collision.gameObject.CompareTag("Ground") || HasWalkableContact(collision))
+        if (!gmFlightEnabled &&
+            (collision.gameObject.CompareTag("Ground") || HasWalkableContact(collision)))
         {
             isGrounded = true;
             SetAnimBool("isGrounded", true);
