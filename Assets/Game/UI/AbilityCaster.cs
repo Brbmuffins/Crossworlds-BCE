@@ -1854,11 +1854,22 @@ public class AbilityCaster : NetworkBehaviour
         return NetworkClient.active && !NetworkServer.active && isLocalPlayer;
     }
 
-    Vector3 GetCameraAimPoint()
+    bool TryGetCameraAimPoint(out Vector3 aimPoint, out Vector3 skyAimDirection)
     {
         // Mouse cursor world position — cast a ray from cursor, not screen centre
         Vector2 mp  = Mouse.current.position.ReadValue();
         Ray     ray = cam.ScreenPointToRay(new Vector3(mp.x, mp.y, 0f));
+
+        // Preserve the cursor's horizontal direction when the ray points above the
+        // horizon and cannot intersect either terrain or the player-height plane.
+        skyAimDirection = Vector3.ProjectOnPlane(ray.direction, Vector3.up);
+        if (skyAimDirection.sqrMagnitude < 0.0001f)
+            skyAimDirection = Vector3.ProjectOnPlane(cam.transform.forward, Vector3.up);
+        if (skyAimDirection.sqrMagnitude < 0.0001f)
+            skyAimDirection = Vector3.ProjectOnPlane(transform.forward, Vector3.up);
+        skyAimDirection = skyAimDirection.sqrMagnitude > 0.0001f
+            ? skyAimDirection.normalized
+            : Vector3.forward;
 
         RaycastHit[] hits = ZonePhysics.RaycastAll(gameObject, ray, 100f, ~0, QueryTriggerInteraction.Ignore);
         System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
@@ -1867,14 +1878,29 @@ public class AbilityCaster : NetworkBehaviour
         {
             if (ShouldIgnoreIndicatorHit(hit))
                 continue;
-            return hit.point;
+            aimPoint = hit.point;
+            return true;
         }
 
         Plane groundPlane = new Plane(Vector3.up, transform.position);
         if (groundPlane.Raycast(ray, out float distance))
-            return ray.GetPoint(distance);
+        {
+            aimPoint = ray.GetPoint(distance);
+            return true;
+        }
 
-        return transform.position + transform.forward * minimumAimDistance;
+        aimPoint = default;
+        return false;
+    }
+
+    Vector3 GetCameraAimPoint()
+    {
+        if (TryGetCameraAimPoint(out Vector3 aimPoint, out Vector3 skyAimDirection))
+            return aimPoint;
+
+        // RefreshAimDirection only needs a direction here. GetAimData handles the
+        // same no-hit case by placing ranged indicators at their maximum range.
+        return transform.position + skyAimDirection * 1000f;
     }
 
     // Called every frame to keep AimDirection current so PlayerMovement can always
@@ -1890,7 +1916,14 @@ public class AbilityCaster : NetworkBehaviour
 
     void GetAimData(AbilityDef ability, out Vector3 aimDir, out float aimDistance)
     {
-        Vector3 targetPoint = GetCameraAimPoint();
+        if (!TryGetCameraAimPoint(out Vector3 targetPoint, out Vector3 skyAimDirection))
+        {
+            aimDir = skyAimDirection;
+            aimDistance = Mathf.Max(0f, ability.range);
+            AimDirection = aimDir;
+            return;
+        }
+
         Vector3 toTarget = targetPoint - transform.position;
         toTarget.y = 0f;
 
