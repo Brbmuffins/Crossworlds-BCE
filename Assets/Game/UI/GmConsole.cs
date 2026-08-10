@@ -76,6 +76,7 @@ public class GmConsole : MonoBehaviour
     bool  _godActive;
     bool  _noclipActive;
     float _baseSpeed;
+    float _baseSprintSpeed;
     float _baseMass;
 
     // ── Lifecycle ─────────────────────────────────────────────────────────
@@ -153,7 +154,11 @@ public class GmConsole : MonoBehaviour
                 _movement    = go.GetComponent<PlayerMovement>();
                 _rb          = go.GetComponent<Rigidbody>();
                 _health      = go.GetComponent<Health>();
-                if (_movement != null) _baseSpeed = _movement.moveSpeed;
+                if (_movement != null)
+                {
+                    _baseSpeed = _movement.moveSpeed;
+                    _baseSprintSpeed = _movement.sprintSpeed;
+                }
                 if (_rb       != null) _baseMass  = _rb.mass;
                 return;
             }
@@ -166,7 +171,11 @@ public class GmConsole : MonoBehaviour
             _movement    = fallback.GetComponent<PlayerMovement>();
             _rb          = fallback.GetComponent<Rigidbody>();
             _health      = fallback.GetComponent<Health>();
-            if (_movement != null) _baseSpeed = _movement.moveSpeed;
+            if (_movement != null)
+            {
+                _baseSpeed = _movement.moveSpeed;
+                _baseSprintSpeed = _movement.sprintSpeed;
+            }
             if (_rb       != null) _baseMass  = _rb.mass;
         }
     }
@@ -227,7 +236,7 @@ public class GmConsole : MonoBehaviour
             return;
         }
         _movement.moveSpeed  = _baseSpeed * mult;
-        _movement.sprintSpeed = _baseSpeed * 1.8f * mult;
+        _movement.sprintSpeed = _baseSprintSpeed * mult;
         Log($"<color=#4ade80>Speed set to ×{mult} ({_movement.moveSpeed:F1} u/s)</color>");
     }
 

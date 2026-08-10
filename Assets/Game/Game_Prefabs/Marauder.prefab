@@ -145,7 +145,7 @@ MonoBehaviour:
   syncDirection: 0
   syncMode: 0
   syncInterval: 0
-  moveSpeed: 5
+  moveSpeed: 9
   sprintSpeed: 9
   jumpForce: 6
   rotationSpeed: 12
@@ -1047,7 +1047,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerAnimator
   combatCheckRadius: 10
   combatCheckInterval: 0.5
-  baseMoveSpeed: 5
+  baseMoveSpeed: 9
   baseSprintSpeed: 9
 --- !u!1001 &1391727693047896589
 PrefabInstance:

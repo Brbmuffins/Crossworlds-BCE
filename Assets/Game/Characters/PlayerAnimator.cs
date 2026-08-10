@@ -42,7 +42,7 @@ public class PlayerAnimator : MonoBehaviour
 
     [Header("Speed Normalisation")]
     [Tooltip("Your PlayerMovement.moveSpeed value — used to normalise Speed to 0-1")]
-    public float baseMoveSpeed = 5f;
+    public float baseMoveSpeed = 9f;
     [Tooltip("Your PlayerMovement.sprintSpeed value — Speed will reach 1.5 at sprint")]
     public float baseSprintSpeed = 9f;
 
@@ -108,7 +108,7 @@ public class PlayerAnimator : MonoBehaviour
             Vector3 flatVel = _rb.linearVelocity;
             flatVel.y = 0f;
             // Normalise: baseMoveSpeed → 1.0, baseSprintSpeed → 1.5
-            float speed = flatVel.magnitude / baseMoveSpeed;
+            float speed = NormalizeLocomotionSpeed(flatVel.magnitude);
             SetFloat("Speed", speed);
         }
 
@@ -144,6 +144,20 @@ public class PlayerAnimator : MonoBehaviour
     }
 
     // ── Health event handlers ─────────────────────────────────────────────────────
+
+    float NormalizeLocomotionSpeed(float worldSpeed)
+    {
+        float runSpeed = Mathf.Max(0.01f, baseMoveSpeed);
+        float authoredSprintSpeed = Mathf.Max(runSpeed, baseSprintSpeed);
+
+        if (worldSpeed <= runSpeed || Mathf.Approximately(authoredSprintSpeed, runSpeed))
+            return Mathf.Clamp(worldSpeed / runSpeed, 0f, 1.5f);
+
+        return Mathf.Lerp(
+            1f,
+            1.5f,
+            Mathf.InverseLerp(runSpeed, authoredSprintSpeed, worldSpeed));
+    }
 
     void OnDamageTaken(float _)
     {

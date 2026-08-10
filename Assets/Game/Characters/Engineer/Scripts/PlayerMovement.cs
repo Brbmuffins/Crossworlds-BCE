@@ -7,7 +7,7 @@ using UnityEngine.InputSystem;
 
 public class PlayerMovement : NetworkBehaviour
 {
-    public float moveSpeed = 5f;
+    public float moveSpeed = 9f;
     public float sprintSpeed = 9f;
     public float jumpForce = 6f;
     public float rotationSpeed = 12f;

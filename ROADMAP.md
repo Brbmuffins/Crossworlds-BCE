@@ -111,6 +111,12 @@ conversation: it names its files, acceptance criteria, and dependencies. Tasks m
 > provides a final server-side player-damage gate everywhere else, and downed players
 > in PVPZONE return to a random matching zone spawn after the normal respawn delay;
 > map and GM arrivals use the same server-selected spawn pool.
+>
+> **Player run speed 2026-08-10:** Normal locomotion now uses the former sprint
+> speed of 9 units/second on all five active class prefabs and future PlayerMovement
+> defaults. Sprint remains at 9, preserving its input/animation hook without an
+> additional speed increase. Player animation normalization and local GM speed
+> scaling use the new authored run/sprint baselines.
 > The `#if !UNITY_SERVER` guards described in the 1.5 note above were the *bare* form;
 > the required convention is `#if UNITY_EDITOR || !UNITY_SERVER`, and the 8 remaining
 > bare guards (HeroCosmeticApplier, StatusEffectHUD, ShieldValueHUD, GoldHUD,
