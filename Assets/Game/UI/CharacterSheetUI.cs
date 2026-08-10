@@ -21,6 +21,7 @@ public sealed class CharacterSheetUI : MonoBehaviour
     bool _open;
     float _nextLiveRefresh;
     UnityEngine.UI.Image _dragIcon;
+    Vector2 _equipmentDragStart;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void Bootstrap()
@@ -270,6 +271,7 @@ public sealed class CharacterSheetUI : MonoBehaviour
         _dragIcon.color = _dragIcon.sprite != null ? Color.white : Color.clear;
         go.GetComponent<CanvasGroup>().blocksRaycasts = false;
         rect.position = eventData.position;
+        _equipmentDragStart = eventData.position;
     }
 
     void OnEquipmentDrag(CharacterEquipmentSlot slot, PointerEventData eventData)
@@ -279,9 +281,14 @@ public sealed class CharacterSheetUI : MonoBehaviour
 
     void OnEquipmentEndDrag(CharacterEquipmentSlot slot, PointerEventData eventData)
     {
+        bool dragged = _dragIcon != null &&
+                       Vector2.Distance(_equipmentDragStart, eventData.position) >= 16f;
+        bool returnedToSource = _view != null &&
+                                _view.TryGetSlotAt(eventData.position,
+                                    eventData.pressEventCamera, out var target) &&
+                                target == slot;
         ClearDragIcon();
-        if (InventoryBagUI.Instance != null && InventoryBagUI.Instance.ContainsScreenPoint(
-                eventData.position, eventData.pressEventCamera))
+        if (dragged && !returnedToSource)
             OnEquipmentClicked(slot);
     }
 
