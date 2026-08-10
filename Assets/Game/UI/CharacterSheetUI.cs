@@ -16,6 +16,7 @@ public sealed class CharacterSheetUI : MonoBehaviour
     readonly Dictionary<CharacterEquipmentSlot, InventoryBagUI.EquippedItemSnapshot> _equipped = new();
     PlayerProgressManager _progress;
     InventoryBagUI _inventory;
+    PlayerIdentity _identity;
     bool _open;
     float _nextLiveRefresh;
 
@@ -42,8 +43,10 @@ public sealed class CharacterSheetUI : MonoBehaviour
     {
         if (_progress != null) _progress.OnDataRefreshed -= RefreshAll;
         if (_inventory != null) _inventory.EquipmentChanged -= RefreshEquipment;
+        if (_identity != null) _identity.EquipmentChanged -= RefreshEquipment;
         _progress = null;
         _inventory = null;
+        _identity = null;
     }
 
     void OnDestroy()
@@ -61,11 +64,13 @@ public sealed class CharacterSheetUI : MonoBehaviour
         _progress.OnDataRefreshed += RefreshAll;
         _inventory.EquipmentChanged -= RefreshEquipment;
         _inventory.EquipmentChanged += RefreshEquipment;
+        BindIdentity(FindLocalIdentity());
         RefreshAll();
     }
 
     void Update()
     {
+        BindIdentity(FindLocalIdentity());
         var keyboard = UnityEngine.InputSystem.Keyboard.current;
         if (keyboard != null)
         {
@@ -137,7 +142,18 @@ public sealed class CharacterSheetUI : MonoBehaviour
         _view.playerName.text = identity != null ? identity.playerName : PlayerPrefs.GetString("username", "Player");
         _view.playerLevel.text = progress != null ? $"Level {progress.Level}" : "Level —";
         _view.className.text = identity != null ? identity.ClassName : "—";
-        if (progress != null)
+        GameObject player = NetworkClient.localPlayer != null
+            ? NetworkClient.localPlayer.gameObject
+            : identity != null ? identity.gameObject : null;
+        CharacterStats stats = player != null ? player.GetComponent<CharacterStats>() : null;
+        if (stats != null)
+        {
+            _view.strValue.text = stats.EffectiveStrength.ToString();
+            _view.agiValue.text = stats.EffectiveAgility.ToString();
+            _view.intValue.text = stats.EffectiveIntelligence.ToString();
+            _view.vitValue.text = stats.EffectiveVitality.ToString();
+        }
+        else if (progress != null)
         {
             _view.strValue.text = progress.StatStr.ToString();
             _view.agiValue.text = progress.StatAgi.ToString();
@@ -145,11 +161,7 @@ public sealed class CharacterSheetUI : MonoBehaviour
             _view.vitValue.text = progress.StatVit.ToString();
         }
 
-        GameObject player = NetworkClient.localPlayer != null
-            ? NetworkClient.localPlayer.gameObject
-            : identity != null ? identity.gameObject : null;
         _modelPreview?.Refresh(player);
-        CharacterStats stats = player != null ? player.GetComponent<CharacterStats>() : null;
         Health health = player != null ? player.GetComponent<Health>() : null;
         SetCombat(0, health != null ? $"{health.maxHealth:0}" : "—");
         SetCombat(1, stats != null ? $"{stats.MaxMana:0}" : "—");
@@ -174,15 +186,29 @@ public sealed class CharacterSheetUI : MonoBehaviour
         if (!_open || _view == null) return;
         _equipped.Clear();
         int ringOrdinal = 0;
-        var snapshots = InventoryBagUI.Instance?.GetEquippedItems();
-        if (snapshots != null)
+        if (_identity != null && _identity.equippedLoot.Count > 0)
         {
-            foreach (var item in snapshots)
+            foreach (EquippedLootState state in _identity.equippedLoot)
+            {
+                int ordinal = state.equipmentSlot == LootEquipmentSlot.Ring ? ringOrdinal++ : 0;
+                if (!CharacterEquipmentSlotMap.TryMap(state.equipmentSlot, ordinal, out CharacterEquipmentSlot slot))
+                    continue;
+                _equipped[slot] = new InventoryBagUI.EquippedItemSnapshot(
+                    state.inventorySlotIndex, state.itemId, 1, "");
+            }
+        }
+        else
+        {
+            var snapshots = InventoryBagUI.Instance?.GetEquippedItems();
+            if (snapshots != null) foreach (var item in snapshots)
             {
                 LootItemDefinition definition = LootItemCatalog.Find(item.ItemId);
-                bool ring = definition != null
-                    ? definition.databaseItemType == LootDatabaseItemType.Ring
-                    : string.Equals(ItemCatalogManager.Instance?.GetTemplate(item.ItemId)?.item_type, "ring", System.StringComparison.OrdinalIgnoreCase);
+                bool ring = definition != null && definition.equipmentSlot != LootEquipmentSlot.None
+                    ? definition.equipmentSlot == LootEquipmentSlot.Ring
+                    : definition != null
+                        ? definition.databaseItemType == LootDatabaseItemType.Ring
+                        : string.Equals(ItemCatalogManager.Instance?.GetTemplate(item.ItemId)?.item_type,
+                            "ring", System.StringComparison.OrdinalIgnoreCase);
                 int ordinal = ring ? ringOrdinal++ : 0;
                 if (CharacterEquipmentSlotMap.TryMap(item.ItemId, ordinal, out CharacterEquipmentSlot slot))
                     _equipped[slot] = item;
@@ -202,6 +228,8 @@ public sealed class CharacterSheetUI : MonoBehaviour
             Color rarity = definition != null ? LootItemCatalog.RarityColor(definition.rarity) : ItemCatalogManager.GetRarityColor(item.ItemId);
             _view.SetEquipment(slot, icon, item.Quantity, rarity, false);
         }
+        GameObject player = NetworkClient.localPlayer != null ? NetworkClient.localPlayer.gameObject : null;
+        _modelPreview?.Refresh(player, true);
     }
 
     void OnEquipmentClicked(CharacterEquipmentSlot slot)
@@ -214,6 +242,15 @@ public sealed class CharacterSheetUI : MonoBehaviour
     {
         if (_equipped.TryGetValue(slot, out var item))
             ItemTooltipUI.Instance?.Show(item.ItemId, eventData.position);
+    }
+
+    void BindIdentity(PlayerIdentity identity)
+    {
+        if (_identity == identity) return;
+        if (_identity != null) _identity.EquipmentChanged -= RefreshEquipment;
+        _identity = identity;
+        if (_identity != null) _identity.EquipmentChanged += RefreshEquipment;
+        RefreshAll();
     }
 
     static bool AnyInputFocused()

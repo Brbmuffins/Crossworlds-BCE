@@ -22,7 +22,7 @@ public sealed class CharacterModelPreview
         CreateStage();
     }
 
-    public void Refresh(GameObject sourcePlayer)
+    public void Refresh(GameObject sourcePlayer, bool rebuild = false)
     {
         if (_target != null)
         {
@@ -31,7 +31,7 @@ public sealed class CharacterModelPreview
             _target.enabled = true;
         }
         if (sourcePlayer == null) return;
-        if (sourcePlayer == _sourcePlayer)
+        if (!rebuild && sourcePlayer == _sourcePlayer)
         {
             if (_camera != null) _camera.Render();
             return;

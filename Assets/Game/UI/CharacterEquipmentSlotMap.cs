@@ -22,10 +22,31 @@ public static class CharacterEquipmentSlotMap
     public static bool TryMap(string itemId, int ringOrdinal, out CharacterEquipmentSlot slot)
     {
         LootItemDefinition definition = LootItemCatalog.Find(itemId);
+        if (definition != null && definition.equipmentSlot != LootEquipmentSlot.None)
+            return TryMap(definition.equipmentSlot, ringOrdinal, out slot);
         if (definition != null) return TryMap(definition.databaseItemType, ringOrdinal, out slot);
 
         string type = ItemCatalogManager.Instance?.GetTemplate(itemId)?.item_type;
         return TryMapServerType(type, ringOrdinal, out slot);
+    }
+
+    public static bool TryMap(LootEquipmentSlot equipmentSlot, int ringOrdinal, out CharacterEquipmentSlot slot)
+    {
+        switch (equipmentSlot)
+        {
+            case LootEquipmentSlot.Head: slot = CharacterEquipmentSlot.Head; return true;
+            case LootEquipmentSlot.Chest: slot = CharacterEquipmentSlot.Chest; return true;
+            case LootEquipmentSlot.Hands: slot = CharacterEquipmentSlot.Hands; return true;
+            case LootEquipmentSlot.MainHand: slot = CharacterEquipmentSlot.MainHand; return true;
+            case LootEquipmentSlot.OffHand: slot = CharacterEquipmentSlot.OffHand; return true;
+            case LootEquipmentSlot.Legs: slot = CharacterEquipmentSlot.Legs; return true;
+            case LootEquipmentSlot.Feet: slot = CharacterEquipmentSlot.Feet; return true;
+            case LootEquipmentSlot.Ring:
+                slot = ringOrdinal == 0 ? CharacterEquipmentSlot.RingLeft : CharacterEquipmentSlot.RingRight;
+                return ringOrdinal < 2;
+            case LootEquipmentSlot.Trinket: slot = CharacterEquipmentSlot.Trinket; return true;
+            default: slot = default; return false;
+        }
     }
 
     public static bool TryMap(LootDatabaseItemType type, int ringOrdinal, out CharacterEquipmentSlot slot)
