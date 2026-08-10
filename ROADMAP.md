@@ -344,6 +344,11 @@ Highest-value phase: every piece exists, only glue is missing.
   overrides and two-handed off-hand exclusion. Unity compilation passes. The additive
   `items.two_handed` migration, atomic off-hand conflict handling, auth patch, and matching
   dedicated server were deployed and health-checked on 2026-08-10.
+  **Equipped-storage follow-up (2026-08-10):** equipped rows now move to reserved server positions
+  (100–108), genuinely freeing their 24-slot bag position; unequip/swap returns displaced gear to
+  the first free bag position and rejects a full bag safely. Inventory saves preserve equipped rows.
+  Character-window drag-back supports reserved positions, and the paper-doll preview renders its
+  unscaled-time animation every frame instead of at the 0.25-second data refresh cadence.
 
 - **3.3 — Crafting loop client.** ✅ code-side (2026-07-03 profession session)
   `ForgeCraftingPanel.cs` — Smelt + Craft tabs, progress bar, ingredient shortage highlight in red.

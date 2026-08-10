@@ -207,6 +207,18 @@ public sealed class InventoryBagUI : MonoBehaviour
         StartCoroutine(PostEquip(slot, false));
     }
 
+    public void UnequipEquipmentPosition(int equipmentPosition, string itemId)
+    {
+        if (equipmentPosition < 100 || string.IsNullOrEmpty(itemId)) return;
+        StartCoroutine(PostEquip(new InventorySlotData
+        {
+            slot_index = equipmentPosition,
+            item_id = itemId,
+            quantity = 1,
+            equipped = 1
+        }, false));
+    }
+
     public bool ContainsScreenPoint(Vector2 screenPosition, Camera eventCamera) =>
         _open && _dragHandle != null && _dragHandle.panel != null &&
         RectTransformUtility.RectangleContainsScreenPoint(

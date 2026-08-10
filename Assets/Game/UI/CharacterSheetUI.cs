@@ -85,6 +85,7 @@ public sealed class CharacterSheetUI : MonoBehaviour
             _nextLiveRefresh = Time.unscaledTime + 0.25f;
             RefreshIdentityAndStats();
         }
+        if (_open) _modelPreview?.RenderFrame();
     }
 
     void CreateView()
@@ -242,7 +243,13 @@ public sealed class CharacterSheetUI : MonoBehaviour
     void OnEquipmentClicked(CharacterEquipmentSlot slot)
     {
         if (_equipped.TryGetValue(slot, out var item))
-            InventoryBagUI.Instance?.UnequipInventorySlot(item.InventorySlotIndex);
+        {
+            if (item.InventorySlotIndex >= 100)
+                InventoryBagUI.Instance?.UnequipEquipmentPosition(
+                    item.InventorySlotIndex, item.ItemId);
+            else
+                InventoryBagUI.Instance?.UnequipInventorySlot(item.InventorySlotIndex);
+        }
     }
 
     void OnEquipmentBeginDrag(CharacterEquipmentSlot slot, PointerEventData eventData)
