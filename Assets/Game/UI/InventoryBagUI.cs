@@ -418,6 +418,7 @@ public sealed class InventoryBagUI : MonoBehaviour
             slot.equipped = equip ? 1 : 0;
             RenderSlots();
             StartCoroutine(FetchInventory());
+            PlayerIdentity.Local?.CmdRefreshEquipment();
         }
         else _view.SetStatus($"Equip failed: {request.error}");
     }

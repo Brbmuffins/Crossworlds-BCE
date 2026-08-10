@@ -14,12 +14,22 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::LootItemDefinition
   itemId: sword_of_gnomen
   displayName: Legendary Sword of Gnomen
-  databaseItemType: 0
+  databaseItemType: 1
+  equipmentSlot: 6
   rarity: 3
   inventoryIcon: {fileID: 21300000, guid: 564b53f9367a42728fea7aa80d61ce77, type: 3}
   iconId: 564b53f9367a42728fea7aa80d61ce77
   sellValue: 0
   crafted: 0
-  stackable: 1
+  stackable: 0
   maxStackSize: 1
+  equippedVisualPrefab: {fileID: 2902735195551507092, guid: 04a20218a0649b446b42964074c6c157, type: 3}
+  attachmentBoneName: 
+  equippedLocalPosition: {x: 0, y: 0, z: 0}
+  equippedLocalEulerAngles: {x: 0, y: 0, z: 0}
+  equippedLocalScale: {x: 1, y: 1, z: 1}
+  bonusStrength: 0
+  bonusAgility: 0
+  bonusIntelligence: 0
+  bonusVitality: 0
   worldVisualPrefab: {fileID: 2902735195551507092, guid: 04a20218a0649b446b42964074c6c157, type: 3}

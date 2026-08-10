@@ -9,7 +9,7 @@ using UnityEngine;
 //  Usage: read playerName / classIndex anywhere on the player object.
 // ═══════════════════════════════════════════════════════════════════════════
 
-public class PlayerIdentity : NetworkBehaviour
+public partial class PlayerIdentity : NetworkBehaviour
 {
     [SyncVar] public string playerName   = "Player";
     [SyncVar] public int    classIndex   = 0;
@@ -155,6 +155,7 @@ public class PlayerIdentity : NetworkBehaviour
 
     public override void OnStartClient()
     {
+        EquipmentOnStartClient();
         // Update display name for remote players
         if (!isLocalPlayer)
             gameObject.name = playerName;
@@ -180,6 +181,7 @@ public class PlayerIdentity : NetworkBehaviour
 
     public override void OnStopClient()
     {
+        EquipmentOnStopClient();
         // Notify player list immediately on leave
 #if UNITY_EDITOR || !UNITY_SERVER
         PlayerListUI.RequestRefresh();

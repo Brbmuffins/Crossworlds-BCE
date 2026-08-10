@@ -287,10 +287,13 @@ Highest-value phase: every piece exists, only glue is missing.
   server-doc convention). *Accept:* kills → XP bar moves → level-up screen → DB row updated.
   *Deps:* 1.6. **READY**
 
-- **3.2 — Character sheet + equip stats.** Files: `UI/CharacterSheetUI.cs`,
-  `Items/Scripts/{CharacterStats,EquipmentUI,EquipmentSlot,TooltipUI}.cs`, `UI/InventoryBagUI.cs`.
-  Verify equip → `POST /api/inventory/equip` → stat recalc from `stat_bonus` JSON. *Accept:*
-  equipping a seeded item changes displayed stats and persists across relog. *Deps:* 1.6. **READY**
+- **3.2 — Character sheet + equip stats.** **CODE COMPLETE / LIVE BACK END DEPLOYED
+  (2026-08-10).** Loot Forge now authors equipment slots, wearable visuals, attachment offsets,
+  stat bonuses, and transparent inventory PNGs. Mirror synchronizes equipped state and wearable
+  visuals; the character sheet displays a paper doll and effective stats. The live API validates
+  canonical slots, preserves server-owned equip state, and exposes equipped items to the game
+  server. *Runtime acceptance remaining:* equip a seeded weapon with two clients, verify the visual
+  replicates, persists across relog, and tune its skeleton-specific hand offset. *Deps:* 1.6.
 
 - **3.3 — Crafting loop client.** ✅ code-side (2026-07-03 profession session)
   `ForgeCraftingPanel.cs` — Smelt + Craft tabs, progress bar, ingredient shortage highlight in red.

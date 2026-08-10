@@ -11,6 +11,22 @@ public enum LootDatabaseItemType
     ArmorHands,
     Offhand,
     Ring,
+    Trinket,
+    // Keep this value last so existing serialized enum indices never change.
+    Unspecified
+}
+
+public enum LootEquipmentSlot
+{
+    None,
+    Head,
+    Chest,
+    Legs,
+    Feet,
+    Hands,
+    MainHand,
+    OffHand,
+    Ring,
     Trinket
 }
 
@@ -30,7 +46,10 @@ public class LootItemDefinition : ScriptableObject
     public string displayName;
 
     [Tooltip("Database inventory category. Must match the live items.item_type enum.")]
-    public LootDatabaseItemType databaseItemType = LootDatabaseItemType.Material;
+    public LootDatabaseItemType databaseItemType = LootDatabaseItemType.Unspecified;
+
+    [Tooltip("Required for equipment. Determines the paper-doll and authoritative database slot.")]
+    public LootEquipmentSlot equipmentSlot = LootEquipmentSlot.None;
 
     [Tooltip("Controls the pickup glow and attached loot-beam color.")]
     public ItemRarity rarity = ItemRarity.Common;
@@ -51,6 +70,22 @@ public class LootItemDefinition : ScriptableObject
 
     [Min(1), Tooltip("Maximum quantity held in one slot. Ignored when Stackable is disabled.")]
     public int maxStackSize = 99;
+
+    [Header("Equipped Item")]
+    [Tooltip("Client-side model attached to the equipped player and paper-doll preview. May reuse World Visual Prefab for simple weapons.")]
+    public GameObject equippedVisualPrefab;
+
+    [Tooltip("Optional exact skeleton transform name. Leave empty to use slot-aware hand/head/body aliases.")]
+    public string attachmentBoneName;
+    public Vector3 equippedLocalPosition;
+    public Vector3 equippedLocalEulerAngles;
+    public Vector3 equippedLocalScale = Vector3.one;
+
+    [Header("Server-authoritative stat bonuses")]
+    [Min(0)] public int bonusStrength;
+    [Min(0)] public int bonusAgility;
+    [Min(0)] public int bonusIntelligence;
+    [Min(0)] public int bonusVitality;
 
     [Tooltip("Optional item-specific model shown on the world pickup, such as a sword or chest. Leave empty for inventory-only items to use the enemy's assigned generic pickup prefab. Colliders on this visual are disabled when attached.")]
     public GameObject worldVisualPrefab;

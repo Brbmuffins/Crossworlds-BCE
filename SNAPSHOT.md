@@ -113,6 +113,7 @@ Dev bypass: in-editor, JWT `"dev"` skips the auth server entirely
 | Class passives | `Characters/Scripts/Passive*` (BountySystem, PhaseCharge, ThreatProtocol, TriageLoop, Overengineered) + `ClassPassive`, `ClassAbilityPool` | Mostly server |
 | Persistence singletons (client-side REST) | `Systems/InventoryManager`, `UI/PlayerProgressManager`, `Systems/ItemCatalogManager`, `Systems/HeroMasteryManager`, `Combat/Scripts/CombatSessionTracker` | Client-initiated HTTP with JWT; kill XP/gold is API-awarded and refreshed into the HUD |
 | Loot/rewards | `DropTable` (ScriptableObject weighted rolls), `WorldItem` (net-spawned pickup), `WaveChest` | Server rolls/spawns; authenticated damage opens a per-instance API hit gate; XP derives from enemy level + grunt/brute/elite/boss category; accepted kill response drives XP refresh/popup |
+| Equipment | `LootItemDefinition`, `LootForgeWindow`, `LootForgeIconRenderer`, `PlayerIdentity.Equipment`, `CharacterSheetUI` | Loot Forge authors slots/stats/wearable prefabs and renders 256px transparent inventory icons; server validates/persists equip state; Mirror replicates equipped visuals and effective stats |
 | UI | ~30 scripts (bag, crafting, XP bar, boss bar, radar, status HUD, GM console…) | Client |
 | Editor tooling | `Editor/` builders (`RodHubSceneBuilder`, `EnemyBuilder`, `WorldBossBuilder`, `BrandalfSetupBuilder`, `BuildScript`, …) | Editor-only, generates scenes/prefabs — load-bearing for reproducibility |
 
@@ -128,6 +129,8 @@ RodNetworkManager.classPrefabs[0-4] ─► class index order everywhere
 Health ─► EnemyController / WorldBossController / EnemyDeathHandler / EnemyHealthBar
 WaveSpawner ─► ArenaSessionController, CombatSessionTracker, WaveHUD, WaveChest, mastery XP
 DropTable + WorldItem prefab ─► InventoryManager ─► /api/inventory/save
+Loot Forge definition ─► inventory PNG + DB item definition ─► /api/inventory/equip
+  └─► PlayerIdentity equipment SyncList ─► wearable visuals + CharacterStats + paper doll
 Scene names as strings ("Arena_Copper", offline/onlineScene paths in RodNetworkManager.Awake)
   ─► PortalTransition / HubReturnTrigger — rename a scene, break the portal silently
 Old gear endpoints/tables (item_template, character_gear…) — SACRED, Unity spawn depends on them

@@ -30,6 +30,7 @@ public class CharacterSheetUI : MonoBehaviour
     // ── UI refs ───────────────────────────────────────────────────────────────
     Canvas          _canvas;
     GameObject      _panel;
+    GameObject      _equipmentPanel;
     TextMeshProUGUI _nameText;
     TextMeshProUGUI _classText;
     TextMeshProUGUI _levelText;
@@ -38,15 +39,25 @@ public class CharacterSheetUI : MonoBehaviour
     Image           _xpFill;
     TextMeshProUGUI _strText, _agiText, _intText, _vitText;
     bool            _open;
+    PlayerIdentity  _equipmentIdentity;
+    readonly System.Collections.Generic.Dictionary<LootEquipmentSlot, Image> _equipmentIcons = new();
+    readonly System.Collections.Generic.Dictionary<LootEquipmentSlot, TextMeshProUGUI> _equipmentNames = new();
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
-    void Awake()  { BuildUI(); _panel.SetActive(false); }
+    void Awake()
+    {
+        BuildUI();
+        _panel.SetActive(false);
+        if (_equipmentPanel != null) _equipmentPanel.SetActive(false);
+    }
 
     void OnEnable()  { StartCoroutine(WaitForManager()); }
     void OnDisable()
     {
         if (PlayerProgressManager.Local != null)
             PlayerProgressManager.Local.OnDataRefreshed -= Repaint;
+        if (_equipmentIdentity != null)
+            _equipmentIdentity.EquipmentChanged -= Repaint;
     }
 
     IEnumerator WaitForManager()
@@ -59,12 +70,14 @@ public class CharacterSheetUI : MonoBehaviour
 
     void Update()
     {
+        BindEquipmentIdentity();
         var kb = UnityEngine.InputSystem.Keyboard.current;
         if (kb == null) return;
         if (kb.cKey.wasPressedThisFrame && !AnyInputFocused())
         {
             _open = !_open;
             _panel.SetActive(_open);
+            if (_equipmentPanel != null) _equipmentPanel.SetActive(_open);
             if (_open) Repaint();
         }
     }
@@ -94,6 +107,16 @@ public class CharacterSheetUI : MonoBehaviour
         _agiText.text = $"AGI   {pm.StatAgi}";
         _intText.text = $"INT   {pm.StatInt}";
         _vitText.text = $"VIT   {pm.StatVit}";
+
+        var stats = id != null ? id.GetComponent<CharacterStats>() : null;
+        if (stats != null)
+        {
+            _strText.text = $"STR   {stats.EffectiveStrength}";
+            _agiText.text = $"AGI   {stats.EffectiveAgility}";
+            _intText.text = $"INT   {stats.EffectiveIntelligence}";
+            _vitText.text = $"VIT   {stats.EffectiveVitality}";
+        }
+        RepaintEquipment(id);
     }
 
     // ── Build UI ──────────────────────────────────────────────────────────────
@@ -183,6 +206,114 @@ public class CharacterSheetUI : MonoBehaviour
 
         // Resize panel to fit content
         pRt.sizeDelta = new Vector2(200f, -(y - gap));
+
+        BuildEquipmentPaperDoll(root, pRt.sizeDelta.y);
+    }
+
+    void BuildEquipmentPaperDoll(RectTransform root, float height)
+    {
+        _equipmentPanel = new GameObject("EquipmentPaperDoll", typeof(RectTransform), typeof(Image));
+        _equipmentPanel.transform.SetParent(root, false);
+        _equipmentPanel.GetComponent<Image>().color = new Color(0.04f, 0.03f, 0.10f, 0.96f);
+        var panel = _equipmentPanel.GetComponent<RectTransform>();
+        panel.anchorMin = new Vector2(0f, 0.3f);
+        panel.anchorMax = new Vector2(0f, 0.75f);
+        panel.pivot = new Vector2(0f, 0.5f);
+        panel.anchoredPosition = new Vector2(220f, 0f);
+        panel.sizeDelta = new Vector2(330f, height);
+
+        var title = MakeText("EquipmentTitle", panel, new Vector2(0f, 1f), new Vector2(1f, 1f),
+            new Vector2(10f, -34f), new Vector2(-10f, 0f));
+        title.text = "EQUIPMENT";
+        title.fontSize = 13f;
+        title.fontStyle = FontStyles.Bold;
+        title.color = new Color(0.9f, 0.75f, 0.35f);
+        title.alignment = TextAlignmentOptions.Center;
+
+        LootEquipmentSlot[] slots =
+        {
+            LootEquipmentSlot.Head, LootEquipmentSlot.Chest,
+            LootEquipmentSlot.Hands, LootEquipmentSlot.Legs,
+            LootEquipmentSlot.Feet, LootEquipmentSlot.MainHand,
+            LootEquipmentSlot.OffHand, LootEquipmentSlot.Ring,
+            LootEquipmentSlot.Trinket
+        };
+        for (int i = 0; i < slots.Length; i++)
+        {
+            int column = i % 2;
+            int row = i / 2;
+            CreateEquipmentSlot(panel, slots[i], column, row);
+        }
+    }
+
+    void CreateEquipmentSlot(RectTransform parent, LootEquipmentSlot slot, int column, int row)
+    {
+        var root = new GameObject(slot + "Slot", typeof(RectTransform), typeof(Image));
+        root.transform.SetParent(parent, false);
+        var rect = root.GetComponent<RectTransform>();
+        rect.anchorMin = rect.anchorMax = new Vector2(0f, 1f);
+        rect.pivot = new Vector2(0f, 1f);
+        rect.anchoredPosition = new Vector2(12f + column * 156f, -43f - row * 62f);
+        rect.sizeDelta = new Vector2(146f, 54f);
+        root.GetComponent<Image>().color = new Color(0.08f, 0.07f, 0.14f, 0.95f);
+
+        var iconObject = new GameObject("Icon", typeof(RectTransform), typeof(Image));
+        iconObject.transform.SetParent(root.transform, false);
+        var iconRect = iconObject.GetComponent<RectTransform>();
+        iconRect.anchorMin = new Vector2(0f, 0.5f);
+        iconRect.anchorMax = new Vector2(0f, 0.5f);
+        iconRect.pivot = new Vector2(0f, 0.5f);
+        iconRect.anchoredPosition = new Vector2(4f, 0f);
+        iconRect.sizeDelta = new Vector2(46f, 46f);
+        Image icon = iconObject.GetComponent<Image>();
+        icon.preserveAspect = true;
+        icon.color = Color.clear;
+        _equipmentIcons[slot] = icon;
+
+        var label = MakeText("Label", root.GetComponent<RectTransform>(), Vector2.zero, Vector2.one,
+            new Vector2(54f, 4f), new Vector2(-4f, -4f));
+        label.text = slot.ToString();
+        label.fontSize = 10f;
+        label.color = new Color(0.65f, 0.62f, 0.72f);
+        label.alignment = TextAlignmentOptions.MidlineLeft;
+        _equipmentNames[slot] = label;
+    }
+
+    void BindEquipmentIdentity()
+    {
+        PlayerIdentity current = PlayerIdentity.Local;
+        if (_equipmentIdentity == current) return;
+        if (_equipmentIdentity != null) _equipmentIdentity.EquipmentChanged -= Repaint;
+        _equipmentIdentity = current;
+        if (_equipmentIdentity != null) _equipmentIdentity.EquipmentChanged += Repaint;
+        if (_open) Repaint();
+    }
+
+    void RepaintEquipment(PlayerIdentity identity)
+    {
+        foreach (var pair in _equipmentIcons)
+        {
+            LootEquipmentSlot slot = pair.Key;
+            Image icon = pair.Value;
+            TextMeshProUGUI label = _equipmentNames[slot];
+            if (identity != null && identity.TryGetEquipped(slot, out EquippedLootState equipped))
+            {
+                LootItemDefinition definition = LootItemCatalog.Find(equipped.itemId);
+                icon.sprite = definition != null ? definition.inventoryIcon : null;
+                icon.color = icon.sprite != null ? Color.white : Color.clear;
+                label.text = definition != null ? definition.displayName : equipped.itemId;
+                label.color = definition != null
+                    ? LootItemCatalog.RarityColor(definition.rarity)
+                    : Color.white;
+            }
+            else
+            {
+                icon.sprite = null;
+                icon.color = Color.clear;
+                label.text = slot.ToString();
+                label.color = new Color(0.45f, 0.43f, 0.52f);
+            }
+        }
     }
 
     // ── UI helpers ────────────────────────────────────────────────────────────

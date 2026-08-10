@@ -46,7 +46,11 @@ namespace Crossworlds.EditorTools.LootForge
                 definition = (LootItemDefinition)EditorGUILayout.ObjectField(
                     "Loot Definition", definition, typeof(LootItemDefinition), false);
                 if (GUILayout.Button("New", GUILayout.Width(70)))
+                {
                     definition = CreateInstance<LootItemDefinition>();
+                    definition.databaseItemType = LootDatabaseItemType.Unspecified;
+                    definition.equipmentSlot = LootEquipmentSlot.None;
+                }
             }
 
             if (definition == null)
@@ -60,7 +64,15 @@ namespace Crossworlds.EditorTools.LootForge
             serialized.Update();
             Draw(serialized, "itemId", "Database Item ID");
             Draw(serialized, "displayName", "Display Name");
-            Draw(serialized, "databaseItemType", "Database Item Type");
+            SerializedProperty itemType = serialized.FindProperty("databaseItemType");
+            EditorGUI.BeginChangeCheck();
+            EditorGUILayout.PropertyField(itemType, new GUIContent("Database Item Type"));
+            if (EditorGUI.EndChangeCheck())
+            {
+                LootDatabaseItemType selected =
+                    (LootDatabaseItemType)itemType.enumValueIndex;
+                ApplyTypeDefaults(serialized, selected);
+            }
             Draw(serialized, "rarity", "Rarity");
             Draw(serialized, "sellValue", "Sell Value");
             Draw(serialized, "crafted", "Crafted Item");
@@ -69,12 +81,38 @@ namespace Crossworlds.EditorTools.LootForge
                 Draw(serialized, "maxStackSize", "Maximum Stack Size");
             Draw(serialized, "inventoryIcon", "Inventory Icon");
             Draw(serialized, "worldVisualPrefab", "World Visual Prefab");
+            if (IsEquipment((LootDatabaseItemType)itemType.enumValueIndex))
+            {
+                EditorGUILayout.Space(5);
+                EditorGUILayout.LabelField("Equipment", EditorStyles.boldLabel);
+                Draw(serialized, "equipmentSlot", "Equipment Slot");
+                Draw(serialized, "equippedVisualPrefab", "Equipped Visual Prefab");
+                Draw(serialized, "attachmentBoneName", "Attachment Bone Override");
+                Draw(serialized, "equippedLocalPosition", "Equipped Position");
+                Draw(serialized, "equippedLocalEulerAngles", "Equipped Rotation");
+                Draw(serialized, "equippedLocalScale", "Equipped Scale");
+                EditorGUILayout.Space(3);
+                EditorGUILayout.LabelField("Stat Bonuses", EditorStyles.miniBoldLabel);
+                Draw(serialized, "bonusStrength", "Strength");
+                Draw(serialized, "bonusAgility", "Agility");
+                Draw(serialized, "bonusIntelligence", "Intelligence");
+                Draw(serialized, "bonusVitality", "Vitality");
+            }
             EditorGUILayout.HelpBox(
                 "World Visual Prefab is optional. Leave it empty for inventory-only items such as tickets, " +
                 "wood, crafting materials, or consumables. The enemy's assigned network-ready pickup prefab " +
                 "will be used as the world representation.",
                 MessageType.None);
             serialized.ApplyModifiedProperties();
+
+            using (new EditorGUI.DisabledScope(
+                       definition.worldVisualPrefab == null && definition.equippedVisualPrefab == null))
+            {
+                if (GUILayout.Button(definition.inventoryIcon == null
+                        ? "Generate Missing Inventory PNG"
+                        : "Regenerate Inventory PNG", GUILayout.Height(28)))
+                    GenerateInventoryIcon(true);
+            }
 
             if (definition.inventoryIcon != null)
             {
@@ -109,6 +147,9 @@ namespace Crossworlds.EditorTools.LootForge
             EditorGUILayout.HelpBox(
                 "Database synchronization is queued automatically. The live items table is updated when a server build " +
                 "containing this definition is deployed and starts.", MessageType.Info);
+
+            if (definition.databaseItemType != LootDatabaseItemType.Unspecified)
+                EditorGUILayout.HelpBox(BuildDeploymentSummary(), MessageType.None);
         }
 
         static void Draw(SerializedObject serialized, string property, string label)
@@ -126,6 +167,7 @@ namespace Crossworlds.EditorTools.LootForge
 
         bool SaveDefinition(bool showConfirmation)
         {
+            if (definition.inventoryIcon == null && !GenerateInventoryIcon(false)) return false;
             List<string> issues = ValidateDefinition(dropTableRequired: false);
             if (issues.Count > 0)
             {
@@ -172,6 +214,7 @@ namespace Crossworlds.EditorTools.LootForge
 
         void SaveAndAssign()
         {
+            if (definition.inventoryIcon == null && !GenerateInventoryIcon(false)) return;
             List<string> issues = ValidateDefinition(dropTableRequired: true);
             if (issues.Count > 0)
             {
@@ -216,6 +259,22 @@ namespace Crossworlds.EditorTools.LootForge
                 issues.Add("Display Name is required and must be 128 characters or fewer.");
             if (definition.rarity == ItemRarity.Legendary)
                 issues.Add("The live database supports Common, Uncommon, Rare, or Epic rarity; Legendary is not supported.");
+            if (definition.databaseItemType == LootDatabaseItemType.Unspecified)
+                issues.Add("Database Item Type must be explicitly selected; new items cannot silently default to Material.");
+            bool equipment = IsEquipment(definition.databaseItemType);
+            if (equipment && definition.equipmentSlot == LootEquipmentSlot.None)
+                issues.Add("Equipment Slot is required for every equipment item.");
+            if (!equipment && definition.equipmentSlot != LootEquipmentSlot.None)
+                issues.Add("Materials cannot occupy a paper-doll equipment slot.");
+            if (equipment && definition.stackable)
+                issues.Add("Equipment cannot be stackable.");
+            if (equipment && definition.maxStackSize != 1)
+                issues.Add("Equipment Maximum Stack Size must be 1.");
+            if (equipment && definition.equippedVisualPrefab == null &&
+                definition.worldVisualPrefab == null)
+                issues.Add("Equipment requires an Equipped Visual Prefab or reusable World Visual Prefab.");
+            if (equipment && !SlotMatchesType(definition.databaseItemType, definition.equipmentSlot))
+                issues.Add($"{definition.databaseItemType} cannot use the {definition.equipmentSlot} equipment slot.");
             if (definition.inventoryIcon == null)
                 issues.Add("Inventory Icon is required.");
             if (definition.worldVisualPrefab != null &&
@@ -235,6 +294,65 @@ namespace Crossworlds.EditorTools.LootForge
                 { issues.Add($"Item ID '{id}' is already used by '{other.name}'."); break; }
             }
             return issues;
+        }
+
+        bool GenerateInventoryIcon(bool showConfirmation)
+        {
+            Sprite icon = LootForgeIconRenderer.Render(definition, out string error);
+            if (icon == null)
+            {
+                EditorUtility.DisplayDialog("Loot Forge Inventory Icon",
+                    string.IsNullOrEmpty(error) ? "Inventory icon generation failed." : error, "OK");
+                return false;
+            }
+            Undo.RecordObject(definition, "Generate Loot Inventory Icon");
+            definition.inventoryIcon = icon;
+            definition.iconId = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(icon));
+            EditorUtility.SetDirty(definition);
+            if (showConfirmation)
+                EditorUtility.DisplayDialog("Loot Forge Inventory Icon",
+                    $"Created transparent 256x256 PNG:\n{AssetDatabase.GetAssetPath(icon)}", "OK");
+            return true;
+        }
+
+        static void ApplyTypeDefaults(SerializedObject serialized, LootDatabaseItemType type)
+        {
+            bool equipment = IsEquipment(type);
+            serialized.FindProperty("stackable").boolValue = !equipment;
+            serialized.FindProperty("maxStackSize").intValue = equipment ? 1 : 99;
+            SerializedProperty slot = serialized.FindProperty("equipmentSlot");
+            slot.enumValueIndex = (int)DefaultSlot(type);
+        }
+
+        static bool IsEquipment(LootDatabaseItemType type) =>
+            type != LootDatabaseItemType.Material && type != LootDatabaseItemType.Unspecified;
+
+        static LootEquipmentSlot DefaultSlot(LootDatabaseItemType type) => type switch
+        {
+            LootDatabaseItemType.Weapon => LootEquipmentSlot.MainHand,
+            LootDatabaseItemType.ArmorHead => LootEquipmentSlot.Head,
+            LootDatabaseItemType.ArmorChest => LootEquipmentSlot.Chest,
+            LootDatabaseItemType.ArmorLegs => LootEquipmentSlot.Legs,
+            LootDatabaseItemType.ArmorFeet => LootEquipmentSlot.Feet,
+            LootDatabaseItemType.ArmorHands => LootEquipmentSlot.Hands,
+            LootDatabaseItemType.Offhand => LootEquipmentSlot.OffHand,
+            LootDatabaseItemType.Ring => LootEquipmentSlot.Ring,
+            LootDatabaseItemType.Trinket => LootEquipmentSlot.Trinket,
+            _ => LootEquipmentSlot.None
+        };
+
+        static bool SlotMatchesType(LootDatabaseItemType type, LootEquipmentSlot slot) =>
+            DefaultSlot(type) == slot;
+
+        string BuildDeploymentSummary()
+        {
+            string category = definition.databaseItemType == LootDatabaseItemType.Material
+                ? "Materials" : "Gear";
+            string slot = definition.equipmentSlot == LootEquipmentSlot.None
+                ? "not equipped" : definition.equipmentSlot.ToString();
+            return $"Deployment preview: Inventory category {category}; slot {slot}; " +
+                   $"stack {(definition.stackable ? definition.maxStackSize : 1)}; " +
+                   $"database sync on next server start.";
         }
 
         static string SafeFileName(string value)
