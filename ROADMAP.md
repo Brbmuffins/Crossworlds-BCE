@@ -14,6 +14,10 @@ conversation: it names its files, acceptance criteria, and dependencies. Tasks m
 
 ---
 
+> **PVP zone night lighting (2026-08-10):** `PVPZONE` retains its existing Night Moon
+> Mid skybox and now uses cool low-intensity moonlight, reduced ambient/reflection
+> contribution, and subtle blue fog so it reads as night while preserving combat visibility.
+
 ## Phase 0 — Repo Stabilization
 
 *Entry:* now. *Exit:* clean `git status`, one canonical doc set, no secrets in git.
