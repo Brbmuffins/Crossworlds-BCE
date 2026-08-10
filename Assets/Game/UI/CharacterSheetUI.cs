@@ -23,6 +23,7 @@ public sealed class CharacterSheetUI : MonoBehaviour
     UnityEngine.UI.Image _dragIcon;
     GameObject _dragLayer;
     Vector2 _equipmentDragStart;
+    Coroutine _pendingPreviewRefresh;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void Bootstrap()
@@ -238,8 +239,17 @@ public sealed class CharacterSheetUI : MonoBehaviour
             Color rarity = definition != null ? LootItemCatalog.RarityColor(definition.rarity) : ItemCatalogManager.GetRarityColor(item.ItemId);
             _view.SetEquipment(slot, icon, item.Quantity, rarity, false);
         }
-        GameObject player = NetworkClient.localPlayer != null ? NetworkClient.localPlayer.gameObject : null;
+        if (_pendingPreviewRefresh != null) StopCoroutine(_pendingPreviewRefresh);
+        _pendingPreviewRefresh = StartCoroutine(RefreshPreviewAfterEquipmentSettles());
+    }
+
+    IEnumerator RefreshPreviewAfterEquipmentSettles()
+    {
+        yield return new WaitForEndOfFrame();
+        GameObject player = NetworkClient.localPlayer != null
+            ? NetworkClient.localPlayer.gameObject : null;
         _modelPreview?.Refresh(player, true);
+        _pendingPreviewRefresh = null;
     }
 
     void OnEquipmentClicked(CharacterEquipmentSlot slot)
