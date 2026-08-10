@@ -109,7 +109,8 @@ conversation: it names its files, acceptance criteria, and dependencies. Tasks m
 > Enemy-targeted player abilities, crowd control, deployables, projectiles, and turrets
 > treat other players as opponents only when both players share PVPZONE. `Health`
 > provides a final server-side player-damage gate everywhere else, and downed players
-> in PVPZONE return to the zone spawn after the normal respawn delay.
+> in PVPZONE return to a random matching zone spawn after the normal respawn delay;
+> map and GM arrivals use the same server-selected spawn pool.
 > The `#if !UNITY_SERVER` guards described in the 1.5 note above were the *bare* form;
 > the required convention is `#if UNITY_EDITOR || !UNITY_SERVER`, and the 8 remaining
 > bare guards (HeroCosmeticApplier, StatusEffectHUD, ShieldValueHUD, GoldHUD,
