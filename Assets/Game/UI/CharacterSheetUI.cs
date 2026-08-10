@@ -21,6 +21,7 @@ public sealed class CharacterSheetUI : MonoBehaviour
     bool _open;
     float _nextLiveRefresh;
     UnityEngine.UI.Image _dragIcon;
+    GameObject _dragLayer;
     Vector2 _equipmentDragStart;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -259,10 +260,18 @@ public sealed class CharacterSheetUI : MonoBehaviour
         ItemTooltipUI.Instance?.Hide();
         ClearDragIcon();
         var definition = LootItemCatalog.Find(item.ItemId);
+        _dragLayer = new GameObject("EquipmentDragOverlay", typeof(RectTransform),
+            typeof(Canvas), typeof(UnityEngine.UI.CanvasScaler));
+        DontDestroyOnLoad(_dragLayer);
+        var overlayCanvas = _dragLayer.GetComponent<Canvas>();
+        overlayCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
+        overlayCanvas.sortingOrder = 1000;
+        var scaler = _dragLayer.GetComponent<UnityEngine.UI.CanvasScaler>();
+        scaler.uiScaleMode = UnityEngine.UI.CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        scaler.referenceResolution = new Vector2(1920f, 1080f);
         var go = new GameObject("DraggedEquippedItem", typeof(RectTransform),
             typeof(CanvasGroup), typeof(UnityEngine.UI.Image));
-        go.transform.SetParent(_view.transform, false);
-        go.transform.SetAsLastSibling();
+        go.transform.SetParent(_dragLayer.transform, false);
         var rect = go.GetComponent<RectTransform>();
         rect.sizeDelta = new Vector2(58f, 58f);
         _dragIcon = go.GetComponent<UnityEngine.UI.Image>();
@@ -294,7 +303,9 @@ public sealed class CharacterSheetUI : MonoBehaviour
 
     void ClearDragIcon()
     {
-        if (_dragIcon != null) Destroy(_dragIcon.gameObject);
+        if (_dragLayer != null) Destroy(_dragLayer);
+        else if (_dragIcon != null) Destroy(_dragIcon.gameObject);
+        _dragLayer = null;
         _dragIcon = null;
     }
 

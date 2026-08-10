@@ -349,6 +349,9 @@ Highest-value phase: every piece exists, only glue is missing.
   the first free bag position and rejects a full bag safely. Inventory saves preserve equipped rows.
   Character-window drag-back supports reserved positions, and the paper-doll preview renders its
   unscaled-time animation every frame instead of at the 0.25-second data refresh cadence.
+  A Mirror `equipmentRevision` SyncVar now forces visual/UI rebuilds when the synchronized equipment
+  list becomes completely empty; the character drag icon uses a sorting-order-1000 overlay so it
+  remains visible above the inventory window. Matching client/server builds deployed 2026-08-10.
 
 - **3.3 — Crafting loop client.** ✅ code-side (2026-07-03 profession session)
   `ForgeCraftingPanel.cs` — Smelt + Craft tabs, progress bar, ingredient shortage highlight in red.

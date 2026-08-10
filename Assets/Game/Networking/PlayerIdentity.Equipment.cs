@@ -17,6 +17,8 @@ public struct EquippedLootState
 public partial class PlayerIdentity
 {
     public readonly SyncList<EquippedLootState> equippedLoot = new();
+    [SyncVar(hook = nameof(OnEquipmentRevisionChanged))]
+    uint equipmentRevision;
     public event Action EquipmentChanged;
 
     readonly Dictionary<LootEquipmentSlot, GameObject> _equippedVisuals = new();
@@ -89,6 +91,7 @@ public partial class PlayerIdentity
         EquipmentBonusDto bonus = response.data.bonus ?? new EquipmentBonusDto();
         GetComponent<CharacterStats>()?.SetEquipmentStatBonuses(
             bonus.stat_str, bonus.stat_agi, bonus.stat_int, bonus.stat_vit);
+        equipmentRevision++;
         Debug.Log($"[EQUIPMENT] Loaded {equippedLoot.Count} slot(s) for char#{characterId}.");
     }
 
@@ -107,6 +110,12 @@ public partial class PlayerIdentity
 
     void OnEquipmentListChanged(SyncList<EquippedLootState>.Operation operation,
         int index, EquippedLootState oldItem, EquippedLootState newItem)
+    {
+        RebuildEquipmentVisuals();
+        EquipmentChanged?.Invoke();
+    }
+
+    void OnEquipmentRevisionChanged(uint _, uint __)
     {
         RebuildEquipmentVisuals();
         EquipmentChanged?.Invoke();
