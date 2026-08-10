@@ -339,6 +339,10 @@ Highest-value phase: every piece exists, only glue is missing.
   canonical slots, preserves server-owned equip state, and exposes equipped items to the game
   server. *Runtime acceptance remaining:* equip a seeded weapon with two clients, verify the visual
   replicates, persists across relog, and tune its skeleton-specific hand offset. *Deps:* 1.6.
+  **2026-08-10 interaction/profile follow-up:** character slots support right-click unequip and
+  drag/drop with the inventory; Loot Forge supports reusable attachment profiles plus per-item
+  overrides and two-handed off-hand exclusion. Unity compilation passes; live two-handed API
+  migration remains pending renewed VPS SSH authorization.
 
 - **3.3 — Crafting loop client.** ✅ code-side (2026-07-03 profession session)
   `ForgeCraftingPanel.cs` — Smelt + Craft tabs, progress bar, ingredient shortage highlight in red.

@@ -207,6 +207,11 @@ public sealed class InventoryBagUI : MonoBehaviour
         StartCoroutine(PostEquip(slot, false));
     }
 
+    public bool ContainsScreenPoint(Vector2 screenPosition, Camera eventCamera) =>
+        _open && _dragHandle != null && _dragHandle.panel != null &&
+        RectTransformUtility.RectangleContainsScreenPoint(
+            _dragHandle.panel, screenPosition, eventCamera);
+
     void RenderSlots()
     {
         if (_view == null) return;
@@ -299,6 +304,13 @@ public sealed class InventoryBagUI : MonoBehaviour
         var slot = VisibleSlot(visibleIndex);
         ClearDragIcon();
         if (slot == null || _dragHandle == null || _dragHandle.panel == null) return;
+        if (slot.equipped == 0 && CharacterSheetUI.Instance != null &&
+            CharacterSheetUI.Instance.AcceptsInventoryDrop(
+                slot.item_id, eventData.position, eventData.pressEventCamera))
+        {
+            StartCoroutine(PostEquip(slot, true));
+            return;
+        }
         if (RectTransformUtility.RectangleContainsScreenPoint(_dragHandle.panel, eventData.position, eventData.pressEventCamera))
             return;
 

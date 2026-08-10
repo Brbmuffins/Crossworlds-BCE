@@ -60,6 +60,7 @@ public static class LootPersistenceService
             crafted = definition.crafted,
             stackable = definition.stackable,
             maxStackSize = definition.stackable ? Mathf.Max(1, definition.maxStackSize) : 1,
+            twoHanded = definition.IsTwoHanded,
             statStr = Mathf.Max(0, definition.bonusStrength),
             statAgi = Mathf.Max(0, definition.bonusAgility),
             statInt = Mathf.Max(0, definition.bonusIntelligence),
@@ -124,7 +125,7 @@ public static class LootPersistenceService
     {
         public string itemId, displayName, rarity, itemType, equipmentSlot, iconId;
         public int sellValue, maxStackSize, statStr, statAgi, statInt, statVit;
-        public bool crafted, stackable;
+        public bool crafted, stackable, twoHanded;
     }
 }
 

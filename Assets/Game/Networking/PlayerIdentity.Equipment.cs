@@ -140,9 +140,9 @@ public partial class PlayerIdentity
             Transform anchor = ResolveEquipmentAnchor(definition, state.equipmentSlot);
             GameObject visual = Instantiate(prefab, anchor, false);
             visual.name = $"[Equipped] {state.itemId}";
-            visual.transform.localPosition = definition.equippedLocalPosition;
-            visual.transform.localRotation = Quaternion.Euler(definition.equippedLocalEulerAngles);
-            Vector3 scale = definition.equippedLocalScale;
+            visual.transform.localPosition = definition.EffectiveEquippedLocalPosition;
+            visual.transform.localRotation = Quaternion.Euler(definition.EffectiveEquippedLocalEulerAngles);
+            Vector3 scale = definition.EffectiveEquippedLocalScale;
             visual.transform.localScale = scale.sqrMagnitude > 0.0001f ? scale : Vector3.one;
             DisablePickupBehaviour(visual);
             _equippedVisuals[state.equipmentSlot] = visual;
@@ -162,9 +162,10 @@ public partial class PlayerIdentity
 #if UNITY_EDITOR || !UNITY_SERVER
     Transform ResolveEquipmentAnchor(LootItemDefinition definition, LootEquipmentSlot slot)
     {
-        if (!string.IsNullOrWhiteSpace(definition.attachmentBoneName))
+        string attachmentBoneName = definition.EffectiveAttachmentBoneName;
+        if (!string.IsNullOrWhiteSpace(attachmentBoneName))
         {
-            Transform exact = FindTransform(transform, definition.attachmentBoneName);
+            Transform exact = FindTransform(transform, attachmentBoneName);
             if (exact != null) return exact;
         }
 

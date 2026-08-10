@@ -75,11 +75,34 @@ public class LootItemDefinition : ScriptableObject
     [Tooltip("Client-side model attached to the equipped player and paper-doll preview. May reuse World Visual Prefab for simple weapons.")]
     public GameObject equippedVisualPrefab;
 
+    [Tooltip("Reusable bone and transform defaults for this equipment family, such as Two-Handed Sword.")]
+    public EquipmentAttachmentProfile attachmentProfile;
+
+    [Tooltip("Use this item's bone/position/rotation/scale instead of its attachment profile defaults.")]
+    public bool overrideAttachmentProfile;
+
+    [Tooltip("Reserves both hands. Enable directly when no attachment profile supplies this rule.")]
+    public bool twoHanded;
+
     [Tooltip("Optional exact skeleton transform name. Leave empty to use slot-aware hand/head/body aliases.")]
     public string attachmentBoneName;
     public Vector3 equippedLocalPosition;
     public Vector3 equippedLocalEulerAngles;
     public Vector3 equippedLocalScale = Vector3.one;
+
+    public bool IsTwoHanded => attachmentProfile != null ? attachmentProfile.twoHanded : twoHanded;
+    public string EffectiveAttachmentBoneName =>
+        attachmentProfile != null && !overrideAttachmentProfile
+            ? attachmentProfile.attachmentBoneName : attachmentBoneName;
+    public Vector3 EffectiveEquippedLocalPosition =>
+        attachmentProfile != null && !overrideAttachmentProfile
+            ? attachmentProfile.localPosition : equippedLocalPosition;
+    public Vector3 EffectiveEquippedLocalEulerAngles =>
+        attachmentProfile != null && !overrideAttachmentProfile
+            ? attachmentProfile.localEulerAngles : equippedLocalEulerAngles;
+    public Vector3 EffectiveEquippedLocalScale =>
+        attachmentProfile != null && !overrideAttachmentProfile
+            ? attachmentProfile.localScale : equippedLocalScale;
 
     [Header("Server-authoritative stat bonuses")]
     [Min(0)] public int bonusStrength;

@@ -87,10 +87,25 @@ namespace Crossworlds.EditorTools.LootForge
                 EditorGUILayout.LabelField("Equipment", EditorStyles.boldLabel);
                 Draw(serialized, "equipmentSlot", "Equipment Slot");
                 Draw(serialized, "equippedVisualPrefab", "Equipped Visual Prefab");
-                Draw(serialized, "attachmentBoneName", "Attachment Bone Override");
-                Draw(serialized, "equippedLocalPosition", "Equipped Position");
-                Draw(serialized, "equippedLocalEulerAngles", "Equipped Rotation");
-                Draw(serialized, "equippedLocalScale", "Equipped Scale");
+                Draw(serialized, "attachmentProfile", "Attachment Profile");
+                if (GUILayout.Button("Create Shared Profile From Current Transform"))
+                {
+                    serialized.ApplyModifiedProperties();
+                    CreateAttachmentProfile();
+                    serialized.Update();
+                }
+                if (serialized.FindProperty("attachmentProfile").objectReferenceValue == null)
+                    Draw(serialized, "twoHanded", "Two Handed");
+                else
+                    Draw(serialized, "overrideAttachmentProfile", "Override Profile Transform");
+                if (serialized.FindProperty("attachmentProfile").objectReferenceValue == null ||
+                    serialized.FindProperty("overrideAttachmentProfile").boolValue)
+                {
+                    Draw(serialized, "attachmentBoneName", "Attachment Bone Override");
+                    Draw(serialized, "equippedLocalPosition", "Equipped Position");
+                    Draw(serialized, "equippedLocalEulerAngles", "Equipped Rotation");
+                    Draw(serialized, "equippedLocalScale", "Equipped Scale");
+                }
                 EditorGUILayout.Space(3);
                 EditorGUILayout.LabelField("Stat Bonuses", EditorStyles.miniBoldLabel);
                 Draw(serialized, "bonusStrength", "Strength");
@@ -313,6 +328,31 @@ namespace Crossworlds.EditorTools.LootForge
                 EditorUtility.DisplayDialog("Loot Forge Inventory Icon",
                     $"Created transparent 256x256 PNG:\n{AssetDatabase.GetAssetPath(icon)}", "OK");
             return true;
+        }
+
+        void CreateAttachmentProfile()
+        {
+            const string folder = "Assets/Game/Resources/LootForge/Attachment Profiles";
+            EnsureFolder(folder);
+            string baseName = string.IsNullOrWhiteSpace(definition.displayName)
+                ? definition.itemId : definition.displayName;
+            string path = AssetDatabase.GenerateUniqueAssetPath(
+                $"{folder}/{SafeFileName(baseName)} Attachment.asset");
+            var profile = CreateInstance<EquipmentAttachmentProfile>();
+            profile.profileName = baseName;
+            profile.attachmentBoneName = definition.attachmentBoneName;
+            profile.localPosition = definition.equippedLocalPosition;
+            profile.localEulerAngles = definition.equippedLocalEulerAngles;
+            profile.localScale = definition.equippedLocalScale.sqrMagnitude > 0.0001f
+                ? definition.equippedLocalScale : Vector3.one;
+            profile.twoHanded = definition.twoHanded;
+            AssetDatabase.CreateAsset(profile, path);
+            Undo.RecordObject(definition, "Assign Equipment Attachment Profile");
+            definition.attachmentProfile = profile;
+            definition.overrideAttachmentProfile = false;
+            EditorUtility.SetDirty(definition);
+            AssetDatabase.SaveAssets();
+            Selection.activeObject = profile;
         }
 
         static void ApplyTypeDefaults(SerializedObject serialized, LootDatabaseItemType type)

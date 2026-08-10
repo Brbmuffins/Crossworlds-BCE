@@ -30,22 +30,56 @@ public sealed class CharacterWindowView : MonoBehaviour
     public TextMeshProUGUI[] combatValues;
     public EquipmentSlotView[] equipmentSlots;
 
-    public void Initialize(Action close, Action<CharacterEquipmentSlot> click,
-        Action<CharacterEquipmentSlot, PointerEventData> enter, Action exit)
+    public void Initialize(Action close, Action<CharacterEquipmentSlot> rightClick,
+        Action<CharacterEquipmentSlot, PointerEventData> enter, Action exit,
+        Action<CharacterEquipmentSlot, PointerEventData> beginDrag,
+        Action<CharacterEquipmentSlot, PointerEventData> drag,
+        Action<CharacterEquipmentSlot, PointerEventData> endDrag)
     {
         closeButton.onClick.AddListener(() => close());
         foreach (var equipment in equipmentSlots)
         {
             CharacterEquipmentSlot captured = equipment.slot;
-            equipment.button.onClick.AddListener(() => click(captured));
             var trigger = equipment.button.gameObject.GetComponent<EventTrigger>() ?? equipment.button.gameObject.AddComponent<EventTrigger>();
+            var onClick = new EventTrigger.Entry { eventID = EventTriggerType.PointerClick };
+            onClick.callback.AddListener(data =>
+            {
+                var pointer = (PointerEventData)data;
+                if (pointer.button == PointerEventData.InputButton.Right) rightClick(captured);
+            });
             var onEnter = new EventTrigger.Entry { eventID = EventTriggerType.PointerEnter };
             onEnter.callback.AddListener(data => enter(captured, (PointerEventData)data));
             var onExit = new EventTrigger.Entry { eventID = EventTriggerType.PointerExit };
             onExit.callback.AddListener(_ => exit());
+            var onBeginDrag = new EventTrigger.Entry { eventID = EventTriggerType.BeginDrag };
+            onBeginDrag.callback.AddListener(data => beginDrag(captured, (PointerEventData)data));
+            var onDrag = new EventTrigger.Entry { eventID = EventTriggerType.Drag };
+            onDrag.callback.AddListener(data => drag(captured, (PointerEventData)data));
+            var onEndDrag = new EventTrigger.Entry { eventID = EventTriggerType.EndDrag };
+            onEndDrag.callback.AddListener(data => endDrag(captured, (PointerEventData)data));
+            trigger.triggers.Add(onClick);
             trigger.triggers.Add(onEnter);
             trigger.triggers.Add(onExit);
+            trigger.triggers.Add(onBeginDrag);
+            trigger.triggers.Add(onDrag);
+            trigger.triggers.Add(onEndDrag);
         }
+    }
+
+    public bool TryGetSlotAt(Vector2 screenPosition, Camera eventCamera, out CharacterEquipmentSlot slot)
+    {
+        foreach (var equipment in equipmentSlots)
+        {
+            if (equipment.disabledOverlay != null && equipment.disabledOverlay.activeSelf) continue;
+            if (RectTransformUtility.RectangleContainsScreenPoint(
+                    equipment.button.transform as RectTransform, screenPosition, eventCamera))
+            {
+                slot = equipment.slot;
+                return true;
+            }
+        }
+        slot = default;
+        return false;
     }
 
     public void SetEquipment(CharacterEquipmentSlot slot, Sprite icon, int quantity, Color rarity, bool disabled)

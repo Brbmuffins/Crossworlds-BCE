@@ -10,6 +10,7 @@ using UnityEngine.EventSystems;
 public sealed class CharacterSheetUI : MonoBehaviour
 {
     static CharacterSheetUI _instance;
+    public static CharacterSheetUI Instance => _instance;
     CharacterWindowView _view;
     CharacterModelPreview _modelPreview;
     CharacterWindowDragHandle _dragHandle;
@@ -19,6 +20,7 @@ public sealed class CharacterSheetUI : MonoBehaviour
     PlayerIdentity _identity;
     bool _open;
     float _nextLiveRefresh;
+    UnityEngine.UI.Image _dragIcon;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void Bootstrap()
@@ -95,7 +97,9 @@ public sealed class CharacterSheetUI : MonoBehaviour
         }
         _view = Instantiate(prefab, transform);
         _view.name = "CharacterWindow";
-        _view.Initialize(Hide, OnEquipmentClicked, OnEquipmentEnter, () => ItemTooltipUI.Instance?.Hide());
+        _view.Initialize(Hide, OnEquipmentClicked, OnEquipmentEnter,
+            () => ItemTooltipUI.Instance?.Hide(), OnEquipmentBeginDrag,
+            OnEquipmentDrag, OnEquipmentEndDrag);
         RectTransform panel = _view.transform.Find("Panel") as RectTransform;
         if (panel != null)
         {
@@ -215,9 +219,12 @@ public sealed class CharacterSheetUI : MonoBehaviour
             }
         }
 
+        bool twoHandedEquipped = _equipped.TryGetValue(CharacterEquipmentSlot.MainHand, out var mainHand) &&
+                                LootItemCatalog.Find(mainHand.ItemId)?.IsTwoHanded == true;
         foreach (CharacterEquipmentSlot slot in System.Enum.GetValues(typeof(CharacterEquipmentSlot)))
         {
-            bool disabled = slot == CharacterEquipmentSlot.Shoulder;
+            bool disabled = slot == CharacterEquipmentSlot.Shoulder ||
+                            (slot == CharacterEquipmentSlot.OffHand && twoHandedEquipped);
             if (!_equipped.TryGetValue(slot, out var item))
             {
                 _view.SetEquipment(slot, null, 0, Color.clear, disabled);
@@ -236,6 +243,57 @@ public sealed class CharacterSheetUI : MonoBehaviour
     {
         if (_equipped.TryGetValue(slot, out var item))
             InventoryBagUI.Instance?.UnequipInventorySlot(item.InventorySlotIndex);
+    }
+
+    void OnEquipmentBeginDrag(CharacterEquipmentSlot slot, PointerEventData eventData)
+    {
+        if (!_equipped.TryGetValue(slot, out var item)) return;
+        ItemTooltipUI.Instance?.Hide();
+        ClearDragIcon();
+        var definition = LootItemCatalog.Find(item.ItemId);
+        var go = new GameObject("DraggedEquippedItem", typeof(RectTransform),
+            typeof(CanvasGroup), typeof(UnityEngine.UI.Image));
+        go.transform.SetParent(_view.transform, false);
+        go.transform.SetAsLastSibling();
+        var rect = go.GetComponent<RectTransform>();
+        rect.sizeDelta = new Vector2(58f, 58f);
+        _dragIcon = go.GetComponent<UnityEngine.UI.Image>();
+        _dragIcon.sprite = definition != null ? definition.inventoryIcon : null;
+        _dragIcon.preserveAspect = true;
+        _dragIcon.color = _dragIcon.sprite != null ? Color.white : Color.clear;
+        go.GetComponent<CanvasGroup>().blocksRaycasts = false;
+        rect.position = eventData.position;
+    }
+
+    void OnEquipmentDrag(CharacterEquipmentSlot slot, PointerEventData eventData)
+    {
+        if (_dragIcon != null) _dragIcon.rectTransform.position = eventData.position;
+    }
+
+    void OnEquipmentEndDrag(CharacterEquipmentSlot slot, PointerEventData eventData)
+    {
+        ClearDragIcon();
+        if (InventoryBagUI.Instance != null && InventoryBagUI.Instance.ContainsScreenPoint(
+                eventData.position, eventData.pressEventCamera))
+            OnEquipmentClicked(slot);
+    }
+
+    void ClearDragIcon()
+    {
+        if (_dragIcon != null) Destroy(_dragIcon.gameObject);
+        _dragIcon = null;
+    }
+
+    public bool AcceptsInventoryDrop(string itemId, Vector2 screenPosition, Camera eventCamera)
+    {
+        if (!_open || _view == null || !_view.TryGetSlotAt(screenPosition, eventCamera, out var target))
+            return false;
+        if (target == CharacterEquipmentSlot.OffHand &&
+            _equipped.TryGetValue(CharacterEquipmentSlot.MainHand, out var mainHand) &&
+            LootItemCatalog.Find(mainHand.ItemId)?.IsTwoHanded == true)
+            return false;
+        int ringOrdinal = target == CharacterEquipmentSlot.RingRight ? 1 : 0;
+        return CharacterEquipmentSlotMap.TryMap(itemId, ringOrdinal, out var expected) && expected == target;
     }
 
     void OnEquipmentEnter(CharacterEquipmentSlot slot, PointerEventData eventData)
