@@ -51,6 +51,7 @@ GameObject:
   - component: {fileID: 6313034496870542683}
   - component: {fileID: 3827461958302847561}
   - component: {fileID: 4829374651920384750}
+  - component: {fileID: 9000000000000000200}
   m_Layer: 0
   m_Name: Arcanist
   m_TagString: Player
@@ -176,7 +177,7 @@ MonoBehaviour:
   syncDirection: 0
   syncMode: 0
   syncInterval: 0
-  moveSpeed: 5
+  moveSpeed: 9
   sprintSpeed: 9
   jumpForce: 6
   rotationSpeed: 12
@@ -2396,6 +2397,22 @@ MonoBehaviour:
   syncInterval: 0
   clientAuthority: 1
   animator: {fileID: 6636301317316658317}
+--- !u!114 &9000000000000000200
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7044732009718663101}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 822480ea9951a9642bba896b0e3be732, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerAnimator
+  combatCheckRadius: 10
+  combatCheckInterval: 0.5
+  baseMoveSpeed: 9
+  baseSprintSpeed: 9
 --- !u!1001 &968965833929619740
 PrefabInstance:
   m_ObjectHideFlags: 0

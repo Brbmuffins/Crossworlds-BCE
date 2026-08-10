@@ -60,9 +60,12 @@ public class RodChatManager : NetworkBehaviour
     string _typedText   = "";
 
     bool _gmFlyActive;
+    bool _gmFreeCameraActive;
     bool _gmModeActive;
     bool _gmMapTravelPending;
     float _gmSpeedMultiplier = 1f;
+    float _gmFreeCameraSpeed = RodPlayerAuth.DefaultFreeCameraSpeed;
+    CameraFollow _gmFreeCamera;
     GameObject _gmLocalPlayer;
     PlayerMovement _gmMovement;
     Rigidbody _gmRigidbody;
@@ -79,6 +82,21 @@ public class RodChatManager : NetworkBehaviour
         // "without an active client" guard and log an error. Skip the Cmd once inactive.
         if (NetworkClient.active && isClient)
             CmdRequestOnlineRoster();
+    }
+
+    public void RequestGmFreeCameraExit()
+    {
+        if (!_gmFreeCameraActive)
+            return;
+
+        if (NetworkClient.active && isClient)
+        {
+            CmdRequestGmFreeCameraExit();
+            return;
+        }
+
+        _gmFreeCameraActive = false;
+        ApplyGmFreeCameraState();
     }
 
     [Command(requiresAuthority = false)]
@@ -239,6 +257,8 @@ public class RodChatManager : NetworkBehaviour
 
     public override void OnStopClient()
     {
+        if (_gmFreeCamera != null)
+            _gmFreeCamera.SetFreeCameraEnabled(false);
         base.OnStopClient();
         UnityEngine.SceneManagement.SceneManager.sceneLoaded -= OnSceneLoaded;
     }
@@ -252,6 +272,8 @@ public class RodChatManager : NetworkBehaviour
         _gmMapTravelPending = false;
         if (_gmFlyActive || !Mathf.Approximately(_gmSpeedMultiplier, 1f))
             ApplyGmMovementState();
+        if (_gmFreeCameraActive)
+            ApplyGmFreeCameraState();
         AddSystemMessage($"Entered {scene.name}.");
     }
 
@@ -342,6 +364,7 @@ public class RodChatManager : NetworkBehaviour
         }
 
         UpdateGmMovement();
+        UpdateGmFreeCamera();
     }
 
     // ── Server-side command ───────────────────────────────────────────────
@@ -376,6 +399,25 @@ public class RodChatManager : NetworkBehaviour
 
         RodPlayerAuth auth = sender.authenticationData as RodPlayerAuth;
         TargetSetGmMode(sender, GmCommandRouter.IsActiveGm(auth));
+    }
+
+    [Command(requiresAuthority = false)]
+    void CmdRequestGmFreeCameraExit(NetworkConnectionToClient sender = null)
+    {
+        if (sender == null)
+            return;
+
+        RodPlayerAuth auth = sender.authenticationData as RodPlayerAuth;
+        if (!GmCommandRouter.IsActiveGm(auth))
+        {
+            TargetSetGmFreeCamera(
+                sender,
+                false,
+                auth?.gmFreeCameraSpeed ?? RodPlayerAuth.DefaultFreeCameraSpeed);
+            return;
+        }
+
+        GmCommandRouter.TryHandle("/freecam off", sender, this);
     }
 
     [Command(requiresAuthority = false)]
@@ -491,6 +533,8 @@ public class RodChatManager : NetworkBehaviour
         if (enabled)
             return;
 
+        _gmFreeCameraActive = false;
+        ApplyGmFreeCameraState();
         _gmMapTravelPending = false;
 #if UNITY_EDITOR || !UNITY_SERVER
         WaypointMapUI.Hide();
@@ -509,6 +553,20 @@ public class RodChatManager : NetworkBehaviour
     {
         _gmSpeedMultiplier = Mathf.Clamp(multiplier, 0.25f, 8f);
         ApplyGmMovementState();
+    }
+
+    [TargetRpc]
+    public void TargetSetGmFreeCamera(
+        NetworkConnectionToClient target,
+        bool enabled,
+        float moveSpeed)
+    {
+        _gmFreeCameraActive = enabled;
+        _gmFreeCameraSpeed = Mathf.Clamp(
+            moveSpeed,
+            RodPlayerAuth.MinFreeCameraSpeed,
+            RodPlayerAuth.MaxFreeCameraSpeed);
+        ApplyGmFreeCameraState();
     }
 
     [TargetRpc]
@@ -647,6 +705,52 @@ public class RodChatManager : NetworkBehaviour
         _gmBaseSprintSpeed = 0f;
     }
 
+    void UpdateGmFreeCamera()
+    {
+        if (!_gmFreeCameraActive)
+            return;
+
+        if (_gmFreeCamera == null || !_gmFreeCamera.isActiveAndEnabled ||
+            !_gmFreeCamera.IsFreeCameraActive)
+            ApplyGmFreeCameraState();
+    }
+
+    void ApplyGmFreeCameraState()
+    {
+        if (!_gmFreeCameraActive && _gmFreeCamera != null &&
+            _gmFreeCamera.IsFreeCameraActive)
+            _gmFreeCamera.SetFreeCameraEnabled(false);
+
+        CameraFollow follow = FindActiveCameraFollow();
+        if (follow == null)
+            return;
+
+        if (_gmFreeCamera != null && _gmFreeCamera != follow &&
+            _gmFreeCamera.IsFreeCameraActive)
+            _gmFreeCamera.SetFreeCameraEnabled(false);
+
+        _gmFreeCamera = follow;
+        _gmFreeCamera.SetFreeCameraSpeed(_gmFreeCameraSpeed);
+        _gmFreeCamera.SetFreeCameraEnabled(_gmFreeCameraActive);
+    }
+
+    static CameraFollow FindActiveCameraFollow()
+    {
+        Camera mainCamera = Camera.main;
+        if (mainCamera != null &&
+            mainCamera.TryGetComponent(out CameraFollow mainFollow))
+            return mainFollow;
+
+        foreach (CameraFollow follow in FindObjectsByType<CameraFollow>(
+                     FindObjectsInactive.Exclude))
+        {
+            if (follow != null && follow.isActiveAndEnabled)
+                return follow;
+        }
+
+        return null;
+    }
+
     void UpdateGmMovement()
     {
         if (!_gmFlyActive && Mathf.Approximately(_gmSpeedMultiplier, 1f))
@@ -658,24 +762,10 @@ public class RodChatManager : NetworkBehaviour
         if (!Mathf.Approximately(_gmSpeedMultiplier, 1f))
             ApplyGmSpeed();
 
-        if (!_gmFlyActive || _gmRigidbody == null)
-            return;
-
-        _gmRigidbody.useGravity = false;
-
-        float vertical = 0f;
-        var keyboard = Keyboard.current;
-        if (keyboard != null)
-        {
-            if (keyboard.spaceKey.isPressed)
-                vertical += 1f;
-            if (keyboard.leftCtrlKey.isPressed || keyboard.rightCtrlKey.isPressed || keyboard.cKey.isPressed)
-                vertical -= 1f;
-        }
-
-        float verticalSpeed = Mathf.Max(6f, _gmBaseMoveSpeed * Mathf.Max(1f, _gmSpeedMultiplier));
-        Vector3 velocity = _gmRigidbody.linearVelocity;
-        _gmRigidbody.linearVelocity = new Vector3(velocity.x, vertical * verticalSpeed, velocity.z);
+        // TargetSetGmFly can arrive before the local player finishes spawning.
+        // Apply the state as soon as the player controller becomes available.
+        if (_gmFlyActive && _gmMovement != null && !_gmMovement.GmFlightEnabled)
+            _gmMovement.SetGmFlightEnabled(true);
     }
 
     void ApplyGmMovementState()
@@ -685,16 +775,17 @@ public class RodChatManager : NetworkBehaviour
 
         ApplyGmSpeed();
 
+        if (_gmMovement != null)
+        {
+            _gmMovement.SetGmFlightEnabled(_gmFlyActive);
+            return;
+        }
+
         if (_gmRigidbody == null)
             return;
 
         _gmRigidbody.useGravity = !_gmFlyActive;
-        if (!_gmFlyActive)
-        {
-            Vector3 velocity = _gmRigidbody.linearVelocity;
-            if (velocity.y > 0f)
-                _gmRigidbody.linearVelocity = new Vector3(velocity.x, 0f, velocity.z);
-        }
+        _gmRigidbody.linearVelocity = Vector3.zero;
     }
 
     void ApplyGmSpeed()

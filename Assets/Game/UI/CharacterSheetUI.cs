@@ -1,22 +1,23 @@
 #if UNITY_EDITOR || !UNITY_SERVER
-using UnityEngine;
-using UnityEngine.UI;
-using TMPro;
 using System.Collections;
+using System.Collections.Generic;
+using Mirror;
+using TMPro;
+using UnityEngine;
+using UnityEngine.EventSystems;
 
-/// <summary>
-/// CharacterSheetUI — C key toggles a side panel showing:
-///   Level, XP progress, Gold
-///   Str / Agi / Int / Vit
-///   Class name
-///
-/// Reads from PlayerProgressManager.Local and PlayerIdentity (local).
-/// Self-bootstrapping.
-/// </summary>
-public class CharacterSheetUI : MonoBehaviour
+/// <summary>Prefab-backed client Character window. Uses inventory's authenticated equipment bridge.</summary>
+public sealed class CharacterSheetUI : MonoBehaviour
 {
-    // ── Bootstrap ─────────────────────────────────────────────────────────────
-    private static CharacterSheetUI _instance;
+    static CharacterSheetUI _instance;
+    CharacterWindowView _view;
+    CharacterModelPreview _modelPreview;
+    CharacterWindowDragHandle _dragHandle;
+    readonly Dictionary<CharacterEquipmentSlot, InventoryBagUI.EquippedItemSnapshot> _equipped = new();
+    PlayerProgressManager _progress;
+    InventoryBagUI _inventory;
+    bool _open;
+    float _nextLiveRefresh;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void Bootstrap()
@@ -27,353 +28,205 @@ public class CharacterSheetUI : MonoBehaviour
         _instance = go.AddComponent<CharacterSheetUI>();
     }
 
-    // ── UI refs ───────────────────────────────────────────────────────────────
-    Canvas          _canvas;
-    GameObject      _panel;
-    GameObject      _equipmentPanel;
-    TextMeshProUGUI _nameText;
-    TextMeshProUGUI _classText;
-    TextMeshProUGUI _levelText;
-    TextMeshProUGUI _xpText;
-    TextMeshProUGUI _goldText;
-    Image           _xpFill;
-    TextMeshProUGUI _strText, _agiText, _intText, _vitText;
-    bool            _open;
-    PlayerIdentity  _equipmentIdentity;
-    readonly System.Collections.Generic.Dictionary<LootEquipmentSlot, Image> _equipmentIcons = new();
-    readonly System.Collections.Generic.Dictionary<LootEquipmentSlot, TextMeshProUGUI> _equipmentNames = new();
-
-    // ── Lifecycle ─────────────────────────────────────────────────────────────
     void Awake()
     {
-        BuildUI();
-        _panel.SetActive(false);
-        if (_equipmentPanel != null) _equipmentPanel.SetActive(false);
+        if (_instance != null && _instance != this) { Destroy(gameObject); return; }
+        _instance = this;
+        CreateView();
+        Hide();
     }
 
-    void OnEnable()  { StartCoroutine(WaitForManager()); }
+    void OnEnable() => StartCoroutine(BindSources());
+
     void OnDisable()
     {
-        if (PlayerProgressManager.Local != null)
-            PlayerProgressManager.Local.OnDataRefreshed -= Repaint;
-        if (_equipmentIdentity != null)
-            _equipmentIdentity.EquipmentChanged -= Repaint;
+        if (_progress != null) _progress.OnDataRefreshed -= RefreshAll;
+        if (_inventory != null) _inventory.EquipmentChanged -= RefreshEquipment;
+        _progress = null;
+        _inventory = null;
     }
 
-    IEnumerator WaitForManager()
+    void OnDestroy()
     {
-        while (PlayerProgressManager.Local == null) yield return null;
-        PlayerProgressManager.Local.OnDataRefreshed -= Repaint;
-        PlayerProgressManager.Local.OnDataRefreshed += Repaint;
-        Repaint();
+        _modelPreview?.Dispose();
+        _modelPreview = null;
+    }
+
+    IEnumerator BindSources()
+    {
+        while (PlayerProgressManager.Local == null || InventoryBagUI.Instance == null) yield return null;
+        _progress = PlayerProgressManager.Local;
+        _inventory = InventoryBagUI.Instance;
+        _progress.OnDataRefreshed -= RefreshAll;
+        _progress.OnDataRefreshed += RefreshAll;
+        _inventory.EquipmentChanged -= RefreshEquipment;
+        _inventory.EquipmentChanged += RefreshEquipment;
+        RefreshAll();
     }
 
     void Update()
     {
-        BindEquipmentIdentity();
-        var kb = UnityEngine.InputSystem.Keyboard.current;
-        if (kb == null) return;
-        if (kb.cKey.wasPressedThisFrame && !AnyInputFocused())
+        var keyboard = UnityEngine.InputSystem.Keyboard.current;
+        if (keyboard != null)
         {
-            _open = !_open;
-            _panel.SetActive(_open);
-            if (_equipmentPanel != null) _equipmentPanel.SetActive(_open);
-            if (_open) Repaint();
+            if (keyboard.cKey.wasPressedThisFrame && !AnyInputFocused()) Toggle();
+            else if (_open && keyboard.escapeKey.wasPressedThisFrame && !AnyInputFocused()) Hide();
+        }
+
+        if (_open && Time.unscaledTime >= _nextLiveRefresh)
+        {
+            _nextLiveRefresh = Time.unscaledTime + 0.25f;
+            RefreshIdentityAndStats();
         }
     }
 
-    // ── Repaint ───────────────────────────────────────────────────────────────
-    void Repaint()
+    void CreateView()
     {
-        if (!_open || _panel == null) return;
-        var pm = PlayerProgressManager.Local;
-        if (pm == null) return;
-
-        // Identity
-        var id = FindLocalIdentity();
-        _nameText.text  = id != null ? id.playerName : PlayerPrefs.GetString("username", "Player");
-        _classText.text = id != null ? id.ClassName  : "—";
-
-        // Progress
-        _levelText.text = $"Level  {pm.Level}";
-        _xpText.text    = $"{pm.Xp} / {pm.XpToNext} XP";
-        _xpFill.fillAmount = pm.XpFraction;
-
-        // Gold
-        _goldText.text = $"⬡ {pm.Gold:N0}";
-
-        // Stats
-        _strText.text = $"STR   {pm.StatStr}";
-        _agiText.text = $"AGI   {pm.StatAgi}";
-        _intText.text = $"INT   {pm.StatInt}";
-        _vitText.text = $"VIT   {pm.StatVit}";
-
-        var stats = id != null ? id.GetComponent<CharacterStats>() : null;
-        if (stats != null)
+        var prefab = Resources.Load<CharacterWindowView>("Character/CharacterWindow");
+        if (prefab == null)
         {
-            _strText.text = $"STR   {stats.EffectiveStrength}";
-            _agiText.text = $"AGI   {stats.EffectiveAgility}";
-            _intText.text = $"INT   {stats.EffectiveIntelligence}";
-            _vitText.text = $"VIT   {stats.EffectiveVitality}";
+            Debug.LogError("[CHARACTER] Missing Resources/Character/CharacterWindow.prefab. Run BCE/Setup/Rebuild Character UI.");
+            return;
         }
-        RepaintEquipment(id);
-    }
-
-    // ── Build UI ──────────────────────────────────────────────────────────────
-    void BuildUI()
-    {
-        // Canvas
-        var cgo = new GameObject("CharSheetCanvas",
-            typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
-        _canvas = cgo.GetComponent<Canvas>();
-        _canvas.renderMode   = RenderMode.ScreenSpaceOverlay;
-        _canvas.sortingOrder = 110;
-        var scaler = cgo.GetComponent<CanvasScaler>();
-        scaler.uiScaleMode         = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1920, 1080);
-        scaler.matchWidthOrHeight  = 0.5f;
-        var root = _canvas.GetComponent<RectTransform>();
-
-        // Panel — left side, vertically centred
-        _panel = new GameObject("CharPanel", typeof(RectTransform), typeof(Image));
-        _panel.transform.SetParent(root, false);
-        _panel.GetComponent<Image>().color = new Color(0.04f, 0.03f, 0.10f, 0.96f);
-        var pRt = _panel.GetComponent<RectTransform>();
-        pRt.anchorMin        = new Vector2(0f, 0.3f);
-        pRt.anchorMax        = new Vector2(0f, 0.75f);
-        pRt.pivot            = new Vector2(0f, 0.5f);
-        pRt.anchoredPosition = new Vector2(12f, 0f);
-        pRt.sizeDelta        = new Vector2(200f, 0f);
-
-        // Title bar
-        var titleBar = MakeStretchChild("TitleBar", pRt,
-            new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, -36f), Vector2.zero);
-        titleBar.AddComponent<Image>().color = new Color(0.08f, 0.05f, 0.20f, 1f);
-        var titleT = MakeText("Title", titleBar.GetComponent<RectTransform>(),
-            Vector2.zero, Vector2.one, new Vector2(8f, 0f), Vector2.zero);
-        titleT.text      = "CHARACTER  <size=8><color=#475569>C to close</color></size>";
-        titleT.fontSize  = 11f;
-        titleT.fontStyle = FontStyles.Bold;
-        titleT.color     = new Color(0.7f, 0.6f, 1f);
-        titleT.alignment = TextAlignmentOptions.Left;
-
-        // Body — stacked rows
-        float y = -44f;
-        float rowH = 20f;
-        float gap  = 4f;
-
-        _nameText  = AddRow("Name",  pRt, ref y, rowH, gap, new Color(1f, 1f, 1f));
-        _classText = AddRow("Class", pRt, ref y, rowH, gap, new Color(0.7f, 0.6f, 1f));
-
-        // Divider
-        AddDivider(pRt, ref y, gap);
-
-        _levelText = AddRow("Level", pRt, ref y, rowH, gap, new Color(0.9f, 0.9f, 1f));
-
-        // XP bar
-        y -= gap;
-        var xpBarGO = MakeStretchChild("XpBg", pRt,
-            new Vector2(0f, 1f), new Vector2(1f, 1f),
-            new Vector2(8f, y - 10f), new Vector2(-8f, y));
-        xpBarGO.AddComponent<Image>().color = new Color(0.08f, 0.06f, 0.18f);
-        var xpFillGO = MakeStretchChild("XpFill", xpBarGO.GetComponent<RectTransform>(),
-            Vector2.zero, new Vector2(1f, 1f), Vector2.zero, Vector2.zero);
-        _xpFill = xpFillGO.AddComponent<Image>();
-        _xpFill.color      = new Color(0.28f, 0.18f, 0.72f);
-        _xpFill.type       = Image.Type.Filled;
-        _xpFill.fillMethod = Image.FillMethod.Horizontal;
-        _xpFill.fillAmount = 0f;
-        y -= 14f;
-
-        _xpText = AddRow("XP", pRt, ref y, rowH, gap, new Color(0.6f, 0.6f, 0.9f));
-        _xpText.fontSize = 9f;
-
-        AddDivider(pRt, ref y, gap);
-
-        _goldText = AddRow("Gold", pRt, ref y, rowH, gap, new Color(1f, 0.85f, 0.2f));
-
-        AddDivider(pRt, ref y, gap);
-
-        // Stats
-        var statsLabel = AddRow("Stats", pRt, ref y, rowH, gap, new Color(0.5f, 0.5f, 0.7f));
-        statsLabel.text = "— STATS —";
-        statsLabel.alignment = TextAlignmentOptions.Center;
-
-        _strText = AddRow("Str", pRt, ref y, rowH, gap, new Color(1f, 0.5f, 0.4f));
-        _agiText = AddRow("Agi", pRt, ref y, rowH, gap, new Color(0.4f, 1f, 0.5f));
-        _intText = AddRow("Int", pRt, ref y, rowH, gap, new Color(0.4f, 0.7f, 1f));
-        _vitText = AddRow("Vit", pRt, ref y, rowH, gap, new Color(1f, 0.7f, 0.4f));
-
-        // Resize panel to fit content
-        pRt.sizeDelta = new Vector2(200f, -(y - gap));
-
-        BuildEquipmentPaperDoll(root, pRt.sizeDelta.y);
-    }
-
-    void BuildEquipmentPaperDoll(RectTransform root, float height)
-    {
-        _equipmentPanel = new GameObject("EquipmentPaperDoll", typeof(RectTransform), typeof(Image));
-        _equipmentPanel.transform.SetParent(root, false);
-        _equipmentPanel.GetComponent<Image>().color = new Color(0.04f, 0.03f, 0.10f, 0.96f);
-        var panel = _equipmentPanel.GetComponent<RectTransform>();
-        panel.anchorMin = new Vector2(0f, 0.3f);
-        panel.anchorMax = new Vector2(0f, 0.75f);
-        panel.pivot = new Vector2(0f, 0.5f);
-        panel.anchoredPosition = new Vector2(220f, 0f);
-        panel.sizeDelta = new Vector2(330f, height);
-
-        var title = MakeText("EquipmentTitle", panel, new Vector2(0f, 1f), new Vector2(1f, 1f),
-            new Vector2(10f, -34f), new Vector2(-10f, 0f));
-        title.text = "EQUIPMENT";
-        title.fontSize = 13f;
-        title.fontStyle = FontStyles.Bold;
-        title.color = new Color(0.9f, 0.75f, 0.35f);
-        title.alignment = TextAlignmentOptions.Center;
-
-        LootEquipmentSlot[] slots =
+        _view = Instantiate(prefab, transform);
+        _view.name = "CharacterWindow";
+        _view.Initialize(Hide, OnEquipmentClicked, OnEquipmentEnter, () => ItemTooltipUI.Instance?.Hide());
+        RectTransform panel = _view.transform.Find("Panel") as RectTransform;
+        if (panel != null)
         {
-            LootEquipmentSlot.Head, LootEquipmentSlot.Chest,
-            LootEquipmentSlot.Hands, LootEquipmentSlot.Legs,
-            LootEquipmentSlot.Feet, LootEquipmentSlot.MainHand,
-            LootEquipmentSlot.OffHand, LootEquipmentSlot.Ring,
-            LootEquipmentSlot.Trinket
-        };
-        for (int i = 0; i < slots.Length; i++)
-        {
-            int column = i % 2;
-            int row = i / 2;
-            CreateEquipmentSlot(panel, slots[i], column, row);
+            _dragHandle = panel.GetComponent<CharacterWindowDragHandle>() ?? panel.gameObject.AddComponent<CharacterWindowDragHandle>();
+            _dragHandle.panel = panel;
         }
+        _modelPreview = new CharacterModelPreview(_view.characterPreview);
     }
 
-    void CreateEquipmentSlot(RectTransform parent, LootEquipmentSlot slot, int column, int row)
+    void Toggle()
     {
-        var root = new GameObject(slot + "Slot", typeof(RectTransform), typeof(Image));
-        root.transform.SetParent(parent, false);
-        var rect = root.GetComponent<RectTransform>();
-        rect.anchorMin = rect.anchorMax = new Vector2(0f, 1f);
-        rect.pivot = new Vector2(0f, 1f);
-        rect.anchoredPosition = new Vector2(12f + column * 156f, -43f - row * 62f);
-        rect.sizeDelta = new Vector2(146f, 54f);
-        root.GetComponent<Image>().color = new Color(0.08f, 0.07f, 0.14f, 0.95f);
-
-        var iconObject = new GameObject("Icon", typeof(RectTransform), typeof(Image));
-        iconObject.transform.SetParent(root.transform, false);
-        var iconRect = iconObject.GetComponent<RectTransform>();
-        iconRect.anchorMin = new Vector2(0f, 0.5f);
-        iconRect.anchorMax = new Vector2(0f, 0.5f);
-        iconRect.pivot = new Vector2(0f, 0.5f);
-        iconRect.anchoredPosition = new Vector2(4f, 0f);
-        iconRect.sizeDelta = new Vector2(46f, 46f);
-        Image icon = iconObject.GetComponent<Image>();
-        icon.preserveAspect = true;
-        icon.color = Color.clear;
-        _equipmentIcons[slot] = icon;
-
-        var label = MakeText("Label", root.GetComponent<RectTransform>(), Vector2.zero, Vector2.one,
-            new Vector2(54f, 4f), new Vector2(-4f, -4f));
-        label.text = slot.ToString();
-        label.fontSize = 10f;
-        label.color = new Color(0.65f, 0.62f, 0.72f);
-        label.alignment = TextAlignmentOptions.MidlineLeft;
-        _equipmentNames[slot] = label;
-    }
-
-    void BindEquipmentIdentity()
-    {
-        PlayerIdentity current = PlayerIdentity.Local;
-        if (_equipmentIdentity == current) return;
-        if (_equipmentIdentity != null) _equipmentIdentity.EquipmentChanged -= Repaint;
-        _equipmentIdentity = current;
-        if (_equipmentIdentity != null) _equipmentIdentity.EquipmentChanged += Repaint;
-        if (_open) Repaint();
-    }
-
-    void RepaintEquipment(PlayerIdentity identity)
-    {
-        foreach (var pair in _equipmentIcons)
+        if (_view == null) CreateView();
+        if (_view == null) return;
+        _open = !_open;
+        _view.gameObject.SetActive(_open);
+        if (_open)
         {
-            LootEquipmentSlot slot = pair.Key;
-            Image icon = pair.Value;
-            TextMeshProUGUI label = _equipmentNames[slot];
-            if (identity != null && identity.TryGetEquipped(slot, out EquippedLootState equipped))
+            _dragHandle?.ApplySavedPosition();
+            RefreshAll();
+            InventoryBagUI.Refresh();
+        }
+        else ItemTooltipUI.Instance?.Hide();
+    }
+
+    void Hide()
+    {
+        _open = false;
+        ItemTooltipUI.Instance?.Hide();
+        if (_view != null) _view.gameObject.SetActive(false);
+    }
+
+    void RefreshAll()
+    {
+        if (!_open || _view == null) return;
+        RefreshIdentityAndStats();
+        RefreshEquipment();
+    }
+
+    void RefreshIdentityAndStats()
+    {
+        if (!_open || _view == null) return;
+        PlayerIdentity identity = FindLocalIdentity();
+        var progress = PlayerProgressManager.Local;
+        _view.playerName.text = identity != null ? identity.playerName : PlayerPrefs.GetString("username", "Player");
+        _view.playerLevel.text = progress != null ? $"Level {progress.Level}" : "Level —";
+        _view.className.text = identity != null ? identity.ClassName : "—";
+        if (progress != null)
+        {
+            _view.strValue.text = progress.StatStr.ToString();
+            _view.agiValue.text = progress.StatAgi.ToString();
+            _view.intValue.text = progress.StatInt.ToString();
+            _view.vitValue.text = progress.StatVit.ToString();
+        }
+
+        GameObject player = NetworkClient.localPlayer != null
+            ? NetworkClient.localPlayer.gameObject
+            : identity != null ? identity.gameObject : null;
+        _modelPreview?.Refresh(player);
+        CharacterStats stats = player != null ? player.GetComponent<CharacterStats>() : null;
+        Health health = player != null ? player.GetComponent<Health>() : null;
+        SetCombat(0, health != null ? $"{health.maxHealth:0}" : "—");
+        SetCombat(1, stats != null ? $"{stats.MaxMana:0}" : "—");
+        SetCombat(2, stats != null ? $"{stats.DamageMultiplier * 100f:0}%" : "—");
+        SetCombat(3, stats != null ? $"{stats.CriticalStrikeChance * 100f:0.#}%" : "—");
+        SetCombat(4, stats != null ? $"{stats.CriticalStrikeDamageMultiplier * 100f:0}%" : "—");
+        SetCombat(5, stats != null ? $"{stats.DamageReduction * 100f:0.#}%" : "—");
+        SetCombat(6, stats != null ? $"{stats.Hp5:0.#}" : "—");
+        SetCombat(7, stats != null ? $"{stats.Mp5:0.#}" : "—");
+        SetCombat(8, stats != null ? $"{stats.MoveSpeedMultiplier * 100f:0}%" : "—");
+        SetCombat(9, stats != null ? $"{stats.EffectiveCooldownReduction * 100f:0.#}%" : "—");
+    }
+
+    void SetCombat(int index, string value)
+    {
+        if (_view.combatValues != null && index >= 0 && index < _view.combatValues.Length)
+            _view.combatValues[index].text = value;
+    }
+
+    void RefreshEquipment()
+    {
+        if (!_open || _view == null) return;
+        _equipped.Clear();
+        int ringOrdinal = 0;
+        var snapshots = InventoryBagUI.Instance?.GetEquippedItems();
+        if (snapshots != null)
+        {
+            foreach (var item in snapshots)
             {
-                LootItemDefinition definition = LootItemCatalog.Find(equipped.itemId);
-                icon.sprite = definition != null ? definition.inventoryIcon : null;
-                icon.color = icon.sprite != null ? Color.white : Color.clear;
-                label.text = definition != null ? definition.displayName : equipped.itemId;
-                label.color = definition != null
-                    ? LootItemCatalog.RarityColor(definition.rarity)
-                    : Color.white;
-            }
-            else
-            {
-                icon.sprite = null;
-                icon.color = Color.clear;
-                label.text = slot.ToString();
-                label.color = new Color(0.45f, 0.43f, 0.52f);
+                LootItemDefinition definition = LootItemCatalog.Find(item.ItemId);
+                bool ring = definition != null
+                    ? definition.databaseItemType == LootDatabaseItemType.Ring
+                    : string.Equals(ItemCatalogManager.Instance?.GetTemplate(item.ItemId)?.item_type, "ring", System.StringComparison.OrdinalIgnoreCase);
+                int ordinal = ring ? ringOrdinal++ : 0;
+                if (CharacterEquipmentSlotMap.TryMap(item.ItemId, ordinal, out CharacterEquipmentSlot slot))
+                    _equipped[slot] = item;
             }
         }
+
+        foreach (CharacterEquipmentSlot slot in System.Enum.GetValues(typeof(CharacterEquipmentSlot)))
+        {
+            bool disabled = slot == CharacterEquipmentSlot.Shoulder;
+            if (!_equipped.TryGetValue(slot, out var item))
+            {
+                _view.SetEquipment(slot, null, 0, Color.clear, disabled);
+                continue;
+            }
+            LootItemDefinition definition = LootItemCatalog.Find(item.ItemId);
+            Sprite icon = definition != null ? definition.inventoryIcon : null;
+            Color rarity = definition != null ? LootItemCatalog.RarityColor(definition.rarity) : ItemCatalogManager.GetRarityColor(item.ItemId);
+            _view.SetEquipment(slot, icon, item.Quantity, rarity, false);
+        }
     }
 
-    // ── UI helpers ────────────────────────────────────────────────────────────
-    TextMeshProUGUI AddRow(string name, RectTransform parent, ref float y,
-        float h, float gap, Color col)
+    void OnEquipmentClicked(CharacterEquipmentSlot slot)
     {
-        y -= gap;
-        var go = MakeStretchChild(name, parent,
-            new Vector2(0f, 1f), new Vector2(1f, 1f),
-            new Vector2(10f, y - h), new Vector2(-10f, y));
-        y -= h;
-        var t = go.AddComponent<TextMeshProUGUI>();
-        t.fontSize  = 11f;
-        t.color     = col;
-        t.alignment = TextAlignmentOptions.Left;
-        return t;
+        if (_equipped.TryGetValue(slot, out var item))
+            InventoryBagUI.Instance?.UnequipInventorySlot(item.InventorySlotIndex);
     }
 
-    void AddDivider(RectTransform parent, ref float y, float gap)
+    void OnEquipmentEnter(CharacterEquipmentSlot slot, PointerEventData eventData)
     {
-        y -= gap + 2f;
-        var div = MakeStretchChild("Divider", parent,
-            new Vector2(0f, 1f), new Vector2(1f, 1f),
-            new Vector2(8f, y - 1f), new Vector2(-8f, y));
-        div.AddComponent<Image>().color = new Color(0.3f, 0.2f, 0.5f, 0.5f);
-        y -= 3f;
-    }
-
-    static GameObject MakeStretchChild(string name, RectTransform parent,
-        Vector2 anchorMin, Vector2 anchorMax, Vector2 offsetMin, Vector2 offsetMax)
-    {
-        var go = new GameObject(name, typeof(RectTransform));
-        go.transform.SetParent(parent, false);
-        var rt = go.GetComponent<RectTransform>();
-        rt.anchorMin = anchorMin; rt.anchorMax = anchorMax;
-        rt.offsetMin = offsetMin; rt.offsetMax = offsetMax;
-        return go;
-    }
-
-    static TextMeshProUGUI MakeText(string name, RectTransform parent,
-        Vector2 anchorMin, Vector2 anchorMax, Vector2 offsetMin, Vector2 offsetMax)
-    {
-        var go = MakeStretchChild(name, parent, anchorMin, anchorMax, offsetMin, offsetMax);
-        return go.AddComponent<TextMeshProUGUI>();
+        if (_equipped.TryGetValue(slot, out var item))
+            ItemTooltipUI.Instance?.Show(item.ItemId, eventData.position);
     }
 
     static bool AnyInputFocused()
     {
-        if (RodChatManager.Instance != null && RodChatManager.Instance.IsOpen)
-            return true;
-
-        foreach (var f in FindObjectsByType<TMP_InputField>(FindObjectsInactive.Exclude))
-            if (f.isFocused) return true;
+        if (RodChatManager.Instance != null && RodChatManager.Instance.IsOpen) return true;
+        foreach (var field in FindObjectsByType<TMP_InputField>(FindObjectsInactive.Exclude)) if (field.isFocused) return true;
         return false;
     }
 
     static PlayerIdentity FindLocalIdentity()
     {
-        foreach (var id in FindObjectsByType<PlayerIdentity>(FindObjectsInactive.Exclude))
-            if (id.isLocalPlayer) return id;
+        foreach (var identity in FindObjectsByType<PlayerIdentity>(FindObjectsInactive.Exclude))
+            if (identity.isLocalPlayer) return identity;
         return null;
     }
 }

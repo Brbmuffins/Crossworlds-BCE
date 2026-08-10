@@ -30,6 +30,9 @@ EditorBuildSettings:
     path: Assets/Game/Scenes/GM Island.unity
     guid: ad9fe483c76731647b9d83a2eec1b602
   - enabled: 1
+    path: Assets/Game/Scenes/PVPZONE.unity
+    guid: 58aa16795796b504eade6ea26f587594
+  - enabled: 1
     path: Assets/Game/Scenes/VoidDungeon.unity
     guid: 891774f03d4fab849bd7466697e2de29
   - enabled: 1

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Mirror;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -53,20 +54,24 @@ public class HubReturnSpawnPoint : MonoBehaviour
         HubReturnSpawnPoint[] points = FindObjectsByType<HubReturnSpawnPoint>(
             FindObjectsInactive.Exclude);
 
-        HubReturnSpawnPoint firstInScene = null;
+        var matches = new List<HubReturnSpawnPoint>();
+        var scenePoints = new List<HubReturnSpawnPoint>();
 
         foreach (HubReturnSpawnPoint point in points)
         {
             if (point == null) continue;
             if (point.gameObject.scene != scene) continue;
 
+            scenePoints.Add(point);
             if (string.Equals(NormalizeId(point.spawnId), id, StringComparison.OrdinalIgnoreCase))
-                return point.transform;
-
-            if (firstInScene == null) firstInScene = point;
+                matches.Add(point);
         }
 
-        if (firstInScene != null) return firstInScene.transform;
+        if (matches.Count > 0)
+            return ChooseSpawn(scene, matches).transform;
+
+        if (scenePoints.Count > 0)
+            return ChooseSpawn(scene, scenePoints).transform;
 
         foreach (NetworkStartPosition start in FindObjectsByType<NetworkStartPosition>(
                      FindObjectsInactive.Exclude))
@@ -76,6 +81,16 @@ public class HubReturnSpawnPoint : MonoBehaviour
         }
 
         return null;
+    }
+
+    static HubReturnSpawnPoint ChooseSpawn(Scene scene, List<HubReturnSpawnPoint> points)
+    {
+        bool randomize = points.Count > 1 &&
+            string.Equals(scene.name, SceneNames.PvpZone, StringComparison.OrdinalIgnoreCase);
+
+        return randomize
+            ? points[UnityEngine.Random.Range(0, points.Count)]
+            : points[0];
     }
 
     static string NormalizeId(string value)

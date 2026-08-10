@@ -63,6 +63,11 @@ public class EscMenu : MonoBehaviour
         if (kb == null) return;
         if (!kb.escapeKey.wasPressedThisFrame) return;
 
+        // Free camera owns Escape so it can restore the hidden UI and return to
+        // the player without briefly opening the pause menu underneath it.
+        if (CameraFollow.IsAnyFreeCameraActive)
+            return;
+
         // If chat is open, let RodChatManager handle Escape (closes chat).
         // Don't open the ESC menu at the same time.
         if (RodChatManager.Instance != null && RodChatManager.Instance.IsOpen)

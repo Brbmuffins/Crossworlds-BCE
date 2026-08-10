@@ -19,7 +19,7 @@ public class ClericAnimationDriver : NetworkBehaviour
 
     [Header("Speed Tuning")]
     [Tooltip("Walk speed — animator Speed reaches 1.0 here")]
-    public float baseMoveSpeed   = 5f;
+    public float baseMoveSpeed   = 9f;
     [Tooltip("Sprint speed — animator Speed reaches 1.5 here")]
     public float baseSprintSpeed = 9f;
 
@@ -52,7 +52,11 @@ public class ClericAnimationDriver : NetworkBehaviour
         if (!_hasSpeedParam) return;
 
         float speed = new Vector3(_rb.linearVelocity.x, 0f, _rb.linearVelocity.z).magnitude;
-        float normalized = Mathf.Clamp(speed / baseSprintSpeed * 1.5f, 0f, 1.5f);
+        float runSpeed = Mathf.Max(0.01f, baseMoveSpeed);
+        float authoredSprintSpeed = Mathf.Max(runSpeed, baseSprintSpeed);
+        float normalized = speed <= runSpeed || Mathf.Approximately(authoredSprintSpeed, runSpeed)
+            ? Mathf.Clamp(speed / runSpeed, 0f, 1.5f)
+            : Mathf.Lerp(1f, 1.5f, Mathf.InverseLerp(runSpeed, authoredSprintSpeed, speed));
         animator.SetFloat(SpeedHash, normalized, 0.1f, Time.deltaTime);
     }
 }

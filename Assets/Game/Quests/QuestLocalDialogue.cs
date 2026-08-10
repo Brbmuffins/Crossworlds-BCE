@@ -76,6 +76,7 @@ public sealed class QuestLocalDialogue : MonoBehaviour
 
     void OnGUI()
     {
+        if (CameraFollow.IsAnyFreeCameraActive) return;
         if (_quest == null || QuestLocalRuntime.Instance == null) return;
         if (Event.current.type == EventType.KeyDown && Event.current.keyCode == KeyCode.Escape)
         {

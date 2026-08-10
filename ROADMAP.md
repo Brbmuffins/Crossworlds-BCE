@@ -88,6 +88,51 @@ conversation: it names its files, acceptance criteria, and dependencies. Tasks m
 > height and duration; server-side target movement is synchronized to clients.
 > Chargeable circle damage and its pulse sequence now share the committed visual
 > radius, fixing Screaming Flames' hit area at larger charge sizes.
+>
+> **GM flight controls 2026-08-09:** Both authenticated `/fly` and the local GM
+> console now use one Rigidbody flight mode in `PlayerMovement`. WASD provides
+> horizontal flight, Space rises, Ctrl/C descends, Shift boosts, and releasing
+> controls stops immediately instead of preserving airborne inertia.
+>
+> **GM cinematic free camera 2026-08-09:** Authenticated GMs can use `/freecam`
+> to detach the active camera for recording while the player remains parked.
+> Movement is inertia-free with vertical controls, fast and precision modifiers,
+> configurable 0.25-100 units/second speed, and automatic return to the saved
+> third-person orbit when disabled. Freecam hides all loaded screen-space and
+> world-space Canvases for clean capture, restores their prior states on exit,
+> suppresses the legacy IMGUI quest window, and provides a server-verified Escape
+> shortcut so the hidden chat is not needed.
+>
+> **PVP zone framework 2026-08-10:** The saved `PVPZONE` scene is a registered,
+> persistable additive zone and default world-map destination, with GM `/arrive pvp`
+> support and a terrain-aware editor action for its arrival/respawn point. Existing
+> Enemy-targeted player abilities, crowd control, deployables, projectiles, and turrets
+> treat other players as opponents only when both players share PVPZONE. `Health`
+> provides a final server-side player-damage gate everywhere else, and downed players
+> in PVPZONE return to a random matching zone spawn after the normal respawn delay;
+> map and GM arrivals use the same server-selected spawn pool.
+>
+> **Player run speed 2026-08-10:** Normal locomotion now uses the former sprint
+> speed of 9 units/second on all five active class prefabs and future PlayerMovement
+> defaults. Sprint remains at 9, preserving its input/animation hook without an
+> additional speed increase. Player animation normalization and local GM speed
+> scaling use the new authored run/sprint baselines.
+>
+> **Circle aim horizon fallback 2026-08-10:** Cursor rays aimed above the visible
+> terrain no longer collapse circle indicators to minimum distance over the caster.
+> The horizontal cursor direction is retained and the indicator clamps to the
+> ability's maximum range, keeping blink/dash destinations stable at the horizon.
+>
+> **Dravos death import repair 2026-08-10:** `Standing React Death Backward` now
+> remaps its embedded Tripo material to the tracked Dravos base-color texture through
+> a URP/Lit material, and imports as Humanoid with its own avatar like the existing
+> Dravos animation set.
+>
+> **Player hero death animations 2026-08-10:** Cleric, Marauder, and Arcanist now
+> enter their class-specific death animation from the replicated `IsDead` downed
+> state and return to idle after revival. Marauder's disabled `PlayerAnimator` was
+> enabled; Arcanist received the missing driver and Dravos death controller state;
+> Cleric's Brandalf death clip is Humanoid and its controller now enters on `IsDead`.
 > The `#if !UNITY_SERVER` guards described in the 1.5 note above were the *bare* form;
 > the required convention is `#if UNITY_EDITOR || !UNITY_SERVER`, and the 8 remaining
 > bare guards (HeroCosmeticApplier, StatusEffectHUD, ShieldValueHUD, GoldHUD,

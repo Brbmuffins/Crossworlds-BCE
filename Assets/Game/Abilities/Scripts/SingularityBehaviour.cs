@@ -60,20 +60,23 @@ public class SingularityBehaviour : MonoBehaviour
             elapsed += Time.fixedDeltaTime;
 
             Collider[] hits = ZonePhysics.OverlapSphere(gameObject, transform.position, pullRadius);
+            var pulled = new System.Collections.Generic.HashSet<Health>();
             foreach (var col in hits)
             {
-                if (!col.CompareTag(enemyTag)) continue;
-                Rigidbody rb = col.GetComponent<Rigidbody>();
+                if (!PvpCombatRules.MatchesTarget(owner, col, enemyTag, out Health health) ||
+                    !pulled.Add(health))
+                    continue;
+                Rigidbody rb = health.GetComponent<Rigidbody>();
                 if (rb != null)
                 {
-                    Vector3 toward = (transform.position - col.transform.position).normalized;
+                    Vector3 toward = (transform.position - health.transform.position).normalized;
                     rb.AddForce(toward * pullForce, ForceMode.Acceleration);
                 }
                 else
                 {
                     // Fallback: move via transform
-                    Vector3 dir = (transform.position - col.transform.position).normalized;
-                    col.transform.position += dir * 3f * Time.fixedDeltaTime;
+                    Vector3 dir = (transform.position - health.transform.position).normalized;
+                    health.transform.position += dir * 3f * Time.fixedDeltaTime;
                 }
             }
 
@@ -82,16 +85,18 @@ public class SingularityBehaviour : MonoBehaviour
 
         // Burst
         Collider[] finalHits = ZonePhysics.OverlapSphere(gameObject, transform.position, burstRadius);
+        var damaged = new System.Collections.Generic.HashSet<Health>();
         foreach (var col in finalHits)
         {
-            if (!col.CompareTag(enemyTag)) continue;
-            Health h = col.GetComponent<Health>();
+            if (!PvpCombatRules.MatchesTarget(owner, col, enemyTag, out Health h) ||
+                !damaged.Add(h))
+                continue;
             h?.TakeDamage(burstDamage, owner);
 
             // Collapsing Void: apply Weakened debuff
             if (applyExposed)
             {
-                var sem = col.GetComponent<StatusEffectManager>();
+                var sem = h.GetComponent<StatusEffectManager>();
                 sem?.AddEffect(new StatusEffect(StatusEffectType.Weakened, exposedDuration));
             }
         }

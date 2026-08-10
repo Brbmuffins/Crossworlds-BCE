@@ -119,9 +119,17 @@ public class ConsumableEffectRunner : MonoBehaviour
     IEnumerator SpeedEffect(float bonus, float duration)
     {
         var pm = GetComponent<PlayerMovement>();
-        if (pm != null) pm.moveSpeed *= (1f + bonus);
+        if (pm != null)
+        {
+            pm.moveSpeed *= (1f + bonus);
+            pm.sprintSpeed *= (1f + bonus);
+        }
         yield return new WaitForSeconds(duration);
-        if (pm != null) pm.moveSpeed /= (1f + bonus);
+        if (pm != null)
+        {
+            pm.moveSpeed /= (1f + bonus);
+            pm.sprintSpeed /= (1f + bonus);
+        }
         _active.Remove("speed");
     }
 

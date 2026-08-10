@@ -5,17 +5,11 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>Creates the reusable inventory prefab from the approved visual assets.</summary>
-[InitializeOnLoad]
 public static class InventoryUIBuilder
 {
     const string PrefabPath = "Assets/Game/UI/Resources/Inventory/InventoryWindow.prefab";
     const string GothicPanelPath = "Assets/Game/UI/Resources/Inventory/inventory-gothic-panel-clean.png";
     const string CoinsPath = "Assets/Game/UI/Resources/Inventory/gold-coins.png";
-
-    static InventoryUIBuilder()
-    {
-        EditorApplication.delayCall += EnsurePrefab;
-    }
 
     [MenuItem("BCE/Setup/Rebuild Inventory UI")]
     public static void Rebuild()
@@ -124,14 +118,6 @@ public static class InventoryUIBuilder
         Object.DestroyImmediate(root);
         AssetDatabase.SaveAssets();
         Debug.Log($"[INVENTORY] Rebuilt {PrefabPath}");
-    }
-
-    static void EnsurePrefab()
-    {
-        // Never overwrite an approved/customized inventory whenever Unity opens or
-        // a batch build starts. The menu command remains the explicit rebuild path.
-        if (AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath) == null)
-            Rebuild();
     }
 
     static void ConfigureSprite(string path)

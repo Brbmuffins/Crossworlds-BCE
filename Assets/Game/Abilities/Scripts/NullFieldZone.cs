@@ -22,6 +22,8 @@ public class NullFieldZone : MonoBehaviour
     // Assign: brbmuffins Technologies/.../GroundFog.prefab
     public GameObject zoneVFX;
 
+    [HideInInspector] public GameObject owner;
+
     private readonly List<StatusEffectManager> _silenced = new List<StatusEffectManager>();
     private GameObject _vfxInstance;
 
@@ -41,21 +43,21 @@ public class NullFieldZone : MonoBehaviour
     {
         // Server applies the silence/curse; client copies just show the fog.
         if (!DeployableNet.IsAuthority) return;
-        if (!other.CompareTag(enemyTag)) return;
-        var sem = other.GetComponent<StatusEffectManager>();
+        if (!PvpCombatRules.MatchesTarget(owner, other, enemyTag, out Health health)) return;
+        var sem = health.GetComponent<StatusEffectManager>();
         if (sem == null) return;
-        sem.AddEffect(new StatusEffect(StatusEffectType.Silenced, duration));
+        sem.AddEffect(new StatusEffect(StatusEffectType.Silenced, duration, 0f, owner));
         if (decayDamagePerSecond > 0f)
-            sem.AddEffect(new StatusEffect(StatusEffectType.Cursed, duration, decayDamagePerSecond));
-        _silenced.Add(sem);
+            sem.AddEffect(new StatusEffect(StatusEffectType.Cursed, duration, decayDamagePerSecond, owner));
+        if (!_silenced.Contains(sem))
+            _silenced.Add(sem);
     }
 
     void OnTriggerExit(Collider other)
     {
-        if (!other.CompareTag(enemyTag)) return;
         // Suppress will expire naturally via StatusEffectManager.Update;
         // we just remove from tracking list.
-        var sem = other.GetComponent<StatusEffectManager>();
+        var sem = other.GetComponentInParent<StatusEffectManager>();
         if (sem != null) _silenced.Remove(sem);
     }
 

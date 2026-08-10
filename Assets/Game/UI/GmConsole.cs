@@ -76,6 +76,7 @@ public class GmConsole : MonoBehaviour
     bool  _godActive;
     bool  _noclipActive;
     float _baseSpeed;
+    float _baseSprintSpeed;
     float _baseMass;
 
     // ── Lifecycle ─────────────────────────────────────────────────────────
@@ -132,11 +133,6 @@ public class GmConsole : MonoBehaviour
             _input.MoveTextEnd(false);
         }
 
-        // Fly physics — move on Y with same input keys
-        if (_flyActive && _rb != null)
-        {
-            _rb.linearVelocity = new Vector3(_rb.linearVelocity.x, GetFlyVertical() * 8f, _rb.linearVelocity.z);
-        }
     }
 
     // ── GM check ──────────────────────────────────────────────────────────
@@ -158,7 +154,11 @@ public class GmConsole : MonoBehaviour
                 _movement    = go.GetComponent<PlayerMovement>();
                 _rb          = go.GetComponent<Rigidbody>();
                 _health      = go.GetComponent<Health>();
-                if (_movement != null) _baseSpeed = _movement.moveSpeed;
+                if (_movement != null)
+                {
+                    _baseSpeed = _movement.moveSpeed;
+                    _baseSprintSpeed = _movement.sprintSpeed;
+                }
                 if (_rb       != null) _baseMass  = _rb.mass;
                 return;
             }
@@ -171,7 +171,11 @@ public class GmConsole : MonoBehaviour
             _movement    = fallback.GetComponent<PlayerMovement>();
             _rb          = fallback.GetComponent<Rigidbody>();
             _health      = fallback.GetComponent<Health>();
-            if (_movement != null) _baseSpeed = _movement.moveSpeed;
+            if (_movement != null)
+            {
+                _baseSpeed = _movement.moveSpeed;
+                _baseSprintSpeed = _movement.sprintSpeed;
+            }
             if (_rb       != null) _baseMass  = _rb.mass;
         }
     }
@@ -232,18 +236,31 @@ public class GmConsole : MonoBehaviour
             return;
         }
         _movement.moveSpeed  = _baseSpeed * mult;
-        _movement.sprintSpeed = _baseSpeed * 1.8f * mult;
+        _movement.sprintSpeed = _baseSprintSpeed * mult;
         Log($"<color=#4ade80>Speed set to ×{mult} ({_movement.moveSpeed:F1} u/s)</color>");
     }
 
     void CmdFly()
     {
-        if (_rb == null) { Log("<color=#f87171>No Rigidbody found on player.</color>"); return; }
+        if (_movement == null && _rb == null)
+        {
+            Log("<color=#f87171>No movable player found.</color>");
+            return;
+        }
+
         _flyActive = !_flyActive;
-        _rb.useGravity = !_flyActive;
-        if (_flyActive)  _rb.linearVelocity = Vector3.zero;
+        if (_movement != null)
+        {
+            _movement.SetGmFlightEnabled(_flyActive);
+        }
+        else
+        {
+            _rb.useGravity = !_flyActive;
+            _rb.linearVelocity = Vector3.zero;
+        }
+
         Log(_flyActive
-            ? "<color=#4ade80>Fly ON — W/S for forward, hold Space/Ctrl for vertical</color>"
+            ? "<color=#4ade80>Fly ON — WASD moves, Space rises, Ctrl/C descends, Shift boosts; release to stop</color>"
             : "<color=#94a3b8>Fly OFF</color>");
     }
 
@@ -444,17 +461,6 @@ public class GmConsole : MonoBehaviour
         // Scroll to bottom
         Canvas.ForceUpdateCanvases();
         _scroll.verticalNormalizedPosition = 0f;
-    }
-
-    // ── Fly vertical input ────────────────────────────────────────────────
-
-    float GetFlyVertical()
-    {
-        float v = 0f;
-        var kb = Keyboard.current;
-        if (kb != null && kb.spaceKey.isPressed)        v += 1f;
-        if (kb != null && kb.leftCtrlKey.isPressed)     v -= 1f;
-        return v;
     }
 
     // ── UI Construction ───────────────────────────────────────────────────

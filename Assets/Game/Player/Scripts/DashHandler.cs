@@ -77,11 +77,14 @@ public class DashHandler : MonoBehaviour
         Vector3 boxCenter = start + dir * (slamDistance / 2f) + Vector3.up * 0.5f;
         Vector3 halfExtents = new Vector3(slamWidth, 1f, slamDistance / 2f);
         Collider[] hits = ZonePhysics.OverlapBox(gameObject, boxCenter, halfExtents, Quaternion.LookRotation(dir));
+        var damaged = new System.Collections.Generic.HashSet<Health>();
         foreach (var col in hits)
         {
-            if (!col.CompareTag(enemyTag)) continue;
-            col.GetComponent<Health>()?.TakeDamage(slamDamage, gameObject);
-            col.GetComponent<StatusEffectManager>()?.AddEffect(
+            if (!PvpCombatRules.MatchesTarget(gameObject, col, enemyTag, out Health health) ||
+                !damaged.Add(health))
+                continue;
+            health.TakeDamage(slamDamage, gameObject);
+            health.GetComponent<StatusEffectManager>()?.AddEffect(
                 new StatusEffect(StatusEffectType.Stagger, staggerDuration));
         }
 

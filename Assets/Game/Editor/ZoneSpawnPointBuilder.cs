@@ -41,6 +41,23 @@ public static class ZoneSpawnPointBuilder
     /// </summary>
     const float GroundClearance = 2f;
 
+    [MenuItem("BCE/Setup/6u - Ensure PVP Zone Spawn Point")]
+    public static void EnsurePvpZoneSpawnPoint()
+    {
+        if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
+        {
+            Debug.Log("[BCE 6u] Cancelled - unsaved scenes were not saved.");
+            return;
+        }
+
+        var report = new List<string>();
+        EnsureSpawnPoint(SceneNames.PvpZone, SceneNames.PvpZonePath, report);
+
+        string summary = string.Join("\n", report);
+        Debug.Log("[BCE 6u] PVP zone spawn point:\n" + summary);
+        EditorUtility.DisplayDialog("BCE - PVP Zone Spawn Point", summary, "OK");
+    }
+
     [MenuItem("BCE/Setup/6t - Fix Zone Spawn Heights")]
     public static void FixHeights()
     {
@@ -262,6 +279,19 @@ public static class ZoneSpawnPointBuilder
                 if (!any) { bounds = r.bounds; any = true; }
                 else bounds.Encapsulate(r.bounds);
             }
+
+            foreach (Terrain terrain in root.GetComponentsInChildren<Terrain>(true))
+            {
+                if (terrain == null || terrain.terrainData == null) continue;
+
+                Bounds localBounds = terrain.terrainData.bounds;
+                Vector3 worldCenter = terrain.transform.TransformPoint(localBounds.center);
+                Vector3 worldSize = Vector3.Scale(localBounds.size, terrain.transform.lossyScale);
+                var worldBounds = new Bounds(worldCenter, worldSize);
+
+                if (!any) { bounds = worldBounds; any = true; }
+                else bounds.Encapsulate(worldBounds);
+            }
         }
 
         return any ? new Vector2(bounds.center.x, bounds.center.z) : Vector2.zero;
@@ -280,6 +310,7 @@ public static class ZoneSpawnPointBuilder
             case SceneNames.VoidDungeon:     return SceneNames.VoidDungeonPath;
             case SceneNames.GatheringZone:   return SceneNames.GatheringZonePath;
             case SceneNames.ArenaCopper:     return SceneNames.ArenaCopperPath;
+            case SceneNames.PvpZone:         return SceneNames.PvpZonePath;
             default:                         return null;
         }
     }

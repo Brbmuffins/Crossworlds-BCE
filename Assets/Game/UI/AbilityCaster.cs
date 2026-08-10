@@ -1854,11 +1854,22 @@ public class AbilityCaster : NetworkBehaviour
         return NetworkClient.active && !NetworkServer.active && isLocalPlayer;
     }
 
-    Vector3 GetCameraAimPoint()
+    bool TryGetCameraAimPoint(out Vector3 aimPoint, out Vector3 skyAimDirection)
     {
         // Mouse cursor world position — cast a ray from cursor, not screen centre
         Vector2 mp  = Mouse.current.position.ReadValue();
         Ray     ray = cam.ScreenPointToRay(new Vector3(mp.x, mp.y, 0f));
+
+        // Preserve the cursor's horizontal direction when the ray points above the
+        // horizon and cannot intersect either terrain or the player-height plane.
+        skyAimDirection = Vector3.ProjectOnPlane(ray.direction, Vector3.up);
+        if (skyAimDirection.sqrMagnitude < 0.0001f)
+            skyAimDirection = Vector3.ProjectOnPlane(cam.transform.forward, Vector3.up);
+        if (skyAimDirection.sqrMagnitude < 0.0001f)
+            skyAimDirection = Vector3.ProjectOnPlane(transform.forward, Vector3.up);
+        skyAimDirection = skyAimDirection.sqrMagnitude > 0.0001f
+            ? skyAimDirection.normalized
+            : Vector3.forward;
 
         RaycastHit[] hits = ZonePhysics.RaycastAll(gameObject, ray, 100f, ~0, QueryTriggerInteraction.Ignore);
         System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
@@ -1867,14 +1878,29 @@ public class AbilityCaster : NetworkBehaviour
         {
             if (ShouldIgnoreIndicatorHit(hit))
                 continue;
-            return hit.point;
+            aimPoint = hit.point;
+            return true;
         }
 
         Plane groundPlane = new Plane(Vector3.up, transform.position);
         if (groundPlane.Raycast(ray, out float distance))
-            return ray.GetPoint(distance);
+        {
+            aimPoint = ray.GetPoint(distance);
+            return true;
+        }
 
-        return transform.position + transform.forward * minimumAimDistance;
+        aimPoint = default;
+        return false;
+    }
+
+    Vector3 GetCameraAimPoint()
+    {
+        if (TryGetCameraAimPoint(out Vector3 aimPoint, out Vector3 skyAimDirection))
+            return aimPoint;
+
+        // RefreshAimDirection only needs a direction here. GetAimData handles the
+        // same no-hit case by placing ranged indicators at their maximum range.
+        return transform.position + skyAimDirection * 1000f;
     }
 
     // Called every frame to keep AimDirection current so PlayerMovement can always
@@ -1890,7 +1916,14 @@ public class AbilityCaster : NetworkBehaviour
 
     void GetAimData(AbilityDef ability, out Vector3 aimDir, out float aimDistance)
     {
-        Vector3 targetPoint = GetCameraAimPoint();
+        if (!TryGetCameraAimPoint(out Vector3 targetPoint, out Vector3 skyAimDirection))
+        {
+            aimDir = skyAimDirection;
+            aimDistance = Mathf.Max(0f, ability.range);
+            AimDirection = aimDir;
+            return;
+        }
+
         Vector3 toTarget = targetPoint - transform.position;
         toTarget.y = 0f;
 
@@ -4491,7 +4524,11 @@ public class AbilityCaster : NetworkBehaviour
             }
 
             case "Silence Ward":
-                SpawnDeployableAt(nullFieldPrefab ?? ability.deployablePrefab, castPoint, null);
+                SpawnDeployableAt(nullFieldPrefab ?? ability.deployablePrefab, castPoint, go =>
+                {
+                    var zone = go.GetComponent<NullFieldZone>();
+                    if (zone != null) zone.owner = gameObject;
+                });
                 break;
 
             case "Dark Harvest":
@@ -4821,22 +4858,14 @@ public class AbilityCaster : NetworkBehaviour
         return offset.sqrMagnitude <= safeRadius * safeRadius;
     }
 
-    static bool HitMatchesTargetTag(Collider hit, Health health, string targetTag)
+    bool HitMatchesTargetTag(Collider hit, Health health, string targetTag)
     {
-        if (string.IsNullOrEmpty(targetTag))
-            return true;
-
-        if (hit.CompareTag(targetTag) || health.CompareTag(targetTag))
-            return true;
-
-        Transform root = health.transform.root;
-        return root != null && root.CompareTag(targetTag);
+        return PvpCombatRules.MatchesTarget(gameObject, hit, health, targetTag);
     }
 
-    static bool TryGetMatchingHealth(Collider hit, string targetTag, out Health health)
+    bool TryGetMatchingHealth(Collider hit, string targetTag, out Health health)
     {
-        health = hit != null ? hit.GetComponentInParent<Health>() : null;
-        return health != null && health.IsAlive && HitMatchesTargetTag(hit, health, targetTag);
+        return PvpCombatRules.MatchesTarget(gameObject, hit, targetTag, out health);
     }
 
     void DealAbilityDamage(Health health, float damage)
@@ -4921,7 +4950,7 @@ public class AbilityCaster : NetworkBehaviour
             DealAbilityDamage(health, damage);
     }
 
-    static bool AddMatchingHit(Collider hit, string targetTag, System.Collections.Generic.List<Collider> hits, System.Collections.Generic.HashSet<Health> matched)
+    bool AddMatchingHit(Collider hit, string targetTag, System.Collections.Generic.List<Collider> hits, System.Collections.Generic.HashSet<Health> matched)
     {
         if (!TryGetMatchingHealth(hit, targetTag, out Health health))
             return false;
@@ -4975,9 +5004,9 @@ public class AbilityCaster : NetworkBehaviour
         float best = Mathf.Infinity;
         foreach (var col in hits)
         {
-            if (!col.CompareTag("Enemy")) continue;
-            float d = Vector3.Distance(castPoint, col.transform.position);
-            if (d < best) { best = d; focusTarget = col.transform; }
+            if (!TryGetMatchingHealth(col, "Enemy", out Health health)) continue;
+            float d = Vector3.Distance(castPoint, health.transform.position);
+            if (d < best) { best = d; focusTarget = health.transform; }
         }
 
         if (focusTarget == null) return;
@@ -5035,26 +5064,29 @@ public class AbilityCaster : NetworkBehaviour
         float duration = ability.pullDuration > 0f ? ability.pullDuration : 2f;
 
         Collider[] hits = ZonePhysics.OverlapSphere(gameObject, castPoint, radius);
+        var pulled = new System.Collections.Generic.HashSet<Health>();
         foreach (var col in hits)
         {
-            if (!col.CompareTag(ability.targetTag)) continue;
-            StartCoroutine(PullToPoint(col, castPoint, duration));
+            if (!TryGetMatchingHealth(col, ability.targetTag, out Health health) ||
+                !pulled.Add(health))
+                continue;
+            StartCoroutine(PullToPoint(health, castPoint, duration));
         }
 
         if (ability.castVFX != null)
             SpawnVFX(ability.castVFX, castPoint, Quaternion.identity);
     }
 
-    System.Collections.IEnumerator PullToPoint(Collider col, Vector3 center, float duration)
+    System.Collections.IEnumerator PullToPoint(Health health, Vector3 center, float duration)
     {
         float elapsed = 0f;
-        while (elapsed < duration && col != null)
+        while (elapsed < duration && health != null)
         {
             elapsed += Time.fixedDeltaTime;
-            Rigidbody rb = col.GetComponent<Rigidbody>();
-            Vector3 dir = (center - col.transform.position).normalized;
+            Rigidbody rb = health.GetComponent<Rigidbody>();
+            Vector3 dir = (center - health.transform.position).normalized;
             if (rb != null) rb.AddForce(dir * 14f, ForceMode.Acceleration);
-            else            col.transform.position += dir * 5f * Time.fixedDeltaTime;
+            else            health.transform.position += dir * 5f * Time.fixedDeltaTime;
             yield return new WaitForFixedUpdate();
         }
     }
@@ -5066,8 +5098,8 @@ public class AbilityCaster : NetworkBehaviour
         Collider[] hits = ZonePhysics.OverlapSphere(gameObject, castPoint, 2f);
         foreach (var col in hits)
         {
-            if (!col.CompareTag("Enemy")) continue;
-            ironTetherHandler.Activate(col.gameObject);
+            if (!TryGetMatchingHealth(col, "Enemy", out Health health)) continue;
+            ironTetherHandler.Activate(health.gameObject);
             return;
         }
     }

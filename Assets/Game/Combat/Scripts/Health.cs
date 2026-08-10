@@ -269,6 +269,7 @@ public class Health : NetworkBehaviour
         if (_isDowned) return;
         if (currentHealth <= 0f) return;
         if (isInvulnerable || zoneTransitionProtected) return;
+        if (PvpCombatRules.ShouldBlockPlayerDamage(source, this)) return;
 
         // Weakened: +25% incoming (Collapsing Void)
         if (_statusEffects != null && _statusEffects.IsWeakened)
@@ -765,7 +766,7 @@ public class Health : NetworkBehaviour
     {
         if (!isPlayer || !_isDowned) return;
 
-        if (respawnAtStartPosition)
+        if (respawnAtStartPosition || PvpCombatRules.IsPvpZone(gameObject))
             MoveToRespawnPoint();
 
         Revive(playerRespawnHealthPercent);

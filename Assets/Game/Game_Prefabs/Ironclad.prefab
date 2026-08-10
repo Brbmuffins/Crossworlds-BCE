@@ -144,7 +144,7 @@ MonoBehaviour:
   syncDirection: 0
   syncMode: 0
   syncInterval: 0
-  moveSpeed: 5
+  moveSpeed: 9
   sprintSpeed: 9
   jumpForce: 6
   rotationSpeed: 12

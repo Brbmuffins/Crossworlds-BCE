@@ -63,10 +63,13 @@ public class NaniteSwarmBehaviour : MonoBehaviour
         {
             _chipTimer = 0f;
             Collider[] hits = ZonePhysics.OverlapSphere(gameObject, transform.position, chipRadius);
+            var damaged = new System.Collections.Generic.HashSet<Health>();
             foreach (var col in hits)
             {
-                if (!col.CompareTag(enemyTag)) continue;
-                col.GetComponent<Health>()?.TakeDamage(chipDamage, owner);
+                if (!PvpCombatRules.MatchesTarget(owner, col, enemyTag, out Health health) ||
+                    !damaged.Add(health))
+                    continue;
+                health.TakeDamage(chipDamage, owner);
             }
         }
 
