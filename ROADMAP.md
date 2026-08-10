@@ -341,8 +341,9 @@ Highest-value phase: every piece exists, only glue is missing.
   replicates, persists across relog, and tune its skeleton-specific hand offset. *Deps:* 1.6.
   **2026-08-10 interaction/profile follow-up:** character slots support right-click unequip and
   drag/drop with the inventory; Loot Forge supports reusable attachment profiles plus per-item
-  overrides and two-handed off-hand exclusion. Unity compilation passes; live two-handed API
-  migration remains pending renewed VPS SSH authorization.
+  overrides and two-handed off-hand exclusion. Unity compilation passes. The additive
+  `items.two_handed` migration, atomic off-hand conflict handling, auth patch, and matching
+  dedicated server were deployed and health-checked on 2026-08-10.
 
 - **3.3 — Crafting loop client.** ✅ code-side (2026-07-03 profession session)
   `ForgeCraftingPanel.cs` — Smelt + Craft tabs, progress bar, ingredient shortage highlight in red.
