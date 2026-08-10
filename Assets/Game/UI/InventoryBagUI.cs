@@ -15,6 +15,23 @@ public sealed class InventoryBagUI : MonoBehaviour
     const int TotalSlots = 24;
     static InventoryBagUI _instance;
     public static InventoryBagUI Instance => _instance;
+    public event Action EquipmentChanged;
+
+    public readonly struct EquippedItemSnapshot
+    {
+        public readonly int InventorySlotIndex;
+        public readonly string ItemId;
+        public readonly int Quantity;
+        public readonly string ServerRarity;
+
+        public EquippedItemSnapshot(int inventorySlotIndex, string itemId, int quantity, string serverRarity)
+        {
+            InventorySlotIndex = inventorySlotIndex;
+            ItemId = itemId;
+            Quantity = quantity;
+            ServerRarity = serverRarity;
+        }
+    }
 
     InventoryBagView _view;
     InventoryWindowDragHandle _dragHandle;
@@ -159,6 +176,7 @@ public sealed class InventoryBagUI : MonoBehaviour
                             if (slot.slot_index >= 0 && slot.slot_index < TotalSlots) _data[slot.slot_index] = slot;
                     RenderSlots();
                     _view.SetStatus("");
+                    EquipmentChanged?.Invoke();
                 }
             }
             catch (Exception exception) { _view.SetStatus($"Parse error: {exception.Message}"); }
@@ -169,6 +187,24 @@ public sealed class InventoryBagUI : MonoBehaviour
             _refreshQueued = false;
             StartCoroutine(FetchInventory());
         }
+    }
+
+    public List<EquippedItemSnapshot> GetEquippedItems()
+    {
+        var result = new List<EquippedItemSnapshot>();
+        foreach (var slot in _data)
+            if (slot != null && slot.equipped == 1 && !string.IsNullOrEmpty(slot.item_id))
+                result.Add(new EquippedItemSnapshot(slot.slot_index, slot.item_id, slot.quantity, slot.rarity));
+        result.Sort((a, b) => a.InventorySlotIndex.CompareTo(b.InventorySlotIndex));
+        return result;
+    }
+
+    public void UnequipInventorySlot(int inventorySlotIndex)
+    {
+        if (inventorySlotIndex < 0 || inventorySlotIndex >= _data.Length) return;
+        var slot = _data[inventorySlotIndex];
+        if (slot == null || slot.equipped != 1) return;
+        StartCoroutine(PostEquip(slot, false));
     }
 
     void RenderSlots()
@@ -417,6 +453,7 @@ public sealed class InventoryBagUI : MonoBehaviour
         {
             slot.equipped = equip ? 1 : 0;
             RenderSlots();
+            EquipmentChanged?.Invoke();
             StartCoroutine(FetchInventory());
         }
         else _view.SetStatus($"Equip failed: {request.error}");
