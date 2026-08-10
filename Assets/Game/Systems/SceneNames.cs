@@ -21,6 +21,7 @@ public static class SceneNames
     public const string GMIsland        = "GM Island";
     public const string VoidDungeon     = "VoidDungeon";      // placeholder — future dungeon build
     public const string GatheringZone   = "Gathering Zone";   // AFK gathering + crafting
+    public const string PvpZone         = "PVPZONE";
 
     // ── Full asset paths (used by editor scripts and Mirror scene fields) ─
     public const string ContainerPath       = "Assets/Game/Scenes/_Container.unity";
@@ -35,6 +36,7 @@ public static class SceneNames
     public const string GMIslandPath        = "Assets/Game/Scenes/GM Island.unity";
     public const string VoidDungeonPath     = "Assets/Game/Scenes/VoidDungeon.unity";
     public const string GatheringZonePath   = "Assets/Game/Scenes/Gathering Zone.unity";
+    public const string PvpZonePath         = "Assets/Game/Scenes/PVPZONE.unity";
 
     // ── Zone helpers (ROADMAP 6.2) ────────────────────────────────────────
     // A "zone" is a scene a character can be standing in when they log out, and
@@ -45,7 +47,7 @@ public static class SceneNames
     public static readonly string[] Zones =
     {
         Hub, Darkwood, ToujamBasin, Boneyard, AshenWastelands, GMIsland, VoidDungeon,
-        GatheringZone, ArenaCopper,
+        GatheringZone, ArenaCopper, PvpZone,
     };
 
     public static bool IsZone(string sceneName)

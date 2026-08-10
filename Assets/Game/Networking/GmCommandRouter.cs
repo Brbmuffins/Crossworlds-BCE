@@ -26,6 +26,8 @@ public static class GmCommandRouter
             ["ashenwastelands"] = new ArriveDestination(SceneNames.AshenWastelands, "AshenWastelandsSpawnPoint", "Ashen Wastelands"),
             ["boneyard"] = new ArriveDestination(SceneNames.Boneyard, "BoneYardPlayerSpawnPoint", "Bone Yard"),
             ["bone"] = new ArriveDestination(SceneNames.Boneyard, "BoneYardPlayerSpawnPoint", "Bone Yard"),
+            ["pvp"] = new ArriveDestination(SceneNames.PvpZone, HubReturnSpawnPoint.DefaultSpawnId, "PVP Zone"),
+            ["pvpzone"] = new ArriveDestination(SceneNames.PvpZone, HubReturnSpawnPoint.DefaultSpawnId, "PVP Zone"),
         };
 
     public static bool TryHandle(string rawMessage, NetworkConnectionToClient sender, RodChatManager chat)
@@ -120,14 +122,14 @@ public static class GmCommandRouter
 
         if (parts.Length < 2)
         {
-            chat.SendGmFeedback(sender, "Usage: /arrive hub | darkwood | ashen | boneyard");
+            chat.SendGmFeedback(sender, "Usage: /arrive hub | darkwood | ashen | boneyard | pvp");
             return;
         }
 
         string key = NormalizeKey(parts[1]);
         if (!ArriveDestinations.TryGetValue(key, out ArriveDestination destination))
         {
-            chat.SendGmFeedback(sender, "Unknown arrival. Use: hub, darkwood, ashen, boneyard.");
+            chat.SendGmFeedback(sender, "Unknown arrival. Use: hub, darkwood, ashen, boneyard, pvp.");
             return;
         }
 
@@ -248,7 +250,7 @@ public static class GmCommandRouter
     static void SendHelp(NetworkConnectionToClient sender, RodChatManager chat)
     {
         chat.SendGmFeedback(sender,
-            "GM commands: /gm on|off, /arrive hub|darkwood|ashen|boneyard, /fly [on|off], /speed <multiplier>, /freecam [on|off] [speed], /freecam speed <value>.");
+            "GM commands: /gm on|off, /arrive hub|darkwood|ashen|boneyard|pvp, /fly [on|off], /speed <multiplier>, /freecam [on|off] [speed], /freecam speed <value>.");
     }
 
     static bool RequireActiveGm(

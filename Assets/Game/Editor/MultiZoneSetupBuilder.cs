@@ -126,6 +126,7 @@ public static class MultiZoneSetupBuilder
             case SceneNames.VoidDungeon:     return SceneNames.VoidDungeonPath;
             case SceneNames.GatheringZone:   return SceneNames.GatheringZonePath;
             case SceneNames.ArenaCopper:     return SceneNames.ArenaCopperPath;
+            case SceneNames.PvpZone:         return SceneNames.PvpZonePath;
             default:                         return null;
         }
     }

@@ -14,6 +14,7 @@ public sealed class WaypointMapTrigger : NetworkBehaviour
     const string AshenWastelandsSpawnId = "AshenWastelandsSpawnPoint";
     const string BoneyardSpawnId = "BoneYardPlayerSpawnPoint";
     const string DarkwoodSpawnId = "DarkwoodSpawnLocation";
+    const string PvpZoneSpawnId = HubReturnSpawnPoint.DefaultSpawnId;
 
 #if UNITY_EDITOR || !UNITY_SERVER
     static readonly List<WaypointMapTrigger> ActiveTriggers = new List<WaypointMapTrigger>();
@@ -600,6 +601,20 @@ public sealed class WaypointMapTrigger : NetworkBehaviour
             },
             new WaypointMapNode
             {
+                id = "pvp",
+                displayName = "PVP ZONE",
+                subtitle = "open combat",
+                sceneName = SceneNames.PvpZone,
+                arrivalSpawnId = PvpZoneSpawnId,
+                useArrivalSpawnRotation = true,
+                unlocked = true,
+                normalizedPosition = new Vector2(0.82f, 0.20f),
+                labelOffset = new Vector2(0f, -36f),
+                color = new Color(0.82f, 0.20f, 0.16f, 1f),
+                description = "A contested arena where players can fight one another."
+            },
+            new WaypointMapNode
+            {
                 id = "ashen",
                 displayName = "ASHEN WASTELAND",
                 subtitle = "burned and blighted",
@@ -624,6 +639,7 @@ public sealed class WaypointMapTrigger : NetworkBehaviour
             new WaypointMapConnection { fromNodeId = "gathering", toNodeId = "darkwood" },
             new WaypointMapConnection { fromNodeId = "brightwood", toNodeId = "darkwood" },
             new WaypointMapConnection { fromNodeId = "darkwood", toNodeId = "boneyard" },
+            new WaypointMapConnection { fromNodeId = "boneyard", toNodeId = "pvp", dashed = true },
             new WaypointMapConnection { fromNodeId = "boneyard", toNodeId = "toujam" },
             new WaypointMapConnection { fromNodeId = "toujam", toNodeId = "ashen" },
             new WaypointMapConnection { fromNodeId = "neimos", toNodeId = "darkwood", dashed = true },

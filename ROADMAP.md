@@ -102,6 +102,14 @@ conversation: it names its files, acceptance criteria, and dependencies. Tasks m
 > world-space Canvases for clean capture, restores their prior states on exit,
 > suppresses the legacy IMGUI quest window, and provides a server-verified Escape
 > shortcut so the hidden chat is not needed.
+>
+> **PVP zone framework 2026-08-10:** The saved `PVPZONE` scene is a registered,
+> persistable additive zone and default world-map destination, with GM `/arrive pvp`
+> support and a terrain-aware editor action for its arrival/respawn point. Existing
+> Enemy-targeted player abilities, crowd control, deployables, projectiles, and turrets
+> treat other players as opponents only when both players share PVPZONE. `Health`
+> provides a final server-side player-damage gate everywhere else, and downed players
+> in PVPZONE return to the zone spawn after the normal respawn delay.
 > The `#if !UNITY_SERVER` guards described in the 1.5 note above were the *bare* form;
 > the required convention is `#if UNITY_EDITOR || !UNITY_SERVER`, and the 8 remaining
 > bare guards (HeroCosmeticApplier, StatusEffectHUD, ShieldValueHUD, GoldHUD,

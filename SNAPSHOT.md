@@ -30,6 +30,10 @@ that override statements below:
 - **`Assets/Game/Heroes/` (Brandalf model dir) is gone**; only editor tooling
   (`BrandalfSetupBuilder`, `CharacterModelSwapper`) remains. Decision still open.
 - **No mount code exists** in `Assets/Game` despite a wiki "Mounts & Traversal" page.
+- **PVPZONE added 2026-08-10:** an open-combat additive zone and world-map
+  destination. Player abilities keep their existing Enemy targeting, while the
+  server treats another player as an opponent only when both occupy PVPZONE;
+  `Health` rejects player-on-player damage in every other scene.
 - Working tree is clean and synced with origin/main (the §2 "uncommitted month of
   work" is resolved); CI (GitHub Actions "Build and Deploy") is the live pipeline.
 - **2026-07-26 audit addendum** (delta above verified at `2daa100f`; since then):

@@ -50,7 +50,7 @@ public class ShockMineBehaviour : MonoBehaviour
         // Server owns detonation; client copies just render the replicated mine + VFX.
         if (!DeployableNet.IsAuthority) return;
         if (!_armed) return;
-        if (!other.CompareTag(targetTag)) return;
+        if (!PvpCombatRules.MatchesTarget(owner, other, targetTag, out _)) return;
 
         Detonate();
     }
@@ -59,10 +59,12 @@ public class ShockMineBehaviour : MonoBehaviour
     {
         // AoE damage to all enemies in blast radius
         Collider[] hits = ZonePhysics.OverlapSphere(gameObject, transform.position, blastRadius);
+        var damaged = new System.Collections.Generic.HashSet<Health>();
         foreach (var col in hits)
         {
-            if (!col.CompareTag(targetTag)) continue;
-            Health h = col.GetComponent<Health>();
+            if (!PvpCombatRules.MatchesTarget(owner, col, targetTag, out Health h) ||
+                !damaged.Add(h))
+                continue;
             h?.TakeDamage(damage, owner);
         }
 

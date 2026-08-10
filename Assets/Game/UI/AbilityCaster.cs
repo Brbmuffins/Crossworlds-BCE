@@ -4491,7 +4491,11 @@ public class AbilityCaster : NetworkBehaviour
             }
 
             case "Silence Ward":
-                SpawnDeployableAt(nullFieldPrefab ?? ability.deployablePrefab, castPoint, null);
+                SpawnDeployableAt(nullFieldPrefab ?? ability.deployablePrefab, castPoint, go =>
+                {
+                    var zone = go.GetComponent<NullFieldZone>();
+                    if (zone != null) zone.owner = gameObject;
+                });
                 break;
 
             case "Dark Harvest":
@@ -4821,22 +4825,14 @@ public class AbilityCaster : NetworkBehaviour
         return offset.sqrMagnitude <= safeRadius * safeRadius;
     }
 
-    static bool HitMatchesTargetTag(Collider hit, Health health, string targetTag)
+    bool HitMatchesTargetTag(Collider hit, Health health, string targetTag)
     {
-        if (string.IsNullOrEmpty(targetTag))
-            return true;
-
-        if (hit.CompareTag(targetTag) || health.CompareTag(targetTag))
-            return true;
-
-        Transform root = health.transform.root;
-        return root != null && root.CompareTag(targetTag);
+        return PvpCombatRules.MatchesTarget(gameObject, hit, health, targetTag);
     }
 
-    static bool TryGetMatchingHealth(Collider hit, string targetTag, out Health health)
+    bool TryGetMatchingHealth(Collider hit, string targetTag, out Health health)
     {
-        health = hit != null ? hit.GetComponentInParent<Health>() : null;
-        return health != null && health.IsAlive && HitMatchesTargetTag(hit, health, targetTag);
+        return PvpCombatRules.MatchesTarget(gameObject, hit, targetTag, out health);
     }
 
     void DealAbilityDamage(Health health, float damage)
@@ -4921,7 +4917,7 @@ public class AbilityCaster : NetworkBehaviour
             DealAbilityDamage(health, damage);
     }
 
-    static bool AddMatchingHit(Collider hit, string targetTag, System.Collections.Generic.List<Collider> hits, System.Collections.Generic.HashSet<Health> matched)
+    bool AddMatchingHit(Collider hit, string targetTag, System.Collections.Generic.List<Collider> hits, System.Collections.Generic.HashSet<Health> matched)
     {
         if (!TryGetMatchingHealth(hit, targetTag, out Health health))
             return false;
@@ -4975,9 +4971,9 @@ public class AbilityCaster : NetworkBehaviour
         float best = Mathf.Infinity;
         foreach (var col in hits)
         {
-            if (!col.CompareTag("Enemy")) continue;
-            float d = Vector3.Distance(castPoint, col.transform.position);
-            if (d < best) { best = d; focusTarget = col.transform; }
+            if (!TryGetMatchingHealth(col, "Enemy", out Health health)) continue;
+            float d = Vector3.Distance(castPoint, health.transform.position);
+            if (d < best) { best = d; focusTarget = health.transform; }
         }
 
         if (focusTarget == null) return;
@@ -5035,26 +5031,29 @@ public class AbilityCaster : NetworkBehaviour
         float duration = ability.pullDuration > 0f ? ability.pullDuration : 2f;
 
         Collider[] hits = ZonePhysics.OverlapSphere(gameObject, castPoint, radius);
+        var pulled = new System.Collections.Generic.HashSet<Health>();
         foreach (var col in hits)
         {
-            if (!col.CompareTag(ability.targetTag)) continue;
-            StartCoroutine(PullToPoint(col, castPoint, duration));
+            if (!TryGetMatchingHealth(col, ability.targetTag, out Health health) ||
+                !pulled.Add(health))
+                continue;
+            StartCoroutine(PullToPoint(health, castPoint, duration));
         }
 
         if (ability.castVFX != null)
             SpawnVFX(ability.castVFX, castPoint, Quaternion.identity);
     }
 
-    System.Collections.IEnumerator PullToPoint(Collider col, Vector3 center, float duration)
+    System.Collections.IEnumerator PullToPoint(Health health, Vector3 center, float duration)
     {
         float elapsed = 0f;
-        while (elapsed < duration && col != null)
+        while (elapsed < duration && health != null)
         {
             elapsed += Time.fixedDeltaTime;
-            Rigidbody rb = col.GetComponent<Rigidbody>();
-            Vector3 dir = (center - col.transform.position).normalized;
+            Rigidbody rb = health.GetComponent<Rigidbody>();
+            Vector3 dir = (center - health.transform.position).normalized;
             if (rb != null) rb.AddForce(dir * 14f, ForceMode.Acceleration);
-            else            col.transform.position += dir * 5f * Time.fixedDeltaTime;
+            else            health.transform.position += dir * 5f * Time.fixedDeltaTime;
             yield return new WaitForFixedUpdate();
         }
     }
@@ -5066,8 +5065,8 @@ public class AbilityCaster : NetworkBehaviour
         Collider[] hits = ZonePhysics.OverlapSphere(gameObject, castPoint, 2f);
         foreach (var col in hits)
         {
-            if (!col.CompareTag("Enemy")) continue;
-            ironTetherHandler.Activate(col.gameObject);
+            if (!TryGetMatchingHealth(col, "Enemy", out Health health)) continue;
+            ironTetherHandler.Activate(health.gameObject);
             return;
         }
     }

@@ -130,14 +130,21 @@ public class TurretController : MonoBehaviour
         if (_focusTarget != null)
         {
             float dist = Vector3.Distance(transform.position, _focusTarget.position);
-            currentTarget = dist <= range * 1.5f ? _focusTarget : null;
+            Health focusHealth = _focusTarget.GetComponentInParent<Health>();
+            currentTarget = dist <= range * 1.5f &&
+                            PvpCombatRules.MatchesTarget(owner, null, focusHealth, targetTag)
+                ? focusHealth.transform
+                : null;
             if (currentTarget != null) return;
         }
 
         if (currentTarget != null)
         {
             float dist = Vector3.Distance(transform.position, currentTarget.position);
-            if (dist <= range) return;
+            Health currentHealth = currentTarget.GetComponentInParent<Health>();
+            if (dist <= range &&
+                PvpCombatRules.MatchesTarget(owner, null, currentHealth, targetTag))
+                return;
             currentTarget = null;
         }
 
@@ -147,16 +154,19 @@ public class TurretController : MonoBehaviour
         if (_retargetTimer > 0f) return;
         _retargetTimer = retargetInterval;
 
-        GameObject[] candidates = GameObject.FindGameObjectsWithTag(targetTag);
+        Collider[] candidates = ZonePhysics.OverlapSphere(gameObject, transform.position, range);
         float closestDist = Mathf.Infinity;
 
-        foreach (GameObject candidate in candidates)
+        foreach (Collider candidate in candidates)
         {
-            float dist = Vector3.Distance(transform.position, candidate.transform.position);
+            if (!PvpCombatRules.MatchesTarget(owner, candidate, targetTag, out Health health))
+                continue;
+
+            float dist = Vector3.Distance(transform.position, health.transform.position);
             if (dist <= range && dist < closestDist)
             {
                 closestDist = dist;
-                currentTarget = candidate.transform;
+                currentTarget = health.transform;
             }
         }
     }

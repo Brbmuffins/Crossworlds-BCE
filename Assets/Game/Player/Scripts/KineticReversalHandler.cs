@@ -64,15 +64,18 @@ public class KineticReversalHandler : MonoBehaviour
 
         // Cone damage
         Collider[] hits = ZonePhysics.OverlapSphere(gameObject, transform.position, coneRange);
+        var damaged = new System.Collections.Generic.HashSet<Health>();
         foreach (var col in hits)
         {
-            if (!col.CompareTag(enemyTag)) continue;
-            Vector3 dir = col.transform.position - transform.position;
+            if (!PvpCombatRules.MatchesTarget(gameObject, col, enemyTag, out Health health) ||
+                !damaged.Add(health))
+                continue;
+            Vector3 dir = health.transform.position - transform.position;
             dir.y = 0;
             if (dir.sqrMagnitude < 0.0001f) continue;
             float angle = Vector3.Angle(transform.forward, dir);
             if (angle > coneAngle / 2f) continue;
-            col.GetComponent<Health>()?.TakeDamage(damage, gameObject);
+            health.TakeDamage(damage, gameObject);
         }
 
         if (releaseVFX != null)
