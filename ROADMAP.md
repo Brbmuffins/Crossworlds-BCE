@@ -122,6 +122,11 @@ conversation: it names its files, acceptance criteria, and dependencies. Tasks m
 > terrain no longer collapse circle indicators to minimum distance over the caster.
 > The horizontal cursor direction is retained and the indicator clamps to the
 > ability's maximum range, keeping blink/dash destinations stable at the horizon.
+>
+> **Dravos death import repair 2026-08-10:** `Standing React Death Backward` now
+> remaps its embedded Tripo material to the tracked Dravos base-color texture through
+> a URP/Lit material, and imports as Humanoid with its own avatar like the existing
+> Dravos animation set.
 > The `#if !UNITY_SERVER` guards described in the 1.5 note above were the *bare* form;
 > the required convention is `#if UNITY_EDITOR || !UNITY_SERVER`, and the 8 remaining
 > bare guards (HeroCosmeticApplier, StatusEffectHUD, ShieldValueHUD, GoldHUD,
