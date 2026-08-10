@@ -93,6 +93,12 @@ conversation: it names its files, acceptance criteria, and dependencies. Tasks m
 > console now use one Rigidbody flight mode in `PlayerMovement`. WASD provides
 > horizontal flight, Space rises, Ctrl/C descends, Shift boosts, and releasing
 > controls stops immediately instead of preserving airborne inertia.
+>
+> **GM cinematic free camera 2026-08-09:** Authenticated GMs can use `/freecam`
+> to detach the active camera for recording while the player remains parked.
+> Movement is inertia-free with vertical controls, fast and precision modifiers,
+> configurable 0.25-100 units/second speed, and automatic return to the saved
+> third-person orbit when disabled.
 > The `#if !UNITY_SERVER` guards described in the 1.5 note above were the *bare* form;
 > the required convention is `#if UNITY_EDITOR || !UNITY_SERVER`, and the 8 remaining
 > bare guards (HeroCosmeticApplier, StatusEffectHUD, ShieldValueHUD, GoldHUD,

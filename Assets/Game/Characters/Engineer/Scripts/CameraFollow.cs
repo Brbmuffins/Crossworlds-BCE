@@ -12,6 +12,10 @@ using UnityEngine.InputSystem;
 //  Scroll wheel       → zoom in / out
 //  Free cursor otherwise; AbilityCaster owns aim indicator positioning.
 //
+//  GM free camera:
+//    WASD + Space/Ctrl → move, right mouse → look
+//    Shift → fast, Alt → slow precision movement
+//
 //  Target wiring:
 //    • Fast path: PlayerMovement.Start() calls follow.target = transform
 //    • Fallback:  FindLocalPlayer() coroutine polls every 0.2 s until found
@@ -20,6 +24,9 @@ public class CameraFollow : MonoBehaviour
 {
     public const string ZoomDistancePrefKey = "CameraZoomDistance";
     public const float DefaultZoomDistance = 7f;
+    public const float DefaultFreeCameraSpeed = RodPlayerAuth.DefaultFreeCameraSpeed;
+    public const float MinFreeCameraSpeed = RodPlayerAuth.MinFreeCameraSpeed;
+    public const float MaxFreeCameraSpeed = RodPlayerAuth.MaxFreeCameraSpeed;
 
     [Header("Distance")]
     public float distance    = DefaultZoomDistance;
@@ -43,20 +50,48 @@ public class CameraFollow : MonoBehaviour
     public float     collisionBuffer     = 0.15f;
     public float     collisionSmoothSpeed = 18f;
 
+    [Header("GM Free Camera")]
+    [SerializeField] float freeCameraMoveSpeed = DefaultFreeCameraSpeed;
+    [SerializeField, Min(1f)] float freeCameraBoostMultiplier = 3f;
+    [SerializeField, Range(0.05f, 1f)] float freeCameraPrecisionMultiplier = 0.25f;
+
     // Set by PlayerMovement.Start() or by FindLocalPlayer coroutine.
     Transform _target;
     public Transform target
     {
         get => _target;
-        set { _target = value; if (_target != null) SnapToTarget(); }
+        set
+        {
+            if (_target == value)
+                return;
+
+            if (_freeCameraActive && _target != null)
+                _target.GetComponent<PlayerMovement>()
+                    ?.SetGmFreeCameraInputLocked(false);
+
+            _target = value;
+            if (_target == null)
+                return;
+
+            if (_freeCameraActive)
+                _target.GetComponent<PlayerMovement>()
+                    ?.SetGmFreeCameraInputLocked(true);
+            else
+                SnapToTarget();
+        }
     }
 
     public float Yaw => _yaw;
+    public bool IsFreeCameraActive => _freeCameraActive;
+    public float FreeCameraMoveSpeed => freeCameraMoveSpeed;
 
     float _yaw;
     float _pitch = 18f;
     bool  _prevOrbitActive;
     float _currentCollisionDistance;
+    bool _freeCameraActive;
+    float _returnYaw;
+    float _returnPitch;
 
     void Start()
     {
@@ -108,6 +143,12 @@ public class CameraFollow : MonoBehaviour
         bool typingInUI = (selGO != null && selGO.GetComponent<TMPro.TMP_InputField>() != null)
                         || (RodChatManager.Instance != null && RodChatManager.Instance.IsOpen);
 
+        if (_freeCameraActive)
+        {
+            UpdateFreeCamera(mouse, typingInUI);
+            return;
+        }
+
         // Smite-style: hold RIGHT mouse and drag to rotate the camera. Only when NOT
         // aiming an ability — AbilityCaster owns RMB (cancel) while an indicator is up —
         // and not typing in chat.
@@ -155,6 +196,122 @@ public class CameraFollow : MonoBehaviour
         transform.LookAt(lookAt);
     }
 
+    public void SetFreeCameraEnabled(bool enabled)
+    {
+        if (_freeCameraActive == enabled)
+            return;
+
+        _freeCameraActive = enabled;
+        PlayerMovement movement = _target != null
+            ? _target.GetComponent<PlayerMovement>()
+            : null;
+        movement?.SetGmFreeCameraInputLocked(enabled);
+
+        if (enabled)
+        {
+            _returnYaw = _yaw;
+            _returnPitch = _pitch;
+
+            Vector3 euler = transform.rotation.eulerAngles;
+            _yaw = euler.y;
+            _pitch = Mathf.Clamp(NormalizeAngle(euler.x), minPitch, maxPitch);
+            _prevOrbitActive = false;
+            return;
+        }
+
+        RestoreCursor();
+        _yaw = _returnYaw;
+        _pitch = _returnPitch;
+        if (_target != null)
+            SnapToTarget(preserveOrbit: true);
+    }
+
+    public void SetFreeCameraSpeed(float speed)
+    {
+        freeCameraMoveSpeed = Mathf.Clamp(
+            speed, MinFreeCameraSpeed, MaxFreeCameraSpeed);
+    }
+
+    void UpdateFreeCamera(Mouse mouse, bool typingInUI)
+    {
+        bool lookActive = mouse.rightButton.isPressed && !typingInUI;
+        UpdateOrbitInput(mouse, lookActive);
+        transform.rotation = Quaternion.Euler(_pitch, _yaw, 0f);
+
+        var keyboard = Keyboard.current;
+        if (typingInUI || keyboard == null)
+            return;
+
+        Vector3 input = Vector3.zero;
+        if (keyboard.wKey.isPressed) input += transform.forward;
+        if (keyboard.sKey.isPressed) input -= transform.forward;
+        if (keyboard.dKey.isPressed) input += transform.right;
+        if (keyboard.aKey.isPressed) input -= transform.right;
+        if (keyboard.spaceKey.isPressed || keyboard.eKey.isPressed) input += Vector3.up;
+        if (keyboard.leftCtrlKey.isPressed || keyboard.rightCtrlKey.isPressed ||
+            keyboard.qKey.isPressed || keyboard.cKey.isPressed) input -= Vector3.up;
+
+        if (input.sqrMagnitude > 1f)
+            input.Normalize();
+
+        float speed = freeCameraMoveSpeed;
+        if (keyboard.leftShiftKey.isPressed || keyboard.rightShiftKey.isPressed)
+            speed *= freeCameraBoostMultiplier;
+        if (keyboard.leftAltKey.isPressed || keyboard.rightAltKey.isPressed)
+            speed *= freeCameraPrecisionMultiplier;
+
+        transform.position += input * speed * Time.unscaledDeltaTime;
+    }
+
+    void UpdateOrbitInput(Mouse mouse, bool orbitActive)
+    {
+        if (orbitActive && Cursor.lockState != CursorLockMode.Locked)
+        {
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+        }
+        else if (!orbitActive)
+        {
+            RestoreCursor();
+        }
+
+        bool justEntered = orbitActive && !_prevOrbitActive;
+        _prevOrbitActive = orbitActive;
+        if (!orbitActive || justEntered)
+            return;
+
+        Vector2 delta = mouse.delta.ReadValue();
+        delta.x = Mathf.Clamp(delta.x, -50f, 50f);
+        delta.y = Mathf.Clamp(delta.y, -50f, 50f);
+        _yaw += delta.x * mouseSensitivity;
+        _pitch = Mathf.Clamp(
+            _pitch - delta.y * mouseSensitivity, minPitch, maxPitch);
+    }
+
+    static float NormalizeAngle(float angle)
+    {
+        return angle > 180f ? angle - 360f : angle;
+    }
+
+    static void RestoreCursor()
+    {
+        if (Cursor.lockState != CursorLockMode.None)
+            Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+    }
+
+    void OnDestroy()
+    {
+        if (!_freeCameraActive)
+            return;
+
+        PlayerMovement movement = _target != null
+            ? _target.GetComponent<PlayerMovement>()
+            : null;
+        movement?.SetGmFreeCameraInputLocked(false);
+        RestoreCursor();
+    }
+
     public void SetZoomDistance(float value, bool savePreference = true)
     {
         distance = Mathf.Clamp(value, minDistance, maxDistance);
@@ -180,10 +337,11 @@ public class CameraFollow : MonoBehaviour
         SetZoomDistance(PlayerPrefs.GetFloat(ZoomDistancePrefKey, distance), savePreference: false);
     }
 
-    public void SnapToTarget()
+    public void SnapToTarget(bool preserveOrbit = false)
     {
         if (_target == null) return;
-        _yaw = _target.eulerAngles.y;
+        if (!preserveOrbit)
+            _yaw = _target.eulerAngles.y;
 
         Vector3    pos    = _target.position;
         Quaternion rot    = Quaternion.Euler(_pitch, _yaw, 0f);

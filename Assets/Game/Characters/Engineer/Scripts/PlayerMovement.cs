@@ -62,6 +62,7 @@ public class PlayerMovement : NetworkBehaviour
     private float currentSpeed;
     private bool gmFlightEnabled = false;
     private float gmFlightVerticalInput = 0f;
+    private bool gmFreeCameraInputLocked = false;
     private float movementLockUntil = -1f;
     private Coroutine abilityMovementRoutine;
 
@@ -201,6 +202,16 @@ public class PlayerMovement : NetworkBehaviour
     }
 
     /// <summary>
+    /// Parks the player while a GM operates a detached recording camera.
+    /// </summary>
+    public void SetGmFreeCameraInputLocked(bool locked)
+    {
+        gmFreeCameraInputLocked = locked;
+        ClearMovementIntent();
+        StopHorizontalMotion();
+    }
+
+    /// <summary>
     /// Moves this locally controlled player to a spell's selected ground point.
     /// NetworkTransform propagates the Rigidbody position to the server and peers.
     /// </summary>
@@ -334,6 +345,12 @@ public class PlayerMovement : NetworkBehaviour
 
     void Update()
     {
+        if (gmFreeCameraInputLocked)
+        {
+            ClearMovementIntent();
+            return;
+        }
+
         if (health != null && health.IsDowned)
         {
             ClearMovementIntent();
@@ -436,6 +453,13 @@ public class PlayerMovement : NetworkBehaviour
     {
         if (rb == null)
             return;
+
+        if (gmFreeCameraInputLocked)
+        {
+            ClearMovementIntent();
+            StopHorizontalMotion();
+            return;
+        }
 
         if (health != null && health.IsDowned)
         {

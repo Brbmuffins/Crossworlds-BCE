@@ -55,6 +55,9 @@ public static class GmCommandRouter
             case "speed":
                 HandleSpeed(parts, sender, chat);
                 return true;
+            case "freecam":
+                HandleFreeCamera(parts, sender, chat);
+                return true;
             default:
                 chat.SendGmFeedback(sender, $"Unknown GM command '/{command}'. Try /gmhelp.");
                 return true;
@@ -95,11 +98,14 @@ public static class GmCommandRouter
         {
             auth.gmActive = false;
             auth.gmFlyEnabled = false;
+            auth.gmFreeCameraEnabled = false;
             auth.gmSpeedMultiplier = 1f;
             chat.TargetSetGmMode(sender, false);
             chat.TargetSetGmFly(sender, false);
             chat.TargetSetGmSpeed(sender, 1f);
-            chat.SendGmFeedback(sender, "GM mode OFF. Fly and speed reset.");
+            chat.TargetSetGmFreeCamera(
+                sender, false, auth.gmFreeCameraSpeed);
+            chat.SendGmFeedback(sender, "GM mode OFF. Fly, free camera, and speed reset.");
             Debug.Log($"[GM] {auth.username} disabled GM mode.");
             return;
         }
@@ -181,10 +187,68 @@ public static class GmCommandRouter
         Debug.Log($"[GM] {auth.username} set speed x{multiplier:0.##}.");
     }
 
+    static void HandleFreeCamera(
+        string[] parts,
+        NetworkConnectionToClient sender,
+        RodChatManager chat)
+    {
+        if (!RequireActiveGm(sender, chat, "freecam", out RodPlayerAuth auth))
+            return;
+
+        if (parts.Length >= 2 &&
+            string.Equals(parts[1], "speed", StringComparison.OrdinalIgnoreCase))
+        {
+            if (parts.Length < 3 || !TryParseFreeCameraSpeed(parts[2], out float speed))
+            {
+                chat.SendGmFeedback(sender,
+                    $"Usage: /freecam speed <{RodPlayerAuth.MinFreeCameraSpeed:0.##}-{RodPlayerAuth.MaxFreeCameraSpeed:0}>.");
+                return;
+            }
+
+            auth.gmFreeCameraSpeed = speed;
+            chat.TargetSetGmFreeCamera(
+                sender, auth.gmFreeCameraEnabled, speed);
+            chat.SendGmFeedback(sender, $"Free camera speed set to {speed:0.##}.");
+            Debug.Log($"[GM] {auth.username} set free camera speed={speed:0.##}.");
+            return;
+        }
+
+        bool enabled = !auth.gmFreeCameraEnabled;
+        if (parts.Length >= 2)
+        {
+            if (!TryParseToggle(parts[1], out enabled))
+            {
+                chat.SendGmFeedback(sender,
+                    "Usage: /freecam [on|off] [speed] or /freecam speed <value>.");
+                return;
+            }
+
+            if (parts.Length >= 3)
+            {
+                if (!TryParseFreeCameraSpeed(parts[2], out float speed))
+                {
+                    chat.SendGmFeedback(sender,
+                        $"Free camera speed must be {RodPlayerAuth.MinFreeCameraSpeed:0.##}-{RodPlayerAuth.MaxFreeCameraSpeed:0}.");
+                    return;
+                }
+
+                auth.gmFreeCameraSpeed = speed;
+            }
+        }
+
+        auth.gmFreeCameraEnabled = enabled;
+        chat.TargetSetGmFreeCamera(
+            sender, enabled, auth.gmFreeCameraSpeed);
+        chat.SendGmFeedback(sender, enabled
+            ? $"Free camera ON at speed {auth.gmFreeCameraSpeed:0.##}. WASD moves, Space/E rises, Ctrl/Q/C descends, RMB looks, Shift boosts, Alt slows."
+            : "Free camera OFF. Camera returned to your character.");
+        Debug.Log($"[GM] {auth.username} set free camera={enabled} speed={auth.gmFreeCameraSpeed:0.##}.");
+    }
+
     static void SendHelp(NetworkConnectionToClient sender, RodChatManager chat)
     {
         chat.SendGmFeedback(sender,
-            "GM commands: /gm on, /gm off, /arrive hub|darkwood|ashen|boneyard, /fly [on|off], /speed <multiplier>.");
+            "GM commands: /gm on|off, /arrive hub|darkwood|ashen|boneyard, /fly [on|off], /speed <multiplier>, /freecam [on|off] [speed], /freecam speed <value>.");
     }
 
     static bool RequireActiveGm(
@@ -259,6 +323,17 @@ public static class GmCommandRouter
                 enabled = false;
                 return false;
         }
+    }
+
+    static bool TryParseFreeCameraSpeed(string value, out float speed)
+    {
+        if (!float.TryParse(
+                value, NumberStyles.Float, CultureInfo.InvariantCulture, out speed))
+            return false;
+
+        return !float.IsNaN(speed) && !float.IsInfinity(speed) &&
+               speed >= RodPlayerAuth.MinFreeCameraSpeed &&
+               speed <= RodPlayerAuth.MaxFreeCameraSpeed;
     }
 
     static string NormalizeKey(string value)
