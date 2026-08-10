@@ -127,6 +127,12 @@ conversation: it names its files, acceptance criteria, and dependencies. Tasks m
 > remaps its embedded Tripo material to the tracked Dravos base-color texture through
 > a URP/Lit material, and imports as Humanoid with its own avatar like the existing
 > Dravos animation set.
+>
+> **Player hero death animations 2026-08-10:** Cleric, Marauder, and Arcanist now
+> enter their class-specific death animation from the replicated `IsDead` downed
+> state and return to idle after revival. Marauder's disabled `PlayerAnimator` was
+> enabled; Arcanist received the missing driver and Dravos death controller state;
+> Cleric's Brandalf death clip is Humanoid and its controller now enters on `IsDead`.
 > The `#if !UNITY_SERVER` guards described in the 1.5 note above were the *bare* form;
 > the required convention is `#if UNITY_EDITOR || !UNITY_SERVER`, and the 8 remaining
 > bare guards (HeroCosmeticApplier, StatusEffectHUD, ShieldValueHUD, GoldHUD,
