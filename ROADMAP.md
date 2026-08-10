@@ -98,7 +98,10 @@ conversation: it names its files, acceptance criteria, and dependencies. Tasks m
 > to detach the active camera for recording while the player remains parked.
 > Movement is inertia-free with vertical controls, fast and precision modifiers,
 > configurable 0.25-100 units/second speed, and automatic return to the saved
-> third-person orbit when disabled.
+> third-person orbit when disabled. Freecam hides all loaded screen-space and
+> world-space Canvases for clean capture, restores their prior states on exit,
+> suppresses the legacy IMGUI quest window, and provides a server-verified Escape
+> shortcut so the hidden chat is not needed.
 > The `#if !UNITY_SERVER` guards described in the 1.5 note above were the *bare* form;
 > the required convention is `#if UNITY_EDITOR || !UNITY_SERVER`, and the 8 remaining
 > bare guards (HeroCosmeticApplier, StatusEffectHUD, ShieldValueHUD, GoldHUD,

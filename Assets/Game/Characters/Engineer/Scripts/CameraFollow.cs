@@ -1,5 +1,6 @@
 using Mirror;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -82,6 +83,7 @@ public class CameraFollow : MonoBehaviour
     }
 
     public float Yaw => _yaw;
+    public static bool IsAnyFreeCameraActive { get; private set; }
     public bool IsFreeCameraActive => _freeCameraActive;
     public float FreeCameraMoveSpeed => freeCameraMoveSpeed;
 
@@ -92,6 +94,8 @@ public class CameraFollow : MonoBehaviour
     bool _freeCameraActive;
     float _returnYaw;
     float _returnPitch;
+    readonly Dictionary<Canvas, bool> _freeCameraCanvasStates = new();
+    float _nextFreeCameraUiSweep;
 
     void Start()
     {
@@ -145,7 +149,9 @@ public class CameraFollow : MonoBehaviour
 
         if (_freeCameraActive)
         {
-            UpdateFreeCamera(mouse, typingInUI);
+            bool freeCameraTyping = RodChatManager.Instance != null &&
+                                    RodChatManager.Instance.IsOpen;
+            UpdateFreeCamera(mouse, freeCameraTyping);
             return;
         }
 
@@ -202,6 +208,7 @@ public class CameraFollow : MonoBehaviour
             return;
 
         _freeCameraActive = enabled;
+        IsAnyFreeCameraActive = enabled;
         PlayerMovement movement = _target != null
             ? _target.GetComponent<PlayerMovement>()
             : null;
@@ -209,6 +216,7 @@ public class CameraFollow : MonoBehaviour
 
         if (enabled)
         {
+            HideFreeCameraUi();
             _returnYaw = _yaw;
             _returnPitch = _pitch;
 
@@ -220,6 +228,7 @@ public class CameraFollow : MonoBehaviour
         }
 
         RestoreCursor();
+        RestoreFreeCameraUi();
         _yaw = _returnYaw;
         _pitch = _returnPitch;
         if (_target != null)
@@ -234,6 +243,8 @@ public class CameraFollow : MonoBehaviour
 
     void UpdateFreeCamera(Mouse mouse, bool typingInUI)
     {
+        KeepFreeCameraUiHidden();
+
         bool lookActive = mouse.rightButton.isPressed && !typingInUI;
         UpdateOrbitInput(mouse, lookActive);
         transform.rotation = Quaternion.Euler(_pitch, _yaw, 0f);
@@ -241,6 +252,15 @@ public class CameraFollow : MonoBehaviour
         var keyboard = Keyboard.current;
         if (typingInUI || keyboard == null)
             return;
+
+        if (keyboard.escapeKey.wasPressedThisFrame)
+        {
+            if (RodChatManager.Instance != null)
+                RodChatManager.Instance.RequestGmFreeCameraExit();
+            else
+                SetFreeCameraEnabled(false);
+            return;
+        }
 
         Vector3 input = Vector3.zero;
         if (keyboard.wKey.isPressed) input += transform.forward;
@@ -261,6 +281,47 @@ public class CameraFollow : MonoBehaviour
             speed *= freeCameraPrecisionMultiplier;
 
         transform.position += input * speed * Time.unscaledDeltaTime;
+    }
+
+    void HideFreeCameraUi()
+    {
+        foreach (Canvas canvas in FindObjectsByType<Canvas>(
+                     FindObjectsInactive.Include))
+        {
+            if (canvas == null)
+                continue;
+
+            if (!_freeCameraCanvasStates.ContainsKey(canvas))
+                _freeCameraCanvasStates.Add(canvas, canvas.enabled);
+            canvas.enabled = false;
+        }
+
+        _nextFreeCameraUiSweep = Time.unscaledTime + 0.25f;
+    }
+
+    void KeepFreeCameraUiHidden()
+    {
+        foreach (Canvas canvas in _freeCameraCanvasStates.Keys)
+        {
+            if (canvas != null)
+                canvas.enabled = false;
+        }
+
+        if (Time.unscaledTime < _nextFreeCameraUiSweep)
+            return;
+
+        HideFreeCameraUi();
+    }
+
+    void RestoreFreeCameraUi()
+    {
+        foreach (KeyValuePair<Canvas, bool> state in _freeCameraCanvasStates)
+        {
+            if (state.Key != null)
+                state.Key.enabled = state.Value;
+        }
+
+        _freeCameraCanvasStates.Clear();
     }
 
     void UpdateOrbitInput(Mouse mouse, bool orbitActive)
@@ -309,6 +370,8 @@ public class CameraFollow : MonoBehaviour
             ? _target.GetComponent<PlayerMovement>()
             : null;
         movement?.SetGmFreeCameraInputLocked(false);
+        IsAnyFreeCameraActive = false;
+        RestoreFreeCameraUi();
         RestoreCursor();
     }
 

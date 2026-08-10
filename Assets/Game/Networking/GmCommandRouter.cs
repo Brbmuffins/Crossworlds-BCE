@@ -240,7 +240,7 @@ public static class GmCommandRouter
         chat.TargetSetGmFreeCamera(
             sender, enabled, auth.gmFreeCameraSpeed);
         chat.SendGmFeedback(sender, enabled
-            ? $"Free camera ON at speed {auth.gmFreeCameraSpeed:0.##}. WASD moves, Space/E rises, Ctrl/Q/C descends, RMB looks, Shift boosts, Alt slows."
+            ? $"Free camera ON at speed {auth.gmFreeCameraSpeed:0.##}. UI hidden. WASD moves, Space/E rises, Ctrl/Q/C descends, RMB looks, Shift boosts, Alt slows, Escape exits."
             : "Free camera OFF. Camera returned to your character.");
         Debug.Log($"[GM] {auth.username} set free camera={enabled} speed={auth.gmFreeCameraSpeed:0.##}.");
     }

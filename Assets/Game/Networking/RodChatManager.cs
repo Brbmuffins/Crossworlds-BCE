@@ -84,6 +84,21 @@ public class RodChatManager : NetworkBehaviour
             CmdRequestOnlineRoster();
     }
 
+    public void RequestGmFreeCameraExit()
+    {
+        if (!_gmFreeCameraActive)
+            return;
+
+        if (NetworkClient.active && isClient)
+        {
+            CmdRequestGmFreeCameraExit();
+            return;
+        }
+
+        _gmFreeCameraActive = false;
+        ApplyGmFreeCameraState();
+    }
+
     [Command(requiresAuthority = false)]
     void CmdRequestOnlineRoster(NetworkConnectionToClient sender = null)
     {
@@ -384,6 +399,25 @@ public class RodChatManager : NetworkBehaviour
 
         RodPlayerAuth auth = sender.authenticationData as RodPlayerAuth;
         TargetSetGmMode(sender, GmCommandRouter.IsActiveGm(auth));
+    }
+
+    [Command(requiresAuthority = false)]
+    void CmdRequestGmFreeCameraExit(NetworkConnectionToClient sender = null)
+    {
+        if (sender == null)
+            return;
+
+        RodPlayerAuth auth = sender.authenticationData as RodPlayerAuth;
+        if (!GmCommandRouter.IsActiveGm(auth))
+        {
+            TargetSetGmFreeCamera(
+                sender,
+                false,
+                auth?.gmFreeCameraSpeed ?? RodPlayerAuth.DefaultFreeCameraSpeed);
+            return;
+        }
+
+        GmCommandRouter.TryHandle("/freecam off", sender, this);
     }
 
     [Command(requiresAuthority = false)]
