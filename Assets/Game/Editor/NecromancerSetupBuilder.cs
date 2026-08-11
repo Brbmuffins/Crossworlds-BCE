@@ -470,6 +470,13 @@ public static class NecromancerSetupBuilder
             if (animator == null)
                 throw new InvalidOperationException(
                     "The replacement Necromancer prefab has no Animator in its model hierarchy.");
+
+            // Replacement prefabs can retain the model's scene-placement height,
+            // leaving the rendered feet above the player root and capsule floor.
+            Vector3 modelPosition = animator.transform.localPosition;
+            modelPosition.y = 0f;
+            animator.transform.localPosition = modelPosition;
+
             animator.runtimeAnimatorController = controller;
             animator.avatar = LoadAvatar(IdlePath);
             animator.applyRootMotion = false;
