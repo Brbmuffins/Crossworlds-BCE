@@ -323,6 +323,10 @@ public static class NecromancerSetupBuilder
 
     static GameObject BuildPrefab(AnimatorController controller, ClassAbilityPool pool)
     {
+        GameObject existing = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);
+        if (existing != null)
+            return RelinkExistingPrefab(controller, pool);
+
         GameObject source = AssetDatabase.LoadAssetAtPath<GameObject>(SourcePrefabPath);
         GameObject modelAsset = AssetDatabase.LoadAssetAtPath<GameObject>(IdlePath);
         Material material = AssetDatabase.LoadAssetAtPath<Material>(MaterialPath);
@@ -418,6 +422,74 @@ public static class NecromancerSetupBuilder
         finally
         {
             UnityEngine.Object.DestroyImmediate(root);
+        }
+
+        AssetDatabase.ImportAsset(PrefabPath, ImportAssetOptions.ForceUpdate);
+        return AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);
+    }
+
+    static GameObject RelinkExistingPrefab(
+        AnimatorController controller, ClassAbilityPool pool)
+    {
+        GameObject root = PrefabUtility.LoadPrefabContents(PrefabPath);
+        try
+        {
+            root.name = "Necromancer";
+            root.tag = "Player";
+
+            PlayerIdentity identity = root.GetComponent<PlayerIdentity>() ??
+                                      root.AddComponent<PlayerIdentity>();
+            identity.classIndex = ClassIndex;
+
+            AbilityCaster currentCaster =
+                root.GetComponentInChildren<AbilityCaster>(true);
+            NecromancerAbilityCaster caster =
+                currentCaster as NecromancerAbilityCaster;
+            if (caster == null)
+            {
+                string casterJson = currentCaster != null
+                    ? EditorJsonUtility.ToJson(currentCaster)
+                    : null;
+                if (currentCaster != null)
+                    UnityEngine.Object.DestroyImmediate(currentCaster);
+
+                caster = root.AddComponent<NecromancerAbilityCaster>();
+                if (!string.IsNullOrEmpty(casterJson))
+                    EditorJsonUtility.FromJsonOverwrite(casterJson, caster);
+            }
+
+            caster.classPool = pool;
+            caster.castAnimator = root.GetComponent<CastAnimator>() ??
+                                  root.AddComponent<CastAnimator>();
+            if (caster.spellbook == null || caster.spellbook.Length == 0)
+                caster.spellbook = CreateStarterSpellbook();
+            if (caster.equippedIndices == null || caster.equippedIndices.Length == 0)
+                caster.equippedIndices = new[] { 0, 1, 2, 3 };
+
+            Animator animator = root.GetComponentInChildren<Animator>(true);
+            if (animator == null)
+                throw new InvalidOperationException(
+                    "The replacement Necromancer prefab has no Animator in its model hierarchy.");
+            animator.runtimeAnimatorController = controller;
+            animator.avatar = LoadAvatar(IdlePath);
+            animator.applyRootMotion = false;
+
+            if (root.GetComponent<PlayerAnimator>() == null)
+                root.AddComponent<PlayerAnimator>();
+
+            NetworkAnimator networkAnimator =
+                root.GetComponent<NetworkAnimator>() ?? root.AddComponent<NetworkAnimator>();
+            networkAnimator.animator = animator;
+            networkAnimator.clientAuthority = true;
+
+            Health health = root.GetComponent<Health>() ?? root.AddComponent<Health>();
+            health.isPlayer = true;
+
+            PrefabUtility.SaveAsPrefabAsset(root, PrefabPath);
+        }
+        finally
+        {
+            PrefabUtility.UnloadPrefabContents(root);
         }
 
         AssetDatabase.ImportAsset(PrefabPath, ImportAssetOptions.ForceUpdate);

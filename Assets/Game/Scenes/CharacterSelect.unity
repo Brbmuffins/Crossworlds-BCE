@@ -310,6 +310,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 1b761bf2e1fd7cd47a2736807d782a85, type: 2}
   - {fileID: 11400000, guid: 11f855f00047dba4298df61fd7fbeced, type: 2}
   - {fileID: 11400000, guid: 8011518b75a795745bf3de2ec6c722da, type: 2}
+  - {fileID: 11400000, guid: b8c5a2e605452ec4c94113b351cec1b3, type: 2}
   serverAddress: 15.204.243.36
   useSceneStage: 1
   sceneModelReference: {fileID: 0}
@@ -322,6 +323,7 @@ MonoBehaviour:
   - 1.12
   - 0.96
   - 1.02
+  - 1
   - 1
 --- !u!1001 &182595229
 PrefabInstance:
