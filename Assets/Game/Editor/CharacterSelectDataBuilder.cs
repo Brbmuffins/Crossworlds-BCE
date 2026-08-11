@@ -26,7 +26,7 @@ public static class CharacterSelectDataBuilder
         // Set all PNGs in Portraits/ and AbilityIcons/ to Sprite (UI) texture type.
         // Run this ONCE after first import, before running Build Class Data.
         int count = 0;
-        foreach (var guid in AssetDatabase.FindAssets("t:Texture2D", new[] { PortraitDir, ClassPortraitDir, IconDir }))
+        foreach (var guid in AssetDatabase.FindAssets("t:Texture2D", new[] { PortraitDir, IconDir }))
         {
             string path = AssetDatabase.GUIDToAssetPath(guid);
             var importer = AssetImporter.GetAtPath(path) as TextureImporter;
@@ -381,7 +381,10 @@ public static class CharacterSelectDataBuilder
             "winning fights through pressure rather than a single burst.";
         d.classColor = new Color(0.45f, 0.75f, 0.20f);
         d.classColorDark = new Color(0.06f, 0.12f, 0.08f);
-        d.portrait = LoadPortrait("Necromancer");
+        // Necromancer currently uses its live 3D class preview. Its Spell Forge
+        // portrait remains a regular mipmapped photo texture like the other
+        // portraits in Assets/Game/Art/Class Portraits.
+        d.portrait = null;
         d.prefab = LoadModel("Assets/Game/Game_Prefabs/Necromancer.prefab");
         d.previewPrefab = d.prefab;
 

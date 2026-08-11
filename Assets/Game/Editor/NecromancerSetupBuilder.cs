@@ -171,14 +171,12 @@ public static class NecromancerSetupBuilder
         var importer = AssetImporter.GetAtPath(PortraitPath) as TextureImporter;
         if (importer == null) return;
 
-        bool dirty = importer.textureType != TextureImporterType.Sprite ||
-                     importer.spriteImportMode != SpriteImportMode.Single ||
-                     importer.mipmapEnabled;
+        bool dirty = importer.textureType != TextureImporterType.Default ||
+                     !importer.mipmapEnabled;
         if (!dirty) return;
 
-        importer.textureType = TextureImporterType.Sprite;
-        importer.spriteImportMode = SpriteImportMode.Single;
-        importer.mipmapEnabled = false;
+        importer.textureType = TextureImporterType.Default;
+        importer.mipmapEnabled = true;
         importer.alphaIsTransparency = true;
         importer.SaveAndReimport();
     }
@@ -598,7 +596,9 @@ public static class NecromancerSetupBuilder
             "The Necromancer controls space with curses, bone magic, and persistent soul wards.";
         data.classColor = new Color(0.45f, 0.75f, 0.20f);
         data.classColorDark = new Color(0.06f, 0.12f, 0.08f);
-        data.portrait = AssetDatabase.LoadAssetAtPath<Sprite>(PortraitPath);
+        // The Spell Forge portrait is a regular mipmapped photo texture. The
+        // character selector uses the live 3D preview for this class.
+        data.portrait = null;
         data.prefab = prefab;
         data.previewPrefab = prefab;
         data.traits = new[]

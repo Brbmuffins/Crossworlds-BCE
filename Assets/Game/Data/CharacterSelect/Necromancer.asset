@@ -19,7 +19,7 @@ MonoBehaviour:
     soul wards.
   classColor: {r: 0.45, g: 0.75, b: 0.2, a: 1}
   classColorDark: {r: 0.06, g: 0.12, b: 0.08, a: 1}
-  portrait: {fileID: 21300000, guid: 3f452deeaecc49046bb9e3fd979ef809, type: 3}
+  portrait: {fileID: 0}
   prefab: {fileID: 7358613600828367401, guid: cbff0fd1f32918349988507a4e8f10d0, type: 3}
   previewPrefab: {fileID: 7358613600828367401, guid: cbff0fd1f32918349988507a4e8f10d0, type: 3}
   traits:
