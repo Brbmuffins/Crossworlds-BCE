@@ -117,7 +117,7 @@ namespace Crossworlds.EditorTools.LootForge
         {
             using (new EditorGUILayout.HorizontalScope())
             {
-                EditorGUILayout.PrefixLabel(label, GUILayout.Width(28f));
+                GUILayout.Label(label, GUILayout.Width(28f));
                 value = GUILayout.HorizontalSlider(value, -2f, 2f);
                 value = EditorGUILayout.FloatField(value, GUILayout.Width(70f));
             }
