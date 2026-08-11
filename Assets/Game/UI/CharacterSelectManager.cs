@@ -92,6 +92,16 @@ public class CharacterSelectManager : MonoBehaviour
             vfxA = "Assets/brbmuffins Dark Arts/brbmuffins Fantasy Pack/Prefabs/Effects normal/Magic circle.prefab",
             vfxB = "Assets/brbmuffins Studio/brbmuffins Magic Pack/Prefabs/Character auras/Star aura.prefab",
         },
+        new ClassDef
+        {
+            idx = 5, name = "NECROMANCER", role = "Summoner  ·  Attrition",
+            blurb = "Bends bone, curses, and captured souls into persistent battlefield pressure. The Necromancer wins by controlling space and making every exchange costly.",
+            abilities = new[] { "Necrotic Bolt", "Bone Spear", "Grave Bloom", "Soul Ward" },
+            passive = "Grave Weaver — controls space through curses, bone magic, and soul wards",
+            accent = new Color(0.45f, 0.75f, 0.20f),
+            vfxA = "Assets/brbmuffins Dark Arts/brbmuffins Fantasy Pack/Prefabs/Effects normal/Death magic circle.prefab",
+            vfxB = "Assets/brbmuffins Dark Arts/brbmuffins Fantasy Pack/Prefabs/Glowing orbs.prefab",
+        },
     };
 
     // ── Constants ────────────────────────────────────────────────────────────

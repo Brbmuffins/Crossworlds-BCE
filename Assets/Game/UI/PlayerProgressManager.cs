@@ -45,7 +45,7 @@ public class PlayerProgressManager : MonoBehaviour
 
     public float XpFraction => XpToNext > 0 ? Mathf.Clamp01((float)Xp / XpToNext) : 1f;
 
-    /// <summary>Local player's class index (0–4). Reads from PlayerIdentity.classIndex.</summary>
+    /// <summary>Local player's class index (0-5). Reads from PlayerIdentity.classIndex.</summary>
     public int ClassIndex
     {
         get

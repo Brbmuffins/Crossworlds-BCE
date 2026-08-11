@@ -12,7 +12,7 @@ using UnityEngine;
 /// someone else's branch.
 ///
 /// What it runs, in order:
-///   4n — NetworkTransform + NetworkAnimator on the 5 heroes + 3 base enemies.
+///   4n — NetworkTransform + NetworkAnimator on all hero and base-enemy prefabs.
 ///        Without it they spawn for other clients and stand frozen forever.
 ///   4o — NetworkIdentity + movement sync on the hand-placed world mobs
 ///        (ogre, cyclops, Gunda, training dummy).

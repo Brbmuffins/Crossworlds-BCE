@@ -54,6 +54,13 @@ public sealed class MarauderAnimationClipDrawer : PropertyDrawer
                     "Assets/Game/3D Models/Heroes/Brandalf/" +
                     "Combat Animations"
                 }
+            },
+            {
+                "Necromancer",
+                new[]
+                {
+                    "Assets/Game/3D Models/Heroes/Necromancer"
+                }
             }
         };
 

@@ -31,10 +31,12 @@ public class PlayerNameplate : MonoBehaviour
 
     static readonly Color[] ClassColors =
     {
-        new Color(0.35f, 0.75f, 1.00f),  // 0 Engineer   — blue
-        new Color(1.00f, 0.80f, 0.20f),  // 1 Guardian   — gold
-        new Color(0.70f, 0.40f, 1.00f),  // 2 Wraith     — purple
-        new Color(0.35f, 1.00f, 0.55f),  // 3 Medic      — green
+        new Color(0.35f, 0.75f, 1.00f),  // 0 Marauder
+        new Color(1.00f, 0.80f, 0.20f),  // 1 Templar
+        new Color(0.70f, 0.40f, 1.00f),  // 2 Night Hunter
+        new Color(0.35f, 1.00f, 0.55f),  // 3 Cleric
+        new Color(0.22f, 0.74f, 0.97f),  // 4 Arcanist
+        new Color(0.46f, 0.79f, 0.21f),  // 5 Necromancer
     };
 
     // ── State ─────────────────────────────────────────────────────────────

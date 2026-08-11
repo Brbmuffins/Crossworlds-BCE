@@ -20,13 +20,14 @@ public static class SpellIconImporter
             AssetDatabase.Refresh();
         }
 
-        string[] classes = { "Marauder", "Ironclad", "Shadowblade", "Cleric", "Arcanist" };
+        string[] classes = { "Marauder", "Ironclad", "Shadowblade", "Cleric", "Arcanist", "Necromancer" };
         Color[] classColors = {
             new Color(0.18f, 0.49f, 0.20f), // Marauder: Forest Green #2E7D32
             new Color(0.90f, 0.32f, 0.00f), // Ironclad: Steel Orange #E65100
             new Color(0.29f, 0.08f, 0.55f), // Shadowblade: Deep Purple #4A148C
             new Color(0.00f, 0.41f, 0.36f), // Cleric: Teal Gold #00695C
-            new Color(0.10f, 0.14f, 0.49f)  // Arcanist: Arcane Blue #1A237E
+            new Color(0.10f, 0.14f, 0.49f), // Arcanist: Arcane Blue #1A237E
+            new Color(0.18f, 0.38f, 0.12f)  // Necromancer: Necrotic Green
         };
 
         for (int c = 0; iClassIndex(c, out string className, out Color classColor); c++)
@@ -97,13 +98,14 @@ public static class SpellIconImporter
 
     private static bool iClassIndex(int index, out string name, out Color color)
     {
-        string[] classes = { "Marauder", "Ironclad", "Shadowblade", "Cleric", "Arcanist" };
+        string[] classes = { "Marauder", "Ironclad", "Shadowblade", "Cleric", "Arcanist", "Necromancer" };
         Color[] classColors = {
             new Color(0.18f, 0.49f, 0.20f), // Marauder: Forest Green #2E7D32
             new Color(0.90f, 0.32f, 0.00f), // Ironclad: Steel Orange #E65100
             new Color(0.29f, 0.08f, 0.55f), // Shadowblade: Deep Purple #4A148C
             new Color(0.00f, 0.41f, 0.36f), // Cleric: Teal Gold #00695C
-            new Color(0.10f, 0.14f, 0.49f)  // Arcanist: Arcane Blue #1A237E
+            new Color(0.10f, 0.14f, 0.49f), // Arcanist: Arcane Blue #1A237E
+            new Color(0.18f, 0.38f, 0.12f)  // Necromancer: Necrotic Green
         };
 
         if (index >= 0 && index < classes.Length)

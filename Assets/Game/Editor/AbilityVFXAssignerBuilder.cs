@@ -7,7 +7,7 @@ using UnityEngine;
 /// AbilityVFXAssignerBuilder — BCE/Heroes/Assign Ability VFX
 ///
 /// Assigns castVFX, hitVFX, and deployablePrefab (+ turretPrefab for Runic
-/// Sentinel) to every AbilityDef in all 5 class spellbooks.
+/// Sentinel) to every AbilityDef in all class spellbooks.
 ///
 /// Prefab lookup searches brbmuffins packs in priority order so the dark
 /// Fantasy Pack "Magic circle" beats the cartoon Magic Pack one. FBX models
@@ -37,6 +37,7 @@ public static class AbilityVFXAssignerBuilder
         "Assets/Game/Game_Prefabs/Shadowblade.prefab",
         "Assets/Game/Game_Prefabs/Cleric.prefab",
         "Assets/Game/Game_Prefabs/Arcanist.prefab",
+        "Assets/Game/Game_Prefabs/Necromancer.prefab",
     };
 
     // ── Main VFX map ──────────────────────────────────────────────────────────
@@ -56,6 +57,12 @@ public static class AbilityVFXAssignerBuilder
         { "Collapsing Void",    ("Death magic circle",               "Explosion",                 "Death magic circle") },
         { "Void Maw",           ("Death magic circle",               "Plexus AoE",                "Death magic circle") },
         { "Arcane Step",        ("Teleport",                         "Glowing orbs",              null) },
+
+        // Necromancer starter spellbook
+        { "Necrotic Bolt",      ("Dard magic shoot",                 "Plexus AoE",                null) },
+        { "Bone Spear",         ("Death magic circle",               "Ground spikes",             null) },
+        { "Grave Bloom",        ("Death magic circle",               "Plexus AoE",                null) },
+        { "Soul Ward",          ("Human_Spell_Shield",               null,                         null) },
 
         // ── Marauder ─────────────────────────────────────────────────────────
         // Runic Sentinel turretPrefab is handled separately in TurretMap below

@@ -12,7 +12,7 @@ using UnityEngine;
 /// and "I can actually fight enemies in Hub."
 ///
 /// What it does (in order):
-///   1. Class prefabs (Marauder/Ironclad/Shadowblade/Cleric/Arcanist)
+///   1. Class prefabs (Marauder/Ironclad/Shadowblade/Cleric/Arcanist/Necromancer)
 ///        • Add Health (isPlayer=true, maxHealth=150) if missing
 ///        • Add CharacterStats if missing
 ///        • Add AbilityCaster if missing
@@ -53,7 +53,7 @@ public static class HubPlayableBuilder
     const string SmallExplosionPath =
         "Assets/brbmuffins Technologies/brbmuffins Particle Pack/EffectExamples/Fire & Explosion Effects/Prefabs/SmallExplosion.prefab";
 
-    static readonly string[] ClassNames  = { "Marauder", "Ironclad", "Shadowblade", "Cleric", "Arcanist" };
+    static readonly string[] ClassNames  = { "Marauder", "Ironclad", "Shadowblade", "Cleric", "Arcanist", "Necromancer" };
     static readonly string[] EnemyNames  = { "Enemy_Grunt", "Enemy_Ranged", "Enemy_Elite" };
 
     // ── Menu entry ───────────────────────────────────────────────────────────────

@@ -16,7 +16,7 @@ using TMPro;
 //
 //  Layout:  [Class List 220px] | [3D Preview - centre] | [Details 420px]
 //
-//  Inspector:  drop 5 CharacterData assets into Characters[0-4].
+//  Inspector:  drop 6 CharacterData assets into Characters[0-5].
 //              Everything else (camera, RT, lights) auto-builds at runtime.
 //              Optionally assign a previewCamera/RT/spawnPoint to override.
 // ═══════════════════════════════════════════════════════════════════════════
@@ -41,7 +41,7 @@ public class CharacterSelectUI : MonoBehaviour
     public Transform     previewSpawnPoint;
     public float         rotationSpeed = 22f;
     [Tooltip("Scene-stage height relative to Arcanist, in class-index order.")]
-    public float[]       sceneClassHeightMultipliers = { 1.22f, 1.12f, 0.96f, 1.02f, 1.00f };
+    public float[]       sceneClassHeightMultipliers = { 1.22f, 1.12f, 0.96f, 1.02f, 1.00f, 1.00f };
 
     // ── Runtime refs ─────────────────────────────────────────────────────────
     int           _sel;

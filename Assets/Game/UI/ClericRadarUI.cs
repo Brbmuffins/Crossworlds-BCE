@@ -232,6 +232,7 @@ public class ClericRadarUI : MonoBehaviour
         2 => new Color(0.5f, 0.1f, 0.7f),  // Shadowblade — purple
         3 => new Color(0.9f, 0.85f, 0.3f), // Cleric   — gold
         4 => new Color(0.3f, 0.5f, 1.0f),  // Arcanist — blue
+        5 => new Color(0.45f, 0.75f, 0.2f), // Necromancer — necrotic green
         _ => Color.white
     };
 

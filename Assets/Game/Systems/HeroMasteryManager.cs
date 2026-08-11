@@ -6,7 +6,7 @@ using UnityEngine.Networking;
 
 /// <summary>
 /// HeroMasteryManager — self-bootstrapping singleton.
-/// Fetches all 5 hero mastery rows, tracks XP/level locally,
+/// Fetches all hero mastery rows, tracks XP/level locally,
 /// applies L6 and L10 passive bonuses to CharacterStats, and
 /// posts XP awards to /api/mastery/award-xp.
 ///
@@ -16,6 +16,7 @@ using UnityEngine.Networking;
 ///   2 Shadowblade: L6 = +8% dmg,     L10 = +8% CDR
 ///   3 Cleric:      L6 = +15% heal,   L10 = +10% max HP
 ///   4 Arcanist:    L6 = +8% CDR,     L10 = +10% dmg
+///   5 Necromancer: L6 = +8% dmg,     L10 = +8% CDR
 ///
 /// Server endpoints (not yet live — stub data used until they exist):
 ///   GET  /api/mastery/:characterId
@@ -47,7 +48,7 @@ public class HeroMasteryManager : MonoBehaviour
         public float XpFraction => xpToNext > 0 ? Mathf.Clamp01((float)xp / xpToNext) : 1f;
     }
 
-    /// <summary>Mastery for each of the 5 heroes. Index == heroId.</summary>
+    /// <summary>Mastery for each hero. Index == heroId.</summary>
     public MasteryEntry[] Masteries { get; private set; } = DefaultMasteries();
 
     // ── Events ────────────────────────────────────────────────────────────────
@@ -224,7 +225,7 @@ public class HeroMasteryManager : MonoBehaviour
     // ── Bonus calculation & application ──────────────────────────────────────
 
     /// <summary>
-    /// Compute aggregate mastery passive bonuses from all 5 heroes' current
+    /// Compute aggregate mastery passive bonuses from all heroes' current
     /// levels, then push them to the local player's CharacterStats.
     /// Call whenever mastery levels change.
     /// </summary>
@@ -283,6 +284,7 @@ public class HeroMasteryManager : MonoBehaviour
     //   Hero 2 Shadowblade: L6 = +8% dmg,     L10 = +8% CDR
     //   Hero 3 Cleric:      L6 = +15% heal,   L10 = +10% maxHp
     //   Hero 4 Arcanist:    L6 = +8% CDR,     L10 = +10% dmg
+    //   Hero 5 Necromancer: L6 = +8% dmg,     L10 = +8% CDR
     static void GetBonuses(int heroId, int level,
         out float d6,  out float h6,  out float c6,  out float hp6,
         out float d10, out float h10, out float c10, out float hp10)
@@ -304,6 +306,9 @@ public class HeroMasteryManager : MonoBehaviour
                 break;
             case 4: // Arcanist
                 c6 = 0.08f; d10 = 0.10f;
+                break;
+            case 5: // Necromancer
+                d6 = 0.08f; c10 = 0.08f;
                 break;
         }
     }
@@ -328,8 +333,8 @@ public class HeroMasteryManager : MonoBehaviour
 
     static MasteryEntry[] DefaultMasteries()
     {
-        var arr = new MasteryEntry[5];
-        for (int i = 0; i < 5; i++)
+        var arr = new MasteryEntry[6];
+        for (int i = 0; i < arr.Length; i++)
             arr[i] = new MasteryEntry { heroId = i, level = 1, xp = 0, xpToNext = XpForLevel(2) };
         return arr;
     }

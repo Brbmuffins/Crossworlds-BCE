@@ -15,7 +15,7 @@ public class PlayerIdentity : NetworkBehaviour
     [SyncVar] public int    classIndex   = 0;
     [SyncVar] public int    characterId  = -1;  // DB row id — used by inventory/progress APIs
 
-    static readonly string[] ClassNames = { "Marauder", "Templar", "Night Hunter", "Cleric", "Arcanist" };
+    static readonly string[] ClassNames = { "Marauder", "Templar", "Night Hunter", "Cleric", "Arcanist", "Necromancer" };
 
     public string ClassName => classIndex >= 0 && classIndex < ClassNames.Length
         ? ClassNames[classIndex]

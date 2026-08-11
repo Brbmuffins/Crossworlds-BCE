@@ -155,7 +155,7 @@ public class CharacterStats : NetworkBehaviour
     public void SetProgressionStats(int classIndex, int level, int strength, int agility,
         int intelligence, int vitality)
     {
-        _progressionClassIndex = Mathf.Clamp(classIndex, 0, 4);
+        _progressionClassIndex = Mathf.Clamp(classIndex, 0, 5);
         _progressionLevel = Mathf.Max(1, level);
         _progressionStr = Mathf.Max(0, strength);
         _progressionAgi = Mathf.Max(0, agility);
@@ -181,6 +181,7 @@ public class CharacterStats : NetworkBehaviour
             2 => _progressionAgi, // Shadowblade / Night Hunter
             3 => _progressionInt, // Cleric
             4 => _progressionInt, // Arcanist
+            5 => _progressionInt, // Necromancer
             _ => _progressionStr
         };
         int primaryBaseline = _progressionClassIndex == 1 ? 10 : 5;

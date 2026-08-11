@@ -14,6 +14,7 @@ public static class SpellIconAssigner
         "Assets/Game/Game_Prefabs/Shadowblade.prefab",
         "Assets/Game/Game_Prefabs/Cleric.prefab",
         "Assets/Game/Game_Prefabs/Arcanist.prefab",
+        "Assets/Game/Game_Prefabs/Necromancer.prefab",
     };
 
     [MenuItem("BCE/Assign Spell Icons")]
@@ -182,6 +183,11 @@ public static class SpellIconAssigner
         "Holy Bolt"          => "soul-bond",
         "Divine Shield"      => "mending-circle",
         "Smite"              => "soul-bond",
+        // Necromancer starter spellbook
+        "Necrotic Bolt"      => "void-bolt",
+        "Bone Spear"         => "dark-harvest",
+        "Grave Bloom"        => "collapsing-void",
+        "Soul Ward"          => "arcane-ward",
         _                    => null,
     };
 }
