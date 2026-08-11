@@ -57,6 +57,12 @@ public class LootItemDefinition : ScriptableObject
     [Tooltip("Sprite shown in the player's inventory bag.")]
     public Sprite inventoryIcon;
 
+    [Tooltip("Rotation used only when Loot Forge photographs the item for its inventory icon.")]
+    public Vector3 inventoryIconEulerAngles = new Vector3(12f, -28f, -8f);
+
+    [Min(0.5f), Tooltip("Inventory icon framing multiplier. Values below 1 zoom in; values above 1 add space around the item.")]
+    public float inventoryIconZoom = 1f;
+
     [HideInInspector] public string iconId;
 
     [Min(0), Tooltip("Base database sell value.")]

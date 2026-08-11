@@ -80,6 +80,8 @@ namespace Crossworlds.EditorTools.LootForge
             if (serialized.FindProperty("stackable").boolValue)
                 Draw(serialized, "maxStackSize", "Maximum Stack Size");
             Draw(serialized, "inventoryIcon", "Inventory Icon");
+            Draw(serialized, "inventoryIconEulerAngles", "Icon Preview Rotation");
+            Draw(serialized, "inventoryIconZoom", "Icon Preview Zoom");
             Draw(serialized, "worldVisualPrefab", "World Visual Prefab");
             if (IsEquipment((LootDatabaseItemType)itemType.enumValueIndex))
             {
@@ -129,6 +131,7 @@ namespace Crossworlds.EditorTools.LootForge
                 "will be used as the world representation.",
                 MessageType.None);
             serialized.ApplyModifiedProperties();
+            NormalizeVisualPrefabReferences();
 
             using (new EditorGUI.DisabledScope(
                        definition.worldVisualPrefab == null && definition.equippedVisualPrefab == null))
@@ -276,6 +279,7 @@ namespace Crossworlds.EditorTools.LootForge
 
         List<string> ValidateDefinition(bool dropTableRequired)
         {
+            NormalizeVisualPrefabReferences();
             var issues = new List<string>();
             string id = definition.itemId?.Trim() ?? "";
             if (!System.Text.RegularExpressions.Regex.IsMatch(id, "^[a-z0-9_-]{1,64}$"))
@@ -305,6 +309,9 @@ namespace Crossworlds.EditorTools.LootForge
             if (definition.worldVisualPrefab != null &&
                 !PrefabUtility.IsPartOfPrefabAsset(definition.worldVisualPrefab))
                 issues.Add("When assigned, World Visual Prefab must be a prefab asset from the Project window.");
+            if (definition.equippedVisualPrefab != null &&
+                !PrefabUtility.IsPartOfPrefabAsset(definition.equippedVisualPrefab))
+                issues.Add("When assigned, Equipped Visual Prefab must be a prefab asset from the Project window.");
             if (definition.sellValue < 0) issues.Add("Sell Value cannot be negative.");
             if (definition.stackable && definition.maxStackSize < 1)
                 issues.Add("Maximum Stack Size must be at least 1.");
@@ -319,6 +326,30 @@ namespace Crossworlds.EditorTools.LootForge
                 { issues.Add($"Item ID '{id}' is already used by '{other.name}'."); break; }
             }
             return issues;
+        }
+
+        void NormalizeVisualPrefabReferences()
+        {
+            if (definition == null) return;
+            GameObject world = ResolvePrefabAsset(definition.worldVisualPrefab);
+            GameObject equipped = ResolvePrefabAsset(definition.equippedVisualPrefab);
+            if (world == definition.worldVisualPrefab &&
+                equipped == definition.equippedVisualPrefab)
+                return;
+
+            Undo.RecordObject(definition, "Use loot prefab assets");
+            definition.worldVisualPrefab = world;
+            definition.equippedVisualPrefab = equipped;
+            EditorUtility.SetDirty(definition);
+        }
+
+        static GameObject ResolvePrefabAsset(GameObject value)
+        {
+            if (value == null || PrefabUtility.IsPartOfPrefabAsset(value)) return value;
+            string path = PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(value);
+            return string.IsNullOrWhiteSpace(path)
+                ? value
+                : AssetDatabase.LoadAssetAtPath<GameObject>(path) ?? value;
         }
 
         bool GenerateInventoryIcon(bool showConfirmation)
