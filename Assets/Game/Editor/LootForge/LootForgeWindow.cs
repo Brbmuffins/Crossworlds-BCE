@@ -88,6 +88,16 @@ namespace Crossworlds.EditorTools.LootForge
                 Draw(serialized, "equipmentSlot", "Equipment Slot");
                 Draw(serialized, "equippedVisualPrefab", "Equipped Visual Prefab");
                 Draw(serialized, "attachmentProfile", "Attachment Profile");
+                using (new EditorGUI.DisabledScope(
+                           definition.equippedVisualPrefab == null && definition.worldVisualPrefab == null))
+                {
+                    if (GUILayout.Button("Open Equipment Position Preview", GUILayout.Height(28)))
+                    {
+                        serialized.ApplyModifiedProperties();
+                        LootForgeEquipmentPreviewWindow.Open(definition);
+                        serialized.Update();
+                    }
+                }
                 if (GUILayout.Button("Create Shared Profile From Current Transform"))
                 {
                     serialized.ApplyModifiedProperties();
