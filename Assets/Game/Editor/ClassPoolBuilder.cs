@@ -4,7 +4,7 @@ using UnityEditor;
 
 /// <summary>
 /// ClassPoolBuilder — BCE/Combat/Create Class Ability Pools
-/// Creates 5 ClassAbilityPool ScriptableObject assets in Assets/Game/Data/ClassPools/
+/// Creates one ClassAbilityPool ScriptableObject per playable class in Assets/Game/Data/ClassPools/
 /// and assigns them to each class prefab's AbilityCaster.classPool field.
 /// Run once per project; safe to re-run (AssetDatabase.CreateAsset overwrites).
 /// </summary>
@@ -43,13 +43,17 @@ public static class ClassPoolBuilder
             availableIndices: new[] { 0,1,2,3,4,5,6,7,29,30,31,32,33,50,51,52 },
             defaultEquipped:  new[] { 33,32,31,29 });        // Fan of Blades, Dark Mark, Dark Harvest, Shadow Veil
 
+        CreatePool("Necromancer",
+            availableIndices: new[] { 0,1,2,3 },
+            defaultEquipped:  new[] { 0,1,2,3 });            // Starter spellbook; expand in Spell Forge
+
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
 
         // Wire to prefabs
         AssignToPrefabs();
 
-        Debug.Log("[ClassPoolBuilder] ✓ All 5 ClassAbilityPool assets created in " + OutputDir);
+        Debug.Log("[ClassPoolBuilder] ✓ All ClassAbilityPool assets created in " + OutputDir);
     }
 
     static void CreatePool(string className, int[] availableIndices, int[] defaultEquipped)
@@ -85,7 +89,8 @@ public static class ClassPoolBuilder
             ("Templar", "Ironclad"),
             ("Arcanist", "Arcanist"),
             ("Cleric", "Cleric"),
-            ("Night Hunter", "Shadowblade")
+            ("Night Hunter", "Shadowblade"),
+            ("Necromancer", "Necromancer")
         };
 
         foreach (var entry in classes)

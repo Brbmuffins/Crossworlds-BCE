@@ -103,6 +103,7 @@ public class PlayerHUD : MonoBehaviour
     const float ActionBarManaWellCenterX = 340f;
     const float ActionBarManaWellCenterY = 121f + ActionBarContentYOffset;
     const float ActionBarManaWellSize = 164f;
+    const float ActionBarLevelBadgeY = 408f;
     Image[]             _slotBg       = new Image[Slots];
     Image[]             _slotIcon     = new Image[Slots];
     Image[]             _slotCooldown = new Image[Slots];
@@ -110,6 +111,8 @@ public class PlayerHUD : MonoBehaviour
     TextMeshProUGUI[]   _slotKey      = new TextMeshProUGUI[Slots];
     TextMeshProUGUI[]   _slotName     = new TextMeshProUGUI[Slots];
     TextMeshProUGUI[]   _slotCdText   = new TextMeshProUGUI[Slots];   // live cooldown countdown
+    TextMeshProUGUI     _levelBadgeText;
+    int                 _displayedLevel = -1;
     int                 _activeSlot         = 0;
     bool                _wasAimingLastFrame = false;
 
@@ -192,6 +195,7 @@ public class PlayerHUD : MonoBehaviour
         TickHpBar();
         TickManaWell();
         TickAbilityBar();
+        TickLevelBadge();
         TickCastBar();
         TickAbilityTooltip();
         TickSpellbook();
@@ -433,6 +437,8 @@ public class PlayerHUD : MonoBehaviour
             frame.color = BgDark;
         Stretch(frame.rectTransform);
 
+        BuildLevelBadge(root);
+
         // Selection rings must remain above the decorative frame, while the
         // ability icon, backdrop, and cooldown stay masked beneath it.
         for (int i = 0; i < Slots; i++)
@@ -446,6 +452,43 @@ public class PlayerHUD : MonoBehaviour
             ringRt.anchoredPosition = new Vector2(x, ActionBarSlotCenterY);
             ringRt.sizeDelta = new Vector2(ActionBarSlotSize + 8f, ActionBarSlotSize + 8f);
         }
+    }
+
+    void BuildLevelBadge(RectTransform parent)
+    {
+        // "XP" is baked into PlayerHUD.png. Cover only the lettering inside the
+        // existing gold plaque, leaving its border and all surrounding artwork intact.
+        var cover = Img(parent, "LevelBadgeCover", new Color(0.035f, 0.026f, 0.022f, 1f));
+        cover.raycastTarget = false;
+        RectTransform coverRt = cover.rectTransform;
+        coverRt.anchorMin = coverRt.anchorMax = new Vector2(0.5f, 0f);
+        coverRt.pivot = new Vector2(0.5f, 0.5f);
+        coverRt.anchoredPosition = new Vector2(0f, ActionBarLevelBadgeY);
+        coverRt.sizeDelta = new Vector2(46f, 28f);
+
+        _levelBadgeText = Lbl(parent, "CurrentLevel", "1", 24f);
+        _levelBadgeText.alignment = TextAlignmentOptions.Center;
+        _levelBadgeText.fontStyle = FontStyles.Bold;
+        _levelBadgeText.color = new Color(0.91f, 0.76f, 0.47f, 1f);
+        _levelBadgeText.outlineColor = new Color32(20, 10, 4, 255);
+        _levelBadgeText.outlineWidth = 0.16f;
+        _levelBadgeText.raycastTarget = false;
+        RectTransform textRt = _levelBadgeText.rectTransform;
+        textRt.anchorMin = textRt.anchorMax = new Vector2(0.5f, 0f);
+        textRt.pivot = new Vector2(0.5f, 0.5f);
+        textRt.anchoredPosition = new Vector2(0f, ActionBarLevelBadgeY);
+        textRt.sizeDelta = new Vector2(72f, 36f);
+    }
+
+    void TickLevelBadge()
+    {
+        if (_levelBadgeText == null) return;
+        int level = PlayerProgressManager.Local != null
+            ? Mathf.Max(1, PlayerProgressManager.Local.Level)
+            : 1;
+        if (level == _displayedLevel) return;
+        _displayedLevel = level;
+        _levelBadgeText.text = level.ToString();
     }
 
     void BuildHealthWell(RectTransform parent)

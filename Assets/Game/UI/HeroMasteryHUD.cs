@@ -38,7 +38,7 @@ public class HeroMasteryHUD : MonoBehaviour
     static readonly Color ColText   = new Color(1.00f, 1.00f, 1.00f, 0.90f);
     static readonly Color ColLabel  = new Color(0.75f, 0.75f, 0.85f, 0.80f);
 
-    // Class fill colours (one per hero 0-4, matches ClassColor in ClericRadarUI)
+    // Class fill colours (one per hero, matches ClassColor in ClericRadarUI)
     static readonly Color[] ClassColors =
     {
         new Color(0.40f, 0.80f, 0.40f, 1f), // 0 Marauder — green
@@ -46,6 +46,7 @@ public class HeroMasteryHUD : MonoBehaviour
         new Color(0.60f, 0.10f, 0.80f, 1f), // 2 Shadowblade — purple
         new Color(0.95f, 0.80f, 0.20f, 1f), // 3 Cleric   — gold
         new Color(0.30f, 0.55f, 1.00f, 1f), // 4 Arcanist — blue
+        new Color(0.45f, 0.75f, 0.20f, 1f), // 5 Necromancer — necrotic green
     };
 
     // ── UI refs ───────────────────────────────────────────────────────────────

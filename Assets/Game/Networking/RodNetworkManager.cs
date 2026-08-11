@@ -13,6 +13,7 @@ using UnityEngine.SceneManagement;
 //    • classPrefabs[2] = Shadowblade prefab
 //    • classPrefabs[3] = Cleric prefab
 //    • classPrefabs[4] = Arcanist prefab
+//    • classPrefabs[5] = Necromancer prefab
 //    • Authenticator   = RodNetworkAuthenticator (same GameObject)
 //    • Network Address = 15.204.243.36
 //
@@ -32,7 +33,7 @@ using UnityEngine.SceneManagement;
 public class RodNetworkManager : NetworkManager
 {
     [Header("Class Prefabs")]
-    [Tooltip("0=Marauder, 1=Templar, 2=Night Hunter, 3=Cleric, 4=Arcanist")]
+    [Tooltip("0=Marauder, 1=Templar, 2=Night Hunter, 3=Cleric, 4=Arcanist, 5=Necromancer")]
     public GameObject[] classPrefabs;
 
     [Header("World / Combat Prefabs")]

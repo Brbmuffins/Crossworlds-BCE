@@ -5,8 +5,8 @@ using UnityEngine.AI;
 
 namespace Crossworlds.EditorTools.EnemyForge
 {
-    internal enum EnemyForgeArchetype { Melee, Ranged, Elite }
-    internal enum EnemyForgeRootTag { Enemy, Player }
+    internal enum EnemyForgeArchetype { Melee, Ranged, Elite, NPC }
+    internal enum EnemyForgeRootTag { Enemy, Player, NPC }
     internal enum EnemyForgeCastAttack
     {
         RandomAll,
@@ -31,7 +31,7 @@ namespace Crossworlds.EditorTools.EnemyForge
         [HideInInspector] public int version = CurrentVersion;
         public GameObject source;
         public EnemyForgeArchetype archetype = EnemyForgeArchetype.Melee;
-        [Tooltip("Tag assigned to the root of the saved prefab. Enemy is recommended for hostile mobs.")]
+        [Tooltip("Tag assigned to the root of the saved prefab. Non-combat NPCs always use NPC.")]
         public EnemyForgeRootTag rootTag = EnemyForgeRootTag.Enemy;
         public string templateId = "enemy_basic";
         public string outputFolder = "Assets/Game/Prefabs/EnemyForge";
@@ -166,12 +166,38 @@ namespace Crossworlds.EditorTools.EnemyForge
         [Range(-0.5f, 0.5f)] public float corpseGroundOffset = -0.05f;
 
         public bool IsRanged => archetype == EnemyForgeArchetype.Ranged;
+        public bool IsNpc => archetype == EnemyForgeArchetype.NPC;
 
         public void ApplyArchetypeDefaults()
         {
             agentBaseOffset = 0f;
+            if (!IsNpc && rootTag == EnemyForgeRootTag.NPC)
+                rootTag = EnemyForgeRootTag.Enemy;
             switch (archetype)
             {
+                case EnemyForgeArchetype.NPC:
+                    rootTag = EnemyForgeRootTag.NPC;
+                    templateId = string.IsNullOrWhiteSpace(templateId) || templateId == "enemy_basic"
+                        ? "npc_basic" : templateId;
+                    maxHealth = 1f;
+                    moveSpeed = 2f;
+                    acceleration = 8f;
+                    angularSpeed = 250f;
+                    stoppingDistance = 0.35f;
+                    enableRoaming = true;
+                    roamingRadius = 6f;
+                    roamingMinWait = 2f;
+                    roamingMaxWait = 5f;
+                    aggroRadius = 0f;
+                    leashRadius = 0f;
+                    aggroWhenDamaged = false;
+                    addHeavyAttack = false;
+                    projectilePrefab = null;
+                    dropTable = null;
+                    worldItemPrefab = null;
+                    lootBeamPrefab = null;
+                    respawnAfterDeath = false;
+                    break;
                 case EnemyForgeArchetype.Ranged:
                     rewardCategory = EnemyController.RewardCategory.Grunt;
                     maxHealth = 40f; moveSpeed = 3.5f; stoppingDistance = 4f;
@@ -205,14 +231,20 @@ namespace Crossworlds.EditorTools.EnemyForge
         public string ImportFromSource(GameObject selected)
         {
             if (selected == null) return "No source was selected.";
-            rootTag = selected.CompareTag("Player") ? EnemyForgeRootTag.Player : EnemyForgeRootTag.Enemy;
+            var forgedNpc = selected.GetComponent<ForgedNpcController>();
+            bool isNpc = selected.CompareTag("NPC") || forgedNpc != null;
+            rootTag = isNpc
+                ? EnemyForgeRootTag.NPC
+                : selected.CompareTag("Player") ? EnemyForgeRootTag.Player : EnemyForgeRootTag.Enemy;
             var health = selected.GetComponent<Health>();
             var agent = selected.GetComponent<NavMeshAgent>();
             var controller = selected.GetComponent<EnemyController>();
             var heavy = selected.GetComponent<EnemyHeavyAttack>();
             var sfx = selected.GetComponent<EnemySfxProfile>();
 
-            if (controller != null && controller.isRanged)
+            if (isNpc)
+                archetype = EnemyForgeArchetype.NPC;
+            else if (controller != null && controller.isRanged)
                 archetype = EnemyForgeArchetype.Ranged;
             else if ((health != null && health.maxHealth >= 200f) ||
                      (controller != null && controller.damage >= 25f))
@@ -224,6 +256,15 @@ namespace Crossworlds.EditorTools.EnemyForge
             // selected combat-ready prefab already defines.
             ApplyArchetypeDefaults();
             int importedComponents = 0;
+            if (forgedNpc != null)
+            {
+                enemyDisplayName = forgedNpc.npcDisplayName;
+                enableRoaming = forgedNpc.enableRoaming;
+                roamingRadius = forgedNpc.roamingRadius;
+                roamingMinWait = forgedNpc.roamingMinWait;
+                roamingMaxWait = forgedNpc.roamingMaxWait;
+                importedComponents++;
+            }
             if (health != null)
             {
                 maxHealth = health.maxHealth;

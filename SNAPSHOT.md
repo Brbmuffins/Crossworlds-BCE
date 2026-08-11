@@ -34,6 +34,11 @@ that override statements below:
   destination. Player abilities keep their existing Enemy targeting, while the
   server treats another player as an opponent only when both occupy PVPZONE;
   `Health` rejects player-on-player damage in every other scene.
+- **Necromancer class framework added 2026-08-10:** Unity reserves class index 5,
+  with Spell Forge, character-selection, network-prefab, mastery, Generic-rig, and
+  animator setup handled by `BCE/Heroes/Build Necromancer Class`. The existing
+  indices 0-4 remain unchanged. VPS auth/API widening and the generated Unity assets
+  remain rollout steps; see `_CONTEXT/NECROMANCER_SERVER_HANDOFF.md`.
 - Working tree is clean and synced with origin/main (the §2 "uncommitted month of
   work" is resolved); CI (GitHub Actions "Build and Deploy") is the live pipeline.
 - **2026-07-26 audit addendum** (delta above verified at `2daa100f`; since then):

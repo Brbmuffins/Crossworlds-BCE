@@ -34,6 +34,7 @@ namespace Crossworlds.EditorTools
                 "Assets/Game/Game_Prefabs/Ironclad.prefab",
                 "Assets/Game/Game_Prefabs/Marauder.prefab",
                 "Assets/Game/Game_Prefabs/Shadowblade.prefab",
+                "Assets/Game/Game_Prefabs/Necromancer.prefab",
                 "Assets/Game/Game_Prefabs/Muffin Junk/Warden_Legacy.prefab"
             };
 

@@ -45,10 +45,11 @@ public class PlayerListUI : MonoBehaviour
         "#B366FF", // Shadowblade
         "#59FF8C", // Cleric
         "#38BDF8", // Arcanist
+        "#75C936", // Necromancer
     };
 
     static readonly string[] ClassNames =
-        { "Marauder", "Templar", "Night Hunter", "Cleric", "Arcanist" };
+        { "Marauder", "Templar", "Night Hunter", "Cleric", "Arcanist", "Necromancer" };
 
     sealed class OnlinePlayerEntry
     {

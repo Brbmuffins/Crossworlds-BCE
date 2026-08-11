@@ -14,6 +14,25 @@ conversation: it names its files, acceptance criteria, and dependencies. Tasks m
 
 ---
 
+> **PVP zone night lighting (2026-08-10):** `PVPZONE` retains its existing Night Moon
+> Mid skybox and now uses cool low-intensity moonlight, reduced ambient/reflection
+> contribution, and subtle blue fog so it reads as night while preserving combat visibility.
+
+> **Cat animation material wiring (2026-08-10):** The `catidle` and `catwalk` FBX
+> material slots now share a URP cat material using the supplied black-cat base-color texture.
+
+> **Necromancer animation material wiring (2026-08-10):** All ten Necromancer FBX
+> models share a URP material using the supplied hooded-undead base-color texture.
+
+> **Necromancer class framework (2026-08-10):** Class index 5 is reserved for
+> Necromancer across Unity networking, progression, mastery, character selection,
+> Spell Forge, and class-aware UI. `BCE/Heroes/Build Necromancer Class` configures
+> the imported Generic rigs, builds the animator/controller and player prefab,
+> creates a four-ability starter spellbook and character card, and wires both
+> CharacterSelect and LoginScene. Pending rollout steps are running that editor
+> builder, committing its generated assets, and applying the auth/API changes in
+> `_CONTEXT/NECROMANCER_SERVER_HANDOFF.md`.
+
 ## Phase 0 — Repo Stabilization
 
 *Entry:* now. *Exit:* clean `git status`, one canonical doc set, no secrets in git.

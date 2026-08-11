@@ -27,8 +27,9 @@ and `CrossWorlds/AGENTS.md` (legacy) defer to it.
   SSH per `_CONTEXT/VPS_SERVER.md`). This repo is client + Unity dedicated server only.
 - **Class/hero indices** (server CLASS_NAMES, mirrored in `PlayerIdentity.ClassNames`,
   `RodNetworkManager.classPrefabs`, CharacterSelect): 0=**Marauder** (legacy names:
-  Warden, Engineer), 1=Ironclad(=Guardian legacy), 2=Shadowblade, 3=Cleric, 4=Arcanist.
-  Verified in code 2026-07-25. Legacy docs use the old names; the index positions are
+  Warden, Engineer), 1=Ironclad(=Guardian legacy), 2=Shadowblade, 3=Cleric, 4=Arcanist,
+  5=Necromancer. Necromancer was reserved in Unity on 2026-08-10 and requires the
+  matching auth/API rollout in `_CONTEXT/NECROMANCER_SERVER_HANDOFF.md`. Legacy docs use the old names; the index positions are
   what matters — never renumber. ("Iron Warden" is a world boss, unrelated to the class.)
 - **Mirror discipline**: `[Server]` on every game-state mutation; client-only code
   (VFX, UI, HUD attach) behind `#if UNITY_EDITOR || !UNITY_SERVER` — **never

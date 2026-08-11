@@ -45,7 +45,7 @@ public class PlayerProgressManager : MonoBehaviour
 
     public float XpFraction => XpToNext > 0 ? Mathf.Clamp01((float)Xp / XpToNext) : 1f;
 
-    /// <summary>Local player's class index (0–4). Reads from PlayerIdentity.classIndex.</summary>
+    /// <summary>Local player's class index (0-5). Reads from PlayerIdentity.classIndex.</summary>
     public int ClassIndex
     {
         get
@@ -157,8 +157,11 @@ public class PlayerProgressManager : MonoBehaviour
                     ? reward.xpToNext
                     : XpForLevel(Level + 1);
                 Gold = Mathf.Max(0, reward.gold);
-                OnDataRefreshed?.Invoke();
                 if (Level > previousLevel) OnLevelUp?.Invoke(Level);
+                // Set the carried-XP target after the level-up callback resets the
+                // visual bar, so the fill animates forward from zero instead of
+                // being overwritten by the callback.
+                OnDataRefreshed?.Invoke();
             }
         }
         catch (Exception e)
@@ -208,19 +211,20 @@ public class PlayerProgressManager : MonoBehaviour
                 rawText = rawText.Substring(1, rawText.Length - 2).Trim();
             }
             var r = JsonUtility.FromJson<CharacterFetchResponse>(rawText);
-            int prevLevel = Level;
             Level    = Mathf.Max(1, r.level);
             // Production names the DB/API field "experience"; retain the legacy
             // "xp" fallback so older development responses remain readable.
             Xp       = Mathf.Max(r.experience, r.xp);
-            XpToNext = XpForLevel(Level + 1);
+            XpToNext = r.xpToNext > 0 ? r.xpToNext : XpForLevel(Level + 1);
+            NormalizeProgressSnapshot();
             Gold     = r.gold;
             StatStr  = r.stat_str;
             StatAgi  = r.stat_agi;
             StatInt  = r.stat_int;
             StatVit  = r.stat_vit;
             OnDataRefreshed?.Invoke();
-            if (Level > prevLevel) OnLevelUp?.Invoke(Level);
+            // Loading an existing higher-level character is not a new level-up.
+            // Firing OnLevelUp here reset the XP fill immediately after setting it.
             Debug.Log($"[PROGRESS] Loaded Lv{Level} {Xp}/{XpToNext}xp {Gold}g");
         }
         catch (Exception e)
@@ -279,10 +283,20 @@ public class PlayerProgressManager : MonoBehaviour
     /// <summary>XP required to reach the next level. Simple curve: 100 × level^1.5</summary>
     public static int XpForLevel(int level) => Mathf.RoundToInt(100f * Mathf.Pow(level, 1.5f));
 
+    void NormalizeProgressSnapshot()
+    {
+        while (XpToNext > 0 && Xp >= XpToNext)
+        {
+            Xp -= XpToNext;
+            Level++;
+            XpToNext = XpForLevel(Level + 1);
+        }
+    }
+
     // ── JSON shapes ───────────────────────────────────────────────────────────
     [Serializable] class CharacterFetchResponse
     {
-        public int level, experience, xp, gold, stat_str, stat_agi, stat_int, stat_vit;
+        public int level, experience, xp, xpToNext, gold, stat_str, stat_agi, stat_int, stat_vit;
     }
 
     [Serializable] class SaveProgressRequest

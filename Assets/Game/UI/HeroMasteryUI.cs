@@ -5,11 +5,11 @@ using UnityEngine.UI;
 using TMPro;
 
 /// <summary>
-/// HeroMasteryUI — 5-hero card panel, toggled by pressing H (or via HeroMasteryHUD).
+/// HeroMasteryUI — hero mastery card panel, toggled by pressing H (or via HeroMasteryHUD).
 ///
 /// Self-bootstrapping singleton, DontDestroyOnLoad, sortingOrder 94.
 ///
-/// Layout: full-screen dim + centred panel (500×340) containing five hero cards side-by-side.
+/// Layout: full-screen dim + centred panel containing one card per hero.
 /// Each card shows:
 ///   • Hero name + class icon colour swatch
 ///   • Level badge (bold)
@@ -36,7 +36,7 @@ public class HeroMasteryUI : MonoBehaviour
     }
 
     // ── Hero metadata ─────────────────────────────────────────────────────────
-    static readonly string[] HeroNames = { "Marauder", "Templar", "Night Hunter", "Cleric", "Arcanist" };
+    static readonly string[] HeroNames = { "Marauder", "Templar", "Night Hunter", "Cleric", "Arcanist", "Necromancer" };
 
     // Matches ClassColors in HeroMasteryHUD
     static readonly Color[] HeroColors =
@@ -46,6 +46,7 @@ public class HeroMasteryUI : MonoBehaviour
         new Color(0.60f, 0.10f, 0.80f, 1f),
         new Color(0.95f, 0.80f, 0.20f, 1f),
         new Color(0.30f, 0.55f, 1.00f, 1f),
+        new Color(0.45f, 0.75f, 0.20f, 1f),
     };
 
     // Reward text per hero per milestone
@@ -56,6 +57,7 @@ public class HeroMasteryUI : MonoBehaviour
         { "Night Hunter","+8% Damage" },
         { "Cleric",     "+15% Healing"},
         { "Arcanist",   "+8% CDR"     },
+        { "Necromancer","+8% Damage"  },
     };
     static readonly string[,] RewardTextL10 =
     {
@@ -64,6 +66,7 @@ public class HeroMasteryUI : MonoBehaviour
         { "Night Hunter","+8% CDR"    },
         { "Cleric",     "+10% Max HP" },
         { "Arcanist",   "+10% Damage" },
+        { "Necromancer","+8% CDR"     },
     };
 
     // ── Colour palette ────────────────────────────────────────────────────────
@@ -81,7 +84,7 @@ public class HeroMasteryUI : MonoBehaviour
     GameObject _panel;
     Image      _dimOverlay;
 
-    // Per-card refs (5 cards)
+    // Per-card refs
     struct CardRefs
     {
         public Image           bg;
@@ -93,7 +96,7 @@ public class HeroMasteryUI : MonoBehaviour
         public TextMeshProUGUI rewardL6;
         public TextMeshProUGUI rewardL10;
     }
-    CardRefs[] _cards = new CardRefs[5];
+    CardRefs[] _cards = new CardRefs[HeroNames.Length];
 
     // ── State ─────────────────────────────────────────────────────────────────
     bool  _open = false;
@@ -178,7 +181,8 @@ public class HeroMasteryUI : MonoBehaviour
 
         int classIdx = PlayerProgressManager.Local?.ClassIndex ?? 0;
 
-        for (int i = 0; i < 5; i++)
+        int count = Mathf.Min(HeroNames.Length, mgr.Masteries.Length);
+        for (int i = 0; i < count; i++)
         {
             var entry = mgr.Masteries[i];
             var c     = _cards[i];
@@ -206,7 +210,7 @@ public class HeroMasteryUI : MonoBehaviour
 
     void OnHeroLevelUp(int heroId, int newLevel)
     {
-        if (heroId < 0 || heroId >= 5) return;
+        if (heroId < 0 || heroId >= HeroNames.Length) return;
         _flashHero  = heroId;
         _flashTimer = FlashDuration;
         if (_open) Refresh();
@@ -242,7 +246,7 @@ public class HeroMasteryUI : MonoBehaviour
         panelRT.anchorMin = new Vector2(0.5f, 0.5f);
         panelRT.anchorMax = new Vector2(0.5f, 0.5f);
         panelRT.pivot     = new Vector2(0.5f, 0.5f);
-        panelRT.sizeDelta = new Vector2(520f, 360f);
+        panelRT.sizeDelta = new Vector2(620f, 360f);
         panelRT.anchoredPosition = Vector2.zero;
         var panelBg = _panel.AddComponent<Image>();
         panelBg.color = ColPanel;
@@ -274,14 +278,14 @@ public class HeroMasteryUI : MonoBehaviour
         subTxt.color     = ColDim;
         subTxt.alignment = TextAlignmentOptions.Center;
 
-        // 5 hero cards — horizontal row
+        // Hero cards — horizontal row
         const float cardW   = 88f;
         const float cardH   = 240f;
         const float cardGap = 12f;
-        float totalW = 5 * cardW + 4 * cardGap;
+        float totalW = HeroNames.Length * cardW + (HeroNames.Length - 1) * cardGap;
         float startX = -totalW / 2f + cardW / 2f;
 
-        for (int i = 0; i < 5; i++)
+        for (int i = 0; i < HeroNames.Length; i++)
         {
             float cx = startX + i * (cardW + cardGap);
             _cards[i] = BuildCard(i, cx, -20f, cardW, cardH);

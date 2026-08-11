@@ -19,7 +19,7 @@ using UnityEngine;
 /// back to a GUID-based computation, so those prefabs fail to spawn for
 /// non-host clients — which is why "only Arcanist works" and chat is broken.
 ///
-/// Running this menu item force-reimports all 5 class prefabs so
+/// Running this menu item force-reimports all class prefabs so
 /// NetworkIdentity.OnValidate() fires and writes the correct _assetId.
 /// Commit the resulting .prefab changes; the fix is permanent.
 /// </summary>
@@ -28,7 +28,7 @@ public static class ClassPrefabFixer
     const string PREFABS_DIR = "Assets/Game/Game_Prefabs";
 
     static readonly string[] ClassNames =
-        { "Marauder", "Ironclad", "Shadowblade", "Cleric", "Arcanist" };
+        { "Marauder", "Ironclad", "Shadowblade", "Cleric", "Arcanist", "Necromancer" };
 
     // Additional networked prefabs (not class heroes) that also need a valid assetId.
     static readonly string[] ExtraPrefabs =

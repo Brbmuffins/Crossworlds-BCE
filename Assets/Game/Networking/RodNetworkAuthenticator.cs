@@ -148,7 +148,7 @@ public class RodNetworkAuthenticator : NetworkAuthenticator
         {
             username    = msg.username,
             jwt         = msg.jwt,
-            classIndex  = Mathf.Clamp(character.class_index, 0, 4),
+            classIndex  = Mathf.Clamp(character.class_index, 0, 5),
             characterId = character.id,
             level       = Mathf.Max(1, character.level),
             statStr     = Mathf.Max(0, character.stat_str),

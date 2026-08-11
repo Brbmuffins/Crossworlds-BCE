@@ -27,7 +27,8 @@ namespace Crossworlds.EditorTools
             "Marauder",
             "Templar",
             "Night Hunter",
-            "Cleric"
+            "Cleric",
+            "Necromancer"
         };
 
         static readonly string[] PrefabPaths =
@@ -36,7 +37,8 @@ namespace Crossworlds.EditorTools
             "Assets/Game/Game_Prefabs/Marauder.prefab",
             "Assets/Game/Game_Prefabs/Ironclad.prefab",
             "Assets/Game/Game_Prefabs/Shadowblade.prefab",
-            "Assets/Game/Game_Prefabs/Cleric.prefab"
+            "Assets/Game/Game_Prefabs/Cleric.prefab",
+            "Assets/Game/Game_Prefabs/Necromancer.prefab"
         };
 
         static readonly string[] SpellTabs =

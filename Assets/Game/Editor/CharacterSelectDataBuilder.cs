@@ -4,20 +4,20 @@ using UnityEditor;
 /// <summary>
 /// BCE/Setup/CharacterSelect ▶ Build Class Data
 ///
-/// Creates or replaces the five CharacterData ScriptableObjects used by
+/// Creates or replaces the CharacterData ScriptableObjects used by
 /// CharacterSelectUI. Run once after first import; re-run to refresh stats/lore.
 ///
 /// Sprites are loaded from:
 ///   Assets/Game/UI/CharacterSelect/Portraits/class-{name}.png
 ///   Assets/Game/UI/CharacterSelect/AbilityIcons/{ability}.png
 ///
-/// After running, drag the 5 assets into CharacterSelectUI.characters
-/// in the CharacterSelect scene Inspector (index order 0–4 matches classPrefabs).
+/// After running, assign the assets to CharacterSelectUI.characters in class-index order.
 /// </summary>
 public static class CharacterSelectDataBuilder
 {
     const string OutDir     = "Assets/Game/Data/CharacterSelect";
     const string PortraitDir = "Assets/Game/UI/CharacterSelect/Portraits";
+    const string ClassPortraitDir = "Assets/Game/Art/Class Portraits";
     const string IconDir     = "Assets/Game/UI/CharacterSelect/AbilityIcons";
 
     [MenuItem("BCE/Setup/CharacterSelect - Fix Sprite Import Settings")]
@@ -55,12 +55,13 @@ public static class CharacterSelectDataBuilder
         CreateShadowblade();
         CreateCleric();
         CreateArcanist();
+        CreateNecromancer();
 
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
 
-        Debug.Log("[BCE] 5 CharacterData assets created in " + OutDir +
-                  "\nNEXT: drag them into CharacterSelectUI.characters[0-4] in the Inspector.");
+        Debug.Log("[BCE] CharacterData assets created in " + OutDir +
+                  "\nNecromancerSetupBuilder can wire them into CharacterSelect automatically.");
     }
 
     // ── 0 — Marauder ──────────────────────────────────────────────────────────
@@ -367,6 +368,69 @@ public static class CharacterSelectDataBuilder
         Save(d, "Arcanist");
     }
 
+    // ── 5 — Necromancer ──────────────────────────────────────────────────────
+
+    static void CreateNecromancer()
+    {
+        var d = Make("Necromancer");
+        d.className = "Necromancer";
+        d.roleTagline = "Summoner  ·  Attrition  ·  Battlefield Control";
+        d.loreDescription =
+            "A grave-weaver who turns the boundary between life and death into a weapon. " +
+            "The Necromancer controls space with curses, bone magic, and persistent soul wards, " +
+            "winning fights through pressure rather than a single burst.";
+        d.classColor = new Color(0.45f, 0.75f, 0.20f);
+        d.classColorDark = new Color(0.06f, 0.12f, 0.08f);
+        // Necromancer currently uses its live 3D class preview. Its Spell Forge
+        // portrait remains a regular mipmapped photo texture like the other
+        // portraits in Assets/Game/Art/Class Portraits.
+        d.portrait = null;
+        d.prefab = LoadModel("Assets/Game/Game_Prefabs/Necromancer.prefab");
+        d.previewPrefab = d.prefab;
+
+        d.traits = new[]
+        {
+            new TraitPill { label = "Grave Weaver" },
+            new TraitPill { label = "Soul Magic" },
+            new TraitPill { label = "Area Control" },
+            new TraitPill { label = "Attrition" },
+        };
+
+        d.stats = new[]
+        {
+            new ClassStat { label = "Damage", value = 4 },
+            new ClassStat { label = "Control", value = 5 },
+            new ClassStat { label = "Mobility", value = 2 },
+            new ClassStat { label = "Survivability", value = 3 },
+            new ClassStat { label = "Utility", value = 4 },
+        };
+
+        d.coreAbilities = new[]
+        {
+            new AbilityPreview
+            {
+                abilityName = "Necrotic Bolt",
+                description = "Launch focused death magic at a selected enemy area."
+            },
+            new AbilityPreview
+            {
+                abilityName = "Bone Spear",
+                description = "Drive a piercing line of bone through enemies."
+            },
+            new AbilityPreview
+            {
+                abilityName = "Grave Bloom",
+                description = "Detonate a wide patch of corrupted ground."
+            },
+        };
+
+        d.deployableName = "Soul Ward";
+        d.deployableDescription =
+            "Place a protective soul ward that shields allies inside its circle.";
+
+        Save(d, "Necromancer");
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     static CharacterData Make(string name)
@@ -394,8 +458,13 @@ public static class CharacterSelectDataBuilder
 
     static Sprite LoadPortrait(string className)
     {
-        string path = $"{PortraitDir}/class-{className}.png";
+        string path = $"{PortraitDir}/class-{className.ToLowerInvariant()}.png";
         var tex = AssetDatabase.LoadAssetAtPath<Sprite>(path);
+        if (tex == null)
+        {
+            path = $"{ClassPortraitDir}/{className}.png";
+            tex = AssetDatabase.LoadAssetAtPath<Sprite>(path);
+        }
         if (tex == null)
             Debug.LogWarning($"[BCE] Portrait not found: {path}");
         return tex;

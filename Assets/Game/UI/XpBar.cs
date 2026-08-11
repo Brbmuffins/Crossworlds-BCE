@@ -36,6 +36,7 @@ public class XpBar : MonoBehaviour
 
     float _displayFraction = 0f;
     float _targetFraction  = 0f;
+    float _fillVelocity;
     int _activeGainCount;
 
     const int   CanvasOrder       = 99;
@@ -115,8 +116,16 @@ public class XpBar : MonoBehaviour
     void Update()
     {
         if (_fill == null) return;
-        _displayFraction = Mathf.MoveTowards(_displayFraction, _targetFraction, Time.deltaTime * 1.2f);
-        _fill.fillAmount = _displayFraction;
+        _displayFraction = Mathf.SmoothDamp(
+            _displayFraction,
+            _targetFraction,
+            ref _fillVelocity,
+            0.35f,
+            Mathf.Infinity,
+            Time.unscaledDeltaTime);
+        if (Mathf.Abs(_displayFraction - _targetFraction) < 0.0005f)
+            _displayFraction = _targetFraction;
+        SetFillFraction(_displayFraction);
     }
 
     // ── Callbacks ─────────────────────────────────────────────────────────────
@@ -133,6 +142,8 @@ public class XpBar : MonoBehaviour
     {
         _targetFraction = 0f;
         _displayFraction = 0f;
+        _fillVelocity = 0f;
+        SetFillFraction(0f);
         _levelText.text = $"Lv {newLevel}";
         StartCoroutine(LevelUpFlash());
     }
@@ -243,11 +254,12 @@ public class XpBar : MonoBehaviour
         fillGO.transform.SetParent(container.transform, false);
         _fill = fillGO.GetComponent<Image>();
         _fill.color    = NormalFill;
-        _fill.type     = Image.Type.Filled;
-        _fill.fillMethod = Image.FillMethod.Horizontal;
-        _fill.fillAmount = 0f;
+        // This runtime Image has no source sprite. Image.Type.Filled does not
+        // reliably clip a sprite-less image and can render as a solid full bar.
+        // Resize its RectTransform from the left edge instead.
+        _fill.type     = Image.Type.Simple;
         _fill.raycastTarget = false;
-        StretchFull(fillGO.GetComponent<RectTransform>());
+        SetFillFraction(0f);
 
         // Thin highlight line at top
         var shine = new GameObject("Shine", typeof(RectTransform), typeof(Image));
@@ -305,6 +317,17 @@ public class XpBar : MonoBehaviour
         rt.anchorMin = Vector2.zero;
         rt.anchorMax = Vector2.one;
         rt.offsetMin = rt.offsetMax = Vector2.zero;
+    }
+
+    void SetFillFraction(float fraction)
+    {
+        if (_fill == null) return;
+        RectTransform rt = _fill.rectTransform;
+        float clamped = Mathf.Clamp01(fraction);
+        rt.anchorMin = Vector2.zero;
+        rt.anchorMax = new Vector2(clamped, 1f);
+        rt.offsetMin = Vector2.zero;
+        rt.offsetMax = Vector2.zero;
     }
 }
 #endif

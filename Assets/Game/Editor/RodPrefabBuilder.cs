@@ -17,9 +17,10 @@ public static class RodPrefabBuilder
     const string ANIM_CTRL     = "Assets/Game/Characters/Engineer/Animations/AnimationController.controller";
 
     static readonly string[] ClassNames = { "Marauder", "Ironclad", "Shadowblade", "Cleric", "Arcanist" };
-    // The 5 canonical hero prefabs the combat stack applies to. (Legacy Engineer/
-    // Guardian/Medic prefabs were removed; Wraith is an enemy, not a player class.)
-    static readonly string[] ExistingCombatPrefabNames = ClassNames;
+    // All current hero prefabs the combat stack applies to. The destructive legacy
+    // rebuild above still owns only its original five; Necromancer has its own builder.
+    static readonly string[] ExistingCombatPrefabNames =
+        { "Marauder", "Ironclad", "Shadowblade", "Cleric", "Arcanist", "Necromancer" };
 
     [MenuItem("BCE/Setup/4 ▶ Create Class Prefabs (5 Classes)", priority = 4)]
     static void Build()
