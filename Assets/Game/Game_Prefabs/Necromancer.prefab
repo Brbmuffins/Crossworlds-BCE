@@ -54,10 +54,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9b91ecbcc199f4492b9a91e820070131, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Mirror::Mirror.NetworkIdentity
   sceneId: 0
-  _assetId: 1636649974
+  _assetId: 2039216943
   serverOnly: 0
   visibility: 0
   hasSpawned: 0
@@ -71,7 +71,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 125492436b0ac9744afb7626ae9d8fb4, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerIdentity
   syncDirection: 0
   syncMode: 0
@@ -140,7 +140,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 932cce511b66cb3489da31f0adac5688, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement
   syncDirection: 0
   syncMode: 0
@@ -171,7 +171,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3ca93769a4cf1824696ebd38dfb364db, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CastAnimator
 --- !u!114 &8311533740198081284
 MonoBehaviour:
@@ -183,7 +183,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6b52a347fbbeb824b977decb57a69f81, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Health
   syncDirection: 0
   syncMode: 0
@@ -197,7 +197,7 @@ MonoBehaviour:
   enemyHealthBarHeightOffset: 0.25
   enemyHealthBarFixedHeight: -1
   showEnemyHoverInfo: 1
-  enemyDisplayName:
+  enemyDisplayName: 
   enemyLevel: 0
   autoRespawnPlayers: 1
   playerRespawnDelay: 10
@@ -245,7 +245,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 97ddc4b0f30335c489bff19a29403a09, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CharacterStats
   syncDirection: 0
   syncMode: 0
@@ -291,7 +291,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a553cb17010b2403e8523b558bffbc14, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Mirror.Components::Mirror.NetworkTransformUnreliable
   syncDirection: 1
   syncMode: 0
@@ -325,7 +325,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7f6f3bf89aa97405989c802ba270f815, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Mirror.Components::Mirror.NetworkAnimator
   syncDirection: 1
   syncMode: 0
@@ -342,7 +342,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 822480ea9951a9642bba896b0e3be732, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerAnimator
   combatCheckRadius: 10
   combatCheckInterval: 0.5
@@ -358,7 +358,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0f4dc9b6a1e7439aa82731d25fb408ce, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AbilityCaster
   syncDirection: 0
   syncMode: 0
@@ -395,22 +395,22 @@ MonoBehaviour:
   indicatorTextureHeal: {fileID: 2800000, guid: 0d383f0cd0395064eb4b64619b2840f3, type: 3}
   indicatorTextureSupport: {fileID: 2800000, guid: a9f31fa68537daf4799d1038b8f9fc6d, type: 3}
   spellbook:
-  - abilityName: Necrotic Bolt
+  - abilityName: Wave of Death
     description: Starter targeted death-magic strike.
     variantOnly: 0
     variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
-    shape: 0
+    shape: 1
     category: 0
-    range: 12
-    coneAngle: 60
-    useFixedRange: 0
-    rectWidth: 1.5
+    range: 18
+    coneAngle: 40
+    useFixedRange: 1
+    rectWidth: 2
     indicatorSize: 1.5
     spawnTurret: 0
     turretPrefab: {fileID: 0}
-    cooldown: 1.5
-    manaCost: 0
-    icon: {fileID: 21300000, guid: 1bc21f5844138bf44a721e5d99408301, type: 3}
+    cooldown: 4
+    manaCost: 10
+    icon: {fileID: 21300000, guid: eb3dfc28aacaad34d8537a953199899d, type: 3}
     instantCast: 0
     castTime: 0.45
     marauderCastAnimation: {fileID: -203655887218126122, guid: 2fc2ec5cc1b1f954abf14bca56bcb3b6, type: 3}
@@ -425,7 +425,7 @@ MonoBehaviour:
     animationLandingPoint: 0.8
     chargeable: 0
     maxChargeTime: 1.5
-    damage: 20
+    damage: 10
     damageDelay: 0
     secondaryDamage: 0
     secondaryDamageDelay: 0
@@ -434,14 +434,14 @@ MonoBehaviour:
     targetTag: Enemy
     chargedTint: {r: 0, g: 0, b: 0, a: 0}
     fireVisual: 0
-    castVFX: {fileID: 0}
-    castingVFX: {fileID: 0}
+    castVFX: {fileID: 2606535738377337154, guid: d7bb948af58e0da4da8136b8b9c3b8f3, type: 3}
+    castingVFX: {fileID: 8211494444665355446, guid: 269acaed0cb9a4547847e7eac0774b3b, type: 3}
     healVFX: {fileID: 0}
-    hitVFX: {fileID: 0}
+    hitVFX: {fileID: 7966645001350468903, guid: 64002d7c87641fe47bf5a99000b92e95, type: 3}
     shieldVFX: {fileID: 0}
     chainVFX: {fileID: 0}
-    castVFXAtCaster: 0
-    hitVFXFollowsTarget: 0
+    castVFXAtCaster: 1
+    hitVFXFollowsTarget: 1
     castSFX: {fileID: 0}
     hitSFX: {fileID: 0}
     sfxVolume: 0.85
@@ -468,11 +468,11 @@ MonoBehaviour:
     pullStopDistance: 1.25
     knockUpHeight: 2.5
     knockUpDuration: 0.8
-    usePulseDamage: 0
-    pulseCount: 0
-    pulseInterval: 0
-    pulseRadius: 0
-    pulseDamage: 0
+    usePulseDamage: 1
+    pulseCount: 6
+    pulseInterval: 0.5
+    pulseRadius: 1
+    pulseDamage: 10
     pulseVFXLifetime: 0
     deployablePrefab: {fileID: 0}
     variants: []
@@ -722,7 +722,7 @@ MonoBehaviour:
   equippedIndices: 00000000010000000200000003000000
   _equippedAbilities:
   - abilityName: Ability
-    description:
+    description: 
     variantOnly: 0
     variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
     shape: 0
@@ -803,7 +803,7 @@ MonoBehaviour:
     deployablePrefab: {fileID: 0}
     variants: []
   - abilityName: Ability
-    description:
+    description: 
     variantOnly: 0
     variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
     shape: 0
@@ -884,7 +884,7 @@ MonoBehaviour:
     deployablePrefab: {fileID: 0}
     variants: []
   - abilityName: Ability
-    description:
+    description: 
     variantOnly: 0
     variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
     shape: 0
@@ -965,7 +965,7 @@ MonoBehaviour:
     deployablePrefab: {fileID: 0}
     variants: []
   - abilityName: Ability
-    description:
+    description: 
     variantOnly: 0
     variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
     shape: 0
@@ -1111,7 +1111,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5866666021909216657, guid: 86b2a547bed3be845b217b7a3ca8b74f, type: 3}
       propertyPath: m_Controller
-      value:
+      value: 
       objectReference: {fileID: 9100000, guid: 601ef66039a6a3a48b122d8827ea43f3, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
