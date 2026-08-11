@@ -641,7 +641,7 @@ public static class NecromancerSetupBuilder
         if (ui.sceneClassHeightMultipliers != null)
             Array.Copy(ui.sceneClassHeightMultipliers, heights,
                 Math.Min(ui.sceneClassHeightMultipliers.Length, heights.Length));
-        heights[ClassIndex] = 1f;
+        heights[ClassIndex] = 1.18f;
         ui.sceneClassHeightMultipliers = heights;
 
         EditorUtility.SetDirty(ui);

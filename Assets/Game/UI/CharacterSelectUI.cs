@@ -41,7 +41,7 @@ public class CharacterSelectUI : MonoBehaviour
     public Transform     previewSpawnPoint;
     public float         rotationSpeed = 22f;
     [Tooltip("Scene-stage height relative to Arcanist, in class-index order.")]
-    public float[]       sceneClassHeightMultipliers = { 1.22f, 1.12f, 0.96f, 1.02f, 1.00f, 1.00f };
+    public float[]       sceneClassHeightMultipliers = { 1.22f, 1.12f, 0.96f, 1.02f, 1.00f, 1.18f };
 
     // ── Runtime refs ─────────────────────────────────────────────────────────
     int           _sel;
