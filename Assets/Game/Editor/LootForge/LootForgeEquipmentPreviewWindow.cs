@@ -101,6 +101,7 @@ namespace Crossworlds.EditorTools.LootForge
                     ? "Left-drag to move. Hold Shift and drag vertically to move forward/back."
                     : "Left-drag to rotate. Hold Shift and drag horizontally to roll.",
                 EditorStyles.miniLabel);
+            DrawSaveTransformButton();
 
             EnsurePreview(nextItem);
             Rect previewRect = GUILayoutUtility.GetRect(
@@ -130,9 +131,13 @@ namespace Crossworlds.EditorTools.LootForge
             localEulerAngles = EditorGUILayout.Vector3Field(
                 "Rotation X / Y / Z", localEulerAngles);
             ApplyTransformToPreview();
+        }
 
+        void DrawSaveTransformButton()
+        {
             GUI.backgroundColor = new Color(0.35f, 0.8f, 0.45f);
-            if (GUILayout.Button("Update and Save Transform", GUILayout.Height(34f))) SaveTransform();
+            if (GUILayout.Button("Update and Save Transform", GUILayout.Height(34f)))
+                SaveTransform();
             GUI.backgroundColor = Color.white;
             EditorGUILayout.HelpBox(SaveDestinationText(), MessageType.None);
         }
