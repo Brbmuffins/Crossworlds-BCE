@@ -207,6 +207,23 @@ public sealed class InventoryBagUI : MonoBehaviour
         StartCoroutine(PostEquip(slot, false));
     }
 
+    public void UnequipEquipmentPosition(int equipmentPosition, string itemId)
+    {
+        if (equipmentPosition < 100 || string.IsNullOrEmpty(itemId)) return;
+        StartCoroutine(PostEquip(new InventorySlotData
+        {
+            slot_index = equipmentPosition,
+            item_id = itemId,
+            quantity = 1,
+            equipped = 1
+        }, false));
+    }
+
+    public bool ContainsScreenPoint(Vector2 screenPosition, Camera eventCamera) =>
+        _open && _dragHandle != null && _dragHandle.panel != null &&
+        RectTransformUtility.RectangleContainsScreenPoint(
+            _dragHandle.panel, screenPosition, eventCamera);
+
     void RenderSlots()
     {
         if (_view == null) return;
@@ -299,6 +316,13 @@ public sealed class InventoryBagUI : MonoBehaviour
         var slot = VisibleSlot(visibleIndex);
         ClearDragIcon();
         if (slot == null || _dragHandle == null || _dragHandle.panel == null) return;
+        if (slot.equipped == 0 && CharacterSheetUI.Instance != null &&
+            CharacterSheetUI.Instance.AcceptsInventoryDrop(
+                slot.item_id, eventData.position, eventData.pressEventCamera))
+        {
+            StartCoroutine(PostEquip(slot, true));
+            return;
+        }
         if (RectTransformUtility.RectangleContainsScreenPoint(_dragHandle.panel, eventData.position, eventData.pressEventCamera))
             return;
 
@@ -455,6 +479,7 @@ public sealed class InventoryBagUI : MonoBehaviour
             RenderSlots();
             EquipmentChanged?.Invoke();
             StartCoroutine(FetchInventory());
+            PlayerIdentity.Local?.CmdRefreshEquipment();
         }
         else _view.SetStatus($"Equip failed: {request.error}");
     }

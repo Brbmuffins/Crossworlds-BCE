@@ -54,11 +54,17 @@ public static class LootPersistenceService
             displayName = definition.displayName?.Trim(),
             rarity = RarityName(definition.rarity),
             itemType = ItemTypeName(definition.databaseItemType),
+            equipmentSlot = EquipmentSlotName(definition.equipmentSlot),
             iconId = string.IsNullOrWhiteSpace(definition.iconId) ? null : definition.iconId,
             sellValue = Mathf.Max(0, definition.sellValue),
             crafted = definition.crafted,
             stackable = definition.stackable,
-            maxStackSize = definition.stackable ? Mathf.Max(1, definition.maxStackSize) : 1
+            maxStackSize = definition.stackable ? Mathf.Max(1, definition.maxStackSize) : 1,
+            twoHanded = definition.IsTwoHanded,
+            statStr = Mathf.Max(0, definition.bonusStrength),
+            statAgi = Mathf.Max(0, definition.bonusAgility),
+            statInt = Mathf.Max(0, definition.bonusIntelligence),
+            statVit = Mathf.Max(0, definition.bonusVitality)
         };
         string json = JsonUtility.ToJson(dto);
         using var request = new UnityWebRequest(
@@ -72,6 +78,9 @@ public static class LootPersistenceService
         if (request.result != UnityWebRequest.Result.Success)
             Debug.LogWarning($"[LOOT DB] Sync '{definition.itemId}' failed: " +
                              $"{request.error} {request.downloadHandler.text}");
+        else
+            Debug.Log($"[LOOT DB] Synced '{definition.itemId}' as " +
+                      $"{dto.itemType}/{dto.equipmentSlot ?? "inventory"}.");
     }
 
     static string RarityName(ItemRarity rarity) => rarity switch
@@ -97,12 +106,26 @@ public static class LootPersistenceService
         _ => "material"
     };
 
+    public static string EquipmentSlotName(LootEquipmentSlot slot) => slot switch
+    {
+        LootEquipmentSlot.Head => "head",
+        LootEquipmentSlot.Chest => "chest",
+        LootEquipmentSlot.Legs => "legs",
+        LootEquipmentSlot.Feet => "feet",
+        LootEquipmentSlot.Hands => "hands",
+        LootEquipmentSlot.MainHand => "main_hand",
+        LootEquipmentSlot.OffHand => "off_hand",
+        LootEquipmentSlot.Ring => "ring",
+        LootEquipmentSlot.Trinket => "trinket",
+        _ => null
+    };
+
     [Serializable]
     sealed class LootDefinitionDto
     {
-        public string itemId, displayName, rarity, itemType, iconId;
-        public int sellValue, maxStackSize;
-        public bool crafted, stackable;
+        public string itemId, displayName, rarity, itemType, equipmentSlot, iconId;
+        public int sellValue, maxStackSize, statStr, statAgi, statInt, statVit;
+        public bool crafted, stackable, twoHanded;
     }
 }
 

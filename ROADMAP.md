@@ -351,10 +351,26 @@ Highest-value phase: every piece exists, only glue is missing.
   server-doc convention). *Accept:* kills → XP bar moves → level-up screen → DB row updated.
   *Deps:* 1.6. **READY**
 
-- **3.2 — Character sheet + equip stats.** Files: `UI/CharacterSheetUI.cs`,
-  `Items/Scripts/{CharacterStats,EquipmentUI,EquipmentSlot,TooltipUI}.cs`, `UI/InventoryBagUI.cs`.
-  Verify equip → `POST /api/inventory/equip` → stat recalc from `stat_bonus` JSON. *Accept:*
-  equipping a seeded item changes displayed stats and persists across relog. *Deps:* 1.6. **READY**
+- **3.2 — Character sheet + equip stats.** **CODE COMPLETE / LIVE BACK END DEPLOYED
+  (2026-08-10).** Loot Forge now authors equipment slots, wearable visuals, attachment offsets,
+  stat bonuses, and transparent inventory PNGs. Mirror synchronizes equipped state and wearable
+  visuals; the character sheet displays a paper doll and effective stats. The live API validates
+  canonical slots, preserves server-owned equip state, and exposes equipped items to the game
+  server. *Runtime acceptance remaining:* equip a seeded weapon with two clients, verify the visual
+  replicates, persists across relog, and tune its skeleton-specific hand offset. *Deps:* 1.6.
+  **2026-08-10 interaction/profile follow-up:** character slots support right-click unequip and
+  drag/drop with the inventory; Loot Forge supports reusable attachment profiles plus per-item
+  overrides and two-handed off-hand exclusion. Unity compilation passes. The additive
+  `items.two_handed` migration, atomic off-hand conflict handling, auth patch, and matching
+  dedicated server were deployed and health-checked on 2026-08-10.
+  **Equipped-storage follow-up (2026-08-10):** equipped rows now move to reserved server positions
+  (100–108), genuinely freeing their 24-slot bag position; unequip/swap returns displaced gear to
+  the first free bag position and rejects a full bag safely. Inventory saves preserve equipped rows.
+  Character-window drag-back supports reserved positions, and the paper-doll preview renders its
+  unscaled-time animation every frame instead of at the 0.25-second data refresh cadence.
+  A Mirror `equipmentRevision` SyncVar now forces visual/UI rebuilds when the synchronized equipment
+  list becomes completely empty; the character drag icon uses a sorting-order-1000 overlay so it
+  remains visible above the inventory window. Matching client/server builds deployed 2026-08-10.
 
 - **3.3 — Crafting loop client.** ✅ code-side (2026-07-03 profession session)
   `ForgeCraftingPanel.cs` — Smelt + Craft tabs, progress bar, ingredient shortage highlight in red.

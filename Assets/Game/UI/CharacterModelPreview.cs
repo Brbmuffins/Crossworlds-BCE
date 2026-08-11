@@ -22,7 +22,7 @@ public sealed class CharacterModelPreview
         CreateStage();
     }
 
-    public void Refresh(GameObject sourcePlayer)
+    public void Refresh(GameObject sourcePlayer, bool rebuild = false)
     {
         if (_target != null)
         {
@@ -31,7 +31,7 @@ public sealed class CharacterModelPreview
             _target.enabled = true;
         }
         if (sourcePlayer == null) return;
-        if (sourcePlayer == _sourcePlayer)
+        if (!rebuild && sourcePlayer == _sourcePlayer)
         {
             if (_camera != null) _camera.Render();
             return;
@@ -62,6 +62,8 @@ public sealed class CharacterModelPreview
             animator.runtimeAnimatorController = sourceAnimator.runtimeAnimatorController;
             animator.applyRootMotion = false;
             animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+            animator.updateMode = AnimatorUpdateMode.UnscaledTime;
+            animator.speed = 1f;
         }
 
         SetLayerRecursive(_model.transform, PreviewLayer);
@@ -75,6 +77,11 @@ public sealed class CharacterModelPreview
     {
         if (_texture != null) { _texture.Release(); Object.Destroy(_texture); }
         if (_stage != null) Object.Destroy(_stage);
+    }
+
+    public void RenderFrame()
+    {
+        if (_camera != null && _model != null) _camera.Render();
     }
 
     void CreateStage()
@@ -95,6 +102,7 @@ public sealed class CharacterModelPreview
         var cameraObject = new GameObject("Camera");
         cameraObject.transform.SetParent(_stage.transform, false);
         _camera = cameraObject.AddComponent<Camera>();
+        _camera.enabled = false;
         _camera.cullingMask = 1 << PreviewLayer;
         _camera.clearFlags = CameraClearFlags.SolidColor;
         _camera.backgroundColor = new Color(0.045f, 0.03f, 0.055f, 1f);

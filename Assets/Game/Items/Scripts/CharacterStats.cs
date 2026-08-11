@@ -128,6 +128,10 @@ public class CharacterStats : NetworkBehaviour
     [SyncVar(hook = nameof(OnProgressionValueChanged))] private int _progressionAgi = 5;
     [SyncVar(hook = nameof(OnProgressionValueChanged))] private int _progressionInt = 5;
     [SyncVar(hook = nameof(OnProgressionValueChanged))] private int _progressionVit = 10;
+    [SyncVar(hook = nameof(OnProgressionValueChanged))] private int _equipmentStr;
+    [SyncVar(hook = nameof(OnProgressionValueChanged))] private int _equipmentAgi;
+    [SyncVar(hook = nameof(OnProgressionValueChanged))] private int _equipmentInt;
+    [SyncVar(hook = nameof(OnProgressionValueChanged))] private int _equipmentVit;
     private float _progressionDamagePct;
     private float _progressionMaxHealth;
     private float _progressionMaxMana;
@@ -140,6 +144,10 @@ public class CharacterStats : NetworkBehaviour
 
     public float EffectiveCooldownReduction =>
         Mathf.Clamp(CooldownReduction + _temporaryCDR, 0f, MaxCooldownReduction);
+    public int EffectiveStrength => _progressionStr + _equipmentStr;
+    public int EffectiveAgility => _progressionAgi + _equipmentAgi;
+    public int EffectiveIntelligence => _progressionInt + _equipmentInt;
+    public int EffectiveVitality => _progressionVit + _equipmentVit;
 
     public void SetMasteryBonuses(float dmgPct, float healPct, float cdrPct, float maxHpPct)
     {
@@ -155,13 +163,24 @@ public class CharacterStats : NetworkBehaviour
     public void SetProgressionStats(int classIndex, int level, int strength, int agility,
         int intelligence, int vitality)
     {
-        _progressionClassIndex = Mathf.Clamp(classIndex, 0, 5);
+        _progressionClassIndex = Mathf.Clamp(classIndex, 0, 4);
         _progressionLevel = Mathf.Max(1, level);
         _progressionStr = Mathf.Max(0, strength);
         _progressionAgi = Mathf.Max(0, agility);
         _progressionInt = Mathf.Max(0, intelligence);
         _progressionVit = Mathf.Max(0, vitality);
 
+        RecalculateProgressionBonuses();
+        Recalculate();
+    }
+
+    [Server]
+    public void SetEquipmentStatBonuses(int strength, int agility, int intelligence, int vitality)
+    {
+        _equipmentStr = Mathf.Max(0, strength);
+        _equipmentAgi = Mathf.Max(0, agility);
+        _equipmentInt = Mathf.Max(0, intelligence);
+        _equipmentVit = Mathf.Max(0, vitality);
         RecalculateProgressionBonuses();
         Recalculate();
     }
@@ -176,22 +195,21 @@ public class CharacterStats : NetworkBehaviour
     {
         int primaryValue = _progressionClassIndex switch
         {
-            0 => _progressionInt, // Marauder (legacy Engineer)
-            1 => _progressionVit, // Ironclad (legacy Guardian)
-            2 => _progressionAgi, // Shadowblade / Night Hunter
-            3 => _progressionInt, // Cleric
-            4 => _progressionInt, // Arcanist
-            5 => _progressionInt, // Necromancer
-            _ => _progressionStr
+            0 => EffectiveIntelligence, // Marauder (legacy Engineer)
+            1 => EffectiveVitality, // Ironclad (legacy Guardian)
+            2 => EffectiveAgility, // Shadowblade / Night Hunter
+            3 => EffectiveIntelligence, // Cleric
+            4 => EffectiveIntelligence, // Arcanist
+            _ => EffectiveStrength
         };
         int primaryBaseline = _progressionClassIndex == 1 ? 10 : 5;
 
         _progressionDamagePct =
             Mathf.Max(0, primaryValue - primaryBaseline) * primaryStatDamagePctPerPoint +
-            Mathf.Max(0, _progressionStr - 5) * strengthDamagePctPerPoint;
-        _progressionMaxHealth = Mathf.Max(0, _progressionVit - 10) * maxHealthPerVitality;
-        _progressionMaxMana = Mathf.Max(0, _progressionInt - 5) * maxManaPerIntelligence;
-        _progressionMoveSpeedPct = Mathf.Max(0, _progressionAgi - 5) * moveSpeedPctPerAgility;
+            Mathf.Max(0, EffectiveStrength - 5) * strengthDamagePctPerPoint;
+        _progressionMaxHealth = Mathf.Max(0, EffectiveVitality - 10) * maxHealthPerVitality;
+        _progressionMaxMana = Mathf.Max(0, EffectiveIntelligence - 5) * maxManaPerIntelligence;
+        _progressionMoveSpeedPct = Mathf.Max(0, EffectiveAgility - 5) * moveSpeedPctPerAgility;
     }
 
     public void AddTemporaryCDR(float delta)
