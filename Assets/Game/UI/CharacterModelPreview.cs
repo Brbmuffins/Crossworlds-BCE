@@ -135,6 +135,7 @@ public sealed class CharacterModelPreview
         clone.localPosition = source.localPosition;
         clone.localRotation = source.localRotation;
         clone.localScale = source.localScale;
+        clone.gameObject.SetActive(source.gameObject.activeSelf);
         map[source] = clone;
         for (int i = 0; i < source.childCount; i++) CloneHierarchy(source.GetChild(i), clone, map);
         return clone;
@@ -149,8 +150,8 @@ public sealed class CharacterModelPreview
             var renderer = target.gameObject.AddComponent<SkinnedMeshRenderer>();
             renderer.sharedMesh = source.sharedMesh;
             renderer.sharedMaterials = source.sharedMaterials;
-            renderer.enabled = true;
-            renderer.forceRenderingOff = false;
+            renderer.enabled = source.enabled;
+            renderer.forceRenderingOff = source.forceRenderingOff;
             renderer.localBounds = source.localBounds;
             renderer.quality = source.quality;
             renderer.updateWhenOffscreen = true;
@@ -170,8 +171,8 @@ public sealed class CharacterModelPreview
             target.gameObject.AddComponent<MeshFilter>().sharedMesh = sourceFilter.sharedMesh;
             var renderer = target.gameObject.AddComponent<MeshRenderer>();
             renderer.sharedMaterials = source.sharedMaterials;
-            renderer.enabled = true;
-            renderer.forceRenderingOff = false;
+            renderer.enabled = source.enabled;
+            renderer.forceRenderingOff = source.forceRenderingOff;
             copied++;
         }
         return copied;
