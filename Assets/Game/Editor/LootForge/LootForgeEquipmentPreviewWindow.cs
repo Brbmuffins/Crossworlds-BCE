@@ -35,6 +35,7 @@ namespace Crossworlds.EditorTools.LootForge
         float cameraPitch = 6f;
         float cameraZoom = 1f;
         bool orbiting;
+        bool transforming;
 
         public static void Open(LootItemDefinition activeDefinition)
         {
@@ -97,8 +98,8 @@ namespace Crossworlds.EditorTools.LootForge
             HandleToolShortcuts();
             EditorGUILayout.LabelField(
                 transformTool == TransformToolMode.Move
-                    ? "Drag a colored arrow to move the item."
-                    : "Drag a colored ring to rotate the item.",
+                    ? "Left-drag to move. Hold Shift and drag vertically to move forward/back."
+                    : "Left-drag to rotate. Hold Shift and drag horizontally to roll.",
                 EditorStyles.miniLabel);
 
             EnsurePreview(nextItem);
@@ -106,6 +107,7 @@ namespace Crossworlds.EditorTools.LootForge
                 100f, Mathf.Max(260f, position.height - 285f), GUILayout.ExpandWidth(true));
             EditorGUI.DrawRect(previewRect, new Color(0.08f, 0.08f, 0.08f, 1f));
             DrawPreview(previewRect);
+            HandleDirectTransformDrag(previewRect);
             DrawTransformHandle(previewRect);
             HandleCamera(previewRect);
 
@@ -240,6 +242,7 @@ namespace Crossworlds.EditorTools.LootForge
         {
             Event current = Event.current;
             if (GUIUtility.hotControl != 0 && !orbiting) return;
+            if (transforming) return;
             if (!rect.Contains(current.mousePosition))
             {
                 if (current.type == EventType.MouseUp) orbiting = false;
@@ -266,6 +269,72 @@ namespace Crossworlds.EditorTools.LootForge
                 cameraZoom = Mathf.Clamp(cameraZoom + current.delta.y * 0.05f, 0.55f, 2.2f);
                 current.Use();
             }
+        }
+
+        void HandleDirectTransformDrag(Rect rect)
+        {
+            Event current = Event.current;
+            int controlId = GUIUtility.GetControlID(
+                "LootForgeTransformDrag".GetHashCode(), FocusType.Passive, rect);
+            if (current.type == EventType.MouseDown && current.button == 0 &&
+                rect.Contains(current.mousePosition))
+            {
+                transforming = true;
+                GUIUtility.hotControl = controlId;
+                current.Use();
+            }
+            else if (current.type == EventType.MouseDrag && transforming && current.button == 0)
+            {
+                if (transformTool == TransformToolMode.Move)
+                    ApplyMouseMove(current.delta, current.shift);
+                else
+                    ApplyMouseRotation(current.delta, current.shift);
+                ApplyTransformToPreview();
+                current.Use();
+                Repaint();
+            }
+            else if (current.type == EventType.MouseUp && transforming && current.button == 0)
+            {
+                transforming = false;
+                GUIUtility.hotControl = 0;
+                current.Use();
+                Repaint();
+            }
+
+            if (rect.Contains(current.mousePosition))
+                EditorGUIUtility.AddCursorRect(rect,
+                    transformTool == TransformToolMode.Move ? MouseCursor.MoveArrow : MouseCursor.RotateArrow);
+        }
+
+        void ApplyMouseMove(Vector2 delta, bool depthMode)
+        {
+            if (preview == null || itemInstance == null) return;
+            Bounds bounds = CalculateBounds(characterInstance);
+            float sensitivity = Mathf.Max(0.0005f,
+                bounds.extents.magnitude * cameraZoom * 0.0025f);
+            Vector3 worldDelta = depthMode
+                ? preview.camera.transform.right * (delta.x * sensitivity) +
+                  preview.camera.transform.forward * (-delta.y * sensitivity)
+                : preview.camera.transform.right * (delta.x * sensitivity) +
+                  preview.camera.transform.up * (-delta.y * sensitivity);
+            Transform parent = itemInstance.transform.parent;
+            localPosition += parent != null
+                ? parent.InverseTransformVector(worldDelta) : worldDelta;
+        }
+
+        void ApplyMouseRotation(Vector2 delta, bool rollMode)
+        {
+            const float degreesPerPixel = 0.55f;
+            if (rollMode)
+                localEulerAngles.z -= delta.x * degreesPerPixel;
+            else
+            {
+                localEulerAngles.y -= delta.x * degreesPerPixel;
+                localEulerAngles.x += delta.y * degreesPerPixel;
+            }
+            localEulerAngles.x = Mathf.Repeat(localEulerAngles.x, 360f);
+            localEulerAngles.y = Mathf.Repeat(localEulerAngles.y, 360f);
+            localEulerAngles.z = Mathf.Repeat(localEulerAngles.z, 360f);
         }
 
         void HandleToolShortcuts()
