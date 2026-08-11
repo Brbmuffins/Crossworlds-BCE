@@ -18,6 +18,9 @@ conversation: it names its files, acceptance criteria, and dependencies. Tasks m
 > Mid skybox and now uses cool low-intensity moonlight, reduced ambient/reflection
 > contribution, and subtle blue fog so it reads as night while preserving combat visibility.
 
+> **Cat animation material wiring (2026-08-10):** The `catidle` and `catwalk` FBX
+> material slots now share a URP cat material using the supplied black-cat base-color texture.
+
 ## Phase 0 — Repo Stabilization
 
 *Entry:* now. *Exit:* clean `git status`, one canonical doc set, no secrets in git.
