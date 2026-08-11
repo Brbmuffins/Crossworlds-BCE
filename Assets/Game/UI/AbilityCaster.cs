@@ -268,7 +268,7 @@ public class AbilityDef
     [Min(0)] public int pulseCount = 0;
     [Tooltip("Seconds between each pulse. Leave at 0 to use the default 1 second.")]
     [Min(0f)] public float pulseInterval = 0f;
-    [Tooltip("Damage radius for each pulse. Leave at 0 to use half of the spell indicator size. Chargeable circle spells automatically use their committed damage-zone radius so every pulse matches the visible zone.")]
+    [Tooltip("Damage radius for each circle pulse. Leave at 0 to use half of the spell indicator size. Chargeable circle spells automatically use their committed damage-zone radius. Cone pulses repeat across the committed cone range and angle instead.")]
     [Min(0f)] public float pulseRadius = 0f;
     [Tooltip("Damage dealt by each pulse before character damage bonuses. Leave at 0 to use this spell's Damage value.")]
     [Min(0f)] public float pulseDamage = 0f;
@@ -4074,6 +4074,8 @@ public class AbilityCaster : NetworkBehaviour
         StartPulseEffectsIfNeeded(
             ability,
             pulsePoint,
+            indicator,
+            castOrigin,
             aimTime,
             damageMultiplier);
     }
@@ -4542,16 +4544,40 @@ public class AbilityCaster : NetworkBehaviour
     void StartPulseEffectsIfNeeded(
         AbilityDef ability,
         Vector3 centre,
+        GameObject indicator,
+        Vector3 castOrigin,
         float aimTime,
         float damageMultiplier)
     {
         if (ShouldRunPulseDamage(ability))
         {
-            StartCoroutine(PulseDamage(
-                ability,
-                centre,
-                aimTime,
-                damageMultiplier));
+            if (ability.shape == AbilityShape.Cone)
+            {
+                float chargeFraction = GetChargeFraction(ability, aimTime);
+                float coneScale = ability.useFixedRange
+                    ? Mathf.Lerp(1f, ability.maxChargeSizeMultiplier, chargeFraction)
+                    : indicator != null
+                        ? indicator.transform.localScale.x
+                        : 1f;
+                Vector3 coneForward = indicator != null
+                    ? indicator.transform.forward
+                    : transform.forward;
+
+                StartCoroutine(PulseConeDamage(
+                    ability,
+                    castOrigin,
+                    coneForward,
+                    ability.range * coneScale,
+                    damageMultiplier));
+            }
+            else
+            {
+                StartCoroutine(PulseDamage(
+                    ability,
+                    centre,
+                    aimTime,
+                    damageMultiplier));
+            }
         }
 
         // Pulse healing intentionally shares the authored ground-ring radius,
@@ -4602,6 +4628,53 @@ public class AbilityCaster : NetworkBehaviour
         for (int pulse = 0; pulse < pulseCount; pulse++)
         {
             ApplyPulseDamage(centre, radius, damage, ability.targetTag, ability.hitVFX, vfxLifetime);
+            if (pulse < pulseCount - 1)
+                yield return new WaitForSeconds(interval);
+        }
+    }
+
+    System.Collections.IEnumerator PulseConeDamage(
+        AbilityDef ability,
+        Vector3 origin,
+        Vector3 forward,
+        float range,
+        float damageMultiplier)
+    {
+        int pulseCount = GetPulseCount(
+            ability,
+            GetDefaultPulseCount(ability));
+        if (pulseCount <= 0 || range <= 0f)
+            yield break;
+
+        forward.y = 0f;
+        if (forward.sqrMagnitude < 0.0001f)
+            forward = transform.forward;
+        forward.y = 0f;
+        if (forward.sqrMagnitude < 0.0001f)
+            forward = Vector3.forward;
+        forward.Normalize();
+
+        float damage = GetPulseDamage(
+            ability,
+            GetDefaultPulseDamage(ability),
+            damageMultiplier);
+        float interval = GetPulseInterval(
+            ability,
+            GetDefaultPulseInterval(ability));
+        float vfxLifetime = GetPulseVFXLifetime(
+            ability,
+            GetDefaultPulseVFXLifetime(ability));
+
+        for (int pulse = 0; pulse < pulseCount; pulse++)
+        {
+            ApplyConePulseDamage(
+                ability,
+                origin,
+                forward,
+                range,
+                damage,
+                vfxLifetime);
+
             if (pulse < pulseCount - 1)
                 yield return new WaitForSeconds(interval);
         }
@@ -4731,6 +4804,44 @@ public class AbilityCaster : NetworkBehaviour
             damaged.Add(health);
             DealAbilityDamage(health, damage);
             EmitHitVFX(hitVFX, health.transform.position + Vector3.up * 0.5f, hitVFXLifetime);
+        }
+    }
+
+    void ApplyConePulseDamage(
+        AbilityDef ability,
+        Vector3 origin,
+        Vector3 forward,
+        float range,
+        float damage,
+        float hitVFXLifetime)
+    {
+        Collider[] hits = ZonePhysics.OverlapSphere(
+            gameObject,
+            origin,
+            range);
+        var damaged = new System.Collections.Generic.HashSet<Health>();
+        float halfAngle = Mathf.Max(0f, ability.coneAngle * 0.5f);
+
+        foreach (Collider hit in hits)
+        {
+            if (!TryGetMatchingHealth(
+                    hit,
+                    ability.targetTag,
+                    out Health health) ||
+                !damaged.Add(health))
+                continue;
+
+            Vector3 toTarget = health.transform.position - origin;
+            toTarget.y = 0f;
+            if (toTarget.sqrMagnitude < 0.0001f ||
+                Vector3.Angle(forward, toTarget) > halfAngle)
+                continue;
+
+            DealAbilityDamage(health, damage);
+            EmitHitVFX(
+                ability.hitVFX,
+                health.transform.position + Vector3.up * 0.5f,
+                hitVFXLifetime);
         }
     }
 
@@ -8053,6 +8164,8 @@ public class AbilityCaster : NetworkBehaviour
         StartPulseEffectsIfNeeded(
             effectAbility,
             pulsePoint,
+            indicator,
+            castOrigin,
             aimTime,
             damageMultiplier);
     }
