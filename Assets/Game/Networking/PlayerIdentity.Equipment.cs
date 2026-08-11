@@ -137,6 +137,15 @@ public partial class PlayerIdentity
     {
 #if UNITY_EDITOR || !UNITY_SERVER
         ClearEquipmentVisuals();
+        bool hasMainHandEquipment = false;
+        foreach (EquippedLootState state in equippedLoot)
+            if (state.equipmentSlot == LootEquipmentSlot.MainHand)
+            {
+                hasMainHandEquipment = true;
+                break;
+            }
+        SetBuiltInMainHandVisible(!hasMainHandEquipment);
+
         foreach (EquippedLootState state in equippedLoot)
         {
             LootItemDefinition definition = LootItemCatalog.Find(state.itemId);
@@ -204,6 +213,18 @@ public partial class PlayerIdentity
             if (string.Equals(candidate.name, targetName, StringComparison.OrdinalIgnoreCase))
                 return candidate;
         return null;
+    }
+
+    void SetBuiltInMainHandVisible(bool visible)
+    {
+        // The Marauder prefab predates runtime equipment and contains this sword
+        // directly under its hand. Treat it as the empty-slot/default visual so a
+        // Loot Forge main-hand model replaces it instead of rendering on top of it.
+        const string MarauderStarterWeapon =
+            "tripo_convert_50c13403-dcbc-4ef5-b5cd-4b887d81dcf3";
+        Transform starterWeapon = FindTransform(transform, MarauderStarterWeapon);
+        if (starterWeapon != null && starterWeapon.gameObject.activeSelf != visible)
+            starterWeapon.gameObject.SetActive(visible);
     }
 
     static void DisablePickupBehaviour(GameObject visual)
