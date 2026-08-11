@@ -1,5 +1,7 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Text;
 using Mirror;
 using TMPro;
 using UnityEngine;
@@ -7,6 +9,7 @@ using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.UI;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
+using UnityEngine.Networking;
 
 // ═══════════════════════════════════════════════════════════════════════════
 //  RodChatManager
@@ -199,6 +202,114 @@ public class RodChatManager : NetworkBehaviour
     public void ServerRefreshQuestRewards(NetworkConnectionToClient target)
     {
         if (target != null) TargetRefreshQuestRewards(target);
+    }
+
+    [Server]
+    public void ServerGiveInventoryItem(
+        NetworkConnectionToClient target,
+        RodPlayerAuth auth,
+        string itemId,
+        int quantity)
+    {
+        if (target == null || auth == null) return;
+        StartCoroutine(GiveInventoryItem(target, auth, itemId, quantity));
+    }
+
+    IEnumerator GiveInventoryItem(
+        NetworkConnectionToClient target,
+        RodPlayerAuth auth,
+        string itemId,
+        int quantity)
+    {
+        var payload = new GmGiveItemPayload
+        {
+            characterId = auth.characterId,
+            itemId = itemId,
+            quantity = quantity
+        };
+        string url = ResolveServerAuthBaseUrl() + "/api/inventory/add-item";
+        using var request = new UnityWebRequest(url, "POST");
+        request.uploadHandler = new UploadHandlerRaw(
+            Encoding.UTF8.GetBytes(JsonUtility.ToJson(payload)));
+        request.downloadHandler = new DownloadHandlerBuffer();
+        request.SetRequestHeader("Content-Type", "application/json");
+        request.SetRequestHeader("Authorization", "Bearer " + auth.jwt);
+        request.timeout = 10;
+        yield return request.SendWebRequest();
+
+        if (request.result != UnityWebRequest.Result.Success)
+        {
+            SendGmFeedback(target,
+                $"Give failed ({request.responseCode}): {request.error}");
+            Debug.LogWarning($"[GM] /give failed for {auth.username}: " +
+                             $"{request.responseCode} {request.error} {request.downloadHandler.text}");
+            yield break;
+        }
+
+        GmGiveItemResponse response = null;
+        try { response = JsonUtility.FromJson<GmGiveItemResponse>(request.downloadHandler.text); }
+        catch (ArgumentException) { }
+        int stored = response?.data?.stored ?? 0;
+        int rejected = response?.data?.rejected ?? quantity;
+        if (stored <= 0)
+        {
+            SendGmFeedback(target,
+                "Give failed: " + (string.IsNullOrWhiteSpace(response?.error)
+                    ? "the item was not stored." : response.error));
+            yield break;
+        }
+
+        TargetRefreshGmInventory(target);
+        SendGmFeedback(target, rejected > 0
+            ? $"Added {stored}x {itemId}; {rejected} could not fit in inventory."
+            : $"Added {stored}x {itemId} to your inventory.");
+        Debug.Log($"[GM] {auth.username} gave self {stored}x {itemId} " +
+                  $"(character {auth.characterId}, rejected {rejected}).");
+    }
+
+    [TargetRpc]
+    void TargetRefreshGmInventory(NetworkConnectionToClient target)
+    {
+#if UNITY_EDITOR || !UNITY_SERVER
+        InventoryBagUI.Refresh();
+#endif
+    }
+
+    static string ResolveServerAuthBaseUrl()
+    {
+        string[] args = Environment.GetCommandLineArgs();
+        for (int i = 0; i < args.Length - 1; i++)
+            if (string.Equals(args[i], "-authurl", StringComparison.OrdinalIgnoreCase) &&
+                !string.IsNullOrWhiteSpace(args[i + 1]))
+                return args[i + 1].TrimEnd('/');
+
+        string environmentUrl = Environment.GetEnvironmentVariable("CROSSWORLDS_AUTH_URL");
+        return string.IsNullOrWhiteSpace(environmentUrl)
+            ? ServerConfig.AuthBaseUrl.TrimEnd('/')
+            : environmentUrl.TrimEnd('/');
+    }
+
+    [Serializable]
+    sealed class GmGiveItemPayload
+    {
+        public int characterId;
+        public string itemId;
+        public int quantity;
+    }
+
+    [Serializable]
+    sealed class GmGiveItemResponse
+    {
+        public bool success;
+        public string error;
+        public GmGiveItemResult data;
+    }
+
+    [Serializable]
+    sealed class GmGiveItemResult
+    {
+        public int stored;
+        public int rejected;
     }
 
     [TargetRpc]

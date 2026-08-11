@@ -96,8 +96,49 @@ namespace Crossworlds.EditorTools.EnemyForge
         {
             var serialized = new SerializedObject(definition);
             serialized.Update();
-            DrawPropertySection(serialized, "Enemy Identity & Output", ref showIdentity,
+            EnemyForgeArchetype previousArchetype = definition.archetype;
+            EnemyForgeRootTag previousRootTag = definition.rootTag;
+            DrawPropertySection(serialized, definition.IsNpc ? "NPC Identity & Output" : "Enemy Identity & Output", ref showIdentity,
                 "archetype", "rootTag", "templateId", "outputFolder");
+            serialized.ApplyModifiedProperties();
+
+            bool archetypeChanged = definition.archetype != previousArchetype;
+            bool rootTagChanged = definition.rootTag != previousRootTag;
+            if (archetypeChanged)
+            {
+                if (definition.IsNpc)
+                    definition.rootTag = EnemyForgeRootTag.NPC;
+                else if (definition.rootTag == EnemyForgeRootTag.NPC)
+                    definition.rootTag = EnemyForgeRootTag.Enemy;
+            }
+            else if (rootTagChanged)
+            {
+                if (definition.rootTag == EnemyForgeRootTag.NPC)
+                    definition.archetype = EnemyForgeArchetype.NPC;
+                else if (previousRootTag == EnemyForgeRootTag.NPC && definition.IsNpc)
+                    definition.archetype = EnemyForgeArchetype.Melee;
+            }
+            if (archetypeChanged || rootTagChanged)
+                EditorUtility.SetDirty(definition);
+
+            serialized.Update();
+
+            if (definition.IsNpc)
+            {
+                DrawPropertySection(serialized, "NPC Identity", ref showVitals,
+                    "enemyDisplayName");
+                DrawPropertySection(serialized, "Movement", ref showMovement,
+                    "moveSpeed", "acceleration", "angularSpeed", "agentRadius", "agentHeight",
+                    "agentBaseOffset", "stoppingDistance", "enableRoaming", "roamingRadius",
+                    "roamingMinWait", "roamingMaxWait");
+                EditorGUILayout.HelpBox(
+                    "NPC creates a non-combat character with no attacks, Health, XP, or loot. " +
+                    "Movement is controlled by the server and synchronized through Mirror.",
+                    MessageType.Info);
+                serialized.ApplyModifiedProperties();
+                return;
+            }
+
             DrawPropertySection(serialized, "Vitals", ref showVitals,
                 "enemyDisplayName", "enemyLevel", "maxHealth", "robotic");
             DrawPropertySection(serialized, "Movement & Perception", ref showMovement,
@@ -1001,6 +1042,13 @@ namespace Crossworlds.EditorTools.EnemyForge
             DrawAnimationSpeedSlider("Animation Speed", definition.idleAnimation, ref definition.idleAnimationSpeed);
             DrawAnimationChoice("Chase / Movement", clips, ref definition.chaseAnimation);
             DrawAnimationSpeedSlider("Animation Speed", definition.chaseAnimation, ref definition.chaseAnimationSpeed);
+            if (definition.IsNpc)
+            {
+                EditorGUILayout.HelpBox(
+                    "Non-combat NPCs use only Idle and Chase / Movement animations.",
+                    MessageType.Info);
+                return;
+            }
             DrawAnimationChoice("Combat Attack 1", clips, ref definition.attackAnimation);
             DrawAnimationSpeedSlider("Animation Speed", definition.attackAnimation, ref definition.attackAnimationSpeed);
             DrawAttackTimingSlider("Attack 1 Hit / VFX Timing", definition.attackAnimation,

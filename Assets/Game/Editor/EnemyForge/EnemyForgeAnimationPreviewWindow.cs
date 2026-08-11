@@ -411,6 +411,7 @@ namespace Crossworlds.EditorTools.EnemyForge
             var states = new List<PreviewState>();
             Add(states, "Idle", d.idleAnimation, d.idleAnimationSpeed);
             Add(states, "Chase", d.chaseAnimation, d.chaseAnimationSpeed);
+            if (d.IsNpc) return states;
             Add(states, "Attack 1", d.attackAnimation, d.attackAnimationSpeed,
                 d.attackImpactPoint, 0, d.attackVfxOffset);
             Add(states, "Attack 2", d.attackAnimation2, d.attackAnimationSpeed2,

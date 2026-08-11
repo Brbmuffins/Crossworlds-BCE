@@ -60,6 +60,9 @@ public static class GmCommandRouter
             case "freecam":
                 HandleFreeCamera(parts, sender, chat);
                 return true;
+            case "give":
+                HandleGive(parts, sender, chat);
+                return true;
             default:
                 chat.SendGmFeedback(sender, $"Unknown GM command '/{command}'. Try /gmhelp.");
                 return true;
@@ -247,10 +250,50 @@ public static class GmCommandRouter
         Debug.Log($"[GM] {auth.username} set free camera={enabled} speed={auth.gmFreeCameraSpeed:0.##}.");
     }
 
+    static void HandleGive(string[] parts, NetworkConnectionToClient sender, RodChatManager chat)
+    {
+        if (!RequireActiveGm(sender, chat, "give", out RodPlayerAuth auth))
+            return;
+
+        if (parts.Length < 2 || parts.Length > 3)
+        {
+            chat.SendGmFeedback(sender, "Usage: /give <item-id> [quantity]");
+            return;
+        }
+
+        string itemId = parts[1].Trim();
+        if (!IsValidItemId(itemId))
+        {
+            chat.SendGmFeedback(sender,
+                "Item ID must be 1-64 lowercase letters, numbers, underscores, or hyphens.");
+            return;
+        }
+
+        int quantity = 1;
+        if (parts.Length == 3 && !int.TryParse(parts[2], out quantity))
+        {
+            chat.SendGmFeedback(sender, "Quantity must be a whole number from 1 to 99.");
+            return;
+        }
+        if (quantity < 1 || quantity > 99)
+        {
+            chat.SendGmFeedback(sender, "Quantity must be from 1 to 99.");
+            return;
+        }
+        if (auth.characterId <= 0 || string.IsNullOrWhiteSpace(auth.jwt) || auth.jwt == "dev")
+        {
+            chat.SendGmFeedback(sender,
+                "This command requires a logged-in persistent character and cannot be used by the local dev identity.");
+            return;
+        }
+
+        chat.ServerGiveInventoryItem(sender, auth, itemId, quantity);
+    }
+
     static void SendHelp(NetworkConnectionToClient sender, RodChatManager chat)
     {
         chat.SendGmFeedback(sender,
-            "GM commands: /gm on|off, /arrive hub|darkwood|ashen|boneyard|pvp, /fly [on|off], /speed <multiplier>, /freecam [on|off] [speed], /freecam speed <value>.");
+            "GM commands: /gm on|off, /give <item-id> [quantity], /arrive hub|darkwood|ashen|boneyard|pvp, /fly [on|off], /speed <multiplier>, /freecam [on|off] [speed], /freecam speed <value>.");
     }
 
     static bool RequireActiveGm(
@@ -341,6 +384,16 @@ public static class GmCommandRouter
     static string NormalizeKey(string value)
     {
         return value.Replace(" ", "").Replace("-", "").Replace("_", "").ToLowerInvariant();
+    }
+
+    static bool IsValidItemId(string value)
+    {
+        if (string.IsNullOrEmpty(value) || value.Length > 64) return false;
+        foreach (char c in value)
+            if (!(c >= 'a' && c <= 'z') && !(c >= '0' && c <= '9') &&
+                c != '_' && c != '-')
+                return false;
+        return true;
     }
 
     static bool CanLoadScene(string sceneName)

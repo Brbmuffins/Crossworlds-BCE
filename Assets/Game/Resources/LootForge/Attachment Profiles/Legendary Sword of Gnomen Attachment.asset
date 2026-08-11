@@ -17,4 +17,10 @@ MonoBehaviour:
   localPosition: {x: 0.15302353, y: 0.031073652, z: 0.059614666}
   localEulerAngles: {x: 2.199713, y: 346.80023, z: 78.100075}
   localScale: {x: 1, y: 1, z: 1}
+  classOverrides:
+  - classIndex: 0
+    attachmentBoneName: 
+    localPosition: {x: 0.0031275267, y: 0.31779495, z: 0.25675735}
+    localEulerAngles: {x: 246.47948, y: 29.920055, z: 28.380054}
+    localScale: {x: 1, y: 1, z: 1}
   twoHanded: 0

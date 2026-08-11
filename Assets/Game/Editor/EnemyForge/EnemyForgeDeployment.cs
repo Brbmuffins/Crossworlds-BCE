@@ -25,7 +25,7 @@ namespace Crossworlds.EditorTools.EnemyForge
         static void OnPlayModeStateChanged(PlayModeStateChange state)
         {
             if (state != PlayModeStateChange.ExitingEditMode) return;
-            bool hasNetworkEnemy = false;
+            bool hasNetworkActor = false;
             bool hasNetworkManager = false;
             for (int i = 0; i < SceneManager.sceneCount; i++)
             {
@@ -33,17 +33,19 @@ namespace Crossworlds.EditorTools.EnemyForge
                 if (!scene.isLoaded) continue;
                 foreach (GameObject root in scene.GetRootGameObjects())
                 {
-                    if (!hasNetworkEnemy && root.GetComponentInChildren<EnemyController>(true) != null &&
+                    if (!hasNetworkActor &&
+                        (root.GetComponentInChildren<EnemyController>(true) != null ||
+                         root.GetComponentInChildren<ForgedNpcController>(true) != null) &&
                         root.GetComponentInChildren<NetworkIdentity>(true) != null)
-                        hasNetworkEnemy = true;
+                        hasNetworkActor = true;
                     if (!hasNetworkManager && root.GetComponentInChildren<RodNetworkManager>(true) != null)
                         hasNetworkManager = true;
                 }
             }
-            if (hasNetworkEnemy && !hasNetworkManager)
+            if (hasNetworkActor && !hasNetworkManager)
             {
                 EditorUtility.DisplayDialog("Network Manager Required",
-                    "This scene contains server-authoritative enemies but no RodNetworkManager. Start through LoginScene and enter this scene through the normal network flow. Also save the scene after placing new enemies.",
+                    "This scene contains server-authoritative forged characters but no RodNetworkManager. Start through LoginScene and enter this scene through the normal network flow. Also save the scene after placing new characters.",
                     "OK");
             }
         }
@@ -53,17 +55,28 @@ namespace Crossworlds.EditorTools.EnemyForge
             var result = new List<EnemyForgeIssue>();
             if (prefab == null)
             {
-                result.Add(new EnemyForgeIssue(EnemyForgeSeverity.Error, "Build or select a forged enemy prefab first."));
+                result.Add(new EnemyForgeIssue(EnemyForgeSeverity.Error, "Build or select a forged prefab first."));
                 return result;
             }
             if (!PrefabUtility.IsPartOfPrefabAsset(prefab))
                 result.Add(new EnemyForgeIssue(EnemyForgeSeverity.Error, "The deployment target must be a saved prefab asset."));
             if (prefab.GetComponent<NetworkIdentity>() == null)
                 result.Add(new EnemyForgeIssue(EnemyForgeSeverity.Error, "NetworkIdentity is missing."));
-            if (prefab.GetComponent<EnemyController>() == null)
-                result.Add(new EnemyForgeIssue(EnemyForgeSeverity.Error, "EnemyController is missing."));
-            if (prefab.GetComponent<Health>() == null)
-                result.Add(new EnemyForgeIssue(EnemyForgeSeverity.Error, "Health is missing."));
+            bool isNpc = prefab.GetComponent<ForgedNpcController>() != null || prefab.CompareTag("NPC");
+            if (isNpc)
+            {
+                if (prefab.GetComponent<ForgedNpcController>() == null)
+                    result.Add(new EnemyForgeIssue(EnemyForgeSeverity.Error, "ForgedNpcController is missing."));
+                if (!prefab.CompareTag("NPC"))
+                    result.Add(new EnemyForgeIssue(EnemyForgeSeverity.Error, "NPC root tag is missing."));
+            }
+            else
+            {
+                if (prefab.GetComponent<EnemyController>() == null)
+                    result.Add(new EnemyForgeIssue(EnemyForgeSeverity.Error, "EnemyController is missing."));
+                if (prefab.GetComponent<Health>() == null)
+                    result.Add(new EnemyForgeIssue(EnemyForgeSeverity.Error, "Health is missing."));
+            }
             if (prefab.GetComponent<NavMeshAgent>() == null)
                 result.Add(new EnemyForgeIssue(EnemyForgeSeverity.Error, "NavMeshAgent is missing."));
 

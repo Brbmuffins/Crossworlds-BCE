@@ -61,7 +61,7 @@ namespace Crossworlds.EditorTools.EnemyForge
             else
                 root = UnityEngine.Object.Instantiate(d.source);
 
-            root.name = BuildForgedPrefabName(d.source.name);
+            root.name = BuildForgedPrefabName(d.source.name, d.IsNpc);
             Undo.RegisterCreatedObjectUndo(root, "Build enemy prefab");
 
             // Prefab assets should have a neutral root transform. Imported/source prefabs
@@ -101,7 +101,7 @@ namespace Crossworlds.EditorTools.EnemyForge
 
             string folder = ResolveOutputFolder(d);
             string path =
-                $"{folder}/{BuildForgedPrefabName(d.source.name)}.prefab";
+                $"{folder}/{BuildForgedPrefabName(d.source.name, d.IsNpc)}.prefab";
             GameObject prefab =
                 AssetDatabase.LoadAssetAtPath<GameObject>(path);
             if (prefab == null) return null;
@@ -137,13 +137,16 @@ namespace Crossworlds.EditorTools.EnemyForge
         static void Configure(GameObject root, EnemyForgeDefinition d, bool recordUndo)
         {
             if (recordUndo) Undo.RegisterFullObjectHierarchyUndo(root, "Update enemy instance");
-            TrySetRootTag(root, d.rootTag);
+            TrySetRootTag(root, d.IsNpc ? EnemyForgeRootTag.NPC : d.rootTag);
             GetOrAdd<NetworkIdentity>(root);
-            var health = GetOrAdd<Health>(root);
-            health.maxHealth = d.maxHealth;
-            health.isPlayer = false;
-            health.isRobotic = d.robotic;
-            health.ConfigureEnemyHoverIdentity(d.enemyDisplayName, d.enemyLevel);
+            if (!d.IsNpc)
+            {
+                var health = GetOrAdd<Health>(root);
+                health.maxHealth = d.maxHealth;
+                health.isPlayer = false;
+                health.isRobotic = d.robotic;
+                health.ConfigureEnemyHoverIdentity(d.enemyDisplayName, d.enemyLevel);
+            }
 
             var agent = GetOrAdd<NavMeshAgent>(root);
             agent.speed = d.moveSpeed;
@@ -155,6 +158,13 @@ namespace Crossworlds.EditorTools.EnemyForge
             agent.stoppingDistance = d.stoppingDistance;
 
             EnsureCollider(root, d);
+
+            if (d.IsNpc)
+            {
+                ConfigureNonCombatNpc(root, d, recordUndo);
+                EditorUtility.SetDirty(root);
+                return;
+            }
 
             var controller = GetOrAdd<EnemyController>(root);
             var sfx = GetOrAdd<EnemySfxProfile>(root);
@@ -285,6 +295,57 @@ namespace Crossworlds.EditorTools.EnemyForge
             EditorUtility.SetDirty(root);
         }
 
+        static void ConfigureNonCombatNpc(GameObject root, EnemyForgeDefinition d,
+            bool recordUndo)
+        {
+            RemoveComponent<EnemyController>(root, recordUndo);
+            RemoveComponent<EnemyHeavyAttack>(root, recordUndo);
+            RemoveComponent<EnemySfxProfile>(root, recordUndo);
+            RemoveComponent<EnemyWanderAI>(root, recordUndo);
+            RemoveComponent<EnemyAI>(root, recordUndo);
+            RemoveComponent<NpcController>(root, recordUndo);
+            RemoveComponent<Health>(root, recordUndo);
+
+            var npc = GetOrAdd<ForgedNpcController>(root);
+            npc.npcDisplayName = string.IsNullOrWhiteSpace(d.enemyDisplayName)
+                ? root.name.Replace("forged_", string.Empty).Replace("_NPC", string.Empty)
+                : d.enemyDisplayName.Trim();
+            npc.enableRoaming = d.enableRoaming;
+            npc.roamingRadius = d.roamingRadius;
+            npc.roamingMinWait = d.roamingMinWait;
+            npc.roamingMaxWait = Mathf.Max(d.roamingMinWait, d.roamingMaxWait);
+
+            var transformSync = root.GetComponent<NetworkTransformBase>();
+            if (transformSync == null)
+                transformSync = Undo.AddComponent<NetworkTransformUnreliable>(root);
+            transformSync.target = root.transform;
+            transformSync.syncDirection = SyncDirection.ServerToClient;
+            transformSync.syncPosition = true;
+            transformSync.syncRotation = true;
+            transformSync.syncScale = false;
+
+            Animator animator = root.GetComponentInChildren<Animator>(true);
+            if (animator != null)
+            {
+                var animatorSync = GetOrAdd<NetworkAnimator>(root);
+                animatorSync.animator = animator;
+                animatorSync.clientAuthority = false;
+                EditorUtility.SetDirty(animatorSync);
+            }
+
+            EditorUtility.SetDirty(npc);
+            EditorUtility.SetDirty(transformSync);
+        }
+
+        static void RemoveComponent<T>(GameObject root, bool recordUndo)
+            where T : Component
+        {
+            T component = root.GetComponent<T>();
+            if (component == null) return;
+            if (recordUndo) Undo.DestroyObjectImmediate(component);
+            else UnityEngine.Object.DestroyImmediate(component, true);
+        }
+
         static ElementalLightningVFXProfile EnsureElementalLightningProfile()
         {
             var profile = AssetDatabase.LoadAssetAtPath<ElementalLightningVFXProfile>(
@@ -407,7 +468,7 @@ namespace Crossworlds.EditorTools.EnemyForge
 
             try
             {
-                path = EnsureForgedAssetNames(path);
+                path = EnsureForgedAssetNames(path, d.IsNpc);
                 CreateDeployBackup(path);
                 using (var scope = new PrefabUtility.EditPrefabContentsScope(path))
                 {
@@ -432,14 +493,14 @@ namespace Crossworlds.EditorTools.EnemyForge
             }
         }
 
-        static string EnsureForgedAssetNames(string prefabPath)
+        static string EnsureForgedAssetNames(string prefabPath, bool isNpc)
         {
             string folder = Path.GetDirectoryName(prefabPath).Replace('\\', '/');
             string oldName = Path.GetFileNameWithoutExtension(prefabPath);
             if (oldName.StartsWith("forged_", StringComparison.OrdinalIgnoreCase))
                 return prefabPath;
 
-            string newName = BuildForgedPrefabName(oldName);
+            string newName = BuildForgedPrefabName(oldName, isNpc);
             string newPrefabPath = $"{folder}/{newName}.prefab";
             if (AssetDatabase.LoadMainAssetAtPath(newPrefabPath) != null)
                 throw new InvalidOperationException(
@@ -1120,7 +1181,12 @@ namespace Crossworlds.EditorTools.EnemyForge
 
         static void TrySetRootTag(GameObject root, EnemyForgeRootTag selectedTag)
         {
-            string tagName = selectedTag == EnemyForgeRootTag.Player ? "Player" : "Enemy";
+            string tagName = selectedTag switch
+            {
+                EnemyForgeRootTag.Player => "Player",
+                EnemyForgeRootTag.NPC => "NPC",
+                _ => "Enemy"
+            };
             try { root.tag = tagName; }
             catch (UnityException)
             {
@@ -1134,11 +1200,13 @@ namespace Crossworlds.EditorTools.EnemyForge
             return value;
         }
 
-        static string BuildForgedPrefabName(string sourceName)
+        static string BuildForgedPrefabName(string sourceName, bool isNpc)
         {
             string name = SanitizeName(sourceName ?? string.Empty).Trim();
             if (name.EndsWith("_Enemy", StringComparison.OrdinalIgnoreCase))
                 name = name.Substring(0, name.Length - "_Enemy".Length);
+            if (name.EndsWith("_NPC", StringComparison.OrdinalIgnoreCase))
+                name = name.Substring(0, name.Length - "_NPC".Length);
 
             if (name.StartsWith("forged_", StringComparison.OrdinalIgnoreCase))
                 name = name.Substring("forged_".Length);
@@ -1150,8 +1218,8 @@ namespace Crossworlds.EditorTools.EnemyForge
             }
 
             if (string.IsNullOrWhiteSpace(name))
-                name = "enemy";
-            return "forged_" + name + "_Enemy";
+                name = isNpc ? "npc" : "enemy";
+            return "forged_" + name + (isNpc ? "_NPC" : "_Enemy");
         }
 
         static void EnsureFolder(string path)
