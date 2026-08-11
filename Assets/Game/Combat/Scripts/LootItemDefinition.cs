@@ -172,6 +172,11 @@ public class LootItemDefinition : ScriptableObject
     [Min(0)] public int bonusIntelligence;
     [Min(0)] public int bonusVitality;
 
+    [Header("Tooltip Spell Bonuses")]
+    [Tooltip("Optional player-facing spell bonus lines shown in the item tooltip. " +
+             "Leave empty when this item has no spell bonuses.")]
+    public string[] spellBonusDescriptions = System.Array.Empty<string>();
+
     [Tooltip("Optional item-specific model shown on the world pickup, such as a sword or chest. Leave empty for inventory-only items to use the enemy's assigned generic pickup prefab. Colliders on this visual are disabled when attached.")]
     public GameObject worldVisualPrefab;
 }

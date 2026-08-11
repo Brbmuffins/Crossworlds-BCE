@@ -124,6 +124,11 @@ namespace Crossworlds.EditorTools.LootForge
                 Draw(serialized, "bonusAgility", "Agility");
                 Draw(serialized, "bonusIntelligence", "Intelligence");
                 Draw(serialized, "bonusVitality", "Vitality");
+                EditorGUILayout.Space(3);
+                EditorGUILayout.LabelField("Tooltip Spell Bonuses", EditorStyles.miniBoldLabel);
+                EditorGUILayout.PropertyField(
+                    serialized.FindProperty("spellBonusDescriptions"),
+                    new GUIContent("Spell Bonus Lines"), true);
             }
             EditorGUILayout.HelpBox(
                 "World Visual Prefab is optional. Leave it empty for inventory-only items such as tickets, " +

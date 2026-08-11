@@ -25,6 +25,7 @@ namespace Crossworlds.EditorTools.LootForge
         PreviewRenderUtility preview;
         GameObject characterInstance;
         GameObject itemInstance;
+        Transform attachmentAnchor;
         GameObject characterPrefab;
         GameObject itemPrefab;
         int classIndex;
@@ -36,6 +37,7 @@ namespace Crossworlds.EditorTools.LootForge
         float cameraZoom = 1f;
         bool orbiting;
         bool transforming;
+        PivotRotation handleOrientation = PivotRotation.Local;
 
         public static void Open(LootItemDefinition activeDefinition)
         {
@@ -90,11 +92,17 @@ namespace Crossworlds.EditorTools.LootForge
             transformTool = (TransformToolMode)GUILayout.Toolbar(
                 (int)transformTool, new[] { "Move (W)", "Rotate (E)" },
                 GUILayout.Height(26f));
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                GUILayout.Label("Handle Orientation", GUILayout.Width(116f));
+                handleOrientation = (PivotRotation)GUILayout.Toolbar(
+                    (int)handleOrientation, new[] { "Global", "Local" });
+            }
             HandleToolShortcuts();
             EditorGUILayout.LabelField(
                 transformTool == TransformToolMode.Move
-                    ? "Left-drag to move. Hold Shift and drag vertically to move forward/back."
-                    : "Left-drag to rotate. Hold Shift and drag horizontally to roll.",
+                    ? "Drag a colored axis or plane handle to position the item."
+                    : "Drag a colored rotation ring to orient the item.",
                 EditorStyles.miniLabel);
             DrawSaveTransformButton();
 
@@ -103,12 +111,14 @@ namespace Crossworlds.EditorTools.LootForge
                 100f, Mathf.Max(260f, position.height - 285f), GUILayout.ExpandWidth(true));
             EditorGUI.DrawRect(previewRect, new Color(0.08f, 0.08f, 0.08f, 1f));
             DrawPreview(previewRect);
-            HandleDirectTransformDrag(previewRect);
             DrawTransformHandle(previewRect);
             HandleCamera(previewRect);
+            HandleDirectTransformDrag(previewRect);
 
             EditorGUILayout.LabelField(
-                "Right-drag to orbit; use the mouse wheel to zoom.", EditorStyles.miniLabel);
+                "Right-drag or Alt+left-drag to orbit; mouse wheel zooms. " +
+                "Left-drag the gizmo or empty viewport to edit the item.",
+                EditorStyles.miniLabel);
             using (new EditorGUILayout.HorizontalScope())
             {
                 if (GUILayout.Button("Front")) SetView(0f);
@@ -171,14 +181,22 @@ namespace Crossworlds.EditorTools.LootForge
             characterInstance = Instantiate(characterPrefab);
             characterInstance.name = characterPrefab.name + "_LootForgePreview";
             DisableBehaviours(characterInstance);
+            FreezeCharacterPose(characterInstance);
+            characterInstance.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
             preview.AddSingleGO(characterInstance);
 
-            Transform anchor = ResolveAnchor(characterInstance.transform, definition, classIndex);
-            itemInstance = Instantiate(nextItem, anchor, false);
+            attachmentAnchor = ResolveAnchor(characterInstance.transform, definition, classIndex);
+            // Keep the equipment independent while authoring, like a separate
+            // GameObject in a normal scene. Its world pose is converted to the
+            // attachment anchor's local pose for runtime when values are saved.
+            itemInstance = Instantiate(nextItem);
             itemInstance.name = nextItem.name + "_LootForgePreview";
             DisableBehaviours(itemInstance);
             Vector3 scale = definition.EffectiveEquippedLocalScaleForClass(classIndex);
-            itemInstance.transform.localScale = scale.sqrMagnitude > 0.0001f ? scale : Vector3.one;
+            Vector3 authoredScale = scale.sqrMagnitude > 0.0001f ? scale : Vector3.one;
+            itemInstance.transform.localScale = Vector3.Scale(
+                attachmentAnchor.lossyScale, authoredScale);
+            preview.AddSingleGO(itemInstance);
             itemPrefab = nextItem;
             ApplyTransformToPreview();
         }
@@ -210,14 +228,16 @@ namespace Crossworlds.EditorTools.LootForge
             EditorGUI.BeginChangeCheck();
             if (transformTool == TransformToolMode.Move)
             {
+                Quaternion handleRotation = handleOrientation == PivotRotation.Local
+                    ? itemInstance.transform.rotation
+                    : Quaternion.identity;
                 Vector3 worldPosition = Handles.PositionHandle(
-                    itemInstance.transform.position, itemInstance.transform.rotation);
+                    itemInstance.transform.position, handleRotation);
                 if (EditorGUI.EndChangeCheck())
                 {
                     Undo.RecordObject(this, "Move Loot Preview Item");
-                    localPosition = itemInstance.transform.parent != null
-                        ? itemInstance.transform.parent.InverseTransformPoint(worldPosition)
-                        : worldPosition;
+                    localPosition = attachmentAnchor != null
+                        ? attachmentAnchor.InverseTransformPoint(worldPosition) : worldPosition;
                     ApplyTransformToPreview();
                     Repaint();
                 }
@@ -229,8 +249,8 @@ namespace Crossworlds.EditorTools.LootForge
                 if (EditorGUI.EndChangeCheck())
                 {
                     Undo.RecordObject(this, "Rotate Loot Preview Item");
-                    Quaternion parentRotation = itemInstance.transform.parent != null
-                        ? itemInstance.transform.parent.rotation : Quaternion.identity;
+                    Quaternion parentRotation = attachmentAnchor != null
+                        ? attachmentAnchor.rotation : Quaternion.identity;
                     localEulerAngles = (Quaternion.Inverse(parentRotation) * worldRotation).eulerAngles;
                     ApplyTransformToPreview();
                     Repaint();
@@ -241,27 +261,38 @@ namespace Crossworlds.EditorTools.LootForge
         void HandleCamera(Rect rect)
         {
             Event current = Event.current;
-            if (GUIUtility.hotControl != 0 && !orbiting) return;
-            if (transforming) return;
+            int controlId = GUIUtility.GetControlID(
+                "LootForgeCameraOrbit".GetHashCode(), FocusType.Passive, rect);
+            if (GUIUtility.hotControl != 0 && GUIUtility.hotControl != controlId) return;
             if (!rect.Contains(current.mousePosition))
             {
-                if (current.type == EventType.MouseUp) orbiting = false;
+                if (current.type == EventType.MouseUp && orbiting)
+                {
+                    orbiting = false;
+                    if (GUIUtility.hotControl == controlId) GUIUtility.hotControl = 0;
+                }
                 return;
             }
-            if (current.type == EventType.MouseDown && (current.button == 1 || current.button == 2))
+            bool orbitButton = current.button == 1 || current.button == 2 ||
+                               (current.button == 0 && current.alt);
+            if (current.type == EventType.MouseDown && orbitButton)
             {
                 orbiting = true;
+                GUIUtility.hotControl = controlId;
                 current.Use();
             }
-            else if (current.type == EventType.MouseDrag && orbiting)
+            else if (current.type == EventType.MouseDrag && orbiting &&
+                     GUIUtility.hotControl == controlId)
             {
                 cameraYaw += current.delta.x * 0.55f;
                 cameraPitch = Mathf.Clamp(cameraPitch - current.delta.y * 0.4f, -70f, 70f);
                 current.Use();
+                Repaint();
             }
-            else if (current.type == EventType.MouseUp)
+            else if (current.type == EventType.MouseUp && orbiting)
             {
                 orbiting = false;
+                GUIUtility.hotControl = 0;
                 current.Use();
             }
             else if (current.type == EventType.ScrollWheel)
@@ -276,14 +307,16 @@ namespace Crossworlds.EditorTools.LootForge
             Event current = Event.current;
             int controlId = GUIUtility.GetControlID(
                 "LootForgeTransformDrag".GetHashCode(), FocusType.Passive, rect);
-            if (current.type == EventType.MouseDown && current.button == 0 &&
+            if (GUIUtility.hotControl != 0 && GUIUtility.hotControl != controlId) return;
+            if (current.type == EventType.MouseDown && current.button == 0 && !current.alt &&
                 rect.Contains(current.mousePosition))
             {
                 transforming = true;
                 GUIUtility.hotControl = controlId;
                 current.Use();
             }
-            else if (current.type == EventType.MouseDrag && transforming && current.button == 0)
+            else if (current.type == EventType.MouseDrag && transforming &&
+                     GUIUtility.hotControl == controlId)
             {
                 if (transformTool == TransformToolMode.Move)
                     ApplyMouseMove(current.delta, current.shift);
@@ -293,17 +326,13 @@ namespace Crossworlds.EditorTools.LootForge
                 current.Use();
                 Repaint();
             }
-            else if (current.type == EventType.MouseUp && transforming && current.button == 0)
+            else if (current.type == EventType.MouseUp && transforming)
             {
                 transforming = false;
                 GUIUtility.hotControl = 0;
                 current.Use();
                 Repaint();
             }
-
-            if (rect.Contains(current.mousePosition))
-                EditorGUIUtility.AddCursorRect(rect,
-                    transformTool == TransformToolMode.Move ? MouseCursor.MoveArrow : MouseCursor.RotateArrow);
         }
 
         void ApplyMouseMove(Vector2 delta, bool depthMode)
@@ -317,9 +346,8 @@ namespace Crossworlds.EditorTools.LootForge
                   preview.camera.transform.forward * (-delta.y * sensitivity)
                 : preview.camera.transform.right * (delta.x * sensitivity) +
                   preview.camera.transform.up * (-delta.y * sensitivity);
-            Transform parent = itemInstance.transform.parent;
-            localPosition += parent != null
-                ? parent.InverseTransformVector(worldDelta) : worldDelta;
+            localPosition += attachmentAnchor != null
+                ? attachmentAnchor.InverseTransformVector(worldDelta) : worldDelta;
         }
 
         void ApplyMouseRotation(Vector2 delta, bool rollMode)
@@ -365,8 +393,17 @@ namespace Crossworlds.EditorTools.LootForge
         void ApplyTransformToPreview()
         {
             if (itemInstance == null) return;
-            itemInstance.transform.localPosition = localPosition;
-            itemInstance.transform.localRotation = Quaternion.Euler(localEulerAngles);
+            if (attachmentAnchor != null)
+            {
+                itemInstance.transform.SetPositionAndRotation(
+                    attachmentAnchor.TransformPoint(localPosition),
+                    attachmentAnchor.rotation * Quaternion.Euler(localEulerAngles));
+            }
+            else
+            {
+                itemInstance.transform.SetPositionAndRotation(
+                    localPosition, Quaternion.Euler(localEulerAngles));
+            }
         }
 
         void SaveTransform()
@@ -453,7 +490,27 @@ namespace Crossworlds.EditorTools.LootForge
                 collider.enabled = false;
         }
 
-        static Bounds CalculateBounds(GameObject root)
+        static void FreezeCharacterPose(GameObject root)
+        {
+            foreach (Animator animator in root.GetComponentsInChildren<Animator>(true))
+            {
+                animator.applyRootMotion = false;
+                if (animator.runtimeAnimatorController != null)
+                {
+                    animator.Rebind();
+                    animator.Update(0f);
+                }
+                animator.speed = 0f;
+                animator.enabled = false;
+            }
+            foreach (Animation animation in root.GetComponentsInChildren<Animation>(true))
+            {
+                animation.Stop();
+                animation.enabled = false;
+            }
+        }
+
+        Bounds CalculateBounds(GameObject root)
         {
             Renderer[] renderers = root.GetComponentsInChildren<Renderer>(true);
             Bounds bounds = new Bounds(root.transform.position, Vector3.one);
@@ -461,6 +518,13 @@ namespace Crossworlds.EditorTools.LootForge
             foreach (Renderer renderer in renderers)
             {
                 if (!renderer.enabled) continue;
+                // The equipped visual is parented beneath the character's hand.
+                // Excluding it keeps camera framing locked to the player while
+                // the item is moved far away or rotated during authoring.
+                if (itemInstance != null &&
+                    (renderer.transform == itemInstance.transform ||
+                     renderer.transform.IsChildOf(itemInstance.transform)))
+                    continue;
                 if (!found) { bounds = renderer.bounds; found = true; }
                 else bounds.Encapsulate(renderer.bounds);
             }
@@ -473,6 +537,7 @@ namespace Crossworlds.EditorTools.LootForge
             preview = null;
             characterInstance = null;
             itemInstance = null;
+            attachmentAnchor = null;
             itemPrefab = null;
         }
     }

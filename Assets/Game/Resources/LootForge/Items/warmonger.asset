@@ -26,14 +26,19 @@ MonoBehaviour:
   stackable: 0
   maxStackSize: 1
   equippedVisualPrefab: {fileID: 587472421312629377, guid: 8094817115d13d54788241f619573de2, type: 3}
-  attachmentProfile: {fileID: 11400000, guid: a9b79a160af1b244bbad6c7ed521b388, type: 2}
+  attachmentProfile: {fileID: 0}
   overrideAttachmentProfile: 0
   twoHanded: 0
   attachmentBoneName: 
   equippedLocalPosition: {x: 0, y: 0, z: 0}
   equippedLocalEulerAngles: {x: 0, y: 0, z: 0}
   equippedLocalScale: {x: 1, y: 1, z: 1}
-  classAttachmentOverrides: []
+  classAttachmentOverrides:
+  - classIndex: 0
+    attachmentBoneName: 
+    localPosition: {x: 0.09624251, y: 0.38080978, z: 0.044639528}
+    localEulerAngles: {x: 217.8, y: 28.050745, z: 44.250057}
+    localScale: {x: 1, y: 1, z: 1}
   bonusStrength: 2
   bonusAgility: 0
   bonusIntelligence: 0
