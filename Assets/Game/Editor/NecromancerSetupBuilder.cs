@@ -16,6 +16,7 @@ using UnityEngine.SceneManagement;
 public static class NecromancerSetupBuilder
 {
     const int ClassIndex = 5;
+    const string AutoBuildSessionKey = "BCE.Necromancer.AutoBuildAttempted";
     const string HeroDir = "Assets/Game/3D Models/Heroes/Necromancer";
     const string SourcePrefabPath = "Assets/Game/Game_Prefabs/Cleric.prefab";
     const string PrefabPath = "Assets/Game/Game_Prefabs/Necromancer.prefab";
@@ -35,6 +36,47 @@ public static class NecromancerSetupBuilder
     static readonly string AreaCastPath = HeroDir + "/Standing 2H Magic Area Attack 01.fbx";
     static readonly string HeavyCastPath = HeroDir + "/Standing 2H Magic Attack 05.fbx";
     static readonly string DeathPath = HeroDir + "/Death From Right.fbx";
+
+    [InitializeOnLoadMethod]
+    static void QueueFirstBuild()
+    {
+        if (Application.isBatchMode ||
+            AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath) != null ||
+            SessionState.GetBool(AutoBuildSessionKey, false))
+            return;
+
+        SessionState.SetBool(AutoBuildSessionKey, true);
+        EditorApplication.delayCall += RunFirstBuildWhenReady;
+    }
+
+    static void RunFirstBuildWhenReady()
+    {
+        if (EditorApplication.isCompiling || EditorApplication.isUpdating)
+        {
+            EditorApplication.delayCall += RunFirstBuildWhenReady;
+            return;
+        }
+
+        // Never interrupt Play Mode. Queue the build for the moment the editor
+        // returns to Edit Mode so a first import cannot silently skip setup.
+        if (EditorApplication.isPlayingOrWillChangePlaymode)
+        {
+            EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
+            EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
+            return;
+        }
+
+        Build();
+    }
+
+    static void OnPlayModeStateChanged(PlayModeStateChange state)
+    {
+        if (state != PlayModeStateChange.EnteredEditMode)
+            return;
+
+        EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
+        EditorApplication.delayCall += RunFirstBuildWhenReady;
+    }
 
     [MenuItem("BCE/Heroes/Build Necromancer Class", priority = 24)]
     public static void Build()
