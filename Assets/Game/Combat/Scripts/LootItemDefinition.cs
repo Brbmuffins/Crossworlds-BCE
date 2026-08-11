@@ -89,6 +89,8 @@ public class LootItemDefinition : ScriptableObject
     public Vector3 equippedLocalPosition;
     public Vector3 equippedLocalEulerAngles;
     public Vector3 equippedLocalScale = Vector3.one;
+    [HideInInspector] public EquipmentAttachmentClassOverride[] classAttachmentOverrides =
+        System.Array.Empty<EquipmentAttachmentClassOverride>();
 
     public bool IsTwoHanded => attachmentProfile != null ? attachmentProfile.twoHanded : twoHanded;
     public string EffectiveAttachmentBoneName =>
@@ -103,6 +105,60 @@ public class LootItemDefinition : ScriptableObject
     public Vector3 EffectiveEquippedLocalScale =>
         attachmentProfile != null && !overrideAttachmentProfile
             ? attachmentProfile.localScale : equippedLocalScale;
+
+    public string EffectiveAttachmentBoneNameForClass(int classIndex)
+    {
+        EquipmentAttachmentClassOverride value = FindClassOverride(classIndex);
+        return value != null && !string.IsNullOrWhiteSpace(value.attachmentBoneName)
+            ? value.attachmentBoneName : EffectiveAttachmentBoneName;
+    }
+
+    public Vector3 EffectiveEquippedLocalPositionForClass(int classIndex) =>
+        FindClassOverride(classIndex)?.localPosition ?? EffectiveEquippedLocalPosition;
+
+    public Vector3 EffectiveEquippedLocalEulerAnglesForClass(int classIndex) =>
+        FindClassOverride(classIndex)?.localEulerAngles ?? EffectiveEquippedLocalEulerAngles;
+
+    public Vector3 EffectiveEquippedLocalScaleForClass(int classIndex)
+    {
+        EquipmentAttachmentClassOverride value = FindClassOverride(classIndex);
+        return value != null && value.localScale.sqrMagnitude > 0.0001f
+            ? value.localScale : EffectiveEquippedLocalScale;
+    }
+
+    public EquipmentAttachmentClassOverride GetOrCreateClassOverride(int classIndex)
+    {
+        if (attachmentProfile != null && !overrideAttachmentProfile)
+            return attachmentProfile.GetOrCreateClassOverride(classIndex);
+        EquipmentAttachmentClassOverride existing = FindItemClassOverride(classIndex);
+        if (existing != null) return existing;
+        var created = new EquipmentAttachmentClassOverride
+        {
+            classIndex = classIndex,
+            attachmentBoneName = attachmentBoneName,
+            localPosition = equippedLocalPosition,
+            localEulerAngles = equippedLocalEulerAngles,
+            localScale = equippedLocalScale.sqrMagnitude > 0.0001f
+                ? equippedLocalScale : Vector3.one
+        };
+        int length = classAttachmentOverrides?.Length ?? 0;
+        System.Array.Resize(ref classAttachmentOverrides, length + 1);
+        classAttachmentOverrides[length] = created;
+        return created;
+    }
+
+    EquipmentAttachmentClassOverride FindClassOverride(int classIndex) =>
+        attachmentProfile != null && !overrideAttachmentProfile
+            ? attachmentProfile.FindClassOverride(classIndex)
+            : FindItemClassOverride(classIndex);
+
+    EquipmentAttachmentClassOverride FindItemClassOverride(int classIndex)
+    {
+        if (classAttachmentOverrides == null) return null;
+        foreach (EquipmentAttachmentClassOverride value in classAttachmentOverrides)
+            if (value != null && value.classIndex == classIndex) return value;
+        return null;
+    }
 
     [Header("Server-authoritative stat bonuses")]
     [Min(0)] public int bonusStrength;

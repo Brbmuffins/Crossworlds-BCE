@@ -42,10 +42,7 @@ namespace Crossworlds.EditorTools.LootForge
             var window = GetWindow<LootForgeEquipmentPreviewWindow>(
                 false, "Loot Equipment Preview", true);
             window.definition = activeDefinition;
-            window.localPosition = activeDefinition != null
-                ? activeDefinition.EffectiveEquippedLocalPosition : Vector3.zero;
-            window.localEulerAngles = activeDefinition != null
-                ? activeDefinition.EffectiveEquippedLocalEulerAngles : Vector3.zero;
+            window.LoadClassTransform();
             window.LoadDefaultCharacter();
             window.minSize = new Vector2(480f, 540f);
             window.Show();
@@ -62,10 +59,7 @@ namespace Crossworlds.EditorTools.LootForge
                 "Loot Definition", definition, typeof(LootItemDefinition), false);
             if (EditorGUI.EndChangeCheck())
             {
-                localPosition = definition != null
-                    ? definition.EffectiveEquippedLocalPosition : Vector3.zero;
-                localEulerAngles = definition != null
-                    ? definition.EffectiveEquippedLocalEulerAngles : Vector3.zero;
+                LoadClassTransform();
                 RebuildPreview();
             }
 
@@ -74,6 +68,7 @@ namespace Crossworlds.EditorTools.LootForge
             {
                 classIndex = nextClass;
                 LoadDefaultCharacter();
+                LoadClassTransform();
                 RebuildPreview();
             }
             EditorGUI.BeginChangeCheck();
@@ -178,11 +173,11 @@ namespace Crossworlds.EditorTools.LootForge
             DisableBehaviours(characterInstance);
             preview.AddSingleGO(characterInstance);
 
-            Transform anchor = ResolveAnchor(characterInstance.transform, definition);
+            Transform anchor = ResolveAnchor(characterInstance.transform, definition, classIndex);
             itemInstance = Instantiate(nextItem, anchor, false);
             itemInstance.name = nextItem.name + "_LootForgePreview";
             DisableBehaviours(itemInstance);
-            Vector3 scale = definition.EffectiveEquippedLocalScale;
+            Vector3 scale = definition.EffectiveEquippedLocalScaleForClass(classIndex);
             itemInstance.transform.localScale = scale.sqrMagnitude > 0.0001f ? scale : Vector3.one;
             itemPrefab = nextItem;
             ApplyTransformToPreview();
@@ -376,20 +371,15 @@ namespace Crossworlds.EditorTools.LootForge
 
         void SaveTransform()
         {
-            if (definition.attachmentProfile != null && !definition.overrideAttachmentProfile)
-            {
-                Undo.RecordObject(definition.attachmentProfile, "Update Loot Equipment Transform");
-                definition.attachmentProfile.localPosition = localPosition;
-                definition.attachmentProfile.localEulerAngles = localEulerAngles;
-                EditorUtility.SetDirty(definition.attachmentProfile);
-            }
-            else
-            {
-                Undo.RecordObject(definition, "Update Loot Equipment Transform");
-                definition.equippedLocalPosition = localPosition;
-                definition.equippedLocalEulerAngles = localEulerAngles;
-                EditorUtility.SetDirty(definition);
-            }
+            UnityEngine.Object saveTarget = definition.attachmentProfile != null &&
+                                            !definition.overrideAttachmentProfile
+                ? definition.attachmentProfile : definition;
+            Undo.RecordObject(saveTarget, "Update Class Equipment Transform");
+            EquipmentAttachmentClassOverride classTransform =
+                definition.GetOrCreateClassOverride(classIndex);
+            classTransform.localPosition = localPosition;
+            classTransform.localEulerAngles = localEulerAngles;
+            EditorUtility.SetDirty(saveTarget);
             AssetDatabase.SaveAssets();
             ShowNotification(new GUIContent("Equipment transform saved"));
         }
@@ -398,8 +388,16 @@ namespace Crossworlds.EditorTools.LootForge
         {
             if (definition == null) return "";
             return definition.attachmentProfile != null && !definition.overrideAttachmentProfile
-                ? $"Updates shared profile: {definition.attachmentProfile.name}"
-                : "Updates this loot item's equipped position.";
+                ? $"Saves {ClassNames[classIndex]} only in shared profile: {definition.attachmentProfile.name}"
+                : $"Saves a {ClassNames[classIndex]} override on this loot item.";
+        }
+
+        void LoadClassTransform()
+        {
+            localPosition = definition != null
+                ? definition.EffectiveEquippedLocalPositionForClass(classIndex) : Vector3.zero;
+            localEulerAngles = definition != null
+                ? definition.EffectiveEquippedLocalEulerAnglesForClass(classIndex) : Vector3.zero;
         }
 
         void LoadDefaultCharacter()
@@ -412,9 +410,9 @@ namespace Crossworlds.EditorTools.LootForge
             (definition.equippedVisualPrefab != null
                 ? definition.equippedVisualPrefab : definition.worldVisualPrefab);
 
-        static Transform ResolveAnchor(Transform root, LootItemDefinition item)
+        static Transform ResolveAnchor(Transform root, LootItemDefinition item, int previewClassIndex)
         {
-            string exactName = item.EffectiveAttachmentBoneName;
+            string exactName = item.EffectiveAttachmentBoneNameForClass(previewClassIndex);
             if (!string.IsNullOrWhiteSpace(exactName))
             {
                 Transform exact = FindTransform(root, exactName);
