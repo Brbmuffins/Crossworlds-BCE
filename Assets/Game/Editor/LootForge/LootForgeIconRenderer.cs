@@ -43,7 +43,9 @@ namespace Crossworlds.EditorTools.LootForge
 
             Scene previewScene = EditorSceneManager.NewPreviewScene();
             RenderTexture target = null;
+            RenderTexture previousActive = RenderTexture.active;
             Texture2D output = null;
+            Camera camera = null;
             var fallbackMaterials = new List<Material>();
             var fallbackMeshes = new List<Mesh>();
             try
@@ -79,7 +81,7 @@ namespace Crossworlds.EditorTools.LootForge
 
                 var cameraObject = new GameObject("LootIconCamera", typeof(Camera));
                 SceneManager.MoveGameObjectToScene(cameraObject, previewScene);
-                Camera camera = cameraObject.GetComponent<Camera>();
+                camera = cameraObject.GetComponent<Camera>();
                 camera.clearFlags = CameraClearFlags.SolidColor;
                 camera.cullingMask = ~0;
                 camera.backgroundColor = new Color(0f, 0f, 0f, 0f);
@@ -105,12 +107,11 @@ namespace Crossworlds.EditorTools.LootForge
                 camera.targetTexture = target;
                 camera.Render();
 
-                RenderTexture previous = RenderTexture.active;
                 RenderTexture.active = target;
                 output = new Texture2D(IconSize, IconSize, TextureFormat.RGBA32, false, false);
                 output.ReadPixels(new Rect(0, 0, IconSize, IconSize), 0, 0);
                 output.Apply(false, false);
-                RenderTexture.active = previous;
+                RenderTexture.active = previousActive;
                 RemoveNativePreviewBackground(output);
 
                 int visiblePixelCount = 0;
@@ -186,7 +187,7 @@ namespace Crossworlds.EditorTools.LootForge
                         RenderTexture.active = target;
                         output.ReadPixels(new Rect(0, 0, IconSize, IconSize), 0, 0);
                         output.Apply(false, false);
-                        RenderTexture.active = previous;
+                        RenderTexture.active = previousActive;
                         RemoveNativePreviewBackground(output);
                         visiblePixelCount = RestoreMissingAlpha(output);
                     }
@@ -213,7 +214,7 @@ namespace Crossworlds.EditorTools.LootForge
                                 RenderTexture.active = target;
                                 output.ReadPixels(new Rect(0, 0, IconSize, IconSize), 0, 0);
                                 output.Apply(false, false);
-                                RenderTexture.active = previous;
+                                RenderTexture.active = previousActive;
                                 RemoveNativePreviewBackground(output);
                                 visiblePixelCount = RestoreMissingAlpha(output);
                             }
@@ -249,17 +250,25 @@ namespace Crossworlds.EditorTools.LootForge
             }
             finally
             {
+                if (camera != null)
+                {
+                    camera.enabled = false;
+                    camera.targetTexture = null;
+                }
+                if (RenderTexture.active == target)
+                    RenderTexture.active = previousActive;
                 if (output != null) UnityEngine.Object.DestroyImmediate(output);
                 foreach (Material material in fallbackMaterials)
                     if (material != null) UnityEngine.Object.DestroyImmediate(material);
                 foreach (Mesh mesh in fallbackMeshes)
                     if (mesh != null) UnityEngine.Object.DestroyImmediate(mesh);
+                if (previewScene.IsValid())
+                    EditorSceneManager.ClosePreviewScene(previewScene);
                 if (target != null)
                 {
                     target.Release();
                     UnityEngine.Object.DestroyImmediate(target);
                 }
-                if (previewScene.IsValid()) EditorSceneManager.ClosePreviewScene(previewScene);
             }
 
             AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceSynchronousImport);
