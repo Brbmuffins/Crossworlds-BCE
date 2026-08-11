@@ -90,16 +90,27 @@ namespace Crossworlds.EditorTools.LootForge
                 return;
             }
 
+            EditorGUILayout.LabelField("Equipment Transform Tool", EditorStyles.boldLabel);
+            transformTool = (TransformToolMode)GUILayout.Toolbar(
+                (int)transformTool, new[] { "Move (W)", "Rotate (E)" },
+                GUILayout.Height(26f));
+            HandleToolShortcuts();
+            EditorGUILayout.LabelField(
+                transformTool == TransformToolMode.Move
+                    ? "Drag a colored arrow to move the item."
+                    : "Drag a colored ring to rotate the item.",
+                EditorStyles.miniLabel);
+
             EnsurePreview(nextItem);
             Rect previewRect = GUILayoutUtility.GetRect(
-                100f, Mathf.Max(300f, position.height - 220f), GUILayout.ExpandWidth(true));
+                100f, Mathf.Max(260f, position.height - 285f), GUILayout.ExpandWidth(true));
             EditorGUI.DrawRect(previewRect, new Color(0.08f, 0.08f, 0.08f, 1f));
             DrawPreview(previewRect);
             DrawTransformHandle(previewRect);
             HandleCamera(previewRect);
 
             EditorGUILayout.LabelField(
-                "Drag the preview to rotate; use the mouse wheel to zoom.", EditorStyles.miniLabel);
+                "Right-drag to orbit; use the mouse wheel to zoom.", EditorStyles.miniLabel);
             using (new EditorGUILayout.HorizontalScope())
             {
                 if (GUILayout.Button("Front")) SetView(0f);
@@ -109,9 +120,6 @@ namespace Crossworlds.EditorTools.LootForge
             }
 
             EditorGUILayout.Space(4f);
-            EditorGUILayout.LabelField("Equipment Transform Tool", EditorStyles.boldLabel);
-            transformTool = (TransformToolMode)GUILayout.Toolbar(
-                (int)transformTool, new[] { "Move", "Rotate" });
             EditorGUILayout.LabelField("Equipped Item Position", EditorStyles.miniBoldLabel);
             DrawAxisSlider("X", ref localPosition.x);
             DrawAxisSlider("Y", ref localPosition.y);
@@ -237,7 +245,7 @@ namespace Crossworlds.EditorTools.LootForge
                 if (current.type == EventType.MouseUp) orbiting = false;
                 return;
             }
-            if (current.type == EventType.MouseDown && (current.button == 0 || current.button == 1))
+            if (current.type == EventType.MouseDown && (current.button == 1 || current.button == 2))
             {
                 orbiting = true;
                 current.Use();
@@ -258,7 +266,24 @@ namespace Crossworlds.EditorTools.LootForge
                 cameraZoom = Mathf.Clamp(cameraZoom + current.delta.y * 0.05f, 0.55f, 2.2f);
                 current.Use();
             }
-            EditorGUIUtility.AddCursorRect(rect, MouseCursor.Orbit);
+        }
+
+        void HandleToolShortcuts()
+        {
+            Event current = Event.current;
+            if (current.type != EventType.KeyDown) return;
+            if (current.keyCode == KeyCode.W)
+            {
+                transformTool = TransformToolMode.Move;
+                current.Use();
+                Repaint();
+            }
+            else if (current.keyCode == KeyCode.E)
+            {
+                transformTool = TransformToolMode.Rotate;
+                current.Use();
+                Repaint();
+            }
         }
 
         void SetView(float yaw)
