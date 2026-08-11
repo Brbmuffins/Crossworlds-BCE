@@ -8,6 +8,8 @@ namespace Crossworlds.EditorTools.LootForge
     /// <summary>Previews and authors the same local equipment position used at runtime.</summary>
     internal sealed class LootForgeEquipmentPreviewWindow : EditorWindow
     {
+        enum TransformToolMode { Move, Rotate }
+
         static readonly string[] ClassNames =
             { "Marauder", "Templar", "Night Hunter", "Cleric", "Arcanist" };
         static readonly string[] DefaultPrefabPaths =
@@ -27,6 +29,8 @@ namespace Crossworlds.EditorTools.LootForge
         GameObject itemPrefab;
         int classIndex;
         Vector3 localPosition;
+        Vector3 localEulerAngles;
+        TransformToolMode transformTool = TransformToolMode.Move;
         float cameraYaw;
         float cameraPitch = 6f;
         float cameraZoom = 1f;
@@ -39,6 +43,8 @@ namespace Crossworlds.EditorTools.LootForge
             window.definition = activeDefinition;
             window.localPosition = activeDefinition != null
                 ? activeDefinition.EffectiveEquippedLocalPosition : Vector3.zero;
+            window.localEulerAngles = activeDefinition != null
+                ? activeDefinition.EffectiveEquippedLocalEulerAngles : Vector3.zero;
             window.LoadDefaultCharacter();
             window.minSize = new Vector2(480f, 540f);
             window.Show();
@@ -57,6 +63,8 @@ namespace Crossworlds.EditorTools.LootForge
             {
                 localPosition = definition != null
                     ? definition.EffectiveEquippedLocalPosition : Vector3.zero;
+                localEulerAngles = definition != null
+                    ? definition.EffectiveEquippedLocalEulerAngles : Vector3.zero;
                 RebuildPreview();
             }
 
@@ -86,8 +94,9 @@ namespace Crossworlds.EditorTools.LootForge
             Rect previewRect = GUILayoutUtility.GetRect(
                 100f, Mathf.Max(300f, position.height - 220f), GUILayout.ExpandWidth(true));
             EditorGUI.DrawRect(previewRect, new Color(0.08f, 0.08f, 0.08f, 1f));
-            HandleCamera(previewRect);
             DrawPreview(previewRect);
+            DrawTransformHandle(previewRect);
+            HandleCamera(previewRect);
 
             EditorGUILayout.LabelField(
                 "Drag the preview to rotate; use the mouse wheel to zoom.", EditorStyles.miniLabel);
@@ -100,15 +109,20 @@ namespace Crossworlds.EditorTools.LootForge
             }
 
             EditorGUILayout.Space(4f);
-            EditorGUILayout.LabelField("Equipped Item Position", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("Equipment Transform Tool", EditorStyles.boldLabel);
+            transformTool = (TransformToolMode)GUILayout.Toolbar(
+                (int)transformTool, new[] { "Move", "Rotate" });
+            EditorGUILayout.LabelField("Equipped Item Position", EditorStyles.miniBoldLabel);
             DrawAxisSlider("X", ref localPosition.x);
             DrawAxisSlider("Y", ref localPosition.y);
             DrawAxisSlider("Z", ref localPosition.z);
             localPosition = EditorGUILayout.Vector3Field("Exact X / Y / Z", localPosition);
-            ApplyPositionToPreview();
+            localEulerAngles = EditorGUILayout.Vector3Field(
+                "Rotation X / Y / Z", localEulerAngles);
+            ApplyTransformToPreview();
 
             GUI.backgroundColor = new Color(0.35f, 0.8f, 0.45f);
-            if (GUILayout.Button("Update and Save Position", GUILayout.Height(34f))) SavePosition();
+            if (GUILayout.Button("Update and Save Transform", GUILayout.Height(34f))) SaveTransform();
             GUI.backgroundColor = Color.white;
             EditorGUILayout.HelpBox(SaveDestinationText(), MessageType.None);
         }
@@ -153,12 +167,10 @@ namespace Crossworlds.EditorTools.LootForge
             itemInstance = Instantiate(nextItem, anchor, false);
             itemInstance.name = nextItem.name + "_LootForgePreview";
             DisableBehaviours(itemInstance);
-            itemInstance.transform.localRotation =
-                Quaternion.Euler(definition.EffectiveEquippedLocalEulerAngles);
             Vector3 scale = definition.EffectiveEquippedLocalScale;
             itemInstance.transform.localScale = scale.sqrMagnitude > 0.0001f ? scale : Vector3.one;
             itemPrefab = nextItem;
-            ApplyPositionToPreview();
+            ApplyTransformToPreview();
         }
 
         void DrawPreview(Rect rect)
@@ -179,9 +191,47 @@ namespace Crossworlds.EditorTools.LootForge
             GUI.DrawTexture(rect, preview.EndPreview(), ScaleMode.StretchToFill, false);
         }
 
+        void DrawTransformHandle(Rect rect)
+        {
+            if (preview == null || itemInstance == null || Event.current.type == EventType.ScrollWheel)
+                return;
+
+            Handles.SetCamera(rect, preview.camera);
+            EditorGUI.BeginChangeCheck();
+            if (transformTool == TransformToolMode.Move)
+            {
+                Vector3 worldPosition = Handles.PositionHandle(
+                    itemInstance.transform.position, itemInstance.transform.rotation);
+                if (EditorGUI.EndChangeCheck())
+                {
+                    Undo.RecordObject(this, "Move Loot Preview Item");
+                    localPosition = itemInstance.transform.parent != null
+                        ? itemInstance.transform.parent.InverseTransformPoint(worldPosition)
+                        : worldPosition;
+                    ApplyTransformToPreview();
+                    Repaint();
+                }
+            }
+            else
+            {
+                Quaternion worldRotation = Handles.RotationHandle(
+                    itemInstance.transform.rotation, itemInstance.transform.position);
+                if (EditorGUI.EndChangeCheck())
+                {
+                    Undo.RecordObject(this, "Rotate Loot Preview Item");
+                    Quaternion parentRotation = itemInstance.transform.parent != null
+                        ? itemInstance.transform.parent.rotation : Quaternion.identity;
+                    localEulerAngles = (Quaternion.Inverse(parentRotation) * worldRotation).eulerAngles;
+                    ApplyTransformToPreview();
+                    Repaint();
+                }
+            }
+        }
+
         void HandleCamera(Rect rect)
         {
             Event current = Event.current;
+            if (GUIUtility.hotControl != 0 && !orbiting) return;
             if (!rect.Contains(current.mousePosition))
             {
                 if (current.type == EventType.MouseUp) orbiting = false;
@@ -218,27 +268,31 @@ namespace Crossworlds.EditorTools.LootForge
             Repaint();
         }
 
-        void ApplyPositionToPreview()
+        void ApplyTransformToPreview()
         {
-            if (itemInstance != null) itemInstance.transform.localPosition = localPosition;
+            if (itemInstance == null) return;
+            itemInstance.transform.localPosition = localPosition;
+            itemInstance.transform.localRotation = Quaternion.Euler(localEulerAngles);
         }
 
-        void SavePosition()
+        void SaveTransform()
         {
             if (definition.attachmentProfile != null && !definition.overrideAttachmentProfile)
             {
-                Undo.RecordObject(definition.attachmentProfile, "Update Loot Equipment Position");
+                Undo.RecordObject(definition.attachmentProfile, "Update Loot Equipment Transform");
                 definition.attachmentProfile.localPosition = localPosition;
+                definition.attachmentProfile.localEulerAngles = localEulerAngles;
                 EditorUtility.SetDirty(definition.attachmentProfile);
             }
             else
             {
-                Undo.RecordObject(definition, "Update Loot Equipment Position");
+                Undo.RecordObject(definition, "Update Loot Equipment Transform");
                 definition.equippedLocalPosition = localPosition;
+                definition.equippedLocalEulerAngles = localEulerAngles;
                 EditorUtility.SetDirty(definition);
             }
             AssetDatabase.SaveAssets();
-            ShowNotification(new GUIContent("Equipment position saved"));
+            ShowNotification(new GUIContent("Equipment transform saved"));
         }
 
         string SaveDestinationText()
