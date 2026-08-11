@@ -24,6 +24,34 @@ namespace Crossworlds.EditorTools.EnemyForge
             var issues = new List<EnemyForgeIssue>();
             if (d == null) { issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Error, "Create or select a definition.")); return issues; }
             if (d.source == null) issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Error, "A source model or prefab is required."));
+            if (d.IsNpc)
+            {
+                if (d.rootTag != EnemyForgeRootTag.NPC)
+                    issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Error,
+                        "Non-combat NPC definitions must use the NPC root tag."));
+                if (string.IsNullOrWhiteSpace(d.templateId))
+                    issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Error, "Template ID is required."));
+                if (string.IsNullOrWhiteSpace(d.outputFolder) || !d.outputFolder.StartsWith("Assets/"))
+                    issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Error, "Output folder must be inside Assets/."));
+                if (d.enableRoaming && d.roamingRadius <= 0f)
+                    issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Error,
+                        "Roaming radius must be greater than zero when roaming is enabled."));
+                if (d.roamingMaxWait < d.roamingMinWait)
+                    issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Error,
+                        "Roaming maximum wait must be at least the minimum wait."));
+                if (d.source != null && d.source.GetComponentInChildren<Renderer>(true) == null)
+                    issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Warning,
+                        "The source has no renderer in its hierarchy."));
+                if (d.generateAnimatorController && d.idleAnimation == null)
+                    issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Warning,
+                        "Animator generation is enabled but no Idle animation is assigned."));
+                if (d.generateAnimatorController)
+                {
+                    ValidateClip(d.idleAnimation, "Idle", true, issues);
+                    ValidateClip(d.chaseAnimation, "Chase / Movement", true, issues);
+                }
+                return issues;
+            }
             if (d.rootTag == EnemyForgeRootTag.Player)
                 issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Warning,
                     "Player tag selected: the prefab still uses EnemyController combat behavior, but other enemies may recognize it as a player target."));
@@ -138,6 +166,40 @@ namespace Crossworlds.EditorTools.EnemyForge
             var issues = new List<EnemyForgeIssue>();
             if (prefab == null) return issues;
             if (prefab.GetComponent<NetworkIdentity>() == null) issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Error, "NetworkIdentity is missing."));
+            var npc = prefab.GetComponent<ForgedNpcController>();
+            if (npc != null || prefab.CompareTag("NPC"))
+            {
+                if (npc == null)
+                    issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Error,
+                        "ForgedNpcController is missing."));
+                if (!prefab.CompareTag("NPC"))
+                    issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Error,
+                        "The non-combat prefab root must use the NPC tag."));
+                if (prefab.GetComponent<EnemyController>() != null ||
+                    prefab.GetComponent<EnemyHeavyAttack>() != null ||
+                    prefab.GetComponent<Health>() != null)
+                    issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Error,
+                        "The NPC still contains combat or Health components. Update it through Enemy Forge."));
+                if (prefab.GetComponent<NavMeshAgent>() == null)
+                    issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Error, "NavMeshAgent is missing."));
+                if (prefab.GetComponent<NetworkTransformBase>() == null)
+                    issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Error,
+                        "A server-to-client NetworkTransform is missing."));
+                var npcAnimator = prefab.GetComponentInChildren<Animator>(true);
+                if (npcAnimator == null)
+                    issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Warning,
+                        "No Animator was found; the NPC can roam but will not animate."));
+                else if (prefab.GetComponent<NetworkAnimator>() == null)
+                    issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Error,
+                        "NetworkAnimator is missing."));
+                if (!HasUsableRootCombatCollider(prefab))
+                    issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Warning,
+                        "The NPC root needs an enabled, non-trigger collider for navigation and interaction."));
+                if (string.IsNullOrEmpty(AssetDatabase.GetAssetPath(prefab)))
+                    issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Info,
+                        "This is a scene object, not a saved prefab."));
+                return issues;
+            }
             var health = prefab.GetComponent<Health>();
             if (health == null) issues.Add(new EnemyForgeIssue(EnemyForgeSeverity.Error, "Health is missing."));
             else if (health.EnemyLevel < 1)
