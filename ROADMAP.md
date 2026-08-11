@@ -21,6 +21,9 @@ conversation: it names its files, acceptance criteria, and dependencies. Tasks m
 > **Cat animation material wiring (2026-08-10):** The `catidle` and `catwalk` FBX
 > material slots now share a URP cat material using the supplied black-cat base-color texture.
 
+> **Necromancer animation material wiring (2026-08-10):** All ten Necromancer FBX
+> models share a URP material using the supplied hooded-undead base-color texture.
+
 ## Phase 0 — Repo Stabilization
 
 *Entry:* now. *Exit:* clean `git status`, one canonical doc set, no secrets in git.
