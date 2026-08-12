@@ -55,6 +55,7 @@ public class RodChatManager : NetworkBehaviour
     CanvasGroup    _cg;
     GameObject     _panel;
     TMP_Text       _log;
+    ScrollRect     _scrollRect;
     GameObject     _inputArea;
     TMP_InputField _input;
 
@@ -775,6 +776,13 @@ public class RodChatManager : NetworkBehaviour
         if (_log != null)
         {
             _log.text = string.Join("\n", _history);
+            Canvas.ForceUpdateCanvases();
+            LayoutRebuilder.ForceRebuildLayoutImmediate(_log.rectTransform);
+            if (_scrollRect != null)
+            {
+                _scrollRect.StopMovement();
+                _scrollRect.verticalNormalizedPosition = 0f;
+            }
             _lastMsgTime = Time.unscaledTime;
 
             if (!_panel.activeSelf) _panel.SetActive(true);
@@ -1008,6 +1016,9 @@ public class RodChatManager : NetworkBehaviour
         var header = MakeRect("Header", _panel.GetComponent<RectTransform>(),
             new Vector2(0f, 0.93f), new Vector2(1f, 1f));
         Img(header, new Color(0.05f, 0.03f, 0.14f, 1f));
+#if UNITY_EDITOR || !UNITY_SERVER
+        header.AddComponent<ChatWindowHandle>().panel = _panel.GetComponent<RectTransform>();
+#endif
         var titleLbl = MakeTmp("Title", header.GetComponent<RectTransform>(),
             new Vector2(0.01f, 0f), new Vector2(1f, 1f));
         titleLbl.text      = "CHAT  <size=8><color=#475569>Enter/T to type · Esc to close</color></size>";
@@ -1017,9 +1028,24 @@ public class RodChatManager : NetworkBehaviour
         titleLbl.alignment = TextAlignmentOptions.MidlineLeft;
 
         // ── Log text (plain fixed rect — no ScrollRect, no Mask/Viewport) ───
-        var logGO = MakeRect("LogText", _panel.GetComponent<RectTransform>(),
+        var scrollGO = MakeRect("LogScroll", _panel.GetComponent<RectTransform>(),
             new Vector2(0f, 0.13f), new Vector2(1f, 0.93f),
             new Vector2(6f, 4f), new Vector2(-6f, -4f));
+        Img(scrollGO, Color.clear);
+        _scrollRect = scrollGO.AddComponent<ScrollRect>();
+        _scrollRect.horizontal = false;
+        _scrollRect.vertical = true;
+        _scrollRect.scrollSensitivity = 24f;
+        _scrollRect.movementType = ScrollRect.MovementType.Clamped;
+
+        var viewport = MakeRect("Viewport", scrollGO.GetComponent<RectTransform>(),
+            Vector2.zero, Vector2.one);
+        Img(viewport, Color.clear);
+        viewport.AddComponent<RectMask2D>();
+        var logGO = MakeRect("LogText", viewport.GetComponent<RectTransform>(),
+            new Vector2(0f, 1f), new Vector2(1f, 1f));
+        var logRT = logGO.GetComponent<RectTransform>();
+        logRT.pivot = new Vector2(0.5f, 1f);
         _log = logGO.AddComponent<TextMeshProUGUI>();
         if (ChatFont != null) _log.font = ChatFont;
         _log.fontSize         = 11f;
@@ -1028,6 +1054,11 @@ public class RodChatManager : NetworkBehaviour
         _log.textWrappingMode = TextWrappingModes.Normal;
         _log.richText         = true;
         _log.overflowMode     = TextOverflowModes.Overflow;
+        var fitter = logGO.AddComponent<ContentSizeFitter>();
+        fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+        fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+        _scrollRect.viewport = viewport.GetComponent<RectTransform>();
+        _scrollRect.content = logRT;
 
         // ── Input area ────────────────────────────────────────────────────
         _inputArea = MakeRect("InputArea", _panel.GetComponent<RectTransform>(),
@@ -1070,6 +1101,15 @@ public class RodChatManager : NetworkBehaviour
         // Enter is handled in Update() — onSubmit is unreliable with new Input System.
 
         _inputArea.SetActive(false);
+#if UNITY_EDITOR || !UNITY_SERVER
+        var resizeGrip = MakeRect("ResizeGrip", _panel.GetComponent<RectTransform>(),
+            new Vector2(1f, 0f), new Vector2(1f, 0f),
+            new Vector2(-22f, 0f), new Vector2(0f, 22f));
+        Img(resizeGrip, new Color(0.35f, 0.55f, 0.8f, 0.75f));
+        var resizeHandle = resizeGrip.AddComponent<ChatWindowHandle>();
+        resizeHandle.panel = _panel.GetComponent<RectTransform>();
+        resizeHandle.resize = true;
+#endif
         _panel.SetActive(false);
     }
 
