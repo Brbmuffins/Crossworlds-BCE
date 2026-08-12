@@ -107,6 +107,9 @@ conversation: it names its files, acceptance criteria, and dependencies. Tasks m
 > height and duration; server-side target movement is synchronized to clients.
 > Chargeable circle damage and its pulse sequence now share the committed visual
 > radius, fixing Screaming Flames' hit area at larger charge sizes.
+> Cone and circle pulse hits can now emit two-ended Chain VFX from the caster to
+> each affected target. Necromancer Life Drain uses this path with refreshed curve
+> controls and a pulse-length lifetime, preventing its tether from pointing skyward.
 >
 > **GM flight controls 2026-08-09:** Both authenticated `/fly` and the local GM
 > console now use one Rigidbody flight mode in `PlayerMovement`. WASD provides

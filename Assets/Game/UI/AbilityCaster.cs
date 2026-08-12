@@ -4627,7 +4627,7 @@ public class AbilityCaster : NetworkBehaviour
 
         for (int pulse = 0; pulse < pulseCount; pulse++)
         {
-            ApplyPulseDamage(centre, radius, damage, ability.targetTag, ability.hitVFX, vfxLifetime);
+            ApplyPulseDamage(ability, centre, radius, damage, vfxLifetime);
             if (pulse < pulseCount - 1)
                 yield return new WaitForSeconds(interval);
         }
@@ -4781,7 +4781,12 @@ public class AbilityCaster : NetworkBehaviour
         return fallback;
     }
 
-    void ApplyPulseDamage(Vector3 centre, float radius, float damage, string targetTag, GameObject hitVFX, float hitVFXLifetime = 4f)
+    void ApplyPulseDamage(
+        AbilityDef ability,
+        Vector3 centre,
+        float radius,
+        float damage,
+        float hitVFXLifetime = 4f)
     {
         Collider[] hits = ZonePhysics.OverlapSphere(
             gameObject,
@@ -4795,7 +4800,7 @@ public class AbilityCaster : NetworkBehaviour
             if (health == null || !health.IsAlive || damaged.Contains(health))
                 continue;
 
-            if (!HitMatchesTargetTag(hit, health, targetTag))
+            if (!HitMatchesTargetTag(hit, health, ability.targetTag))
                 continue;
 
             if (!IsWithinHorizontalPulseRadius(health.transform.position, centre, radius))
@@ -4803,7 +4808,7 @@ public class AbilityCaster : NetworkBehaviour
 
             damaged.Add(health);
             DealAbilityDamage(health, damage);
-            EmitHitVFX(hitVFX, health.transform.position + Vector3.up * 0.5f, hitVFXLifetime);
+            EmitPulseTargetVFX(ability, health, hitVFXLifetime);
         }
     }
 
@@ -4838,11 +4843,28 @@ public class AbilityCaster : NetworkBehaviour
                 continue;
 
             DealAbilityDamage(health, damage);
-            EmitHitVFX(
-                ability.hitVFX,
-                health.transform.position + Vector3.up * 0.5f,
-                hitVFXLifetime);
+            EmitPulseTargetVFX(ability, health, hitVFXLifetime);
         }
+    }
+
+    void EmitPulseTargetVFX(
+        AbilityDef ability,
+        Health health,
+        float lifetime)
+    {
+        if (ability == null || health == null)
+            return;
+
+        Vector3 casterPoint = transform.position + Vector3.up * 0.8f;
+        Vector3 targetPoint = health.transform.position + Vector3.up * 0.8f;
+        EmitChainVFX(ability, casterPoint, targetPoint, lifetime);
+
+        if (ability.hitVFX != null)
+            EmitAbilityHitVFX(
+                ability,
+                health,
+                Vector3.up * 0.5f,
+                lifetime);
     }
 
     void ApplyPulseHealing(
@@ -5357,7 +5379,11 @@ public class AbilityCaster : NetworkBehaviour
         return found;
     }
 
-    void EmitChainVFX(AbilityDef ability, Vector3 from, Vector3 to)
+    void EmitChainVFX(
+        AbilityDef ability,
+        Vector3 from,
+        Vector3 to,
+        float lifetime = 4f)
     {
         if (ability?.chainVFX == null)
             return;
@@ -5366,24 +5392,36 @@ public class AbilityCaster : NetworkBehaviour
         {
             int spellbookIndex = FindSpellbookIndex(ability);
             if (spellbookIndex >= 0)
-                RpcPlayChainVFX(spellbookIndex, from, to);
+                RpcPlayChainVFX(spellbookIndex, from, to, lifetime);
         }
         else if (!NetworkClient.active)
-            SpawnChainVFX(ability.chainVFX, from, to);
+            SpawnChainVFX(ability.chainVFX, from, to, lifetime);
     }
 
     [ClientRpc]
-    void RpcPlayChainVFX(int spellbookIndex, Vector3 from, Vector3 to)
+    void RpcPlayChainVFX(
+        int spellbookIndex,
+        Vector3 from,
+        Vector3 to,
+        float lifetime)
     {
         if (spellbook == null ||
             spellbookIndex < 0 ||
             spellbookIndex >= spellbook.Length)
             return;
 
-        SpawnChainVFX(spellbook[spellbookIndex]?.chainVFX, from, to);
+        SpawnChainVFX(
+            spellbook[spellbookIndex]?.chainVFX,
+            from,
+            to,
+            lifetime);
     }
 
-    void SpawnChainVFX(GameObject prefab, Vector3 from, Vector3 to)
+    void SpawnChainVFX(
+        GameObject prefab,
+        Vector3 from,
+        Vector3 to,
+        float lifetime)
     {
         if (prefab == null)
             return;
@@ -5396,6 +5434,23 @@ public class AbilityCaster : NetworkBehaviour
         {
             castEndpoint.position = from;
             hitEndpoint.position = to;
+
+            // Curve-based tether graphs expose these optional control points.
+            // Reposition them with the endpoints so authored preview coordinates
+            // cannot pull an in-game beam away from its caster and target.
+            Transform castCurve =
+                FindNamedDescendant(fx.transform, "Cast Position Curve");
+            Transform hitCurve =
+                FindNamedDescendant(fx.transform, "Hit Position Curve");
+            float lift = Mathf.Clamp(
+                Vector3.Distance(from, to) * 0.15f,
+                0.35f,
+                1.5f);
+            Vector3 curveOffset = Vector3.up * lift;
+            if (castCurve != null)
+                castCurve.position = Vector3.Lerp(from, to, 0.33f) + curveOffset;
+            if (hitCurve != null)
+                hitCurve.position = Vector3.Lerp(from, to, 0.67f) + curveOffset;
         }
         else
         {
@@ -5405,7 +5460,7 @@ public class AbilityCaster : NetworkBehaviour
                 fx.transform.rotation = Quaternion.LookRotation(direction.normalized, Vector3.up);
         }
 
-        Destroy(fx, 4f);
+        Destroy(fx, Mathf.Max(0.1f, lifetime));
     }
 
     static Transform FindNamedDescendant(Transform root, string childName)
