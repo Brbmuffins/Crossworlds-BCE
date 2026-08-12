@@ -89,7 +89,16 @@ namespace Crossworlds.EditorTools.LootForge
                 EditorGUILayout.LabelField("Equipment", EditorStyles.boldLabel);
                 Draw(serialized, "equipmentSlot", "Equipment Slot");
                 Draw(serialized, "equippedVisualPrefab", "Equipped Visual Prefab");
+                if ((LootEquipmentSlot)serialized.FindProperty("equipmentSlot").enumValueIndex ==
+                    LootEquipmentSlot.MainHand)
+                    Draw(serialized, "twoHanded", "Two Handed Weapon");
                 Draw(serialized, "attachmentProfile", "Attachment Profile");
+                if (GUILayout.Button("Apply Recommended Attachment Profile"))
+                {
+                    serialized.ApplyModifiedProperties();
+                    EnsureRecommendedAttachmentProfile(true);
+                    serialized.Update();
+                }
                 using (new EditorGUI.DisabledScope(
                            definition.equippedVisualPrefab == null && definition.worldVisualPrefab == null))
                 {
@@ -106,9 +115,7 @@ namespace Crossworlds.EditorTools.LootForge
                     CreateAttachmentProfile();
                     serialized.Update();
                 }
-                if (serialized.FindProperty("attachmentProfile").objectReferenceValue == null)
-                    Draw(serialized, "twoHanded", "Two Handed");
-                else
+                if (serialized.FindProperty("attachmentProfile").objectReferenceValue != null)
                     Draw(serialized, "overrideAttachmentProfile", "Override Profile Transform");
                 if (serialized.FindProperty("attachmentProfile").objectReferenceValue == null ||
                     serialized.FindProperty("overrideAttachmentProfile").boolValue)
@@ -137,6 +144,7 @@ namespace Crossworlds.EditorTools.LootForge
                 MessageType.None);
             serialized.ApplyModifiedProperties();
             NormalizeVisualPrefabReferences();
+            EnsureRecommendedAttachmentProfile(false);
 
             using (new EditorGUI.DisabledScope(
                        definition.worldVisualPrefab == null && definition.equippedVisualPrefab == null))
@@ -285,6 +293,7 @@ namespace Crossworlds.EditorTools.LootForge
         List<string> ValidateDefinition(bool dropTableRequired)
         {
             NormalizeVisualPrefabReferences();
+            EnsureRecommendedAttachmentProfile(false);
             var issues = new List<string>();
             string id = definition.itemId?.Trim() ?? "";
             if (!System.Text.RegularExpressions.Regex.IsMatch(id, "^[a-z0-9_-]{1,64}$"))
@@ -307,6 +316,10 @@ namespace Crossworlds.EditorTools.LootForge
             if (equipment && definition.equippedVisualPrefab == null &&
                 definition.worldVisualPrefab == null)
                 issues.Add("Equipment requires an Equipped Visual Prefab or reusable World Visual Prefab.");
+            if (equipment && definition.equipmentSlot != LootEquipmentSlot.Ring &&
+                definition.equipmentSlot != LootEquipmentSlot.Trinket &&
+                definition.attachmentProfile == null)
+                issues.Add("Equipment requires an attachment profile. Use Apply Recommended Attachment Profile.");
             if (equipment && !SlotMatchesType(definition.databaseItemType, definition.equipmentSlot))
                 issues.Add($"{definition.databaseItemType} cannot use the {definition.equipmentSlot} equipment slot.");
             if (definition.inventoryIcon == null)
@@ -355,6 +368,23 @@ namespace Crossworlds.EditorTools.LootForge
             return string.IsNullOrWhiteSpace(path)
                 ? value
                 : AssetDatabase.LoadAssetAtPath<GameObject>(path) ?? value;
+        }
+
+        void EnsureRecommendedAttachmentProfile(bool force)
+        {
+            if (definition == null || !IsEquipment(definition.databaseItemType)) return;
+            if (!force && definition.attachmentProfile != null &&
+                !LootForgeAttachmentDefaults.IsDefault(definition.attachmentProfile))
+                return;
+
+            EquipmentAttachmentProfile recommended =
+                LootForgeAttachmentDefaults.GetOrCreate(
+                    definition.equipmentSlot, definition.twoHanded);
+            if (recommended == definition.attachmentProfile) return;
+            Undo.RecordObject(definition, "Assign recommended attachment profile");
+            definition.attachmentProfile = recommended;
+            definition.overrideAttachmentProfile = false;
+            EditorUtility.SetDirty(definition);
         }
 
         bool GenerateInventoryIcon(bool showConfirmation)
@@ -427,8 +457,16 @@ namespace Crossworlds.EditorTools.LootForge
             _ => LootEquipmentSlot.None
         };
 
-        static bool SlotMatchesType(LootDatabaseItemType type, LootEquipmentSlot slot) =>
-            DefaultSlot(type) == slot;
+        static bool SlotMatchesType(LootDatabaseItemType type, LootEquipmentSlot slot)
+        {
+            // Weapon is the database category for wielded weapon items. It may be
+            // authored for either hand; the dedicated Offhand category remains
+            // available for shields, focuses, tomes, and similar offhand gear.
+            if (type == LootDatabaseItemType.Weapon)
+                return slot == LootEquipmentSlot.MainHand ||
+                       slot == LootEquipmentSlot.OffHand;
+            return DefaultSlot(type) == slot;
+        }
 
         string BuildDeploymentSummary()
         {

@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4d960b9672ac30048a5f23f6ebc02031, type: 3}
+  m_Name: Cull The Gunda
+  m_EditorClassIdentifier: Assembly-CSharp::QuestDefinition
+  questId: cull_the_gunda
+  definitionVersion: 1
+  title: Cull The Gunda
+  description: Gunda are overtaking Duskwood.
+  minimumLevel: 1
+  objectivesMustBeCompletedInOrder: 0
+  offerText: I need you to cull the Gunda that are overtaking Duskwood!
+  activeText: How goes the task?
+  completionText: Well done.
+  questGiverPrefab: {fileID: 0}
+  turnInPrefab: {fileID: 0}
+  objectives:
+  - objectiveId: d0212193e23349278839e67e1c55942e
+    type: 0
+    targetId: gunda_basic
+    description: Kill Gunda basic
+    requiredAmount: 20
+    targetPrefab: {fileID: 1046127108768916309, guid: 7d58e2ca87a1a1e47930db2b695dfa13, type: 3}
+  goldReward: 1
+  experienceReward: 15
+  itemRewardId: wood_spike_mace
+  itemRewardQuantity: 1

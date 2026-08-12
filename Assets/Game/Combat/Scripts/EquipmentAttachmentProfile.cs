@@ -4,7 +4,7 @@ using UnityEngine;
 [Serializable]
 public sealed class EquipmentAttachmentClassOverride
 {
-    [Range(0, 4)] public int classIndex;
+    [Range(0, 5)] public int classIndex;
     public string attachmentBoneName;
     public Vector3 localPosition;
     public Vector3 localEulerAngles;

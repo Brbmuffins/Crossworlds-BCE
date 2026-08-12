@@ -155,7 +155,10 @@ public partial class PlayerIdentity
                 : definition.worldVisualPrefab;
             if (prefab == null) continue;
 
-            Transform anchor = ResolveEquipmentAnchor(definition, state.equipmentSlot);
+            bool skinnedArmor = IsSkinnedArmorPrefab(prefab, state.equipmentSlot);
+            Transform anchor = skinnedArmor
+                ? transform
+                : ResolveEquipmentAnchor(definition, state.equipmentSlot);
             GameObject visual = Instantiate(prefab, anchor, false);
             visual.name = $"[Equipped] {state.itemId}";
             visual.transform.localPosition = definition.EffectiveEquippedLocalPositionForClass(classIndex);
@@ -163,6 +166,8 @@ public partial class PlayerIdentity
                 definition.EffectiveEquippedLocalEulerAnglesForClass(classIndex));
             Vector3 scale = definition.EffectiveEquippedLocalScaleForClass(classIndex);
             visual.transform.localScale = scale.sqrMagnitude > 0.0001f ? scale : Vector3.one;
+            if (skinnedArmor)
+                RemapSkinnedArmorBones(visual);
             DisablePickupBehaviour(visual);
             _equippedVisuals[state.equipmentSlot] = visual;
         }
@@ -214,6 +219,57 @@ public partial class PlayerIdentity
             if (string.Equals(candidate.name, targetName, StringComparison.OrdinalIgnoreCase))
                 return candidate;
         return null;
+    }
+
+    static bool IsSkinnedArmorPrefab(GameObject prefab, LootEquipmentSlot slot)
+    {
+        bool armorSlot = slot == LootEquipmentSlot.Head ||
+                         slot == LootEquipmentSlot.Chest ||
+                         slot == LootEquipmentSlot.Hands ||
+                         slot == LootEquipmentSlot.Legs ||
+                         slot == LootEquipmentSlot.Feet;
+        return armorSlot && prefab.GetComponentInChildren<SkinnedMeshRenderer>(true) != null;
+    }
+
+    void RemapSkinnedArmorBones(GameObject visual)
+    {
+        var playerBones = new Dictionary<string, Transform>(StringComparer.OrdinalIgnoreCase);
+        foreach (Transform candidate in transform.GetComponentsInChildren<Transform>(true))
+            if (!candidate.IsChildOf(visual.transform) && !playerBones.ContainsKey(candidate.name))
+                playerBones.Add(candidate.name, candidate);
+
+        foreach (SkinnedMeshRenderer renderer in
+                 visual.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+        {
+            Transform[] sourceBones = renderer.bones;
+            var mappedBones = new Transform[sourceBones.Length];
+            int mapped = 0;
+            for (int i = 0; i < sourceBones.Length; i++)
+            {
+                Transform sourceBone = sourceBones[i];
+                if (sourceBone != null && playerBones.TryGetValue(sourceBone.name, out Transform targetBone))
+                {
+                    mappedBones[i] = targetBone;
+                    mapped++;
+                }
+                else
+                    mappedBones[i] = sourceBone;
+            }
+
+            if (sourceBones.Length > 0 && mapped == 0)
+            {
+                Debug.LogWarning(
+                    $"[EQUIPMENT] Skinned armor '{visual.name}' does not share bone names with '{name}'. " +
+                    "Rig it to the player skeleton or use a class-specific armor prefab.", visual);
+                continue;
+            }
+
+            renderer.bones = mappedBones;
+            if (renderer.rootBone != null &&
+                playerBones.TryGetValue(renderer.rootBone.name, out Transform mappedRoot))
+                renderer.rootBone = mappedRoot;
+            renderer.updateWhenOffscreen = true;
+        }
     }
 
     void SetBuiltInMainHandVisible(bool visible)
