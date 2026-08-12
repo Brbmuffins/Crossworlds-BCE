@@ -25,8 +25,8 @@ MonoBehaviour:
     localScale: {x: 1, y: 1, z: 1}
   - classIndex: 4
     attachmentBoneName: LeftHandSocket
-    localPosition: {x: 0.15835564, y: 0.35982582, z: 0.05177837}
-    localEulerAngles: {x: 354.27994, y: 340.19992, z: 334.91983}
+    localPosition: {x: 0.10716287, y: 0.2815446, z: 0.0061237235}
+    localEulerAngles: {x: 351.52988, y: 351.74982, z: 334.91983}
     localScale: {x: 1, y: 1, z: 1}
   - classIndex: 3
     attachmentBoneName: LeftHandSocket

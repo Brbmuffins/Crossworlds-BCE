@@ -20,17 +20,17 @@ MonoBehaviour:
   classOverrides:
   - classIndex: 0
     attachmentBoneName: RightHandSocket
-    localPosition: {x: -0.28454053, y: 0.08092284, z: 0.031256706}
-    localEulerAngles: {x: 14.519973, y: 1.3199066, z: 96.79989}
+    localPosition: {x: -0.0027284203, y: 0.37233624, z: 0.07118424}
+    localEulerAngles: {x: 221.06981, y: 44.76967, z: 33.79996}
     localScale: {x: 1, y: 1, z: 1}
   - classIndex: 3
     attachmentBoneName: RightHandSocket
-    localPosition: {x: 0.29106447, y: 0.15037507, z: -0.049741156}
-    localEulerAngles: {x: 0, y: 0, z: 286.52002}
+    localPosition: {x: -0.17349601, y: 0.30755785, z: 0.07162933}
+    localEulerAngles: {x: 197.44995, y: 176, z: 84.06996}
     localScale: {x: 1, y: 1, z: 1}
   - classIndex: 4
     attachmentBoneName: RightHandSocket
-    localPosition: {x: -0.17178074, y: 0.2505814, z: -0.008651417}
-    localEulerAngles: {x: 0, y: 0, z: 58.959972}
+    localPosition: {x: 0.08266303, y: 0.31279045, z: 0.2531115}
+    localEulerAngles: {x: 257.64993, y: 20.65008, z: 36.959953}
     localScale: {x: 1, y: 1, z: 1}
   twoHanded: 0

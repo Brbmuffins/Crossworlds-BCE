@@ -87,7 +87,6 @@ internal static class WarmongerFireEffectSetup
 
             PrefabUtility.SaveAsPrefabAsset(root, WeaponPrefabPath);
             RemoveDuplicateSceneSocketOverrides();
-            RegenerateInventoryIcon();
             Debug.Log("[WARMONGER] Applied looping flame and fire light to FireSocket.", weaponPrefab);
         }
         catch (Exception exception)
@@ -146,30 +145,5 @@ internal static class WarmongerFireEffectSetup
         return null;
     }
 
-    static void RegenerateInventoryIcon()
-    {
-        GameObject weapon = AssetDatabase.LoadAssetAtPath<GameObject>(WeaponPrefabPath);
-        if (weapon == null) return;
-
-        var temporaryDefinition = ScriptableObject.CreateInstance<LootItemDefinition>();
-        try
-        {
-            temporaryDefinition.itemId = "warmonger";
-            temporaryDefinition.displayName = "Warmonger";
-            temporaryDefinition.equippedVisualPrefab = weapon;
-            // Warmonger's imported mesh is one-sided. This is its known-visible
-            // face; use extra framing instead of rotating toward the culled side.
-            temporaryDefinition.inventoryIconEulerAngles = new Vector3(12f, -28f, -8f);
-            temporaryDefinition.inventoryIconZoom = 1.8f;
-            Crossworlds.EditorTools.LootForge.LootForgeIconRenderer.Render(
-                temporaryDefinition, out string error);
-            if (!string.IsNullOrWhiteSpace(error))
-                Debug.LogWarning("[WARMONGER] Inventory icon regeneration failed: " + error);
-        }
-        finally
-        {
-            UnityEngine.Object.DestroyImmediate(temporaryDefinition);
-        }
-    }
 }
 #endif

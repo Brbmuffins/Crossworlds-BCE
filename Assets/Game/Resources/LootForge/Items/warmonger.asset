@@ -26,21 +26,32 @@ MonoBehaviour:
   stackable: 0
   maxStackSize: 1
   equippedVisualPrefab: {fileID: 587472421312629377, guid: 8094817115d13d54788241f619573de2, type: 3}
-  attachmentProfile: {fileID: 0}
-  overrideAttachmentProfile: 0
+  attachmentProfile: {fileID: 11400000, guid: fdf5a72e64c799f4cbdbc534cb3eb014, type: 2}
+  overrideAttachmentProfile: 1
   twoHanded: 0
-  attachmentBoneName: 
+  attachmentBoneName: RightHandSocket
   equippedLocalPosition: {x: 0, y: 0, z: 0}
   equippedLocalEulerAngles: {x: 0, y: 0, z: 0}
   equippedLocalScale: {x: 1, y: 1, z: 1}
   classAttachmentOverrides:
   - classIndex: 0
-    attachmentBoneName: 
-    localPosition: {x: 0.09624251, y: 0.38080978, z: 0.044639528}
-    localEulerAngles: {x: 217.8, y: 28.050745, z: 44.250057}
+    attachmentBoneName: RightHandSocket
+    localPosition: {x: -0.0027284203, y: 0.37233624, z: 0.07118424}
+    localEulerAngles: {x: 221.06981, y: 44.76967, z: 33.79996}
+    localScale: {x: 1, y: 1, z: 1}
+  - classIndex: 3
+    attachmentBoneName: RightHandSocket
+    localPosition: {x: -0.17349601, y: 0.30755785, z: 0.07162933}
+    localEulerAngles: {x: 197.44995, y: 176, z: 84.06996}
+    localScale: {x: 1, y: 1, z: 1}
+  - classIndex: 4
+    attachmentBoneName: RightHandSocket
+    localPosition: {x: 0.08266303, y: 0.31279045, z: 0.2531115}
+    localEulerAngles: {x: 257.64993, y: 20.65008, z: 36.959953}
     localScale: {x: 1, y: 1, z: 1}
   bonusStrength: 2
   bonusAgility: 0
   bonusIntelligence: 0
   bonusVitality: 1
+  spellBonusDescriptions: []
   worldVisualPrefab: {fileID: 587472421312629377, guid: 8094817115d13d54788241f619573de2, type: 3}
