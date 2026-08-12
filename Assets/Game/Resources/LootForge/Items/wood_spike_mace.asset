@@ -27,13 +27,28 @@ MonoBehaviour:
   maxStackSize: 1
   equippedVisualPrefab: {fileID: 4842899369787706840, guid: 4d44d95f215642142b727485cf76f58d, type: 3}
   attachmentProfile: {fileID: 11400000, guid: fdf5a72e64c799f4cbdbc534cb3eb014, type: 2}
-  overrideAttachmentProfile: 0
+  overrideAttachmentProfile: 1
   twoHanded: 0
-  attachmentBoneName: 
+  attachmentBoneName: RightHandSocket
   equippedLocalPosition: {x: 0, y: 0, z: 0}
   equippedLocalEulerAngles: {x: 0, y: 0, z: 0}
   equippedLocalScale: {x: 1, y: 1, z: 1}
-  classAttachmentOverrides: []
+  classAttachmentOverrides:
+  - classIndex: 0
+    attachmentBoneName: 
+    localPosition: {x: -0.33964893, y: 0.08108617, z: 0.02075059}
+    localEulerAngles: {x: 0, y: 0, z: 95.15001}
+    localScale: {x: 1, y: 1, z: 1}
+  - classIndex: 4
+    attachmentBoneName: 
+    localPosition: {x: -0.23644716, y: 0.1871191, z: -0.021911146}
+    localEulerAngles: {x: 2.2, y: 347.90012, z: 74.8}
+    localScale: {x: 1, y: 1, z: 1}
+  - classIndex: 3
+    attachmentBoneName: 
+    localPosition: {x: 0.22389042, y: 0.016336804, z: -0.042115144}
+    localEulerAngles: {x: 0, y: 0, z: 263.44998}
+    localScale: {x: 1, y: 1, z: 1}
   bonusStrength: 1
   bonusAgility: 1
   bonusIntelligence: 0
