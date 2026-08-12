@@ -4855,9 +4855,7 @@ public class AbilityCaster : NetworkBehaviour
         if (ability == null || health == null)
             return;
 
-        Vector3 casterPoint = transform.position + Vector3.up * 0.8f;
-        Vector3 targetPoint = health.transform.position + Vector3.up * 0.8f;
-        EmitChainVFX(ability, casterPoint, targetPoint, lifetime);
+        EmitFollowingChainVFX(ability, health, lifetime);
 
         if (ability.hitVFX != null)
             EmitAbilityHitVFX(
@@ -5398,6 +5396,45 @@ public class AbilityCaster : NetworkBehaviour
             SpawnChainVFX(ability.chainVFX, from, to, lifetime);
     }
 
+    void EmitFollowingChainVFX(
+        AbilityDef ability,
+        Health target,
+        float lifetime)
+    {
+        if (ability?.chainVFX == null || target == null)
+            return;
+
+        Vector3 from = transform.position + Vector3.up * 0.8f;
+        Vector3 to = target.transform.position + Vector3.up * 0.8f;
+        if (NetworkServer.active)
+        {
+            int spellbookIndex = FindSpellbookIndex(ability);
+            if (spellbookIndex < 0)
+                return;
+
+            NetworkIdentity targetIdentity = target.netIdentity;
+            if (targetIdentity != null && targetIdentity.netId != 0)
+            {
+                RpcPlayFollowingChainVFX(
+                    spellbookIndex,
+                    targetIdentity.netId,
+                    lifetime);
+            }
+            else
+                RpcPlayChainVFX(spellbookIndex, from, to, lifetime);
+        }
+        else if (!NetworkClient.active)
+        {
+            SpawnChainVFX(
+                ability.chainVFX,
+                from,
+                to,
+                lifetime,
+                transform,
+                target.transform);
+        }
+    }
+
     [ClientRpc]
     void RpcPlayChainVFX(
         int spellbookIndex,
@@ -5417,12 +5454,49 @@ public class AbilityCaster : NetworkBehaviour
             lifetime);
     }
 
+    [ClientRpc]
+    void RpcPlayFollowingChainVFX(
+        int spellbookIndex,
+        uint targetNetId,
+        float lifetime)
+    {
+#if UNITY_EDITOR || !UNITY_SERVER
+        if (spellbook == null ||
+            spellbookIndex < 0 ||
+            spellbookIndex >= spellbook.Length ||
+            !NetworkClient.spawned.TryGetValue(
+                targetNetId,
+                out NetworkIdentity targetIdentity))
+        {
+            return;
+        }
+
+        Health targetHealth =
+            targetIdentity.GetComponentInChildren<Health>();
+        Transform targetTransform = targetHealth != null
+            ? targetHealth.transform
+            : targetIdentity.transform;
+        Vector3 from = transform.position + Vector3.up * 0.8f;
+        Vector3 to = targetTransform.position + Vector3.up * 0.8f;
+        SpawnChainVFX(
+            spellbook[spellbookIndex]?.chainVFX,
+            from,
+            to,
+            lifetime,
+            transform,
+            targetTransform);
+#endif
+    }
+
     void SpawnChainVFX(
         GameObject prefab,
         Vector3 from,
         Vector3 to,
-        float lifetime)
+        float lifetime,
+        Transform sourceToFollow = null,
+        Transform targetToFollow = null)
     {
+#if UNITY_EDITOR || !UNITY_SERVER
         if (prefab == null)
             return;
 
@@ -5442,15 +5516,31 @@ public class AbilityCaster : NetworkBehaviour
                 FindNamedDescendant(fx.transform, "Cast Position Curve");
             Transform hitCurve =
                 FindNamedDescendant(fx.transform, "Hit Position Curve");
-            float lift = Mathf.Clamp(
-                Vector3.Distance(from, to) * 0.15f,
-                0.35f,
-                1.5f);
-            Vector3 curveOffset = Vector3.up * lift;
-            if (castCurve != null)
-                castCurve.position = Vector3.Lerp(from, to, 0.33f) + curveOffset;
-            if (hitCurve != null)
-                hitCurve.position = Vector3.Lerp(from, to, 0.67f) + curveOffset;
+
+            if (sourceToFollow != null && targetToFollow != null)
+            {
+                ChainVFXEndpointFollower follower =
+                    fx.AddComponent<ChainVFXEndpointFollower>();
+                follower.Bind(
+                    sourceToFollow,
+                    targetToFollow,
+                    castEndpoint,
+                    hitEndpoint,
+                    castCurve,
+                    hitCurve,
+                    sourceToFollow.InverseTransformPoint(from),
+                    targetToFollow.InverseTransformPoint(to));
+            }
+            else
+            {
+                ChainVFXEndpointFollower.PlaceEndpoints(
+                    castEndpoint,
+                    hitEndpoint,
+                    castCurve,
+                    hitCurve,
+                    from,
+                    to);
+            }
         }
         else
         {
@@ -5461,6 +5551,7 @@ public class AbilityCaster : NetworkBehaviour
         }
 
         Destroy(fx, Mathf.Max(0.1f, lifetime));
+#endif
     }
 
     static Transform FindNamedDescendant(Transform root, string childName)
@@ -8455,6 +8546,94 @@ public class AbilityCaster : NetworkBehaviour
 }
 
 #if UNITY_EDITOR || !UNITY_SERVER
+internal sealed class ChainVFXEndpointFollower : MonoBehaviour
+{
+    Transform source;
+    Transform target;
+    Transform castEndpoint;
+    Transform hitEndpoint;
+    Transform castCurve;
+    Transform hitCurve;
+    Vector3 sourceLocalOffset;
+    Vector3 targetLocalOffset;
+
+    public void Bind(
+        Transform sourceTransform,
+        Transform targetTransform,
+        Transform castPosition,
+        Transform hitPosition,
+        Transform castCurvePosition,
+        Transform hitCurvePosition,
+        Vector3 sourceOffset,
+        Vector3 targetOffset)
+    {
+        source = sourceTransform;
+        target = targetTransform;
+        castEndpoint = castPosition;
+        hitEndpoint = hitPosition;
+        castCurve = castCurvePosition;
+        hitCurve = hitCurvePosition;
+        sourceLocalOffset = sourceOffset;
+        targetLocalOffset = targetOffset;
+        RefreshEndpoints();
+    }
+
+    void LateUpdate()
+    {
+        if (source == null || target == null)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
+        RefreshEndpoints();
+    }
+
+    void RefreshEndpoints()
+    {
+        if (source == null || target == null)
+            return;
+
+        PlaceEndpoints(
+            castEndpoint,
+            hitEndpoint,
+            castCurve,
+            hitCurve,
+            source.TransformPoint(sourceLocalOffset),
+            target.TransformPoint(targetLocalOffset));
+    }
+
+    public static void PlaceEndpoints(
+        Transform castPosition,
+        Transform hitPosition,
+        Transform castCurvePosition,
+        Transform hitCurvePosition,
+        Vector3 from,
+        Vector3 to)
+    {
+        if (castPosition != null)
+            castPosition.position = from;
+        if (hitPosition != null)
+            hitPosition.position = to;
+
+        float lift = Mathf.Clamp(
+            Vector3.Distance(from, to) * 0.15f,
+            0.35f,
+            1.5f);
+        Vector3 curveOffset = Vector3.up * lift;
+        if (castCurvePosition != null)
+        {
+            castCurvePosition.position =
+                Vector3.Lerp(from, to, 0.33f) + curveOffset;
+        }
+        if (hitCurvePosition != null)
+        {
+            hitCurvePosition.position =
+                Vector3.Lerp(from, to, 0.67f) + curveOffset;
+        }
+    }
+}
+
 internal sealed class ShieldVFXLifetime : MonoBehaviour
 {
     static readonly Dictionary<int, ShieldVFXLifetime> ActiveByTarget =
