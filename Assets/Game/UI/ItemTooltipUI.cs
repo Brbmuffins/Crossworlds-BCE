@@ -45,6 +45,8 @@ public class ItemTooltipUI : MonoBehaviour
     TextMeshProUGUI _rarityTxt;
     TextMeshProUGUI _slotTxt;
     TextMeshProUGUI _detailsTxt;
+    Image           _slotTopDivider;
+    Image           _slotBottomDivider;
 
     // Tooltip sizing
     const float PanelW   = 300f;
@@ -95,6 +97,12 @@ public class ItemTooltipUI : MonoBehaviour
         string slotName = lootDefinition != null
             ? FormatEquipmentSlot(lootDefinition.equipmentSlot) : "";
         _slotTxt.gameObject.SetActive(!string.IsNullOrWhiteSpace(slotName));
+        _slotTopDivider.gameObject.SetActive(!string.IsNullOrWhiteSpace(slotName));
+        _slotBottomDivider.gameObject.SetActive(!string.IsNullOrWhiteSpace(slotName));
+        Color dividerColor = Color.Lerp(ColBorder, rarityColor, 0.5f);
+        dividerColor.a = 0.8f;
+        _slotTopDivider.color = dividerColor;
+        _slotBottomDivider.color = dividerColor;
         _slotTxt.text = string.IsNullOrWhiteSpace(slotName)
             ? "" : $"Equipment Slot                 <color=#D8AD52>{slotName}</color>";
 
@@ -239,8 +247,10 @@ public class ItemTooltipUI : MonoBehaviour
             27f, 20f, FontStyles.Bold, ColText);
         _rarityTxt = MakeTopTMP("RarityAndType", panelGO.transform, 14f, 40f,
             PanelW - 28f, 22f, 15f, FontStyles.Normal, ColSubtext);
+        _slotTopDivider = MakeDivider("EquipmentSlotTopDivider", panelGO.transform, 68f);
         _slotTxt = MakeTopTMP("EquipmentSlot", panelGO.transform, 14f, 70f,
             PanelW - 28f, 30f, 15f, FontStyles.Normal, ColText);
+        _slotBottomDivider = MakeDivider("EquipmentSlotBottomDivider", panelGO.transform, 105f);
         _detailsTxt = MakeTopTMP("Details", panelGO.transform, 14f, 112f,
             PanelW - 28f, 80f, 15f, FontStyles.Normal, ColText);
         _detailsTxt.enableWordWrapping = true;
@@ -267,6 +277,17 @@ public class ItemTooltipUI : MonoBehaviour
         t.color     = col;
         t.alignment = TextAlignmentOptions.Left;
         return t;
+    }
+
+    static Image MakeDivider(string name, Transform parent, float top)
+    {
+        var go = new GameObject(name, typeof(RectTransform), typeof(Image));
+        go.transform.SetParent(parent, false);
+        var rect = go.GetComponent<RectTransform>();
+        SetTopRect(rect, 14f, top, PanelW - 28f, 1f);
+        var image = go.GetComponent<Image>();
+        image.raycastTarget = false;
+        return image;
     }
 
     static void SetTopRect(RectTransform rt, float left, float top, float width, float height)
