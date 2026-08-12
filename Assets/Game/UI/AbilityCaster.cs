@@ -264,6 +264,9 @@ public class AbilityDef
     [UnityEngine.Serialization.FormerlySerializedAs("overridePulseSettings")]
     [Tooltip("Turn on to add pulse damage to this spell, or to customize built-in pulses for spells like Void Maw.")]
     public bool usePulseDamage = false;
+    [InspectorName("Is DoT")]
+    [Tooltip("Lock pulse damage to the targets caught by the initial cast. Those targets keep taking ticks after leaving the original area; leave off for a zone that rescans each pulse.")]
+    public bool pulseDamageIsDoT = false;
     [Tooltip("How many damage pulses happen after the spell lands. Set to 0 to disable custom pulses.")]
     [Min(0)] public int pulseCount = 0;
     [Tooltip("Seconds between each pulse. Leave at 0 to use the default 1 second.")]
@@ -4624,10 +4627,26 @@ public class AbilityCaster : NetworkBehaviour
         float damage = GetPulseDamage(ability, GetDefaultPulseDamage(ability), damageMultiplier);
         float interval = GetPulseInterval(ability, GetDefaultPulseInterval(ability));
         float vfxLifetime = GetPulseVFXLifetime(ability, GetDefaultPulseVFXLifetime(ability));
+        List<Health> dotTargets = ability.pulseDamageIsDoT
+            ? FindPulseTargets(ability, centre, radius)
+            : null;
 
         for (int pulse = 0; pulse < pulseCount; pulse++)
         {
-            ApplyPulseDamage(ability, centre, radius, damage, vfxLifetime);
+            if (dotTargets != null)
+                ApplyPulseDamageToTargets(
+                    ability,
+                    dotTargets,
+                    damage,
+                    vfxLifetime);
+            else
+                ApplyPulseDamage(
+                    ability,
+                    centre,
+                    radius,
+                    damage,
+                    vfxLifetime);
+
             if (pulse < pulseCount - 1)
                 yield return new WaitForSeconds(interval);
         }
@@ -4664,16 +4683,26 @@ public class AbilityCaster : NetworkBehaviour
         float vfxLifetime = GetPulseVFXLifetime(
             ability,
             GetDefaultPulseVFXLifetime(ability));
+        List<Health> dotTargets = ability.pulseDamageIsDoT
+            ? FindConePulseTargets(ability, origin, forward, range)
+            : null;
 
         for (int pulse = 0; pulse < pulseCount; pulse++)
         {
-            ApplyConePulseDamage(
-                ability,
-                origin,
-                forward,
-                range,
-                damage,
-                vfxLifetime);
+            if (dotTargets != null)
+                ApplyPulseDamageToTargets(
+                    ability,
+                    dotTargets,
+                    damage,
+                    vfxLifetime);
+            else
+                ApplyConePulseDamage(
+                    ability,
+                    origin,
+                    forward,
+                    range,
+                    damage,
+                    vfxLifetime);
 
             if (pulse < pulseCount - 1)
                 yield return new WaitForSeconds(interval);
@@ -4788,16 +4817,29 @@ public class AbilityCaster : NetworkBehaviour
         float damage,
         float hitVFXLifetime = 4f)
     {
+        ApplyPulseDamageToTargets(
+            ability,
+            FindPulseTargets(ability, centre, radius),
+            damage,
+            hitVFXLifetime);
+    }
+
+    List<Health> FindPulseTargets(
+        AbilityDef ability,
+        Vector3 centre,
+        float radius)
+    {
+        var targets = new List<Health>();
         Collider[] hits = ZonePhysics.OverlapSphere(
             gameObject,
             centre,
             PulsePhysicsQueryRadius(radius));
-        var damaged = new System.Collections.Generic.HashSet<Health>();
+        var matched = new HashSet<Health>();
 
         foreach (Collider hit in hits)
         {
             Health health = hit.GetComponentInParent<Health>();
-            if (health == null || !health.IsAlive || damaged.Contains(health))
+            if (health == null || !health.IsAlive || matched.Contains(health))
                 continue;
 
             if (!HitMatchesTargetTag(hit, health, ability.targetTag))
@@ -4806,10 +4848,11 @@ public class AbilityCaster : NetworkBehaviour
             if (!IsWithinHorizontalPulseRadius(health.transform.position, centre, radius))
                 continue;
 
-            damaged.Add(health);
-            DealAbilityDamage(health, damage);
-            EmitPulseTargetVFX(ability, health, hitVFXLifetime);
+            matched.Add(health);
+            targets.Add(health);
         }
+
+        return targets;
     }
 
     void ApplyConePulseDamage(
@@ -4820,11 +4863,25 @@ public class AbilityCaster : NetworkBehaviour
         float damage,
         float hitVFXLifetime)
     {
+        ApplyPulseDamageToTargets(
+            ability,
+            FindConePulseTargets(ability, origin, forward, range),
+            damage,
+            hitVFXLifetime);
+    }
+
+    List<Health> FindConePulseTargets(
+        AbilityDef ability,
+        Vector3 origin,
+        Vector3 forward,
+        float range)
+    {
+        var targets = new List<Health>();
         Collider[] hits = ZonePhysics.OverlapSphere(
             gameObject,
             origin,
             range);
-        var damaged = new System.Collections.Generic.HashSet<Health>();
+        var matched = new HashSet<Health>();
         float halfAngle = Mathf.Max(0f, ability.coneAngle * 0.5f);
 
         foreach (Collider hit in hits)
@@ -4833,7 +4890,7 @@ public class AbilityCaster : NetworkBehaviour
                     hit,
                     ability.targetTag,
                     out Health health) ||
-                !damaged.Add(health))
+                !matched.Add(health))
                 continue;
 
             Vector3 toTarget = health.transform.position - origin;
@@ -4841,6 +4898,30 @@ public class AbilityCaster : NetworkBehaviour
             if (toTarget.sqrMagnitude < 0.0001f ||
                 Vector3.Angle(forward, toTarget) > halfAngle)
                 continue;
+
+            targets.Add(health);
+        }
+
+        return targets;
+    }
+
+    void ApplyPulseDamageToTargets(
+        AbilityDef ability,
+        List<Health> targets,
+        float damage,
+        float hitVFXLifetime)
+    {
+        if (targets == null)
+            return;
+
+        for (int i = targets.Count - 1; i >= 0; i--)
+        {
+            Health health = targets[i];
+            if (health == null || !health.IsAlive)
+            {
+                targets.RemoveAt(i);
+                continue;
+            }
 
             DealAbilityDamage(health, damage);
             EmitPulseTargetVFX(ability, health, hitVFXLifetime);

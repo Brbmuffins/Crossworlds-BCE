@@ -111,6 +111,9 @@ conversation: it names its files, acceptance criteria, and dependencies. Tasks m
 > each affected target. Necromancer Life Drain uses this path with curve controls
 > bound to the moving caster and target for the pulse lifetime, preventing its
 > tether from pointing skyward or leaving its source behind.
+> Pulse Damage now exposes an authored `Is DoT` mode that snapshots the original
+> targets and continues ticking them outside the cast area. Life Drain enables it;
+> ordinary pulse zones retain their per-tick area checks.
 >
 > **GM flight controls 2026-08-09:** Both authenticated `/fly` and the local GM
 > console now use one Rigidbody flight mode in `PlayerMovement`. WASD provides

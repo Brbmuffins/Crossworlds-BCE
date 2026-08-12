@@ -550,6 +550,7 @@ MonoBehaviour:
     knockUpHeight: 2.5
     knockUpDuration: 0.8
     usePulseDamage: 1
+    pulseDamageIsDoT: 1
     pulseCount: 5
     pulseInterval: 1
     pulseRadius: 0
