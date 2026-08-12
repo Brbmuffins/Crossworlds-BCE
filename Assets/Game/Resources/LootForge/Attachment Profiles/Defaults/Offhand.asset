@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8ab47830435d61d41be5afada3f088a6, type: 3}
+  m_Name: Offhand
+  m_EditorClassIdentifier: Assembly-CSharp::EquipmentAttachmentProfile
+  profileName: Offhand
+  attachmentBoneName: LeftHandSocket
+  localPosition: {x: 0, y: 0, z: 0}
+  localEulerAngles: {x: 0, y: 0, z: 0}
+  localScale: {x: 1, y: 1, z: 1}
+  classOverrides:
+  - classIndex: 0
+    attachmentBoneName: LeftHandSocket
+    localPosition: {x: 0.22613901, y: -0.0929362, z: -0.082791775}
+    localEulerAngles: {x: 347.68, y: 33.00003, z: 240.75986}
+    localScale: {x: 1, y: 1, z: 1}
+  - classIndex: 4
+    attachmentBoneName: LeftHandSocket
+    localPosition: {x: 0.15835564, y: 0.35982582, z: 0.05177837}
+    localEulerAngles: {x: 354.27994, y: 340.19992, z: 334.91983}
+    localScale: {x: 1, y: 1, z: 1}
+  - classIndex: 3
+    attachmentBoneName: LeftHandSocket
+    localPosition: {x: -0.25734, y: 0.2245713, z: -0.06345138}
+    localEulerAngles: {x: 0, y: 0, z: 56.759964}
+    localScale: {x: 1, y: 1, z: 1}
+  twoHanded: 0

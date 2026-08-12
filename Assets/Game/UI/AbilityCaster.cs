@@ -264,6 +264,9 @@ public class AbilityDef
     [UnityEngine.Serialization.FormerlySerializedAs("overridePulseSettings")]
     [Tooltip("Turn on to add pulse damage to this spell, or to customize built-in pulses for spells like Void Maw.")]
     public bool usePulseDamage = false;
+    [InspectorName("Is DoT")]
+    [Tooltip("Lock pulse damage to the targets caught by the initial cast. Those targets keep taking ticks after leaving the original area; leave off for a zone that rescans each pulse.")]
+    public bool pulseDamageIsDoT = false;
     [Tooltip("How many damage pulses happen after the spell lands. Set to 0 to disable custom pulses.")]
     [Min(0)] public int pulseCount = 0;
     [Tooltip("Seconds between each pulse. Leave at 0 to use the default 1 second.")]
@@ -4624,10 +4627,26 @@ public class AbilityCaster : NetworkBehaviour
         float damage = GetPulseDamage(ability, GetDefaultPulseDamage(ability), damageMultiplier);
         float interval = GetPulseInterval(ability, GetDefaultPulseInterval(ability));
         float vfxLifetime = GetPulseVFXLifetime(ability, GetDefaultPulseVFXLifetime(ability));
+        List<Health> dotTargets = ability.pulseDamageIsDoT
+            ? FindPulseTargets(ability, centre, radius)
+            : null;
 
         for (int pulse = 0; pulse < pulseCount; pulse++)
         {
-            ApplyPulseDamage(centre, radius, damage, ability.targetTag, ability.hitVFX, vfxLifetime);
+            if (dotTargets != null)
+                ApplyPulseDamageToTargets(
+                    ability,
+                    dotTargets,
+                    damage,
+                    vfxLifetime);
+            else
+                ApplyPulseDamage(
+                    ability,
+                    centre,
+                    radius,
+                    damage,
+                    vfxLifetime);
+
             if (pulse < pulseCount - 1)
                 yield return new WaitForSeconds(interval);
         }
@@ -4664,16 +4683,26 @@ public class AbilityCaster : NetworkBehaviour
         float vfxLifetime = GetPulseVFXLifetime(
             ability,
             GetDefaultPulseVFXLifetime(ability));
+        List<Health> dotTargets = ability.pulseDamageIsDoT
+            ? FindConePulseTargets(ability, origin, forward, range)
+            : null;
 
         for (int pulse = 0; pulse < pulseCount; pulse++)
         {
-            ApplyConePulseDamage(
-                ability,
-                origin,
-                forward,
-                range,
-                damage,
-                vfxLifetime);
+            if (dotTargets != null)
+                ApplyPulseDamageToTargets(
+                    ability,
+                    dotTargets,
+                    damage,
+                    vfxLifetime);
+            else
+                ApplyConePulseDamage(
+                    ability,
+                    origin,
+                    forward,
+                    range,
+                    damage,
+                    vfxLifetime);
 
             if (pulse < pulseCount - 1)
                 yield return new WaitForSeconds(interval);
@@ -4781,30 +4810,49 @@ public class AbilityCaster : NetworkBehaviour
         return fallback;
     }
 
-    void ApplyPulseDamage(Vector3 centre, float radius, float damage, string targetTag, GameObject hitVFX, float hitVFXLifetime = 4f)
+    void ApplyPulseDamage(
+        AbilityDef ability,
+        Vector3 centre,
+        float radius,
+        float damage,
+        float hitVFXLifetime = 4f)
     {
+        ApplyPulseDamageToTargets(
+            ability,
+            FindPulseTargets(ability, centre, radius),
+            damage,
+            hitVFXLifetime);
+    }
+
+    List<Health> FindPulseTargets(
+        AbilityDef ability,
+        Vector3 centre,
+        float radius)
+    {
+        var targets = new List<Health>();
         Collider[] hits = ZonePhysics.OverlapSphere(
             gameObject,
             centre,
             PulsePhysicsQueryRadius(radius));
-        var damaged = new System.Collections.Generic.HashSet<Health>();
+        var matched = new HashSet<Health>();
 
         foreach (Collider hit in hits)
         {
             Health health = hit.GetComponentInParent<Health>();
-            if (health == null || !health.IsAlive || damaged.Contains(health))
+            if (health == null || !health.IsAlive || matched.Contains(health))
                 continue;
 
-            if (!HitMatchesTargetTag(hit, health, targetTag))
+            if (!HitMatchesTargetTag(hit, health, ability.targetTag))
                 continue;
 
             if (!IsWithinHorizontalPulseRadius(health.transform.position, centre, radius))
                 continue;
 
-            damaged.Add(health);
-            DealAbilityDamage(health, damage);
-            EmitHitVFX(hitVFX, health.transform.position + Vector3.up * 0.5f, hitVFXLifetime);
+            matched.Add(health);
+            targets.Add(health);
         }
+
+        return targets;
     }
 
     void ApplyConePulseDamage(
@@ -4815,11 +4863,25 @@ public class AbilityCaster : NetworkBehaviour
         float damage,
         float hitVFXLifetime)
     {
+        ApplyPulseDamageToTargets(
+            ability,
+            FindConePulseTargets(ability, origin, forward, range),
+            damage,
+            hitVFXLifetime);
+    }
+
+    List<Health> FindConePulseTargets(
+        AbilityDef ability,
+        Vector3 origin,
+        Vector3 forward,
+        float range)
+    {
+        var targets = new List<Health>();
         Collider[] hits = ZonePhysics.OverlapSphere(
             gameObject,
             origin,
             range);
-        var damaged = new System.Collections.Generic.HashSet<Health>();
+        var matched = new HashSet<Health>();
         float halfAngle = Mathf.Max(0f, ability.coneAngle * 0.5f);
 
         foreach (Collider hit in hits)
@@ -4828,7 +4890,7 @@ public class AbilityCaster : NetworkBehaviour
                     hit,
                     ability.targetTag,
                     out Health health) ||
-                !damaged.Add(health))
+                !matched.Add(health))
                 continue;
 
             Vector3 toTarget = health.transform.position - origin;
@@ -4837,12 +4899,51 @@ public class AbilityCaster : NetworkBehaviour
                 Vector3.Angle(forward, toTarget) > halfAngle)
                 continue;
 
-            DealAbilityDamage(health, damage);
-            EmitHitVFX(
-                ability.hitVFX,
-                health.transform.position + Vector3.up * 0.5f,
-                hitVFXLifetime);
+            targets.Add(health);
         }
+
+        return targets;
+    }
+
+    void ApplyPulseDamageToTargets(
+        AbilityDef ability,
+        List<Health> targets,
+        float damage,
+        float hitVFXLifetime)
+    {
+        if (targets == null)
+            return;
+
+        for (int i = targets.Count - 1; i >= 0; i--)
+        {
+            Health health = targets[i];
+            if (health == null || !health.IsAlive)
+            {
+                targets.RemoveAt(i);
+                continue;
+            }
+
+            DealAbilityDamage(health, damage);
+            EmitPulseTargetVFX(ability, health, hitVFXLifetime);
+        }
+    }
+
+    void EmitPulseTargetVFX(
+        AbilityDef ability,
+        Health health,
+        float lifetime)
+    {
+        if (ability == null || health == null)
+            return;
+
+        EmitFollowingChainVFX(ability, health, lifetime);
+
+        if (ability.hitVFX != null)
+            EmitAbilityHitVFX(
+                ability,
+                health,
+                Vector3.up * 0.5f,
+                lifetime);
     }
 
     void ApplyPulseHealing(
@@ -5357,7 +5458,11 @@ public class AbilityCaster : NetworkBehaviour
         return found;
     }
 
-    void EmitChainVFX(AbilityDef ability, Vector3 from, Vector3 to)
+    void EmitChainVFX(
+        AbilityDef ability,
+        Vector3 from,
+        Vector3 to,
+        float lifetime = 4f)
     {
         if (ability?.chainVFX == null)
             return;
@@ -5366,25 +5471,113 @@ public class AbilityCaster : NetworkBehaviour
         {
             int spellbookIndex = FindSpellbookIndex(ability);
             if (spellbookIndex >= 0)
-                RpcPlayChainVFX(spellbookIndex, from, to);
+                RpcPlayChainVFX(spellbookIndex, from, to, lifetime);
         }
         else if (!NetworkClient.active)
-            SpawnChainVFX(ability.chainVFX, from, to);
+            SpawnChainVFX(ability.chainVFX, from, to, lifetime);
+    }
+
+    void EmitFollowingChainVFX(
+        AbilityDef ability,
+        Health target,
+        float lifetime)
+    {
+        if (ability?.chainVFX == null || target == null)
+            return;
+
+        Vector3 from = transform.position + Vector3.up * 0.8f;
+        Vector3 to = target.transform.position + Vector3.up * 0.8f;
+        if (NetworkServer.active)
+        {
+            int spellbookIndex = FindSpellbookIndex(ability);
+            if (spellbookIndex < 0)
+                return;
+
+            NetworkIdentity targetIdentity = target.netIdentity;
+            if (targetIdentity != null && targetIdentity.netId != 0)
+            {
+                RpcPlayFollowingChainVFX(
+                    spellbookIndex,
+                    targetIdentity.netId,
+                    lifetime);
+            }
+            else
+                RpcPlayChainVFX(spellbookIndex, from, to, lifetime);
+        }
+        else if (!NetworkClient.active)
+        {
+            SpawnChainVFX(
+                ability.chainVFX,
+                from,
+                to,
+                lifetime,
+                transform,
+                target.transform);
+        }
     }
 
     [ClientRpc]
-    void RpcPlayChainVFX(int spellbookIndex, Vector3 from, Vector3 to)
+    void RpcPlayChainVFX(
+        int spellbookIndex,
+        Vector3 from,
+        Vector3 to,
+        float lifetime)
     {
         if (spellbook == null ||
             spellbookIndex < 0 ||
             spellbookIndex >= spellbook.Length)
             return;
 
-        SpawnChainVFX(spellbook[spellbookIndex]?.chainVFX, from, to);
+        SpawnChainVFX(
+            spellbook[spellbookIndex]?.chainVFX,
+            from,
+            to,
+            lifetime);
     }
 
-    void SpawnChainVFX(GameObject prefab, Vector3 from, Vector3 to)
+    [ClientRpc]
+    void RpcPlayFollowingChainVFX(
+        int spellbookIndex,
+        uint targetNetId,
+        float lifetime)
     {
+#if UNITY_EDITOR || !UNITY_SERVER
+        if (spellbook == null ||
+            spellbookIndex < 0 ||
+            spellbookIndex >= spellbook.Length ||
+            !NetworkClient.spawned.TryGetValue(
+                targetNetId,
+                out NetworkIdentity targetIdentity))
+        {
+            return;
+        }
+
+        Health targetHealth =
+            targetIdentity.GetComponentInChildren<Health>();
+        Transform targetTransform = targetHealth != null
+            ? targetHealth.transform
+            : targetIdentity.transform;
+        Vector3 from = transform.position + Vector3.up * 0.8f;
+        Vector3 to = targetTransform.position + Vector3.up * 0.8f;
+        SpawnChainVFX(
+            spellbook[spellbookIndex]?.chainVFX,
+            from,
+            to,
+            lifetime,
+            transform,
+            targetTransform);
+#endif
+    }
+
+    void SpawnChainVFX(
+        GameObject prefab,
+        Vector3 from,
+        Vector3 to,
+        float lifetime,
+        Transform sourceToFollow = null,
+        Transform targetToFollow = null)
+    {
+#if UNITY_EDITOR || !UNITY_SERVER
         if (prefab == null)
             return;
 
@@ -5396,6 +5589,39 @@ public class AbilityCaster : NetworkBehaviour
         {
             castEndpoint.position = from;
             hitEndpoint.position = to;
+
+            // Curve-based tether graphs expose these optional control points.
+            // Reposition them with the endpoints so authored preview coordinates
+            // cannot pull an in-game beam away from its caster and target.
+            Transform castCurve =
+                FindNamedDescendant(fx.transform, "Cast Position Curve");
+            Transform hitCurve =
+                FindNamedDescendant(fx.transform, "Hit Position Curve");
+
+            if (sourceToFollow != null && targetToFollow != null)
+            {
+                ChainVFXEndpointFollower follower =
+                    fx.AddComponent<ChainVFXEndpointFollower>();
+                follower.Bind(
+                    sourceToFollow,
+                    targetToFollow,
+                    castEndpoint,
+                    hitEndpoint,
+                    castCurve,
+                    hitCurve,
+                    sourceToFollow.InverseTransformPoint(from),
+                    targetToFollow.InverseTransformPoint(to));
+            }
+            else
+            {
+                ChainVFXEndpointFollower.PlaceEndpoints(
+                    castEndpoint,
+                    hitEndpoint,
+                    castCurve,
+                    hitCurve,
+                    from,
+                    to);
+            }
         }
         else
         {
@@ -5405,7 +5631,8 @@ public class AbilityCaster : NetworkBehaviour
                 fx.transform.rotation = Quaternion.LookRotation(direction.normalized, Vector3.up);
         }
 
-        Destroy(fx, 4f);
+        Destroy(fx, Mathf.Max(0.1f, lifetime));
+#endif
     }
 
     static Transform FindNamedDescendant(Transform root, string childName)
@@ -8400,6 +8627,94 @@ public class AbilityCaster : NetworkBehaviour
 }
 
 #if UNITY_EDITOR || !UNITY_SERVER
+internal sealed class ChainVFXEndpointFollower : MonoBehaviour
+{
+    Transform source;
+    Transform target;
+    Transform castEndpoint;
+    Transform hitEndpoint;
+    Transform castCurve;
+    Transform hitCurve;
+    Vector3 sourceLocalOffset;
+    Vector3 targetLocalOffset;
+
+    public void Bind(
+        Transform sourceTransform,
+        Transform targetTransform,
+        Transform castPosition,
+        Transform hitPosition,
+        Transform castCurvePosition,
+        Transform hitCurvePosition,
+        Vector3 sourceOffset,
+        Vector3 targetOffset)
+    {
+        source = sourceTransform;
+        target = targetTransform;
+        castEndpoint = castPosition;
+        hitEndpoint = hitPosition;
+        castCurve = castCurvePosition;
+        hitCurve = hitCurvePosition;
+        sourceLocalOffset = sourceOffset;
+        targetLocalOffset = targetOffset;
+        RefreshEndpoints();
+    }
+
+    void LateUpdate()
+    {
+        if (source == null || target == null)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
+        RefreshEndpoints();
+    }
+
+    void RefreshEndpoints()
+    {
+        if (source == null || target == null)
+            return;
+
+        PlaceEndpoints(
+            castEndpoint,
+            hitEndpoint,
+            castCurve,
+            hitCurve,
+            source.TransformPoint(sourceLocalOffset),
+            target.TransformPoint(targetLocalOffset));
+    }
+
+    public static void PlaceEndpoints(
+        Transform castPosition,
+        Transform hitPosition,
+        Transform castCurvePosition,
+        Transform hitCurvePosition,
+        Vector3 from,
+        Vector3 to)
+    {
+        if (castPosition != null)
+            castPosition.position = from;
+        if (hitPosition != null)
+            hitPosition.position = to;
+
+        float lift = Mathf.Clamp(
+            Vector3.Distance(from, to) * 0.15f,
+            0.35f,
+            1.5f);
+        Vector3 curveOffset = Vector3.up * lift;
+        if (castCurvePosition != null)
+        {
+            castCurvePosition.position =
+                Vector3.Lerp(from, to, 0.33f) + curveOffset;
+        }
+        if (hitCurvePosition != null)
+        {
+            hitCurvePosition.position =
+                Vector3.Lerp(from, to, 0.67f) + curveOffset;
+        }
+    }
+}
+
 internal sealed class ShieldVFXLifetime : MonoBehaviour
 {
     static readonly Dictionary<int, ShieldVFXLifetime> ActiveByTarget =

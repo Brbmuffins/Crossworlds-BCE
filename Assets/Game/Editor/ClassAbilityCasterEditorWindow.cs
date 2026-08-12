@@ -746,11 +746,6 @@ namespace Crossworlds.EditorTools
                     "chainTargets",
                     "chainDamageFalloff",
                     "chainRadius",
-                    "usePulseDamage",
-                    "pulseCount",
-                    "pulseInterval",
-                    "pulseRadius",
-                    "pulseDamage",
                     "variants");
             }
             else
@@ -762,13 +757,17 @@ namespace Crossworlds.EditorTools
                     "chainRadius",
                     "pullRadius",
                     "pullDuration",
-                    "usePulseDamage",
-                    "pulseCount",
-                    "pulseInterval",
-                    "pulseRadius",
-                    "pulseDamage",
                     "variants");
             }
+
+            DrawFieldGroup(
+                "PULSE DAMAGE", ability,
+                "usePulseDamage",
+                "pulseDamageIsDoT",
+                "pulseCount",
+                "pulseInterval",
+                "pulseRadius",
+                "pulseDamage");
         }
 
         void DrawCrowdControlGroup(

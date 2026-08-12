@@ -147,6 +147,7 @@ GameObject:
   - component: {fileID: 5425423173228415393}
   - component: {fileID: 8174897947564323128}
   - component: {fileID: 8340484662746655627}
+  - component: {fileID: 2950866427468218910}
   m_Layer: 0
   m_Name: Gunda
   m_TagString: Enemy
@@ -398,7 +399,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Mirror::Mirror.NetworkIdentity
   sceneId: 0
-  _assetId: 3835496571
+  _assetId: 0
   serverOnly: 0
   visibility: 0
   hasSpawned: 0
@@ -453,6 +454,19 @@ MonoBehaviour:
   syncInterval: 0
   clientAuthority: 0
   animator: {fileID: 5857688048310145366}
+--- !u!114 &2950866427468218910
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1046127108768916309}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a05a8e74f20d9c140a8d904075f0896b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::QuestEnemyTarget
+  enemyTemplateId: gunda_basic
 --- !u!1 &1211626105655372265
 GameObject:
   m_ObjectHideFlags: 0

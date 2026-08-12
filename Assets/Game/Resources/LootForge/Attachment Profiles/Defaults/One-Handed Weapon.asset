@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8ab47830435d61d41be5afada3f088a6, type: 3}
+  m_Name: One-Handed Weapon
+  m_EditorClassIdentifier: Assembly-CSharp::EquipmentAttachmentProfile
+  profileName: One-Handed Weapon
+  attachmentBoneName: RightHandSocket
+  localPosition: {x: 0, y: 0, z: 0}
+  localEulerAngles: {x: 0, y: 0, z: 0}
+  localScale: {x: 1, y: 1, z: 1}
+  classOverrides:
+  - classIndex: 0
+    attachmentBoneName: RightHandSocket
+    localPosition: {x: -0.28454053, y: 0.08092284, z: 0.031256706}
+    localEulerAngles: {x: 14.519973, y: 1.3199066, z: 96.79989}
+    localScale: {x: 1, y: 1, z: 1}
+  - classIndex: 3
+    attachmentBoneName: RightHandSocket
+    localPosition: {x: 0.29106447, y: 0.15037507, z: -0.049741156}
+    localEulerAngles: {x: 0, y: 0, z: 286.52002}
+    localScale: {x: 1, y: 1, z: 1}
+  - classIndex: 4
+    attachmentBoneName: RightHandSocket
+    localPosition: {x: -0.17178074, y: 0.2505814, z: -0.008651417}
+    localEulerAngles: {x: 0, y: 0, z: 58.959972}
+    localScale: {x: 1, y: 1, z: 1}
+  twoHanded: 0

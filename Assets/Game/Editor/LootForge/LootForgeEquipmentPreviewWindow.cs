@@ -1,5 +1,6 @@
 #if UNITY_EDITOR
 using System;
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
@@ -11,14 +12,15 @@ namespace Crossworlds.EditorTools.LootForge
         enum TransformToolMode { Move, Rotate }
 
         static readonly string[] ClassNames =
-            { "Marauder", "Templar", "Night Hunter", "Cleric", "Arcanist" };
+            { "Marauder", "Templar", "Night Hunter", "Cleric", "Arcanist", "Necromancer" };
         static readonly string[] DefaultPrefabPaths =
         {
             "Assets/Game/Game_Prefabs/Marauder.prefab",
             "Assets/Game/Game_Prefabs/Ironclad.prefab",
             "Assets/Game/Game_Prefabs/Shadowblade.prefab",
             "Assets/Game/Game_Prefabs/Cleric.prefab",
-            "Assets/Game/Game_Prefabs/Arcanist.prefab"
+            "Assets/Game/Game_Prefabs/Arcanist.prefab",
+            "Assets/Game/Game_Prefabs/Necromancer.prefab"
         };
 
         LootItemDefinition definition;
@@ -185,7 +187,10 @@ namespace Crossworlds.EditorTools.LootForge
             characterInstance.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
             preview.AddSingleGO(characterInstance);
 
-            attachmentAnchor = ResolveAnchor(characterInstance.transform, definition, classIndex);
+            bool skinnedArmor = IsSkinnedArmorPrefab(nextItem, definition.equipmentSlot);
+            attachmentAnchor = skinnedArmor
+                ? characterInstance.transform
+                : ResolveAnchor(characterInstance.transform, definition, classIndex);
             // Keep the equipment independent while authoring, like a separate
             // GameObject in a normal scene. Its world pose is converted to the
             // attachment anchor's local pose for runtime when values are saved.
@@ -196,6 +201,8 @@ namespace Crossworlds.EditorTools.LootForge
             Vector3 authoredScale = scale.sqrMagnitude > 0.0001f ? scale : Vector3.one;
             itemInstance.transform.localScale = Vector3.Scale(
                 attachmentAnchor.lossyScale, authoredScale);
+            if (skinnedArmor)
+                RemapSkinnedArmorBones(characterInstance.transform, itemInstance);
             preview.AddSingleGO(itemInstance);
             itemPrefab = nextItem;
             ApplyTransformToPreview();
@@ -480,6 +487,38 @@ namespace Crossworlds.EditorTools.LootForge
                 if (string.Equals(candidate.name, name, StringComparison.OrdinalIgnoreCase))
                     return candidate;
             return null;
+        }
+
+        static bool IsSkinnedArmorPrefab(GameObject prefab, LootEquipmentSlot slot)
+        {
+            bool armorSlot = slot == LootEquipmentSlot.Head ||
+                             slot == LootEquipmentSlot.Chest ||
+                             slot == LootEquipmentSlot.Hands ||
+                             slot == LootEquipmentSlot.Legs ||
+                             slot == LootEquipmentSlot.Feet;
+            return armorSlot && prefab.GetComponentInChildren<SkinnedMeshRenderer>(true) != null;
+        }
+
+        static void RemapSkinnedArmorBones(Transform character, GameObject visual)
+        {
+            var playerBones = new Dictionary<string, Transform>(StringComparer.OrdinalIgnoreCase);
+            foreach (Transform candidate in character.GetComponentsInChildren<Transform>(true))
+                if (!candidate.IsChildOf(visual.transform) && !playerBones.ContainsKey(candidate.name))
+                    playerBones.Add(candidate.name, candidate);
+
+            foreach (SkinnedMeshRenderer renderer in
+                     visual.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+            {
+                Transform[] bones = renderer.bones;
+                for (int i = 0; i < bones.Length; i++)
+                    if (bones[i] != null && playerBones.TryGetValue(bones[i].name, out Transform mapped))
+                        bones[i] = mapped;
+                renderer.bones = bones;
+                if (renderer.rootBone != null &&
+                    playerBones.TryGetValue(renderer.rootBone.name, out Transform rootBone))
+                    renderer.rootBone = rootBone;
+                renderer.updateWhenOffscreen = true;
+            }
         }
 
         static void DisableBehaviours(GameObject root)

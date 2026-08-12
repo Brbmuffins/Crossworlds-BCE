@@ -1,0 +1,42 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0d265fc78b3142d591c1492a3c992590, type: 3}
+  m_Name: wood_spike_mace
+  m_EditorClassIdentifier: Assembly-CSharp::LootItemDefinition
+  itemId: wood_spike_mace
+  displayName: Wood Spike Mace
+  databaseItemType: 1
+  equipmentSlot: 6
+  rarity: 2
+  inventoryIcon: {fileID: 21300000, guid: 51f7888c2201e6d4f951b7b19941bf98, type: 3}
+  inventoryIconEulerAngles: {x: 12, y: -28, z: -8}
+  inventoryIconZoom: 1
+  iconId: 51f7888c2201e6d4f951b7b19941bf98
+  sellValue: 0
+  crafted: 0
+  stackable: 0
+  maxStackSize: 1
+  equippedVisualPrefab: {fileID: 4842899369787706840, guid: 4d44d95f215642142b727485cf76f58d, type: 3}
+  attachmentProfile: {fileID: 11400000, guid: fdf5a72e64c799f4cbdbc534cb3eb014, type: 2}
+  overrideAttachmentProfile: 0
+  twoHanded: 0
+  attachmentBoneName: 
+  equippedLocalPosition: {x: 0, y: 0, z: 0}
+  equippedLocalEulerAngles: {x: 0, y: 0, z: 0}
+  equippedLocalScale: {x: 1, y: 1, z: 1}
+  classAttachmentOverrides: []
+  bonusStrength: 1
+  bonusAgility: 1
+  bonusIntelligence: 0
+  bonusVitality: 1
+  spellBonusDescriptions: []
+  worldVisualPrefab: {fileID: 4842899369787706840, guid: 4d44d95f215642142b727485cf76f58d, type: 3}

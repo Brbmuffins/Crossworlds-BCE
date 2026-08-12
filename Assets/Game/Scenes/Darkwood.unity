@@ -1879,6 +1879,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::QuestGiver
   quests:
   - {fileID: 11400000, guid: 447b36fdcb199ed4d92735500040b9f4, type: 2}
+  - {fileID: 11400000, guid: 9368f253c5bb2804b8a17a5738bcf04c, type: 2}
   markerAnchor: {fileID: 0}
   interactionRadius: 3
 --- !u!1 &417985867
@@ -3931,8 +3932,8 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 719276705}
-  m_LocalRotation: {x: 0.00349097, y: -0.7050212, z: 0.0034705503, w: 0.70916927}
-  m_LocalPosition: {x: 0, y: 0, z: 0.028387312}
+  m_LocalRotation: {x: 0.0034909644, y: -0.7050203, z: 0.0034705375, w: 0.7091701}
+  m_LocalPosition: {x: 0, y: 0, z: 0.028419072}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -3940,7 +3941,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0.010538085, y: 1.2587854}
+  m_AnchoredPosition: {x: 0.010517291, y: 1.2587855}
   m_SizeDelta: {x: 1.5, y: 1.5}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &719276707
@@ -5768,13 +5769,34 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 5845357343150107075, guid: 223f5fc82aa58ab4caea5dfa5e230ec7, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 900396263}
   m_SourcePrefab: {fileID: 100100000, guid: 223f5fc82aa58ab4caea5dfa5e230ec7, type: 3}
 --- !u!4 &900396261 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 6509162867342619513, guid: 223f5fc82aa58ab4caea5dfa5e230ec7, type: 3}
   m_PrefabInstance: {fileID: 900396260}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &900396262 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 5845357343150107075, guid: 223f5fc82aa58ab4caea5dfa5e230ec7, type: 3}
+  m_PrefabInstance: {fileID: 900396260}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &900396263
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 900396262}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a05a8e74f20d9c140a8d904075f0896b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::QuestEnemyTarget
+  enemyTemplateId: gunda_basic
 --- !u!4 &909972930 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 67e60b1386f6c45429d359dad4114d07, type: 3}
@@ -13096,6 +13118,9 @@ MonoBehaviour:
   collisionRadius: 0.28
   collisionBuffer: 0.15
   collisionSmoothSpeed: 18
+  freeCameraMoveSpeed: 8
+  freeCameraBoostMultiplier: 3
+  freeCameraPrecisionMultiplier: 0.25
 --- !u!114 &2044594954
 MonoBehaviour:
   m_ObjectHideFlags: 0
