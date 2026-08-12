@@ -23,6 +23,10 @@ public class FloatingDamageText : MonoBehaviour
     const float HealScreenRise = 104f;
     const float CritScreenRise = 116f;
     const float TriageScreenRise = 54f;
+    const float CritImpactDuration = 0.34f;
+    const float CritJoltDistance = 24f;
+    const float CritJoltHeight = 10f;
+    const float CritTiltDegrees = 8f;
 
     GameObject[] _pool;
     RectTransform[] _rects;
@@ -165,13 +169,25 @@ public class FloatingDamageText : MonoBehaviour
             return;
 
         rect.localScale = Vector3.one * StartingScale(type);
+        rect.localRotation = Quaternion.identity;
         obj.SetActive(true);
 
-        StartCoroutine(Animate(obj, rect, label, idx, myGen, worldAnchor, screenScatter, type));
+        float critJoltDirection = Random.value < 0.5f ? -1f : 1f;
+        StartCoroutine(Animate(
+            obj,
+            rect,
+            label,
+            idx,
+            myGen,
+            worldAnchor,
+            screenScatter,
+            type,
+            critJoltDirection));
     }
 
     IEnumerator Animate(GameObject obj, RectTransform rect, TextMeshProUGUI label, int idx, int gen,
-                        Vector3 worldAnchor, Vector2 screenScatter, DamageType type)
+                        Vector3 worldAnchor, Vector2 screenScatter, DamageType type,
+                        float critJoltDirection)
     {
         float lifetime = type == DamageType.Critical || type == DamageType.HealCrit
             ? CritLifetime
@@ -194,6 +210,24 @@ public class FloatingDamageText : MonoBehaviour
             float easedRise = Mathf.SmoothStep(0f, rise, t);
             Vector2 screenOffset = screenScatter + Vector2.up * easedRise;
 
+            bool isDamageCrit = type == DamageType.Critical;
+            if (isDamageCrit && elapsed < CritImpactDuration)
+            {
+                float impactT = Mathf.Clamp01(
+                    elapsed / CritImpactDuration);
+                float envelope = (1f - impactT) * (1f - impactT);
+                float wave = Mathf.Sin(impactT * Mathf.PI * 5f) * envelope;
+                screenOffset += new Vector2(
+                    critJoltDirection * wave * CritJoltDistance,
+                    Mathf.Abs(wave) * CritJoltHeight);
+                rect.localRotation = Quaternion.Euler(
+                    0f,
+                    0f,
+                    critJoltDirection * wave * CritTiltDegrees);
+            }
+            else
+                rect.localRotation = Quaternion.identity;
+
             if (!TrySetScreenPosition(rect, worldAnchor, screenOffset))
             {
                 obj.SetActive(false);
@@ -202,10 +236,7 @@ public class FloatingDamageText : MonoBehaviour
 
             float scale = startScale;
             if (type == DamageType.Critical || type == DamageType.HealCrit)
-            {
-                float punch = Mathf.Clamp01(t / 0.18f);
-                scale *= Mathf.LerpUnclamped(1f, 1.28f, Mathf.Sin(punch * Mathf.PI));
-            }
+                scale *= CritScaleMultiplier(elapsed);
             rect.localScale = new Vector3(scale, scale, 1f);
 
             if (t > 0.6f)
@@ -221,6 +252,30 @@ public class FloatingDamageText : MonoBehaviour
 
         obj.SetActive(false);
         rect.localScale = Vector3.one;
+        rect.localRotation = Quaternion.identity;
+    }
+
+    static float CritScaleMultiplier(float elapsed)
+    {
+        // Preserve the existing 1.28 peak size, but reach it much faster and
+        // rebound below/above resting scale before settling for a harder impact.
+        if (elapsed < 0.065f)
+            return Mathf.Lerp(1f, 1.28f, EaseOutCubic(elapsed / 0.065f));
+        if (elapsed < 0.14f)
+            return Mathf.Lerp(1.28f, 0.94f, Mathf.SmoothStep(0f, 1f, (elapsed - 0.065f) / 0.075f));
+        if (elapsed < 0.23f)
+            return Mathf.Lerp(0.94f, 1.04f, Mathf.SmoothStep(0f, 1f, (elapsed - 0.14f) / 0.09f));
+        if (elapsed < CritImpactDuration)
+            return Mathf.Lerp(1.04f, 1f, Mathf.SmoothStep(0f, 1f, (elapsed - 0.23f) / 0.11f));
+
+        return 1f;
+    }
+
+    static float EaseOutCubic(float t)
+    {
+        t = Mathf.Clamp01(t);
+        float inverse = 1f - t;
+        return 1f - inverse * inverse * inverse;
     }
 
     bool TrySetScreenPosition(RectTransform rect, Vector3 worldAnchor, Vector2 screenOffset)
