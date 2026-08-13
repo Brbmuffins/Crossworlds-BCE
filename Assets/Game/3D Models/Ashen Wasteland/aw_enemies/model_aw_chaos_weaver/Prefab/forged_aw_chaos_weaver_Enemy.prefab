@@ -237,7 +237,7 @@ MonoBehaviour:
   syncInterval: 0
   state: 0
   allowOfflineSimulation: 0
-  enemyForgeRuntimeProfileVersion: 27
+  enemyForgeRuntimeProfileVersion: 28
   aggroRadius: 15
   leashRadius: 30
   aggroWhenDamaged: 1
@@ -278,7 +278,8 @@ MonoBehaviour:
   tooCloseDistance: 4
   dropTable: {fileID: 11400000, guid: 91e1b47960e84c6294e4800d6135527b, type: 2}
   worldItemPrefab: {fileID: 2360249239558683541, guid: afa6b6c6fa2bf1d4781c7971f36a74c0, type: 3}
-  lootBeamPrefab: {fileID: 883407852276016311, guid: fb3b9b0b33d48c64c8c11e01dbe71caa, type: 3}
+  lootBeamPrefab: {fileID: 3621047873860463696, guid: fb3b9b0b33d48c64c8c11e01dbe71caa, type: 3}
+  rewardCategory: 0
   enemyTemplateId: prefab_aw_chaos_weaver_basic
   deadModelVisibleSeconds: 15
   respawnAfterDeath: 1

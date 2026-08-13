@@ -18,11 +18,11 @@ MonoBehaviour:
   drops:
   - itemDefinition: {fileID: 11400000, guid: 7ed1e2a1cdf959a42b82dc019971cdba, type: 2}
     itemId: 
-    weight: 1
+    weight: 9
     minQty: 1
     maxQty: 1
   - itemDefinition: {fileID: 11400000, guid: b68d44a4da47c6d4fb58658953341aed, type: 2}
     itemId: 
-    weight: 9
+    weight: 1
     minQty: 1
     maxQty: 1

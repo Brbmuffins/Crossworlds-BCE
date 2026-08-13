@@ -36,6 +36,7 @@ public class WorldItem : NetworkBehaviour
     private Vector3 _origin;
     private bool    _pickedUp = false;
     private bool    _pickupRequested = false;
+    private int     _pendingPickerConnectionId = -1;
 
     static readonly Color ColorCommon   = new Color(0.75f, 0.75f, 0.75f);
     static readonly Color ColorUncommon = new Color(0.2f,  0.9f,  0.2f);
@@ -95,11 +96,17 @@ public class WorldItem : NetworkBehaviour
     void CmdPickup(NetworkConnectionToClient sender = null)
     {
         if (_pickedUp || sender == null || sender.identity == null)
+        {
+            if (sender != null) TargetResetPickup(sender);
             return;
+        }
 
         NetworkIdentity picker = sender.identity;
         if (picker.connectionToClient != sender)
+        {
+            TargetResetPickup(sender);
             return;
+        }
 
         // This command intentionally does not require authority because the
         // pickup belongs to the world. Validate proximity on the server so a
@@ -113,16 +120,17 @@ public class WorldItem : NetworkBehaviour
                 $"[LOOT] Rejected distant pickup from netId={picker.netId} " +
                 $"for '{itemId}' ({offset.magnitude:F2}m away).",
                 this);
+            TargetResetPickup(sender);
             return;
         }
 
         _pickedUp = true;
-        if (!itemId.StartsWith("gold:"))
-            QuestLocalRuntime.ServerReport(sender,
-                QuestObjectiveType.CollectItem, itemId, Mathf.Max(1, quantity));
-
+        _pendingPickerConnectionId = sender.connectionId;
         TargetOnPickedUp(sender, itemId, quantity);
-        StartCoroutine(DestroyAfterRewardDispatch());
+        if (itemId.StartsWith("gold:"))
+            StartCoroutine(DestroyAfterRewardDispatch());
+        else
+            StartCoroutine(ResetTimedOutPickup(sender.connectionId));
     }
 
     [TargetRpc]
@@ -155,10 +163,58 @@ public class WorldItem : NetworkBehaviour
 #if UNITY_EDITOR || !UNITY_SERVER
         var inv = InventoryManager.Instance;
         if (inv != null)
-            inv.OnItemPickedUp(pickedItemId, qty);
+            inv.PersistWorldPickup(pickedItemId, qty,
+                stored => CmdCompleteItemPickup(stored));
         else
+        {
             Debug.LogWarning($"[LOOT] InventoryManager not found — {pickedItemId} x{qty} lost on client");
+            CmdCompleteItemPickup(0);
+        }
 #endif
+    }
+
+    [Command(requiresAuthority = false)]
+    void CmdCompleteItemPickup(int stored, NetworkConnectionToClient sender = null)
+    {
+        if (!_pickedUp || sender == null ||
+            sender.connectionId != _pendingPickerConnectionId)
+            return;
+
+        int persisted = Mathf.Clamp(stored, 0, Mathf.Max(1, quantity));
+        if (persisted > 0)
+        {
+            QuestLocalRuntime.ServerReport(sender,
+                QuestObjectiveType.CollectItem, itemId, persisted);
+            quantity -= persisted;
+        }
+
+        if (quantity <= 0)
+        {
+            NetworkServer.Destroy(gameObject);
+            return;
+        }
+
+        _pickedUp = false;
+        _pendingPickerConnectionId = -1;
+        TargetResetPickup(sender);
+    }
+
+    [TargetRpc]
+    void TargetResetPickup(NetworkConnectionToClient target)
+    {
+        _pickupRequested = false;
+    }
+
+    [Server]
+    IEnumerator ResetTimedOutPickup(int connectionId)
+    {
+        yield return new WaitForSeconds(12f);
+        if (!_pickedUp || _pendingPickerConnectionId != connectionId) yield break;
+        _pickedUp = false;
+        _pendingPickerConnectionId = -1;
+        if (NetworkServer.connections.TryGetValue(
+                connectionId, out NetworkConnectionToClient connection))
+            TargetResetPickup(connection);
     }
 
     [Server]

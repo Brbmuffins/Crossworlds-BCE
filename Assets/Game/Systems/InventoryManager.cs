@@ -1,4 +1,5 @@
 #if UNITY_EDITOR || !UNITY_SERVER
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -110,6 +111,65 @@ public class InventoryManager : MonoBehaviour
         if (stored <= 0) return;
         Debug.Log($"[LOOT] Picked up {stored}x {itemId}");
         StartCoroutine(SaveInventory());
+    }
+
+    /// <summary>
+    /// Persists world loot without rewriting equipped/reserved inventory rows.
+    /// Returns the quantity the server actually stored.
+    /// </summary>
+    public void PersistWorldPickup(string itemId, int qty, Action<int> completed)
+    {
+        StartCoroutine(PersistWorldPickupRequest(itemId, qty, completed));
+    }
+
+    IEnumerator PersistWorldPickupRequest(string itemId, int qty, Action<int> completed)
+    {
+        int charId = AuthManager.CharacterId;
+        string token = !string.IsNullOrEmpty(AuthManager.Token)
+            ? AuthManager.Token
+            : PlayerPrefs.GetString("jwt_token", "");
+        if (charId <= 0 || string.IsNullOrEmpty(token))
+        {
+            Debug.LogWarning("[LOOT] Pickup persistence skipped: auth not ready");
+            completed?.Invoke(0);
+            yield break;
+        }
+
+        string url = $"{ServerConfig.AuthBaseUrl}/api/inventory/add-item";
+        string json = JsonUtility.ToJson(new InventoryAddPayload
+            { characterId = charId, itemId = itemId, quantity = Mathf.Max(1, qty) });
+        using var req = new UnityWebRequest(url, "POST");
+        req.uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes(json));
+        req.downloadHandler = new DownloadHandlerBuffer();
+        req.SetRequestHeader("Content-Type", "application/json");
+        req.SetRequestHeader("Authorization", $"Bearer {token}");
+        req.timeout = 10;
+        yield return req.SendWebRequest();
+
+        int stored = 0;
+        if (req.result == UnityWebRequest.Result.Success)
+        {
+            InventoryAddResponse response =
+                JsonUtility.FromJson<InventoryAddResponse>(req.downloadHandler.text);
+            if (response?.success == true && response.data != null)
+                stored = Mathf.Clamp(response.data.stored, 0, Mathf.Max(1, qty));
+        }
+
+        if (stored > 0)
+        {
+            Debug.Log($"[LOOT] Persisted {stored}x {itemId}");
+            yield return LoadInventory();
+            InventoryBagUI.Refresh();
+        }
+        else
+        {
+            string detail = req.downloadHandler?.text;
+            Debug.LogWarning(
+                $"[LOOT] Pickup persistence failed ({req.responseCode}) for {itemId}: " +
+                (string.IsNullOrWhiteSpace(detail) ? req.error : detail));
+        }
+
+        completed?.Invoke(stored);
     }
 
     public List<InventorySlot> GetSlots() => new List<InventorySlot>(_slots);
@@ -243,6 +303,9 @@ public class InventoryManager : MonoBehaviour
 
     [System.Serializable] class InventoryResponse  { public bool success; public List<InventorySlot> data; public string error; }
     [System.Serializable] class InventorySavePayload { public int characterId; public List<InventorySlot> slots; }
+    [System.Serializable] class InventoryAddPayload { public int characterId; public string itemId; public int quantity; }
+    [System.Serializable] class InventoryAddResponse { public bool success; public InventoryAddResult data; public string error; }
+    [System.Serializable] class InventoryAddResult { public int stored; public int rejected; }
 }
 
 #endif
