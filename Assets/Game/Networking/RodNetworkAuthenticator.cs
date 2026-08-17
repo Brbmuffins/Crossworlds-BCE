@@ -84,6 +84,7 @@ public class RodNetworkAuthenticator : NetworkAuthenticator
                 spawnY      = 2f,
                 spawnZ      = 0f,
                 zone        = SceneNames.Hub,
+                hasSavedPosition = false,
                 fromDB      = false,
                 gmAllowed   = true,
                 gmActive    = true,
@@ -144,6 +145,12 @@ public class RodNetworkAuthenticator : NetworkAuthenticator
             yield break;
         }
 
+        // The original DB defaults (GameWorld, 0/2/0) describe a character that has
+        // never entered the world, not a saved logout position. Keep recognizing that
+        // sentinel so existing fresh class slots land at the Hub spawn after rollout.
+        bool hasSavedPosition = !IsFreshCharacterPosition(
+            character.pos_x, character.pos_y, character.pos_z);
+
         conn.authenticationData = new RodPlayerAuth
         {
             username    = msg.username,
@@ -159,6 +166,7 @@ public class RodNetworkAuthenticator : NetworkAuthenticator
             spawnY      = character.pos_y,
             spawnZ      = character.pos_z,
             zone        = SceneNames.NormalizeZone(character.map),
+            hasSavedPosition = hasSavedPosition,
             fromDB      = true,
             gmAllowed   = character.gm_enabled,
             gmLevel     = character.gm_level,
@@ -176,6 +184,18 @@ public class RodNetworkAuthenticator : NetworkAuthenticator
             Debug.LogWarning($"[RodAuth] {msg.username} had stored map '{character.map}' — not a known " +
                              $"zone, falling back to {zone}. Expected until ROADMAP 6.2's VPS half " +
                              $"lands and backfills characters.map.");
+    }
+
+    static bool IsFreshCharacterPosition(float x, float y, float z)
+    {
+        const float epsilon = 0.001f;
+        bool zeroDefault = Mathf.Abs(x) <= epsilon
+                           && Mathf.Abs(y) <= epsilon
+                           && Mathf.Abs(z) <= epsilon;
+        bool legacyDefault = Mathf.Abs(x) <= epsilon
+                             && Mathf.Abs(y - 2f) <= epsilon
+                             && Mathf.Abs(z) <= epsilon;
+        return zeroDefault || legacyDefault;
     }
 
     void Reject(NetworkConnectionToClient conn, string reason)
@@ -262,5 +282,6 @@ public partial class RodPlayerAuth
     public float  spawnX, spawnY, spawnZ;
     public string zone;         // scene the player logged out in (ROADMAP 6.2); always a real
                                 // zone name — NormalizeZone collapses unknown/legacy values to Hub
+    public bool   hasSavedPosition; // false for fresh DB rows using 0/0/0 or legacy 0/2/0
     public bool   fromDB;       // false in dev mode — falls back to CreatePlayerMessage class
 }

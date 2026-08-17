@@ -383,6 +383,7 @@ public class RodNetworkManager : NetworkManager
         // Also guard against characters that disconnected while falling through the map (Y < -20).
         Vector3 spawnPos;
         bool hasSavedPos = auth != null && auth.fromDB
+                           && auth.hasSavedPosition
                            && (auth.spawnX != 0f || auth.spawnY != 0f || auth.spawnZ != 0f)
                            && auth.spawnY > -20f
                            && IsFinite(auth.spawnX)
