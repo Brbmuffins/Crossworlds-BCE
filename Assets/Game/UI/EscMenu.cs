@@ -116,7 +116,9 @@ public class EscMenu : MonoBehaviour
         // LoginScene briefly rebuilds the persistent NetworkManager before its
         // one-shot redirect to CharacterSelect. Keep the loading overlay above both
         // scene loads so the intermediate login UI is never presented to the player.
+#if !UNITY_SERVER
         LoadingScreen.Show("Character Selection");
+#endif
         SetOpen(false);
 
         // Re-enable cursor before the scene transition so character select isn't mouse-locked
@@ -159,7 +161,9 @@ public class EscMenu : MonoBehaviour
     void Quit()
     {
         SetOpen(false);
+#if !UNITY_SERVER
         LoadingScreen.Show("Saving Character");
+#endif
 
         if (NetworkManager.singleton is RodNetworkManager rod)
             rod.QuitAfterSavingPosition();
