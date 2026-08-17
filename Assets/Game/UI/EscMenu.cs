@@ -113,6 +113,10 @@ public class EscMenu : MonoBehaviour
 
     void ChangeCharacter()
     {
+        // LoginScene briefly rebuilds the persistent NetworkManager before its
+        // one-shot redirect to CharacterSelect. Keep the loading overlay above both
+        // scene loads so the intermediate login UI is never presented to the player.
+        LoadingScreen.Show("Character Selection");
         SetOpen(false);
 
         // Re-enable cursor before the scene transition so character select isn't mouse-locked
@@ -128,29 +132,28 @@ public class EscMenu : MonoBehaviour
         }
         else
         {
-            // Fallback if the manager isn't the expected type: behave like Logout.
-            Debug.LogWarning("[EscMenu] NetworkManager is not RodNetworkManager — falling back to Logout.");
-            Logout();
+            // Preserve the same one-shot redirect when a scene has a base Mirror
+            // NetworkManager instead of RodNetworkManager. LoginScene rebuilds the
+            // correct manager, then LoginManager forwards to CharacterSelect.
+            Debug.LogWarning("[EscMenu] NetworkManager is not RodNetworkManager — using generic disconnect fallback.");
+            RodNetworkManager.PendingChangeCharacter = true;
+
+            if (NetworkServer.active && NetworkClient.isConnected)
+                NetworkManager.singleton.StopHost();
+            else if (NetworkClient.isConnected || NetworkClient.active)
+                NetworkManager.singleton.StopClient();
+            else if (NetworkServer.active)
+                NetworkManager.singleton.StopServer();
+            else
+                UnityEngine.SceneManagement.SceneManager.LoadScene(SceneNames.Login);
         }
     }
 
     void Logout()
     {
-        SetOpen(false);
-
-        // Re-enable cursor before scene transition so login screen isn't mouse-locked
-        Cursor.lockState = CursorLockMode.None;
-        Cursor.visible   = true;
-
-        if (NetworkServer.active && NetworkClient.isConnected)
-            NetworkManager.singleton.StopHost();
-        else if (NetworkClient.isConnected)
-            NetworkManager.singleton.StopClient();
-        else if (NetworkServer.active)
-            NetworkManager.singleton.StopServer();
-        // RodNetworkManager.Awake() sets offlineScene = LoginScene, so Mirror
-        // navigates there automatically. Do NOT also call SceneManager.LoadScene()
-        // here — that double-loads the scene and can hang the editor.
+        // Logout means leave the active character, not exit the account or game.
+        // Keep the authenticated session and return to class/character selection.
+        ChangeCharacter();
     }
 
     void Quit()

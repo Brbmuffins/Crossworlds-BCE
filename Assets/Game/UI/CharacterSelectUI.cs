@@ -939,8 +939,12 @@ public class CharacterSelectUI : MonoBehaviour
         {
             var charData = JsonUtility.FromJson<CharacterApiResponse>(req.downloadHandler.text);
             if (charData != null && charData.id != 0 && charData.class_index != classIndex)
-                Debug.LogWarning($"[CharSel] class_index mismatch: sent {classIndex}, server has {charData.class_index}. " +
-                                 "Run the VPS patch to make POST /character update class_index for existing characters.");
+            {
+                Debug.LogError($"[CharSel] class_index mismatch: sent {classIndex}, server has {charData.class_index}. " +
+                               "Deployment stopped so the wrong class is not spawned.");
+                ResetDeployButton("CLASS UPDATE FAILED — RETRY");
+                yield break;
+            }
         }
         catch { /* non-fatal: response shape may differ */ }
 
