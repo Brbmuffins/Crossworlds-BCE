@@ -938,13 +938,18 @@ public class CharacterSelectUI : MonoBehaviour
         try
         {
             var charData = JsonUtility.FromJson<CharacterApiResponse>(req.downloadHandler.text);
-            if (charData != null && charData.id != 0 && charData.class_index != classIndex)
+            if (charData == null || charData.id <= 0 || charData.class_index != classIndex ||
+                string.IsNullOrEmpty(charData.token))
             {
-                Debug.LogError($"[CharSel] class_index mismatch: sent {classIndex}, server has {charData.class_index}. " +
-                               "Deployment stopped so the wrong class is not spawned.");
+                Debug.LogError($"[CharSel] Server did not return a character-bound token for class {classIndex}. " +
+                               "Deployment stopped so progression cannot be applied to the wrong character.");
                 ResetDeployButton("CLASS UPDATE FAILED — RETRY");
                 yield break;
             }
+            PlayerPrefs.SetString("jwt_token", charData.token);
+            PlayerPrefs.Save();
+            AuthManager.Token = charData.token;
+            AuthManager.CharacterId = charData.id;
         }
         catch { /* non-fatal: response shape may differ */ }
 
@@ -1083,7 +1088,7 @@ public class CharacterSelectUI : MonoBehaviour
     }
 
     [System.Serializable]
-    class CharacterApiResponse { public int id; public int class_index; }
+    class CharacterApiResponse { public int id; public int class_index; public string token; }
 }
 
 /// <summary>

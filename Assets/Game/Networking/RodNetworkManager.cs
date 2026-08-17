@@ -90,15 +90,18 @@ public class RodNetworkManager : NetworkManager
     // NetworkManager) and set a one-shot flag; LoginManager reads it on load and
     // forwards straight to CharacterSelect, skipping the login UI.
     public static bool PendingChangeCharacter;
+    static bool PendingApplicationQuit;
+
+    public struct GracefulDisconnectMessage : NetworkMessage { }
 
     public void ReturnToCharacterSelect()
     {
         PendingChangeCharacter = true;
 
-        if (NetworkServer.active && NetworkClient.isConnected)
-            StopHost();                 // editor/dev host mode
-        else if (NetworkClient.isConnected || NetworkClient.active)
-            StopClient();               // normal client connected to the VPS game server
+        if (NetworkClient.isConnected)
+            RequestGracefulDisconnect();
+        else if (NetworkClient.active)
+            StopClient();
         else
         {
             // Not connected — the live manager is still the DDOL singleton, so a direct
@@ -106,6 +109,51 @@ public class RodNetworkManager : NetworkManager
             PendingChangeCharacter = false;
             UnityEngine.SceneManagement.SceneManager.LoadScene(SceneNames.CharacterSelect);
         }
+    }
+
+    public void QuitAfterSavingPosition()
+    {
+        PendingChangeCharacter = false;
+        PendingApplicationQuit = true;
+
+        if (NetworkClient.isConnected)
+            RequestGracefulDisconnect();
+        else
+            FinishApplicationQuit();
+    }
+
+    void RequestGracefulDisconnect()
+    {
+        NetworkClient.Send(new GracefulDisconnectMessage());
+        StartCoroutine(GracefulDisconnectTimeout());
+    }
+
+    IEnumerator GracefulDisconnectTimeout()
+    {
+        yield return new WaitForSecondsRealtime(6f);
+        if (NetworkClient.isConnected || NetworkClient.active)
+        {
+            Debug.LogWarning("[RodNM] Graceful position-save disconnect timed out; disconnecting with the periodic save as fallback.");
+            if (NetworkServer.active) StopHost();
+            else StopClient();
+        }
+    }
+
+    public override void OnClientDisconnect()
+    {
+        base.OnClientDisconnect();
+        if (PendingApplicationQuit)
+            FinishApplicationQuit();
+    }
+
+    static void FinishApplicationQuit()
+    {
+        PendingApplicationQuit = false;
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#else
+        Application.Quit();
+#endif
     }
 
     // ── Custom network message ────────────────────────────────────────────────
@@ -236,6 +284,7 @@ public class RodNetworkManager : NetworkManager
     {
         base.OnStartServer();
         NetworkServer.RegisterHandler<CreatePlayerMessage>(OnCreatePlayer);
+        NetworkServer.RegisterHandler<GracefulDisconnectMessage>(OnGracefulDisconnect);
 
         // Spawn a single persistent ChatManager that survives ServerChangeScene.
         // DontDestroyOnLoad moves it out of any scene so Mirror won't destroy it on
@@ -256,6 +305,26 @@ public class RodNetworkManager : NetworkManager
             Debug.LogWarning("[RodNM] chatManagerPrefab not assigned — chat will not work. " +
                              "Run BCE/Setup/4p with LoginScene open to fix.");
         }
+    }
+
+    void OnGracefulDisconnect(NetworkConnectionToClient conn, GracefulDisconnectMessage msg)
+    {
+        void DisconnectAfterSave()
+        {
+            if (conn is LocalConnectionToClient)
+                StopHost();
+            else if (NetworkServer.connections.ContainsKey(conn.connectionId))
+                conn.Disconnect();
+        }
+
+        var saver = conn.identity != null
+            ? conn.identity.GetComponent<RodPositionSaver>()
+            : null;
+
+        if (saver != null)
+            saver.SaveBeforeDisconnect(DisconnectAfterSave);
+        else
+            DisconnectAfterSave();
     }
 
     public override void OnStopServer()
@@ -315,7 +384,10 @@ public class RodNetworkManager : NetworkManager
         Vector3 spawnPos;
         bool hasSavedPos = auth != null && auth.fromDB
                            && (auth.spawnX != 0f || auth.spawnY != 0f || auth.spawnZ != 0f)
-                           && auth.spawnY > -20f;
+                           && auth.spawnY > -20f
+                           && IsFinite(auth.spawnX)
+                           && IsFinite(auth.spawnY)
+                           && IsFinite(auth.spawnZ);
 
         if (hasSavedPos)
         {
@@ -346,12 +418,12 @@ public class RodNetworkManager : NetworkManager
                                     int classIndex, string username, Vector3 spawnPos,
                                     RodPlayerAuth auth, bool hasSavedPos)
     {
-        // Login always returns players to HUB regardless of the zone they logged out
-        // in (overrides ROADMAP 6.2 zone-persistence by request). The saved DB position
-        // is only valid inside its own zone, so ignore it here and drop onto HUB's spawn
-        // point. In-session zone travel (portals/waypoints) is unaffected.
-        string zoneName = SceneNames.Hub;
-        hasSavedPos = false;
+        // Restore the authenticated server-owned zone and position. Unknown/legacy
+        // zone values normalize to HUB; fresh or unsafe coordinates use that zone's
+        // configured spawn point instead.
+        string zoneName = auth != null && auth.fromDB
+            ? SceneNames.NormalizeZone(auth.zone)
+            : SceneNames.Hub;
 
         if (ZoneManager.Instance == null)
         {
@@ -369,6 +441,11 @@ public class RodNetworkManager : NetworkManager
             yield break;
         }
 
+        // PrepareZone can fall back to HUB if the stored destination is unavailable.
+        // Coordinates from another scene are never valid in that fallback scene.
+        if (!string.Equals(zone.name, zoneName, System.StringComparison.OrdinalIgnoreCase))
+            hasSavedPos = false;
+
         // Connection may have dropped during the async scene load.
         if (!NetworkServer.connections.ContainsKey(conn.connectionId) || conn.identity != null)
             yield break;
@@ -379,6 +456,13 @@ public class RodNetworkManager : NetworkManager
         // File into the zone BEFORE AddPlayerForConnection: interest management reads
         // gameObject.scene when it builds the initial observer set.
         ZoneScene.PlaceIn(player, zone);
+
+        if (hasSavedPos && !HasGroundNearSavedPosition(player, spawnPos))
+        {
+            Debug.LogWarning($"[RodNM] Saved position {spawnPos} for {username} has no valid ground " +
+                             $"in {zone.name}; using the zone spawn point.");
+            hasSavedPos = false;
+        }
 
         // A saved position is only meaningful inside the zone it was saved in. Without
         // one, fall back to that zone's spawn point rather than to a global search.
@@ -420,6 +504,28 @@ public class RodNetworkManager : NetworkManager
 
         Debug.Log($"[RodNM] Spawned {username} as class {classIndex} in zone {zone.name} at " +
                   $"{player.transform.position} (fromDB={auth?.fromDB}, hasSavedPos={hasSavedPos})");
+    }
+
+    static bool IsFinite(float value) => !float.IsNaN(value) && !float.IsInfinity(value);
+
+    static bool HasGroundNearSavedPosition(GameObject player, Vector3 position)
+    {
+        // The player has already been filed into the additive zone, so ZonePhysics
+        // queries that zone's isolated PhysicsScene rather than the container scene.
+        RaycastHit[] hits = ZonePhysics.RaycastAll(
+            player, position + Vector3.up * 2f, Vector3.down, 10f,
+            Physics.AllLayers, QueryTriggerInteraction.Ignore);
+
+        foreach (RaycastHit hit in hits)
+        {
+            if (hit.collider == null) continue;
+            Transform hitTransform = hit.collider.transform;
+            if (hitTransform == player.transform || hitTransform.IsChildOf(player.transform))
+                continue;
+            return true;
+        }
+
+        return false;
     }
 
 

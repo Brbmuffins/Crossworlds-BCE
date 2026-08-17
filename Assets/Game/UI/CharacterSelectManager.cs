@@ -386,12 +386,38 @@ public class CharacterSelectManager : MonoBehaviour
             yield break;
         }
 
+        CharacterSelectionResponse selected = null;
+        try { selected = JsonUtility.FromJson<CharacterSelectionResponse>(req.downloadHandler.text); }
+        catch (Exception ex) { Debug.LogError($"[CharSel] Invalid character response: {ex.Message}"); }
+
+        if (selected == null || selected.id <= 0 || selected.class_index != classIndex ||
+            string.IsNullOrEmpty(selected.token))
+        {
+            Debug.LogError("[CharSel] Server did not confirm a character-bound class selection.");
+            _enterBtn.interactable = true;
+            if (_enterLabel != null) _enterLabel.text = "ENTER WORLD";
+            yield break;
+        }
+
+        PlayerPrefs.SetString("jwt_token", selected.token);
+        PlayerPrefs.Save();
+        AuthManager.Token = selected.token;
+        AuthManager.CharacterId = selected.id;
+
         // Apply whichever server IP the player entered on the login screen
         NetworkManager.singleton.networkAddress = gameIP;
         Debug.Log(gameIP == authIP
             ? $"[CharSel] Connecting to game server at {gameIP}..."
             : $"[CharSel] Connecting to game server at {gameIP} (auth was {authIP}) — override active.");
         NetworkManager.singleton.StartClient();
+    }
+
+    [Serializable]
+    sealed class CharacterSelectionResponse
+    {
+        public int id;
+        public int class_index;
+        public string token;
     }
 
     // ═══════════════════════════════════════════════════════════════════════════

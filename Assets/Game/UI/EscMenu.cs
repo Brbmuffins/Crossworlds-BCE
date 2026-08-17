@@ -158,11 +158,20 @@ public class EscMenu : MonoBehaviour
 
     void Quit()
     {
+        SetOpen(false);
+        LoadingScreen.Show("Saving Character");
+
+        if (NetworkManager.singleton is RodNetworkManager rod)
+            rod.QuitAfterSavingPosition();
+        else
+        {
+            // A non-game scene has no active character position to preserve.
 #if UNITY_EDITOR
-        UnityEditor.EditorApplication.isPlaying = false;
+            UnityEditor.EditorApplication.isPlaying = false;
 #else
-        Application.Quit();
+            Application.Quit();
 #endif
+        }
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────

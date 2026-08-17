@@ -81,6 +81,32 @@ public class RodPositionSaver : MonoBehaviour
             isLogout: false));
     }
 
+    /// <summary>
+    /// Completes a final authoritative save before a graceful logout disconnects.
+    /// The callback always runs, including dev mode or a failed HTTP request, so a
+    /// network outage cannot leave the connection stuck indefinitely.
+    /// </summary>
+    public void SaveBeforeDisconnect(System.Action onComplete)
+    {
+        if (_saved || !CanSave())
+        {
+            onComplete?.Invoke();
+            return;
+        }
+
+        _saved = true;
+        _lastZone = ResolveZoneForSave();
+        StartCoroutine(SaveBeforeDisconnectRoutine(onComplete));
+    }
+
+    IEnumerator SaveBeforeDisconnectRoutine(System.Action onComplete)
+    {
+        yield return PositionSaveRoutine.Save(
+            authServerURL, jwt, characterId, transform.position, transform.eulerAngles.y,
+            _lastZone, isLogout: true);
+        onComplete?.Invoke();
+    }
+
     IEnumerator PeriodicSaveLoop()
     {
         // Stagger the first tick so N players who joined together don't all hit
