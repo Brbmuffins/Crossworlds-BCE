@@ -1,0 +1,26 @@
+fileFormatVersion: 2
+guid: 29f8de3c0fb4470e83a99cff2c96ab2b
+TextureImporter:
+  mipmaps: {enableMipMap: 0}
+  isReadable: 0
+  textureSettings: {filterMode: 1, aniso: 1, mipBias: 0, wrapU: 1, wrapV: 1, wrapW: 1}
+  nPOTScale: 0
+  spriteMode: 1
+  spritePixelsToUnits: 100
+  spriteGenerateFallbackPhysicsShape: 0
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  textureType: 8
+  textureShape: 1
+  maxTextureSize: 1024
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 1024
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+  spriteSheet: {serializedVersion: 2, sprites: [], outline: [], physicsShape: [], spriteID: a82422f7db044e2c8800000000000000, internalID: 0}
+  userData:
+  assetBundleName:
+  assetBundleVariant:

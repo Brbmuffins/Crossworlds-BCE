@@ -11,7 +11,7 @@ using TMPro;
 /// PlayerHUD — fully self-building, self-bootstrapping HUD.
 ///
 /// Builds at runtime:
-///   • HP bar (bottom-left) with shield glow + damage flash
+///   • Gothic player frame (top-left) with class portrait, HP, mana, level, and shield
 ///   • 4-slot ability bar (bottom-centre) with icon, keybind, cooldown sweep
 ///   • Active-slot gold ring indicator
 ///   • Shrine-driven spell loadout — grid of all class abilities with icons
@@ -78,6 +78,26 @@ public class PlayerHUD : MonoBehaviour
     Image       _actionHealthFill;
     Image       _actionManaFill;
     TextMeshProUGUI _hpLabel;
+    Image       _playerFrameManaFill;
+    TextMeshProUGUI _playerFrameManaLabel;
+    TextMeshProUGUI _playerFrameName;
+    TextMeshProUGUI _playerFrameClass;
+    TextMeshProUGUI _playerFrameLevel;
+    Image       _playerFramePortrait;
+    Material    _playerFrameShellMaterial;
+    static readonly string[] PlayerPortraitResources =
+    {
+        "PlayerFrame/Portraits/class-0-marauder",
+        "PlayerFrame/Portraits/class-1-ironclad",
+        "PlayerFrame/Portraits/class-2-shadowblade",
+        "PlayerFrame/Portraits/class-3-cleric",
+        "PlayerFrame/Portraits/class-4-arcanist",
+        "PlayerFrame/Portraits/class-5-necromancer"
+    };
+    static readonly string[] PlayerFrameClassNames =
+    {
+        "MARAUDER", "IRONCLAD", "SHADOWBLADE", "CLERIC", "ARCANIST", "NECROMANCER"
+    };
     float       _displayedHp   = 1f;
     float       _hpFlashTimer  = 0f;
 
@@ -233,6 +253,20 @@ public class PlayerHUD : MonoBehaviour
         _caster = player.GetComponent<AbilityCaster>();
         if (_caster) _caster.SpellEquipResult += OnSpellEquipResult;
 
+        PlayerIdentity identity = player.GetComponent<PlayerIdentity>();
+        if (_playerFrameName != null)
+            _playerFrameName.text = identity != null && !string.IsNullOrWhiteSpace(identity.playerName)
+                ? identity.playerName.ToUpperInvariant() : PlayerPrefs.GetString("username", "Player").ToUpperInvariant();
+        int portraitClassIndex = identity != null ? identity.classIndex : 0;
+        portraitClassIndex = Mathf.Clamp(portraitClassIndex, 0, PlayerPortraitResources.Length - 1);
+        if (_playerFrameClass != null)
+            _playerFrameClass.text = PlayerFrameClassNames[portraitClassIndex];
+        if (_playerFramePortrait != null)
+        {
+            _playerFramePortrait.sprite = Resources.Load<Sprite>(PlayerPortraitResources[portraitClassIndex]);
+            _playerFramePortrait.color = _playerFramePortrait.sprite != null ? Color.white : Color.clear;
+        }
+
         if (_health)
         {
             _health.onHealthChanged.AddListener(OnHealthChanged);
@@ -259,6 +293,7 @@ public class PlayerHUD : MonoBehaviour
         if (_health) _health.onHealthChanged.RemoveListener(OnHealthChanged);
         if (_stats) _stats.onManaChanged.RemoveListener(OnManaChanged);
         if (_caster) _caster.SpellEquipResult -= OnSpellEquipResult;
+        if (_playerFrameShellMaterial != null) Destroy(_playerFrameShellMaterial);
     }
 
     void OnHealthChanged(float current, float max)
@@ -273,6 +308,8 @@ public class PlayerHUD : MonoBehaviour
     void OnManaChanged(float current, float max)
     {
         SetManaWellFraction(max > 0f ? current / max : 0f);
+        if (_playerFrameManaLabel != null)
+            _playerFrameManaLabel.text = $"{Mathf.CeilToInt(current)} / {Mathf.CeilToInt(max)}";
     }
 
     // ── Build ─────────────────────────────────────────────────────────────────
@@ -280,7 +317,7 @@ public class PlayerHUD : MonoBehaviour
     void BuildAllUI()
     {
         _canvas = MakeCanvas(100);
-        BuildHpBar();
+        BuildPlayerFrame();
         BuildAbilityBar();
         BuildCastBar();
         BuildAbilityTooltip();
@@ -305,50 +342,119 @@ public class PlayerHUD : MonoBehaviour
         return c;
     }
 
-    // ── HP bar ────────────────────────────────────────────────────────────────
+    // ── Player frame ─────────────────────────────────────────────────────────
 
-    void BuildHpBar()
+    void BuildPlayerFrame()
     {
-        var root = Rt(_canvas.transform, "HpRoot");
-        root.anchorMin = new Vector2(0.01f, 0.93f);
-        root.anchorMax = new Vector2(0.10f, 0.97f);
-        root.offsetMin = root.offsetMax = Vector2.zero;
+        var root = Rt(_canvas.transform, "PlayerFrame");
+        root.anchorMin = root.anchorMax = new Vector2(0f, 1f);
+        root.pivot = new Vector2(0f, 1f);
+        root.anchoredPosition = new Vector2(18f, -14f);
+        root.sizeDelta = new Vector2(650f, 289f);
 
-        // Panel
-        var panel = Img(root, "HpPanel", BgDark);
-        Stretch(panel.rectTransform);
+        Image shell = Img(root, "GothicShell", Color.white);
+        shell.sprite = Resources.Load<Sprite>("PlayerFrame/player-frame-shell");
+        shell.preserveAspect = true;
+        shell.raycastTarget = false;
+        Material keyMaterial = Resources.Load<Material>("PlayerFrame/PlayerFrameBackgroundKey");
+        if (keyMaterial != null)
+        {
+            _playerFrameShellMaterial = new Material(keyMaterial) { name = "PlayerFrameBackgroundKey (Runtime)" };
+            shell.material = _playerFrameShellMaterial;
+        }
+        Stretch(shell.rectTransform);
 
-        // HP BG (dark red)
-        _hpBg = Img(root, "HpBg", new Color(0.22f, 0.05f, 0.05f, 1f));
-        _hpBg.rectTransform.anchorMin = new Vector2(0.03f, 0.15f);
-        _hpBg.rectTransform.anchorMax = new Vector2(0.97f, 0.85f);
-        _hpBg.rectTransform.offsetMin = _hpBg.rectTransform.offsetMax = Vector2.zero;
+        var portraitMaskRoot = Rt(root, "PortraitMask");
+        Place(portraitMaskRoot, 27f, -28f, 215f, 215f);
+        Image maskGraphic = portraitMaskRoot.gameObject.AddComponent<Image>();
+        maskGraphic.color = Color.white;
+        maskGraphic.sprite = HealthWellSprite();
+        maskGraphic.raycastTarget = false;
+        Mask mask = portraitMaskRoot.gameObject.AddComponent<Mask>();
+        mask.showMaskGraphic = false;
+        var portraitObject = new GameObject("ClassPortrait", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+        portraitObject.transform.SetParent(portraitMaskRoot, false);
+        _playerFramePortrait = portraitObject.GetComponent<Image>();
+        _playerFramePortrait.sprite = Resources.Load<Sprite>(PlayerPortraitResources[0]);
+        _playerFramePortrait.preserveAspect = true;
+        _playerFramePortrait.raycastTarget = false;
+        Stretch(_playerFramePortrait.rectTransform);
 
-        // HP fill
-        _hpFill = Img(root, "HpFill", HpFull);
-        _hpFill.type       = Image.Type.Filled;
+        // Centre on the visible right-hand plaque. The portrait and its frame cover
+        // part of the shell, so the plaque centre is farther right than the content centre.
+        _playerFrameName = FrameLabel(root, "PlayerName", "PLAYER", 32f, 280f, -51f, 336f, 40f);
+        _playerFrameName.color = new Color32(232, 206, 143, 255);
+        _playerFrameName.characterSpacing = 4f;
+        _playerFrameName.outlineColor = new Color32(24, 14, 5, 255);
+        _playerFrameName.outlineWidth = .12f;
+        _playerFrameClass = FrameLabel(root, "PlayerClass", "ADVENTURER", 15f, 280f, -93f, 336f, 24f);
+        _playerFrameClass.color = new Color32(190, 154, 91, 255);
+        _playerFrameClass.characterSpacing = 9f;
+
+        _hpBg = Img(root, "HpBg", new Color(0.12f, 0.01f, 0.01f, 1f));
+        Place(_hpBg.rectTransform, 306f, -126f, 299f, 29f);
+        _hpFill = Img(root, "HpFill", HealthWellFull);
+        _hpFill.type = Image.Type.Filled;
         _hpFill.fillMethod = Image.FillMethod.Horizontal;
         _hpFill.fillAmount = 1f;
-        _hpFill.rectTransform.anchorMin = new Vector2(0.03f, 0.15f);
-        _hpFill.rectTransform.anchorMax = new Vector2(0.97f, 0.85f);
-        _hpFill.rectTransform.offsetMin = _hpFill.rectTransform.offsetMax = Vector2.zero;
-
-        // Shield fill (on top)
+        Place(_hpFill.rectTransform, 306f, -126f, 299f, 29f);
         _shieldFill = Img(root, "ShieldFill", ShieldCol);
-        _shieldFill.type       = Image.Type.Filled;
+        _shieldFill.type = Image.Type.Filled;
         _shieldFill.fillMethod = Image.FillMethod.Horizontal;
         _shieldFill.fillAmount = 0f;
-        _shieldFill.rectTransform.anchorMin = new Vector2(0.03f, 0.68f);
-        _shieldFill.rectTransform.anchorMax = new Vector2(0.97f, 0.85f);
-        _shieldFill.rectTransform.offsetMin = _shieldFill.rectTransform.offsetMax = Vector2.zero;
+        Place(_shieldFill.rectTransform, 306f, -126f, 299f, 5f);
+        _hpLabel = FrameLabel(root, "HpValue", "HP", 13f, 306f, -126f, 299f, 29f);
 
-        // Label
-        _hpLabel = Lbl(root, "HpLabel", "HP", 11f);
-        _hpLabel.rectTransform.anchorMin = new Vector2(0.03f, 0f);
-        _hpLabel.rectTransform.anchorMax = new Vector2(0.97f, 0.18f);
-        _hpLabel.rectTransform.offsetMin = _hpLabel.rectTransform.offsetMax = Vector2.zero;
-        _hpLabel.alignment = TextAlignmentOptions.Center;
-        _hpLabel.color     = TextDim;
+        Image manaBg = Img(root, "ManaBg", new Color(0.01f, 0.04f, 0.13f, 1f));
+        Place(manaBg.rectTransform, 306f, -171f, 299f, 29f);
+        _playerFrameManaFill = Img(root, "ManaFill", ManaWellFull);
+        _playerFrameManaFill.type = Image.Type.Filled;
+        _playerFrameManaFill.fillMethod = Image.FillMethod.Horizontal;
+        _playerFrameManaFill.fillAmount = 1f;
+        Place(_playerFrameManaFill.rectTransform, 306f, -171f, 299f, 29f);
+        _playerFrameManaLabel = FrameLabel(root, "ManaValue", "MP", 13f, 306f, -171f, 299f, 29f);
+
+        TextMeshProUGUI hpCaption = FrameLabel(root, "HpCaption", "HP", 15f, 272f, -126f, 30f, 29f);
+        hpCaption.color = new Color32(224, 196, 128, 255);
+        hpCaption.textWrappingMode = TextWrappingModes.NoWrap;
+        hpCaption.overflowMode = TextOverflowModes.Overflow;
+        TextMeshProUGUI mpCaption = FrameLabel(root, "MpCaption", "MP", 15f, 272f, -171f, 30f, 29f);
+        mpCaption.color = new Color32(224, 196, 128, 255);
+        mpCaption.textWrappingMode = TextWrappingModes.NoWrap;
+        mpCaption.overflowMode = TextOverflowModes.Overflow;
+        // A wide centred text box plus auto-sizing keeps levels 1 through 999
+        // optically centred in the medallion without shrinking low levels.
+        _playerFrameLevel = FrameLabel(root, "PlayerLevel", "1", 42f, 29f, -220f, 72f, 48f);
+        _playerFrameLevel.alignment = TextAlignmentOptions.Center;
+        _playerFrameLevel.enableAutoSizing = true;
+        _playerFrameLevel.fontSizeMin = 24f;
+        _playerFrameLevel.fontSizeMax = 42f;
+        _playerFrameLevel.textWrappingMode = TextWrappingModes.NoWrap;
+        _playerFrameLevel.overflowMode = TextOverflowModes.Overflow;
+        _playerFrameLevel.characterSpacing = 0f;
+        _playerFrameLevel.color = new Color32(255, 220, 126, 255);
+        _playerFrameLevel.outlineColor = new Color32(20, 10, 3, 255);
+        _playerFrameLevel.outlineWidth = .16f;
+    }
+
+    static void Place(RectTransform rt, float x, float y, float width, float height)
+    {
+        rt.anchorMin = rt.anchorMax = new Vector2(0f, 1f);
+        rt.pivot = new Vector2(0f, 1f);
+        rt.anchoredPosition = new Vector2(x, y);
+        rt.sizeDelta = new Vector2(width, height);
+    }
+
+    TextMeshProUGUI FrameLabel(RectTransform parent, string name, string value, float size,
+        float x, float y, float width, float height)
+    {
+        TextMeshProUGUI label = Lbl(parent, name, value, size);
+        Place(label.rectTransform, x, y, width, height);
+        label.alignment = TextAlignmentOptions.Center;
+        label.fontStyle = FontStyles.Bold;
+        label.color = TextPrimary;
+        label.raycastTarget = false;
+        return label;
     }
 
     void TickHpBar()
@@ -356,7 +462,7 @@ public class PlayerHUD : MonoBehaviour
         float target = (_health != null) ? _health.Fraction : 1f;
         _displayedHp = Mathf.MoveTowards(_displayedHp, target, Time.deltaTime * 1.5f);
         _hpFill.fillAmount = _displayedHp;
-        _hpFill.color = Color.Lerp(HpLow, HpFull, _displayedHp);
+        _hpFill.color = Color.Lerp(HealthWellLow, HealthWellFull, _displayedHp);
         if (_actionHealthFill != null)
         {
             _actionHealthFill.fillAmount = _displayedHp;
@@ -394,11 +500,17 @@ public class PlayerHUD : MonoBehaviour
 
     void SetManaWellFraction(float fraction)
     {
-        if (_actionManaFill == null)
-            return;
-
-        _actionManaFill.fillAmount = Mathf.Clamp01(fraction);
-        _actionManaFill.color = ManaWellFull;
+        float clamped = Mathf.Clamp01(fraction);
+        if (_actionManaFill != null)
+        {
+            _actionManaFill.fillAmount = clamped;
+            _actionManaFill.color = ManaWellFull;
+        }
+        if (_playerFrameManaFill != null)
+        {
+            _playerFrameManaFill.fillAmount = clamped;
+            _playerFrameManaFill.color = ManaWellFull;
+        }
     }
 
     void UpdateHpLabel(float current, float max)
@@ -489,6 +601,7 @@ public class PlayerHUD : MonoBehaviour
         if (level == _displayedLevel) return;
         _displayedLevel = level;
         _levelBadgeText.text = level.ToString();
+        if (_playerFrameLevel != null) _playerFrameLevel.text = level.ToString();
     }
 
     void BuildHealthWell(RectTransform parent)
