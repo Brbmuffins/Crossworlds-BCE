@@ -45,6 +45,13 @@ using UnityEngine.SceneManagement;
 [AddComponentMenu("BCE/Network/Zone Manager")]
 public class ZoneManager : MonoBehaviour
 {
+    const float ArrivalMinimumSpacing = 1.1f;
+    const float ArrivalGroundSearchHeight = 3f;
+    const float ArrivalGroundSearchDistance = 7f;
+    const float ArrivalMaximumGroundDelta = 2.5f;
+    const float ArrivalMaximumSlope = 50f;
+    const int ArrivalRingCount = 6;
+
     public static ZoneManager Instance { get; private set; }
 
     [Tooltip("Zones that get one copy per party instead of one shared copy.")]
@@ -473,12 +480,40 @@ public class ZoneManager : MonoBehaviour
         if (target == null)
             Debug.LogWarning($"[Zone] No spawn point '{spawnId}' in '{scene.name}' — using origin.");
 
+        PlaceAtSafePosition(player, scene, position, rotation);
+    }
+
+    /// <summary>
+    /// Keeps an exact arrival position when it is free. If another player already
+    /// occupies it, selects a grounded, capsule-clear slot on expanding rings. This
+    /// runs on the server after the traveler is filed into the destination scene, so
+    /// simultaneous arrivals are resolved sequentially in that zone's physics scene.
+    /// </summary>
+    public void PlaceAtSafePosition(GameObject player, Scene scene, Vector3 desiredPosition,
+                                    Quaternion rotation)
+    {
+        if (player == null || !scene.IsValid()) return;
+
+        Physics.SyncTransforms();
+        Vector3 position = ResolveArrivalPosition(player, desiredPosition, rotation);
+
         var controller = player.GetComponent<CharacterController>();
         if (controller != null) controller.enabled = false;
+
+        var body = player.GetComponent<Rigidbody>();
+        if (body != null)
+        {
+            body.linearVelocity = Vector3.zero;
+            body.angularVelocity = Vector3.zero;
+            body.position = position;
+            body.rotation = rotation;
+        }
 
         player.transform.SetPositionAndRotation(position, rotation);
 
         if (controller != null) controller.enabled = true;
+
+        Physics.SyncTransforms();
 
         // Without ServerTeleport the NetworkTransform treats a cross-zone jump as
         // ordinary movement and interpolates the player across the whole map —
@@ -494,6 +529,175 @@ public class ZoneManager : MonoBehaviour
         var networkTransform = player.GetComponent<NetworkTransformBase>();
         if (networkTransform != null)
             networkTransform.ServerTeleport(position, rotation);
+    }
+
+    Vector3 ResolveArrivalPosition(GameObject player, Vector3 desiredPosition, Quaternion rotation)
+    {
+        if (!IsOccupiedByAnotherPlayer(player, desiredPosition, rotation))
+            return desiredPosition;
+
+        float spacing = Mathf.Max(ArrivalMinimumSpacing, PlayerCapsuleRadius(player) * 2f + 0.35f);
+        float phase = Mathf.Abs(player.GetInstanceID() % 16) * (Mathf.PI * 2f / 16f);
+        Vector3 fallback = desiredPosition;
+        int fallbackCrowding = int.MaxValue;
+
+        for (int ring = 1; ring <= ArrivalRingCount; ring++)
+        {
+            int slots = ring * 8;
+            float radius = ring * spacing;
+
+            for (int slot = 0; slot < slots; slot++)
+            {
+                float angle = phase + slot * (Mathf.PI * 2f / slots);
+                Vector3 candidate = desiredPosition + new Vector3(
+                    Mathf.Cos(angle) * radius, 0f, Mathf.Sin(angle) * radius);
+
+                if (!TryProjectArrivalToGround(player, desiredPosition.y, candidate,
+                        out Vector3 grounded, out Collider groundCollider))
+                    continue;
+
+                if (!IsWorldSpaceClear(player, grounded, rotation, groundCollider))
+                    continue;
+
+                int crowding = CountNearbyPlayers(player, grounded, rotation);
+                if (crowding == 0)
+                {
+                    Debug.Log($"[Zone] Arrival at {desiredPosition} occupied; placed " +
+                              $"{player.name} in open slot {grounded}.");
+                    return grounded;
+                }
+
+                if (crowding < fallbackCrowding)
+                {
+                    fallbackCrowding = crowding;
+                    fallback = grounded;
+                }
+            }
+        }
+
+        Debug.LogWarning($"[Zone] No completely open arrival slot near {desiredPosition} for " +
+                         $"{player.name}; using least-crowded grounded slot {fallback}.");
+        return fallback;
+    }
+
+    static bool TryProjectArrivalToGround(GameObject player, float desiredY, Vector3 candidate,
+                                          out Vector3 grounded, out Collider groundCollider)
+    {
+        grounded = candidate;
+        groundCollider = null;
+        float bestDelta = float.MaxValue;
+
+        RaycastHit[] hits = ZonePhysics.RaycastAll(
+            player, candidate + Vector3.up * ArrivalGroundSearchHeight, Vector3.down,
+            ArrivalGroundSearchDistance, Physics.AllLayers, QueryTriggerInteraction.Ignore);
+
+        foreach (RaycastHit hit in hits)
+        {
+            if (hit.collider == null || IsOwnCollider(player, hit.collider)) continue;
+            if (IsPlayerCollider(hit.collider)) continue;
+            if (Vector3.Angle(hit.normal, Vector3.up) > ArrivalMaximumSlope) continue;
+
+            float delta = Mathf.Abs(hit.point.y - desiredY);
+            if (delta > ArrivalMaximumGroundDelta || delta >= bestDelta) continue;
+
+            bestDelta = delta;
+            grounded = new Vector3(candidate.x, hit.point.y, candidate.z);
+            groundCollider = hit.collider;
+        }
+
+        return groundCollider != null;
+    }
+
+    static bool IsOccupiedByAnotherPlayer(GameObject player, Vector3 position, Quaternion rotation)
+    {
+        return CountNearbyPlayers(player, position, rotation) > 0;
+    }
+
+    static int CountNearbyPlayers(GameObject player, Vector3 position, Quaternion rotation)
+    {
+        GetCapsule(player, position, rotation, 0.15f,
+            out Vector3 point0, out Vector3 point1, out float radius);
+
+        Collider[] overlaps = ZonePhysics.OverlapCapsule(
+            player, point0, point1, radius, Physics.AllLayers,
+            QueryTriggerInteraction.Ignore);
+
+        var roots = new HashSet<Transform>();
+        foreach (Collider overlap in overlaps)
+        {
+            if (overlap == null || IsOwnCollider(player, overlap) || !IsPlayerCollider(overlap))
+                continue;
+            roots.Add(overlap.transform.root);
+        }
+        return roots.Count;
+    }
+
+    static bool IsWorldSpaceClear(GameObject player, Vector3 position, Quaternion rotation,
+                                  Collider groundCollider)
+    {
+        GetCapsule(player, position + Vector3.up * 0.05f, rotation, -0.03f,
+            out Vector3 point0, out Vector3 point1, out float radius);
+
+        Collider[] overlaps = ZonePhysics.OverlapCapsule(
+            player, point0, point1, radius, Physics.AllLayers,
+            QueryTriggerInteraction.Ignore);
+
+        foreach (Collider overlap in overlaps)
+        {
+            if (overlap == null || overlap == groundCollider || IsOwnCollider(player, overlap))
+                continue;
+            // Player occupancy is scored separately so a least-crowded grounded
+            // fallback remains available if every slot is busy.
+            if (IsPlayerCollider(overlap))
+                continue;
+            return false;
+        }
+        return true;
+    }
+
+    static void GetCapsule(GameObject player, Vector3 position, Quaternion rotation,
+                           float radiusPadding, out Vector3 point0, out Vector3 point1,
+                           out float radius)
+    {
+        CapsuleCollider capsule = player.GetComponent<CapsuleCollider>();
+        if (capsule == null)
+        {
+            radius = Mathf.Max(0.1f, 0.35f + radiusPadding);
+            point0 = position + Vector3.up * radius;
+            point1 = position + Vector3.up * (1.8f - radius);
+            return;
+        }
+
+        Vector3 scale = player.transform.lossyScale;
+        float axisScale = Mathf.Abs(scale.y);
+        float radialScale = Mathf.Max(Mathf.Abs(scale.x), Mathf.Abs(scale.z));
+        radius = Mathf.Max(0.05f, capsule.radius * radialScale + radiusPadding);
+        float halfHeight = Mathf.Max(radius, capsule.height * axisScale * 0.5f);
+        Vector3 center = position + rotation * Vector3.Scale(capsule.center, scale);
+        Vector3 axis = rotation * Vector3.up;
+        float segment = Mathf.Max(0f, halfHeight - radius);
+        point0 = center - axis * segment;
+        point1 = center + axis * segment;
+    }
+
+    static float PlayerCapsuleRadius(GameObject player)
+    {
+        CapsuleCollider capsule = player.GetComponent<CapsuleCollider>();
+        if (capsule == null) return 0.35f;
+        Vector3 scale = player.transform.lossyScale;
+        return capsule.radius * Mathf.Max(Mathf.Abs(scale.x), Mathf.Abs(scale.z));
+    }
+
+    static bool IsOwnCollider(GameObject player, Collider collider)
+    {
+        Transform transform = collider.transform;
+        return transform == player.transform || transform.IsChildOf(player.transform);
+    }
+
+    static bool IsPlayerCollider(Collider collider)
+    {
+        return collider.GetComponentInParent<PlayerIdentity>() != null
+               || collider.transform.root.CompareTag("Player");
     }
 
     // ── Connection lifecycle ──────────────────────────────────────────────────

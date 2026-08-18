@@ -73,6 +73,29 @@ public static class ZonePhysics
         }
     }
 
+    public static Collider[] OverlapCapsule(
+        GameObject context,
+        Vector3 point0,
+        Vector3 point1,
+        float radius,
+        int layerMask = Physics.AllLayers,
+        QueryTriggerInteraction queryTriggerInteraction = QueryTriggerInteraction.UseGlobal)
+    {
+        PhysicsScene physicsScene = Resolve(context);
+        int capacity = InitialCapacity;
+
+        while (true)
+        {
+            var results = new Collider[capacity];
+            int count = physicsScene.OverlapCapsule(
+                point0, point1, radius, results, layerMask, queryTriggerInteraction);
+            if (count < capacity || capacity >= MaximumCapacity)
+                return Trim(results, count);
+
+            capacity = Mathf.Min(capacity * 2, MaximumCapacity);
+        }
+    }
+
     public static RaycastHit[] RaycastAll(
         GameObject context,
         Ray ray,

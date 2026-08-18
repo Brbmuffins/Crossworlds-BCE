@@ -469,6 +469,8 @@ public class RodNetworkManager : NetworkManager
         // one, fall back to that zone's spawn point rather than to a global search.
         if (!hasSavedPos)
             ZoneManager.Instance.PlaceAtSpawnPoint(player, zone, null);
+        else
+            ZoneManager.Instance.PlaceAtSafePosition(player, zone, spawnPos, Quaternion.identity);
 
         var identity = player.GetComponent<PlayerIdentity>();
         if (identity != null)
