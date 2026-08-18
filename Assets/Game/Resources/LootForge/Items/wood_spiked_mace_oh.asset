@@ -21,7 +21,7 @@ MonoBehaviour:
   inventoryIconEulerAngles: {x: 12, y: -28, z: -8}
   inventoryIconZoom: 1
   iconId: 51f7888c2201e6d4f951b7b19941bf98
-  sellValue: 0
+  sellValue: 5
   crafted: 0
   stackable: 0
   maxStackSize: 1
