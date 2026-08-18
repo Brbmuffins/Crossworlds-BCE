@@ -94,14 +94,15 @@ public static class InventoryUIBuilder
         var footerLine = Rect("FooterLine", panel, new Vector2(0.5f, 0f), new Vector2(390f, 1f));
         footerLine.anchoredPosition = new Vector2(0f, 59f);
         footerLine.gameObject.AddComponent<Image>().color = new Color32(166, 132, 68, 150);
-        var coins = Rect("GoldCoins", panel, Vector2.zero, new Vector2(48f, 48f));
-        coins.anchoredPosition = new Vector2(70f, 34f);
+        var coins = Rect("GoldCoins", panel, Vector2.one, new Vector2(32f, 32f));
+        coins.anchoredPosition = new Vector2(-176f, -62f);
         var coinImage = coins.gameObject.AddComponent<Image>();
         coinImage.sprite = AssetDatabase.LoadAssetAtPath<Sprite>(CoinsPath);
         coinImage.preserveAspect = true;
         coinImage.raycastTarget = false;
-        var gold = Text("Gold", panel, "0", 20f, FontStyles.Bold, new Color32(113, 76, 18, 255),
-            Vector2.zero, Vector2.zero, new Vector2(91f, 19f), new Vector2(228f, 51f), TextAlignmentOptions.Left);
+        var gold = Text("Gold", panel, "0", 20f, FontStyles.Bold, new Color32(255, 211, 64, 255),
+            Vector2.one, Vector2.one, new Vector2(-154f, -76f), new Vector2(-54f, -48f), TextAlignmentOptions.Left);
+        gold.raycastTarget = false;
         var status = Text("Status", panel, "", 13f, FontStyles.Italic, new Color32(115, 70, 51, 255),
             Vector2.zero, Vector2.zero, new Vector2(220f, 20f), new Vector2(442f, 50f), TextAlignmentOptions.Right);
 
