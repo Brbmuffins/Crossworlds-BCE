@@ -160,43 +160,26 @@ public static class HubSceneBuilder
     static void AddForgeAndMining()
     {
         // ── Forge NPC ─────────────────────────────────────────────────────────
-        // Placed behind the spawn ring at z=-8, facing players coming in.
-        var forgeParent = new GameObject("ForgeNPC_Master");
-        forgeParent.transform.position = new Vector3(-12f, 0f, -4f);
-        forgeParent.transform.rotation = Quaternion.Euler(0f, 90f, 0f);
+        // Reuse the intentionally unassigned male Hub NPC. Sarah is the female
+        // vendor and must retain NetworkVendor exclusively.
+        var forgeParent = GameObject.Find("forged_male_vendor_rigged_NPC (1)")
+                          ?? GameObject.Find("Forge Master");
+        if (forgeParent == null)
+        {
+            Debug.LogError("[HubSceneBuilder] Unused male Hub NPC was not found; Forge Master was not assigned.");
+            return;
+        }
 
-        // Visual: simple capsule + orange point light to make it stand out
-        var npcBody = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-        npcBody.name = "Body";
-        npcBody.transform.SetParent(forgeParent.transform, false);
-        npcBody.transform.localPosition = new Vector3(0f, 1f, 0f);
-        npcBody.transform.localScale    = new Vector3(0.7f, 0.85f, 0.7f);
-        Object.DestroyImmediate(npcBody.GetComponent<CapsuleCollider>());
-        var npcMat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
-        npcMat.color = new Color(0.55f, 0.35f, 0.15f);
-        npcBody.GetComponent<Renderer>().sharedMaterial = npcMat;
+        forgeParent.name = "Forge Master";
+        var npcController = forgeParent.GetComponent<ForgedNpcController>();
+        if (npcController != null) npcController.npcDisplayName = "Forge Master";
 
-        var forgeLightGO = new GameObject("ForgeLight");
-        forgeLightGO.transform.SetParent(forgeParent.transform, false);
-        forgeLightGO.transform.localPosition = new Vector3(0f, 2.5f, 0f);
-        var forgeLight = forgeLightGO.AddComponent<Light>();
-        forgeLight.type      = LightType.Point;
-        forgeLight.color     = new Color(1f, 0.55f, 0.1f);
-        forgeLight.intensity = 2.5f;
-        forgeLight.range     = 8f;
-
-        // Proximity collider for visual radius
-        var triggerCol = forgeParent.AddComponent<SphereCollider>();
-        triggerCol.isTrigger = true;
-        triggerCol.radius    = 4f;
-
-        // ForgeNPC script
-        var fnpc = forgeParent.AddComponent<ForgeNPC>();
-        fnpc.professionId  = 1;
+        var fnpc = forgeParent.GetComponent<ForgeNPC>() ?? forgeParent.AddComponent<ForgeNPC>();
+        fnpc.professionId  = 2;
         fnpc.npcName       = "Forge Master";
         fnpc.interactRange = 3.5f;
 
-        Debug.Log("[HubSceneBuilder] ✓ Added Forge Master NPC at (-12, 0, -4).");
+        Debug.Log("[HubSceneBuilder] ✓ Assigned the existing male Hub NPC as Forge Master.");
 
         // ── Mining Stations (3 × Copper Ore) ───────────────────────────────────
         var minePositions = new Vector3[]

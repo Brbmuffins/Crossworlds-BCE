@@ -3585,7 +3585,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4009743542156262909, guid: 9154dd4f5b09124479addef78dbd6d2f, type: 3}
       propertyPath: m_Name
-      value: forged_male_vendor_rigged_NPC (1)
+      value: Forge Master
+      objectReference: {fileID: 0}
+    - target: {fileID: 1027687546554743881, guid: 9154dd4f5b09124479addef78dbd6d2f, type: 3}
+      propertyPath: npcDisplayName
+      value: Forge Master
       objectReference: {fileID: 0}
     - target: {fileID: 4390631599370381127, guid: 9154dd4f5b09124479addef78dbd6d2f, type: 3}
       propertyPath: m_LocalScale.x
@@ -3642,8 +3646,31 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 4009743542156262909, guid: 9154dd4f5b09124479addef78dbd6d2f, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2100000002}
   m_SourcePrefab: {fileID: 100100000, guid: 9154dd4f5b09124479addef78dbd6d2f, type: 3}
+--- !u!1 &2100000001 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4009743542156262909, guid: 9154dd4f5b09124479addef78dbd6d2f, type: 3}
+  m_PrefabInstance: {fileID: 1374614104}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &2100000002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2100000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6ea4b6ed0f9e6fd4694b20cfbe62cd7f, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::ForgeNPC
+  professionId: 2
+  npcName: Forge Master
+  interactRange: 3.5
 --- !u!1 &1394886852
 GameObject:
   m_ObjectHideFlags: 0

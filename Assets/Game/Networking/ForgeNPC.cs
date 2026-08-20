@@ -34,11 +34,23 @@ public class ForgeNPC : MonoBehaviour
     float      _scanTimer;
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
-    void Awake()  { BuildPrompt(); }
-    void Start()  { _promptGO.SetActive(false); }
+    void Awake()
+    {
+#if UNITY_EDITOR || !UNITY_SERVER
+        BuildPrompt();
+#endif
+    }
+
+    void Start()
+    {
+#if UNITY_EDITOR || !UNITY_SERVER
+        _promptGO.SetActive(false);
+#endif
+    }
 
     void Update()
     {
+#if UNITY_EDITOR || !UNITY_SERVER
         // Find local player periodically
         _scanTimer -= Time.deltaTime;
         if (_localPlayer == null && _scanTimer <= 0f)
@@ -73,6 +85,7 @@ public class ForgeNPC : MonoBehaviour
         {
             OpenCrafting();
         }
+#endif
     }
 
     // ── Actions ───────────────────────────────────────────────────────────────
