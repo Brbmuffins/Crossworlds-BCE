@@ -7,16 +7,15 @@ using UnityEngine.InputSystem;
 /// Place on any NPC GameObject in the Hub. Requires a Collider (set as trigger).
 /// Shows a world-space "Press E to Craft" billboard prompt when the player is in range.
 ///
-/// profession_id defaults to 1 (Smithing). Can be changed in Inspector for Mining (2), etc.
-///
 /// No Mirror NetworkBehaviour — ForgeNPC is a purely client-side interaction.
 /// The NPC visual is just a scene object; crafting API calls happen in ForgeCraftingPanel.
 /// </summary>
 public class ForgeNPC : MonoBehaviour
 {
     [Header("Crafting")]
-    [Tooltip("Profession opened by this NPC: 1=Smithing, 2=Mining, 3=Alchemy")]
-    public int professionId = 1;
+    // Retained for existing scene builders and serialized Forge NPCs. The
+    // current panel loads every recipe and no longer filters by this value.
+    [HideInInspector] public int professionId = 2;
 
     [Tooltip("Display name shown in the E-prompt")]
     public string npcName = "Forge Master";

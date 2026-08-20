@@ -388,8 +388,15 @@ Highest-value phase: every piece exists, only glue is missing.
   (extended: XP award, transaction, level-up loop, smelt support). SQL: 5 raw materials, 5 refined,
   6 consumables (Void Resist Flask, Iron Warden Blast Kit, etc.), 8 crafted gear items, 19 recipes.
   Server patched and live (2026-07-03).
+  **Contract/security correction deployed 2026-08-20:** profession and recipe IDs now use stable
+  text keys (`woodcutting`, `fishing`, `mining`); the malformed empty-ID recipe was removed;
+  consumables are a valid live item type; potion stack limits are 40. Crafting now locks bag rows
+  inside its transaction, excludes equipped gear from ingredients, rejects zero-ingredient
+  recipes, honors result stack limits, reuses freed slots, and enforces positions 0–23. Live auth
+  health and unauthenticated guards passed after restart. Runtime acceptance with a designated
+  test character is still required before calling the player-facing loop complete.
   *Editor steps remaining:* wire ForgeNPC → `ForgeCraftingPanel.Open()`; build RecipeRowPrefab UI
-  prefab; add `GetItemCount(itemId)` to `InventoryManager`.
+  prefab. (`InventoryManager.GetItemCount(itemId)` already exists.)
   *Accept:* craft copper ingot from 3 ore in-game; Void Resist Flask reduces boss void damage 25%.
   *Deps:* 0.5, 1.6.
 

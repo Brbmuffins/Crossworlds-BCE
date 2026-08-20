@@ -43,6 +43,30 @@ PREPARE s FROM @sql2; EXECUTE s; DEALLOCATE PREPARE s;
 -- ── 2. Raw gathering materials ───────────────────────────────────────────────
 -- These are what AfkGatheringStation drops; they feed into smelt recipes.
 
+-- Repair invalid enum-zero rows to supported temporary values first, otherwise
+-- strict MariaDB can reject the enum alteration as truncated data.
+UPDATE items SET item_type = 'weapon' WHERE id IN ('bow_oak', 'staff_oak');
+UPDATE items SET item_type = 'trinket' WHERE id IN ('augment_copper', 'augment_iron');
+UPDATE items SET item_type = 'material' WHERE id IN (
+  'flask_hp_minor', 'flask_mp_minor', 'flask_hp_major', 'flask_void_resist',
+  'kit_iron_warden', 'flask_speed', 'flask_damage'
+);
+
+-- The live schema predates consumables. Extend it without renaming or removing
+-- any existing values used by the legacy gear contract.
+ALTER TABLE items MODIFY COLUMN item_type ENUM(
+  'weapon', 'armor_head', 'armor_chest', 'armor_legs', 'armor_feet',
+  'armor_hands', 'offhand', 'ring', 'trinket', 'material', 'consumable'
+) NOT NULL;
+
+-- Repair rows created while their intended enum values did not exist.
+UPDATE items SET item_type = 'weapon' WHERE id IN ('bow_oak', 'staff_oak');
+UPDATE items SET item_type = 'trinket' WHERE id IN ('augment_copper', 'augment_iron');
+UPDATE items SET item_type = 'consumable' WHERE id IN (
+  'flask_hp_minor', 'flask_mp_minor', 'flask_hp_major', 'flask_void_resist',
+  'kit_iron_warden', 'flask_speed', 'flask_damage'
+);
+
 INSERT IGNORE INTO items (id, name, rarity, item_type, stat_bonus, sell_value) VALUES
   ('ore_copper',  'Copper Ore',   'common',    'material', '{}', 2),
   ('ore_iron',    'Iron Ore',     'common',    'material', '{}', 5),
@@ -163,155 +187,128 @@ INSERT IGNORE INTO items (id, name, rarity, item_type, stat_bonus, sell_value) V
 
   ('bow_oak',
    'Oak Shortbow',
-   'common', 'weapon_ranged',
+   'common', 'weapon',
    '{"agi":8}',
    45),
 
   ('staff_oak',
    'Oak Staff',
-   'common', 'weapon_magic',
+   'common', 'weapon',
    '{"int":8}',
    45),
 
   ('augment_copper',
    'Copper Augment',
-   'common', 'augment',
+   'common', 'trinket',
    '{"stat_bonus_pct":10}',
    30),
 
   ('augment_iron',
    'Iron Augment',
-   'uncommon', 'augment',
+   'uncommon', 'trinket',
    '{"stat_bonus_pct":18}',
    75);
 
--- ── 6. Smelt recipes (raw → refined, recipe_type='smelt', 2s) ────────────────
+-- ── 6–7. Recipes ─────────────────────────────────────────────────────────────
+-- Recipe IDs and profession IDs are explicit stable strings because the live
+-- schema uses VARCHAR keys. Never use LAST_INSERT_ID() for this table.
 
--- Copper Smelt: 3× ore_copper → 1× ingot_copper (Mining Lv 1)
-INSERT IGNORE INTO recipes (profession_id, skill_level_required, result_item_id, recipe_type, craft_time_seconds)
-VALUES (2, 1, 'ingot_copper', 'smelt', 2.0);
-SET @r = LAST_INSERT_ID();
-INSERT IGNORE INTO recipe_ingredients (recipe_id, item_id, quantity) VALUES (@r, 'ore_copper', 3);
+INSERT INTO recipes
+  (id, name, profession_id, skill_level_required, result_item_id, result_quantity, recipe_type, craft_time_seconds)
+VALUES
+  ('smelt_copper_ingot', 'Smelt Copper Ingot', 'mining', 1, 'ingot_copper', 1, 'smelt', 2.0),
+  ('smelt_iron_ingot', 'Smelt Iron Ingot', 'mining', 5, 'ingot_iron', 1, 'smelt', 2.0),
+  ('smelt_gold_ingot', 'Smelt Gold Ingot', 'mining', 15, 'ingot_gold', 1, 'smelt', 2.0),
+  ('mill_oak_plank', 'Mill Oak Plank', 'woodcutting', 1, 'plank_oak', 1, 'smelt', 2.0),
+  ('prepare_river_fillet', 'Prepare River Fillet', 'fishing', 1, 'fish_fillet', 1, 'smelt', 2.0),
+  ('craft_minor_healing_potion', 'Minor Healing Potion', 'fishing', 1, 'flask_hp_minor', 1, 'craft', 3.0),
+  ('craft_swiftness_flask', 'Swiftness Flask', 'fishing', 3, 'flask_speed', 1, 'craft', 3.0),
+  ('craft_void_resist_flask', 'Void Resist Flask', 'fishing', 5, 'flask_void_resist', 1, 'craft', 4.0),
+  ('craft_major_healing_flask', 'Major Healing Flask', 'fishing', 8, 'flask_hp_major', 1, 'craft', 4.0),
+  ('craft_copper_helm', 'Copper Helm', 'mining', 3, 'helm_copper', 1, 'craft', 5.0),
+  ('craft_copper_augment', 'Copper Augment', 'mining', 5, 'augment_copper', 1, 'craft', 3.0),
+  ('craft_oak_shortbow', 'Oak Shortbow', 'woodcutting', 3, 'bow_oak', 1, 'craft', 5.0),
+  ('craft_oak_staff', 'Oak Staff', 'woodcutting', 3, 'staff_oak', 1, 'craft', 5.0),
+  ('craft_iron_warden_kit', 'Iron Warden Blast Kit', 'mining', 12, 'kit_iron_warden', 1, 'craft', 6.0),
+  ('craft_iron_helm', 'Iron Helm', 'mining', 8, 'helm_iron', 1, 'craft', 5.0),
+  ('craft_iron_augment', 'Iron Augment', 'mining', 12, 'augment_iron', 1, 'craft', 3.0),
+  ('craft_iron_chestplate', 'Iron Chestplate', 'mining', 10, 'chest_iron', 1, 'craft', 8.0),
+  ('craft_forge_tempered_flask', 'Forge-Tempered Flask', 'mining', 10, 'flask_damage', 1, 'craft', 5.0),
+  ('craft_gold_tempered_helm', 'Gold-Tempered Helm', 'mining', 18, 'helm_gold', 1, 'craft', 10.0)
+ON DUPLICATE KEY UPDATE
+  name = VALUES(name), profession_id = VALUES(profession_id),
+  skill_level_required = VALUES(skill_level_required), result_item_id = VALUES(result_item_id),
+  result_quantity = VALUES(result_quantity), recipe_type = VALUES(recipe_type),
+  craft_time_seconds = VALUES(craft_time_seconds);
 
--- Iron Smelt: 3× ore_iron → 1× ingot_iron (Mining Lv 5)
-INSERT IGNORE INTO recipes (profession_id, skill_level_required, result_item_id, recipe_type, craft_time_seconds)
-VALUES (2, 5, 'ingot_iron', 'smelt', 2.0);
-SET @r = LAST_INSERT_ID();
-INSERT IGNORE INTO recipe_ingredients (recipe_id, item_id, quantity) VALUES (@r, 'ore_iron', 3);
+INSERT INTO recipe_ingredients (recipe_id, item_id, quantity) VALUES
+  ('smelt_copper_ingot', 'ore_copper', 3),
+  ('smelt_iron_ingot', 'ore_iron', 3),
+  ('smelt_gold_ingot', 'ore_gold', 3),
+  ('mill_oak_plank', 'log_oak', 3),
+  ('prepare_river_fillet', 'fish_river', 2),
+  ('craft_minor_healing_potion', 'fish_fillet', 2),
+  ('craft_swiftness_flask', 'fish_fillet', 2),
+  ('craft_swiftness_flask', 'ingot_copper', 1),
+  ('craft_void_resist_flask', 'fish_fillet', 3),
+  ('craft_void_resist_flask', 'ingot_copper', 2),
+  ('craft_major_healing_flask', 'fish_fillet', 4),
+  ('craft_major_healing_flask', 'ingot_iron', 1),
+  ('craft_copper_helm', 'ingot_copper', 2),
+  ('craft_copper_augment', 'ingot_copper', 1),
+  ('craft_oak_shortbow', 'plank_oak', 3),
+  ('craft_oak_staff', 'plank_oak', 3),
+  ('craft_iron_warden_kit', 'ingot_iron', 3),
+  ('craft_iron_warden_kit', 'plank_oak', 2),
+  ('craft_iron_helm', 'ingot_iron', 2),
+  ('craft_iron_augment', 'ingot_iron', 1),
+  ('craft_iron_chestplate', 'ingot_iron', 3),
+  ('craft_iron_chestplate', 'ingot_copper', 1),
+  ('craft_forge_tempered_flask', 'ingot_iron', 2),
+  ('craft_forge_tempered_flask', 'fish_fillet', 3),
+  ('craft_gold_tempered_helm', 'ingot_gold', 2),
+  ('craft_gold_tempered_helm', 'ingot_iron', 1)
+ON DUPLICATE KEY UPDATE quantity = VALUES(quantity);
 
--- Gold Smelt: 3× ore_gold → 1× ingot_gold (Mining Lv 15)
-INSERT IGNORE INTO recipes (profession_id, skill_level_required, result_item_id, recipe_type, craft_time_seconds)
-VALUES (2, 15, 'ingot_gold', 'smelt', 2.0);
-SET @r = LAST_INSERT_ID();
-INSERT IGNORE INTO recipe_ingredients (recipe_id, item_id, quantity) VALUES (@r, 'ore_gold', 3);
+-- Convert any rows written by the retired numeric profession contract. A
+-- temporary table avoids ambiguous target/source references in MariaDB.
+DROP TEMPORARY TABLE IF EXISTS profession_id_migration;
+CREATE TEMPORARY TABLE profession_id_migration (
+  character_id BIGINT UNSIGNED NOT NULL,
+  profession_id VARCHAR(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  skill_level INT NOT NULL,
+  skill_xp INT NOT NULL
+);
+INSERT INTO profession_id_migration (character_id, profession_id, skill_level, skill_xp)
+SELECT character_id,
+       CASE profession_id
+         WHEN '0' THEN 'woodcutting'
+         WHEN '1' THEN 'fishing'
+         WHEN '2' THEN 'mining'
+       END AS profession_id,
+       skill_level,
+       skill_xp
+FROM professions
+WHERE profession_id IN ('0', '1', '2');
 
--- Oak Plank: 3× log_oak → 1× plank_oak (Woodcutting Lv 1)
-INSERT IGNORE INTO recipes (profession_id, skill_level_required, result_item_id, recipe_type, craft_time_seconds)
-VALUES (0, 1, 'plank_oak', 'smelt', 2.0);
-SET @r = LAST_INSERT_ID();
-INSERT IGNORE INTO recipe_ingredients (recipe_id, item_id, quantity) VALUES (@r, 'log_oak', 3);
+UPDATE professions AS existing
+JOIN profession_id_migration AS migrated
+  ON migrated.character_id = existing.character_id
+ AND migrated.profession_id = existing.profession_id
+SET existing.skill_level = GREATEST(existing.skill_level, migrated.skill_level),
+    existing.skill_xp = GREATEST(existing.skill_xp, migrated.skill_xp);
 
--- River Fillet: 2× fish_river → 1× fish_fillet (Fishing Lv 1)
-INSERT IGNORE INTO recipes (profession_id, skill_level_required, result_item_id, recipe_type, craft_time_seconds)
-VALUES (1, 1, 'fish_fillet', 'smelt', 2.0);
-SET @r = LAST_INSERT_ID();
-INSERT IGNORE INTO recipe_ingredients (recipe_id, item_id, quantity) VALUES (@r, 'fish_river', 2);
+DELETE FROM professions WHERE profession_id IN ('0', '1', '2');
 
--- ── 7. Craft recipes (refined → gear/consumables, recipe_type='craft') ────────
+INSERT IGNORE INTO professions (character_id, profession_id, skill_level, skill_xp)
+SELECT character_id, profession_id, skill_level, skill_xp
+FROM profession_id_migration;
 
--- Minor Healing Flask: 2× fish_fillet (Fishing Lv 1, 3s)
-INSERT IGNORE INTO recipes (profession_id, skill_level_required, result_item_id, recipe_type, craft_time_seconds)
-VALUES (1, 1, 'flask_hp_minor', 'craft', 3.0);
-SET @r = LAST_INSERT_ID();
-INSERT IGNORE INTO recipe_ingredients (recipe_id, item_id, quantity) VALUES (@r, 'fish_fillet', 2);
+DROP TEMPORARY TABLE profession_id_migration;
 
--- Swiftness Flask: 2× fish_fillet + 1× ingot_copper (Fishing Lv 3, 3s)
-INSERT IGNORE INTO recipes (profession_id, skill_level_required, result_item_id, recipe_type, craft_time_seconds)
-VALUES (1, 3, 'flask_speed', 'craft', 3.0);
-SET @r = LAST_INSERT_ID();
-INSERT IGNORE INTO recipe_ingredients (recipe_id, item_id, quantity) VALUES (@r, 'fish_fillet', 2);
-INSERT IGNORE INTO recipe_ingredients (recipe_id, item_id, quantity) VALUES (@r, 'ingot_copper', 1);
-
--- Void Resist Flask: 3× fish_fillet + 2× ingot_copper (Fishing Lv 5, 4s)
--- Counters Null Architect void damage — exclusive to professions
-INSERT IGNORE INTO recipes (profession_id, skill_level_required, result_item_id, recipe_type, craft_time_seconds)
-VALUES (1, 5, 'flask_void_resist', 'craft', 4.0);
-SET @r = LAST_INSERT_ID();
-INSERT IGNORE INTO recipe_ingredients (recipe_id, item_id, quantity) VALUES (@r, 'fish_fillet', 3);
-INSERT IGNORE INTO recipe_ingredients (recipe_id, item_id, quantity) VALUES (@r, 'ingot_copper', 2);
-
--- Major Healing Flask: 4× fish_fillet + 1× ingot_iron (Fishing Lv 8, 4s)
-INSERT IGNORE INTO recipes (profession_id, skill_level_required, result_item_id, recipe_type, craft_time_seconds)
-VALUES (1, 8, 'flask_hp_major', 'craft', 4.0);
-SET @r = LAST_INSERT_ID();
-INSERT IGNORE INTO recipe_ingredients (recipe_id, item_id, quantity) VALUES (@r, 'fish_fillet', 4);
-INSERT IGNORE INTO recipe_ingredients (recipe_id, item_id, quantity) VALUES (@r, 'ingot_iron', 1);
-
--- Copper Helm: 2× ingot_copper (Mining Lv 3, 5s)
-INSERT IGNORE INTO recipes (profession_id, skill_level_required, result_item_id, recipe_type, craft_time_seconds)
-VALUES (2, 3, 'helm_copper', 'craft', 5.0);
-SET @r = LAST_INSERT_ID();
-INSERT IGNORE INTO recipe_ingredients (recipe_id, item_id, quantity) VALUES (@r, 'ingot_copper', 2);
-
--- Copper Augment: 1× ingot_copper (Mining Lv 5, 3s)
-INSERT IGNORE INTO recipes (profession_id, skill_level_required, result_item_id, recipe_type, craft_time_seconds)
-VALUES (2, 5, 'augment_copper', 'craft', 3.0);
-SET @r = LAST_INSERT_ID();
-INSERT IGNORE INTO recipe_ingredients (recipe_id, item_id, quantity) VALUES (@r, 'ingot_copper', 1);
-
--- Oak Shortbow: 3× plank_oak (Woodcutting Lv 3, 5s)
-INSERT IGNORE INTO recipes (profession_id, skill_level_required, result_item_id, recipe_type, craft_time_seconds)
-VALUES (0, 3, 'bow_oak', 'craft', 5.0);
-SET @r = LAST_INSERT_ID();
-INSERT IGNORE INTO recipe_ingredients (recipe_id, item_id, quantity) VALUES (@r, 'log_oak', 3);
-
--- Oak Staff: 3× plank_oak (Woodcutting Lv 3, 5s)
-INSERT IGNORE INTO recipes (profession_id, skill_level_required, result_item_id, recipe_type, craft_time_seconds)
-VALUES (0, 3, 'staff_oak', 'craft', 5.0);
-SET @r = LAST_INSERT_ID();
-INSERT IGNORE INTO recipe_ingredients (recipe_id, item_id, quantity) VALUES (@r, 'log_oak', 3);
-
--- Iron Warden Blast Kit: 3× ingot_iron + 2× plank_oak (Mining Lv 12, 6s)
--- Counters Devastation slam — exclusive to professions
-INSERT IGNORE INTO recipes (profession_id, skill_level_required, result_item_id, recipe_type, craft_time_seconds)
-VALUES (2, 12, 'kit_iron_warden', 'craft', 6.0);
-SET @r = LAST_INSERT_ID();
-INSERT IGNORE INTO recipe_ingredients (recipe_id, item_id, quantity) VALUES (@r, 'ingot_iron', 3);
-INSERT IGNORE INTO recipe_ingredients (recipe_id, item_id, quantity) VALUES (@r, 'plank_oak', 2);
-
--- Iron Helm: 2× ingot_iron (Mining Lv 8, 5s)
-INSERT IGNORE INTO recipes (profession_id, skill_level_required, result_item_id, recipe_type, craft_time_seconds)
-VALUES (2, 8, 'helm_iron', 'craft', 5.0);
-SET @r = LAST_INSERT_ID();
-INSERT IGNORE INTO recipe_ingredients (recipe_id, item_id, quantity) VALUES (@r, 'ingot_iron', 2);
-
--- Iron Augment: 1× ingot_iron (Mining Lv 12, 3s)
-INSERT IGNORE INTO recipes (profession_id, skill_level_required, result_item_id, recipe_type, craft_time_seconds)
-VALUES (2, 12, 'augment_iron', 'craft', 3.0);
-SET @r = LAST_INSERT_ID();
-INSERT IGNORE INTO recipe_ingredients (recipe_id, item_id, quantity) VALUES (@r, 'ingot_iron', 1);
-
--- Iron Chestplate: 3× ingot_iron + 1× ingot_copper (Mining Lv 10, 8s)
-INSERT IGNORE INTO recipes (profession_id, skill_level_required, result_item_id, recipe_type, craft_time_seconds)
-VALUES (2, 10, 'chest_iron', 'craft', 8.0);
-SET @r = LAST_INSERT_ID();
-INSERT IGNORE INTO recipe_ingredients (recipe_id, item_id, quantity) VALUES (@r, 'ingot_iron', 3);
-INSERT IGNORE INTO recipe_ingredients (recipe_id, item_id, quantity) VALUES (@r, 'ingot_copper', 1);
-
--- Forge-Tempered Flask: 2× ingot_iron + 3× fish_fillet (Mining Lv 10 / Fishing gate via materials, 5s)
-INSERT IGNORE INTO recipes (profession_id, skill_level_required, result_item_id, recipe_type, craft_time_seconds)
-VALUES (2, 10, 'flask_damage', 'craft', 5.0);
-SET @r = LAST_INSERT_ID();
-INSERT IGNORE INTO recipe_ingredients (recipe_id, item_id, quantity) VALUES (@r, 'ingot_iron', 2);
-INSERT IGNORE INTO recipe_ingredients (recipe_id, item_id, quantity) VALUES (@r, 'fish_fillet', 3);
-
--- Gold-Tempered Helm: 2× ingot_gold + 1× ingot_iron (Mining Lv 18, 10s)
--- Best-in-slot head — only reachable by dedicated miners
-INSERT IGNORE INTO recipes (profession_id, skill_level_required, result_item_id, recipe_type, craft_time_seconds)
-VALUES (2, 18, 'helm_gold', 'craft', 10.0);
-SET @r = LAST_INSERT_ID();
-INSERT IGNORE INTO recipe_ingredients (recipe_id, item_id, quantity) VALUES (@r, 'ingot_gold', 2);
-INSERT IGNORE INTO recipe_ingredients (recipe_id, item_id, quantity) VALUES (@r, 'ingot_iron', 1);
+-- Remove the malformed row created by the previous numeric/LAST_INSERT_ID patch.
+DELETE FROM recipe_ingredients WHERE recipe_id = '';
+DELETE FROM recipes WHERE id = '';
 
 -- ── Done ────────────────────────────────────────────────────────────────────
 SELECT 'Professions patch complete.' AS status;

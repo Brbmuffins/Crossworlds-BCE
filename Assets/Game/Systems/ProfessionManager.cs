@@ -9,8 +9,9 @@ using UnityEngine.Networking;
 /// Loads profession records on login, caches them locally, and exposes
 /// level-check + XP-award APIs to AfkGatheringStation and other systems.
 ///
-/// Profession IDs (match DB / web panel):
+/// Game-facing profession indices:
 ///   0 = Woodcutting   1 = Fishing   2 = Mining
+/// Wire/database IDs are the stable strings: woodcutting, fishing, mining.
 ///
 /// XP formula (matches ProfessionsPanel.ts):
 ///   xpToNextLevel = skill_level × 50
@@ -24,6 +25,27 @@ public class ProfessionManager : MonoBehaviour
     public static ProfessionManager Local { get; private set; }
 
     public static readonly string[] ProfessionNames = { "Woodcutting", "Fishing", "Mining" };
+    public static readonly string[] ProfessionWireIds = { "woodcutting", "fishing", "mining" };
+
+    public static string ToWireId(int professionId) =>
+        professionId >= 0 && professionId < ProfessionWireIds.Length
+            ? ProfessionWireIds[professionId]
+            : string.Empty;
+
+    public static bool TryFromWireId(string wireId, out int professionId)
+    {
+        for (int i = 0; i < ProfessionWireIds.Length; i++)
+        {
+            if (string.Equals(ProfessionWireIds[i], wireId, System.StringComparison.OrdinalIgnoreCase))
+            {
+                professionId = i;
+                return true;
+            }
+        }
+
+        professionId = -1;
+        return false;
+    }
 
     // ── Events ────────────────────────────────────────────────────────────────────
     /// Fired when a profession levels up. Args: professionId, newLevel.
@@ -34,6 +56,14 @@ public class ProfessionManager : MonoBehaviour
     public class ProfessionRecord
     {
         public int profession_id;
+        public int skill_level;
+        public int skill_xp;
+    }
+
+    [System.Serializable]
+    class ProfessionWireRecord
+    {
+        public string profession_id;
         public int skill_level;
         public int skill_xp;
     }
@@ -131,8 +161,18 @@ public class ProfessionManager : MonoBehaviour
         {
             foreach (var p in wrapper.data)
             {
-                // Ensure all 3 professions exist in cache even if not in DB yet
-                _professions[p.profession_id] = p;
+                if (!TryFromWireId(p.profession_id, out int professionId))
+                {
+                    Debug.LogWarning($"[PROF] Ignoring unknown profession id '{p.profession_id}'.");
+                    continue;
+                }
+
+                _professions[professionId] = new ProfessionRecord
+                {
+                    profession_id = professionId,
+                    skill_level = p.skill_level,
+                    skill_xp = p.skill_xp
+                };
             }
         }
 
@@ -154,7 +194,14 @@ public class ProfessionManager : MonoBehaviour
 
         if (charId <= 0 || string.IsNullOrEmpty(jwt)) yield break;
 
-        string json = $"{{\"characterId\":{charId},\"professionId\":{professionId},\"xpAmount\":{xpAmount}}}";
+        string wireId = ToWireId(professionId);
+        if (string.IsNullOrEmpty(wireId))
+        {
+            Debug.LogWarning($"[PROF] Refusing to award XP for unknown profession index {professionId}.");
+            yield break;
+        }
+
+        string json = $"{{\"characterId\":{charId},\"professionId\":\"{wireId}\",\"xpAmount\":{xpAmount}}}";
 
         using var req = new UnityWebRequest($"{ServerConfig.AuthBaseUrl}/api/professions/award-xp", "POST");
         req.uploadHandler   = new UploadHandlerRaw(System.Text.Encoding.UTF8.GetBytes(json));
@@ -219,7 +266,7 @@ public class ProfessionManager : MonoBehaviour
 
     // ── JSON wrappers ─────────────────────────────────────────────────────────────
 
-    [System.Serializable] class ProfessionListWrapper { public bool success; public List<ProfessionRecord> data; }
+    [System.Serializable] class ProfessionListWrapper { public bool success; public List<ProfessionWireRecord> data; }
     [System.Serializable] class AwardXpData { public int skill_level; public int skill_xp; public bool leveled_up; }
     [System.Serializable] class AwardXpResponse { public bool success; public AwardXpData data; }
 }

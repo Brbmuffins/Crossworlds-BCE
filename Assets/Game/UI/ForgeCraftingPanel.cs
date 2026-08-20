@@ -189,10 +189,10 @@ public class ForgeCraftingPanel : MonoBehaviour
         }
     }
 
-    static string GetProfessionName(int id) => id switch
-    {
-        0 => "Woodcutting", 1 => "Fishing", 2 => "Mining", _ => "Profession"
-    };
+    static string GetProfessionName(string id) =>
+        ProfessionManager.TryFromWireId(id, out int professionId)
+            ? ProfessionManager.ProfessionNames[professionId]
+            : "Profession";
 
     // ── JSON shapes ───────────────────────────────────────────────────────────
 
@@ -208,8 +208,8 @@ public class ForgeCraftingPanel : MonoBehaviour
     }
     [System.Serializable] public class RecipeData
     {
-        public int    recipe_id;
-        public int    profession_id;
+        public string recipe_id;
+        public string profession_id;
         public int    skill_level_required;
         public string result_item_id;
         public string result_name;
@@ -228,7 +228,7 @@ public class ForgeCraftingPanel : MonoBehaviour
     [System.Serializable] class CraftRequest
     {
         public int characterId;
-        public int recipeId;
+        public string recipeId;
     }
     [System.Serializable] class CraftResponse
     {
