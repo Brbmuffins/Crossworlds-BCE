@@ -12,8 +12,9 @@ public enum LootDatabaseItemType
     Offhand,
     Ring,
     Trinket,
-    // Keep this value last so existing serialized enum indices never change.
-    Unspecified
+    // Existing serialized indices above this point must never change.
+    Unspecified,
+    Consumable
 }
 
 public enum LootEquipmentSlot

@@ -37,7 +37,8 @@ public static class ConsumableEffect
     // Keep in sync with the consumable seeds in professions-full-patch.sql
     static readonly Dictionary<string, EffectDef> Effects = new Dictionary<string, EffectDef>
     {
-        { "flask_hp_minor",    new EffectDef("hp_regen",     30f,   60f) },
+        { "flask_hp_minor",    new EffectDef("hp_regen",     15f,   40f) },
+        { "flask_mp_minor",    new EffectDef("mana_restore", 15f,    0f) },
         { "flask_hp_major",    new EffectDef("hp_regen",     80f,   60f) },
         { "flask_void_resist", new EffectDef("resist_void",  0.25f, 90f) },
         { "kit_iron_warden",   new EffectDef("resist_blast", 0.25f, 60f) },
@@ -48,6 +49,26 @@ public static class ConsumableEffect
     /// True if this item id is a usable consumable (drives "use" vs "equip" in the bag UI).
     public static bool IsConsumable(string itemId) =>
         !string.IsNullOrEmpty(itemId) && Effects.ContainsKey(itemId);
+
+    /// <summary>Player-facing effect text used by inventory and vendor tooltips.</summary>
+    public static bool TryGetTooltip(string itemId, out string tooltip)
+    {
+        tooltip = null;
+        if (string.IsNullOrEmpty(itemId) || !Effects.TryGetValue(itemId, out var def))
+            return false;
+
+        tooltip = def.type switch
+        {
+            "hp_regen" => $"Restores {def.value:0} HP over {def.duration:0} seconds.",
+            "mana_restore" => $"Restores {def.value:0} MP immediately.",
+            "resist_void" => $"Reduces Void damage by {def.value:P0} for {def.duration:0} seconds.",
+            "resist_blast" => $"Reduces Blast damage by {def.value:P0} for {def.duration:0} seconds.",
+            "speed" => $"Increases movement speed by {def.value:P0} for {def.duration:0} seconds.",
+            "damage_amp" => $"Increases damage by {def.value:P0} for {def.duration:0} seconds.",
+            _ => null
+        };
+        return !string.IsNullOrWhiteSpace(tooltip);
+    }
 
     /// Returns true if the item is a known consumable and its effect was started.
     public static bool Apply(string itemId, GameObject target)
@@ -72,6 +93,13 @@ public class ConsumableEffectRunner : MonoBehaviour
 
     public void Apply(string effectType, float value, float duration)
     {
+        if (effectType == "mana_restore")
+        {
+            GetComponent<CharacterStats>()?.RestoreMana(value);
+            RodChatManager.Instance?.AddSystemMessage($"[CONSUMABLE] Restored {value:0} MP");
+            return;
+        }
+
         if (_active.TryGetValue(effectType, out var existing) && existing != null)
             StopCoroutine(existing);
 
@@ -94,8 +122,8 @@ public class ConsumableEffectRunner : MonoBehaviour
     IEnumerator HpRegenEffect(int totalHeal, float duration)
     {
         var hp      = GetComponent<Health>();
-        int ticks   = Mathf.Max(1, Mathf.RoundToInt(duration / 2f));
-        int perTick = Mathf.Max(1, totalHeal / ticks);
+        int ticks = Mathf.Max(1, Mathf.RoundToInt(duration / 2f));
+        float perTick = totalHeal / (float)ticks;
 
         for (int i = 0; i < ticks; i++)
         {

@@ -441,7 +441,9 @@ namespace Crossworlds.EditorTools.LootForge
         }
 
         static bool IsEquipment(LootDatabaseItemType type) =>
-            type != LootDatabaseItemType.Material && type != LootDatabaseItemType.Unspecified;
+            type != LootDatabaseItemType.Material &&
+            type != LootDatabaseItemType.Unspecified &&
+            type != LootDatabaseItemType.Consumable;
 
         static LootEquipmentSlot DefaultSlot(LootDatabaseItemType type) => type switch
         {
@@ -470,8 +472,12 @@ namespace Crossworlds.EditorTools.LootForge
 
         string BuildDeploymentSummary()
         {
-            string category = definition.databaseItemType == LootDatabaseItemType.Material
-                ? "Materials" : "Gear";
+            string category = definition.databaseItemType switch
+            {
+                LootDatabaseItemType.Material => "Materials",
+                LootDatabaseItemType.Consumable => "Consumables",
+                _ => "Gear"
+            };
             string slot = definition.equipmentSlot == LootEquipmentSlot.None
                 ? "not equipped" : definition.equipmentSlot.ToString();
             return $"Deployment preview: Inventory category {category}; slot {slot}; " +

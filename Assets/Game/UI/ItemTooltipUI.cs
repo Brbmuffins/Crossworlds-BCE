@@ -134,6 +134,25 @@ public class ItemTooltipUI : MonoBehaviour
                 details.AppendLine($"<color=#78B9FF>{bonus.Trim()}</color>");
             }
         }
+        if (ConsumableEffect.TryGetTooltip(itemId, out string consumableTooltip))
+        {
+            if (details.Length > 0) details.AppendLine();
+            details.AppendLine("<color=#A99A82>USE</color>");
+            details.AppendLine($"<color=#78D98B>{consumableTooltip}</color>");
+        }
+        if (lootDefinition != null)
+        {
+            int purchasePrice = FindPurchasePrice(lootDefinition);
+            if (purchasePrice > 0 || lootDefinition.sellValue > 0)
+            {
+                if (details.Length > 0) details.AppendLine();
+                details.AppendLine("<color=#A99A82>VALUE</color>");
+                if (purchasePrice > 0)
+                    details.AppendLine($"Purchase Price  <color=#FFD34E>{purchasePrice:N0} Gold</color>");
+                if (lootDefinition.sellValue > 0)
+                    details.AppendLine($"Sell Price          <color=#FFD34E>{lootDefinition.sellValue:N0} Gold</color>");
+            }
+        }
         _detailsTxt.text = details.ToString().TrimEnd();
         _detailsTxt.gameObject.SetActive(details.Length > 0);
         ResizePanel(!string.IsNullOrWhiteSpace(slotName));
@@ -197,6 +216,19 @@ public class ItemTooltipUI : MonoBehaviour
         if (amount != 0) values.Add($"{(amount > 0 ? "+" : "")}{amount} {label}");
     }
 
+    static int FindPurchasePrice(LootItemDefinition item)
+    {
+        int lowest = int.MaxValue;
+        foreach (VendorProfile profile in Resources.LoadAll<VendorProfile>("Vendors"))
+        {
+            if (profile?.stock == null) continue;
+            foreach (VendorStockEntry entry in profile.stock)
+                if (entry?.item == item && entry.buyPrice > 0)
+                    lowest = Mathf.Min(lowest, entry.buyPrice);
+        }
+        return lowest == int.MaxValue ? 0 : lowest;
+    }
+
     void ResizePanel(bool hasSlot)
     {
         float detailsTop = hasSlot ? 112f : 74f;
@@ -253,7 +285,7 @@ public class ItemTooltipUI : MonoBehaviour
         _slotBottomDivider = MakeDivider("EquipmentSlotBottomDivider", panelGO.transform, 105f);
         _detailsTxt = MakeTopTMP("Details", panelGO.transform, 14f, 112f,
             PanelW - 28f, 80f, 15f, FontStyles.Normal, ColText);
-        _detailsTxt.enableWordWrapping = true;
+        _detailsTxt.textWrappingMode = TextWrappingModes.Normal;
     }
 
     static void Stretch(RectTransform rt, float inset, float outset)

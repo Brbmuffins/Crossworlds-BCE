@@ -61,7 +61,8 @@ INSERT IGNORE INTO items (id, name, rarity, item_type, stat_bonus, sell_value) V
 
 -- ── 4. Consumables (craft-only, not in loot tables) ──────────────────────────
 -- stat_bonus JSON for consumables carries effect metadata:
---   {"effect":"hp_regen",  "value":30,  "duration":60}
+--   {"effect":"hp_regen",  "value":15,  "duration":40}
+--   {"effect":"mana_restore","value":15}
 --   {"effect":"resist_void","value":0.25,"duration":90}
 --   {"effect":"resist_blast","value":0.25,"duration":60}
 --   {"effect":"speed",     "value":0.20, "duration":30}
@@ -69,10 +70,16 @@ INSERT IGNORE INTO items (id, name, rarity, item_type, stat_bonus, sell_value) V
 
 INSERT IGNORE INTO items (id, name, rarity, item_type, stat_bonus, sell_value) VALUES
   ('flask_hp_minor',
-   'Minor Healing Flask',
+   'Minor Healing Potion',
    'common', 'consumable',
-   '{"effect":"hp_regen","value":30,"duration":60}',
-   12),
+   '{"effect":"hp_regen","value":15,"duration":40}',
+   1),
+
+  ('flask_mp_minor',
+   'Minor Mana Potion',
+   'common', 'consumable',
+   '{"effect":"mana_restore","value":15}',
+   1),
 
   ('flask_hp_major',
    'Major Healing Flask',
@@ -103,6 +110,29 @@ INSERT IGNORE INTO items (id, name, rarity, item_type, stat_bonus, sell_value) V
    'rare', 'consumable',
    '{"effect":"damage_amp","value":0.15,"duration":45}',
    55);
+
+-- Keep an existing deployment synchronized; INSERT IGNORE above intentionally
+-- does not overwrite rows seeded by an earlier version of this patch.
+UPDATE items
+SET name = 'Minor Healing Potion',
+    rarity = 'common',
+    item_type = 'consumable',
+    stat_bonus = '{"effect":"hp_regen","value":15,"duration":40}',
+    sell_value = 1
+WHERE id = 'flask_hp_minor';
+
+UPDATE items
+SET name = 'Minor Mana Potion',
+    rarity = 'common',
+    item_type = 'consumable',
+    stat_bonus = '{"effect":"mana_restore","value":15}',
+    sell_value = 1
+WHERE id = 'flask_mp_minor';
+
+UPDATE items
+SET stackable = 1,
+    max_stack_size = 40
+WHERE id IN ('flask_hp_minor', 'flask_mp_minor');
 
 -- ── 5. Crafted gear (deterministic stats, not in loot tables) ────────────────
 
