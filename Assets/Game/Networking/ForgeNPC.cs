@@ -1,28 +1,30 @@
 ﻿using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.EventSystems;
+using TMPro;
 
 /// <summary>
 /// ForgeNPC — proximity trigger that opens the ForgeCraftingPanel when the local player presses E.
 ///
-/// Place on any NPC GameObject in the Hub. Requires a Collider (set as trigger).
+/// Place on the physical forge GameObject in the Hub.
 /// Shows a world-space "Press E to Craft" billboard prompt when the player is in range.
 ///
-/// profession_id defaults to 1 (Smithing). Can be changed in Inspector for Mining (2), etc.
-///
 /// No Mirror NetworkBehaviour — ForgeNPC is a purely client-side interaction.
-/// The NPC visual is just a scene object; crafting API calls happen in ForgeCraftingPanel.
+/// The forge visual is a scene object; crafting API calls happen in ForgeCraftingPanel.
 /// </summary>
 public class ForgeNPC : MonoBehaviour
 {
     [Header("Crafting")]
-    [Tooltip("Profession opened by this NPC: 1=Smithing, 2=Mining, 3=Alchemy")]
-    public int professionId = 1;
+    // Retained for existing scene builders and serialized Forge NPCs. The
+    // current panel loads every recipe and no longer filters by this value.
+    [HideInInspector] public int professionId = 2;
 
     [Tooltip("Display name shown in the E-prompt")]
-    public string npcName = "Forge Master";
+    public string npcName = "Craft";
 
     [Header("Interaction")]
     public float interactRange = 3.5f;
+    public float promptHeight = 3f;
 
     // ── Prompt billboard ──────────────────────────────────────────────────────
     GameObject _promptGO;
@@ -35,11 +37,23 @@ public class ForgeNPC : MonoBehaviour
     float      _scanTimer;
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
-    void Awake()  { BuildPrompt(); }
-    void Start()  { _promptGO.SetActive(false); }
+    void Awake()
+    {
+#if UNITY_EDITOR || !UNITY_SERVER
+        BuildPrompt();
+#endif
+    }
+
+    void Start()
+    {
+#if UNITY_EDITOR || !UNITY_SERVER
+        _promptGO.SetActive(false);
+#endif
+    }
 
     void Update()
     {
+#if UNITY_EDITOR || !UNITY_SERVER
         // Find local player periodically
         _scanTimer -= Time.deltaTime;
         if (_localPlayer == null && _scanTimer <= 0f)
@@ -61,6 +75,7 @@ public class ForgeNPC : MonoBehaviour
         // Billboard: face camera
         if (_promptVisible)
         {
+            _promptGO.transform.position = transform.position + Vector3.up * promptHeight;
             if (_camera == null || !_camera.isActiveAndEnabled)
                 _camera = Camera.main;
             if (_camera != null)
@@ -70,10 +85,11 @@ public class ForgeNPC : MonoBehaviour
         }
 
         // Interact
-        if (inRange && Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame)
+        if (inRange && !IsInputFocused() && Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame)
         {
             OpenCrafting();
         }
+#endif
     }
 
     // ── Actions ───────────────────────────────────────────────────────────────
@@ -86,7 +102,7 @@ public class ForgeNPC : MonoBehaviour
         if (ForgeCraftingPanel.Instance != null)
             ForgeCraftingPanel.Instance.Open();
         else
-            Debug.LogWarning("[ForgeNPC] ForgeCraftingPanel.Instance is null — add the ForgeCraftingPanel to the Hub scene and wire its Inspector fields.");
+            Debug.LogWarning("[ForgeNPC] ForgeCraftingPanel.Instance is null — verify Resources/Forge/ForgeWindow.prefab exists.");
 #endif
     }
 
@@ -94,9 +110,9 @@ public class ForgeNPC : MonoBehaviour
     void BuildPrompt()
     {
         _promptGO = new GameObject("ForgePrompt");
-        _promptGO.transform.SetParent(transform, false);
-        _promptGO.transform.localPosition = new Vector3(0f, 3f, 0f);
-        _promptGO.transform.localScale    = Vector3.one * 0.018f;
+        // Keep this independent of the heavily scaled forge model hierarchy.
+        _promptGO.transform.position   = transform.position + Vector3.up * promptHeight;
+        _promptGO.transform.localScale = Vector3.one * 0.018f;
 
         _promptMesh = _promptGO.AddComponent<TextMesh>();
         _promptMesh.text          = $"[E]  {npcName}";
@@ -112,6 +128,19 @@ public class ForgeNPC : MonoBehaviour
     static Transform FindLocalPlayer()
     {
         return PlayerIdentity.Local != null ? PlayerIdentity.Local.transform : null;
+    }
+
+    static bool IsInputFocused()
+    {
+        var selected = EventSystem.current?.currentSelectedGameObject;
+        return selected != null && selected.GetComponent<TMP_InputField>() != null;
+    }
+
+    void OnDestroy()
+    {
+#if UNITY_EDITOR || !UNITY_SERVER
+        if (_promptGO != null) Destroy(_promptGO);
+#endif
     }
 
     // ── Editor gizmo ─────────────────────────────────────────────────────────

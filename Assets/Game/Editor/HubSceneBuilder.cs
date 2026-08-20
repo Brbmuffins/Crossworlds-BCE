@@ -18,6 +18,7 @@ using UnityEngine;
 
 public static class HubSceneBuilder
 {
+    const string ForgePrefabPath = "Assets/Game/3D Models/HUB ASSETS/Forge/prefab_forge.prefab";
     [MenuItem("BCE/Build Hub Scene")]
     static void Build()
     {
@@ -150,53 +151,53 @@ public static class HubSceneBuilder
     }
 
     // ─────────────────────────────────────────────────────────────────────────────
-    //  Step 8: Add Forge NPC + Mining Stations
+    //  Step 8: Add Forge + Crafting Trainer + Mining Stations
     //  Run AFTER BCE/Build Hub Scene. Adds:
-    //    • 1 Forge Master NPC (ForgeNPC, opens ForgeCraftingPanel)
+    //    • prefab_forge (ForgeNPC, opens ForgeCraftingPanel)
+    //    • 1 Crafting Trainer NPC reserved for skill/recipe learning
     //    • 3 Copper Ore gathering stations (server-backed inventory add)
     //  Mining stations are scattered at radius 14 from center.
     // ─────────────────────────────────────────────────────────────────────────────
-    [MenuItem("BCE/Hub Setup/8 - Add Forge and Mining NPCs")]
+    [MenuItem("BCE/Hub Setup/8 - Add Forge, Trainer and Mining")]
     static void AddForgeAndMining()
     {
-        // ── Forge NPC ─────────────────────────────────────────────────────────
-        // Placed behind the spawn ring at z=-8, facing players coming in.
-        var forgeParent = new GameObject("ForgeNPC_Master");
-        forgeParent.transform.position = new Vector3(-12f, 0f, -4f);
-        forgeParent.transform.rotation = Quaternion.Euler(0f, 90f, 0f);
+        // The physical forge owns crafting. Refresh the prefab source, then use
+        // its placed instance (or instantiate its authored pose when missing).
+        ForgeModelMaterialFix.Apply();
+        var forgePrefab = AssetDatabase.LoadAssetAtPath<GameObject>(ForgePrefabPath);
+        var forgeObject = GameObject.Find("prefab_forge");
+        if (forgeObject == null && forgePrefab != null)
+            forgeObject = PrefabUtility.InstantiatePrefab(forgePrefab) as GameObject;
 
-        // Visual: simple capsule + orange point light to make it stand out
-        var npcBody = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-        npcBody.name = "Body";
-        npcBody.transform.SetParent(forgeParent.transform, false);
-        npcBody.transform.localPosition = new Vector3(0f, 1f, 0f);
-        npcBody.transform.localScale    = new Vector3(0.7f, 0.85f, 0.7f);
-        Object.DestroyImmediate(npcBody.GetComponent<CapsuleCollider>());
-        var npcMat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
-        npcMat.color = new Color(0.55f, 0.35f, 0.15f);
-        npcBody.GetComponent<Renderer>().sharedMaterial = npcMat;
+        if (forgeObject == null)
+        {
+            Debug.LogError("[HubSceneBuilder] prefab_forge was not found or could not be instantiated.");
+            return;
+        }
 
-        var forgeLightGO = new GameObject("ForgeLight");
-        forgeLightGO.transform.SetParent(forgeParent.transform, false);
-        forgeLightGO.transform.localPosition = new Vector3(0f, 2.5f, 0f);
-        var forgeLight = forgeLightGO.AddComponent<Light>();
-        forgeLight.type      = LightType.Point;
-        forgeLight.color     = new Color(1f, 0.55f, 0.1f);
-        forgeLight.intensity = 2.5f;
-        forgeLight.range     = 8f;
+        forgeObject.name = "prefab_forge";
+        var forgeInteraction = forgeObject.GetComponent<ForgeNPC>() ?? forgeObject.AddComponent<ForgeNPC>();
+        forgeInteraction.professionId = 2;
+        forgeInteraction.npcName = "Craft";
+        forgeInteraction.interactRange = 3.5f;
+        forgeInteraction.promptHeight = 3f;
 
-        // Proximity collider for visual radius
-        var triggerCol = forgeParent.AddComponent<SphereCollider>();
-        triggerCol.isTrigger = true;
-        triggerCol.radius    = 4f;
+        // The former Forge Master NPC is reserved for learning the skill and
+        // recipes. No trainer API is invented here; this only separates roles.
+        var trainer = GameObject.Find("forged_male_vendor_rigged_NPC (1)")
+                      ?? GameObject.Find("Forge Master")
+                      ?? GameObject.Find("Crafting Trainer");
+        if (trainer != null)
+        {
+            var oldForgeInteraction = trainer.GetComponent<ForgeNPC>();
+            if (oldForgeInteraction != null) Object.DestroyImmediate(oldForgeInteraction);
+            trainer.name = "Crafting Trainer";
+            var npcController = trainer.GetComponent<ForgedNpcController>();
+            if (npcController != null) npcController.npcDisplayName = "Crafting Trainer";
+        }
+        else Debug.LogWarning("[HubSceneBuilder] Male Crafting Trainer NPC was not found.");
 
-        // ForgeNPC script
-        var fnpc = forgeParent.AddComponent<ForgeNPC>();
-        fnpc.professionId  = 1;
-        fnpc.npcName       = "Forge Master";
-        fnpc.interactRange = 3.5f;
-
-        Debug.Log("[HubSceneBuilder] ✓ Added Forge Master NPC at (-12, 0, -4).");
+        Debug.Log("[HubSceneBuilder] ✓ Forge owns crafting; male NPC reserved as Crafting Trainer.");
 
         // ── Mining Stations (3 × Copper Ore) ───────────────────────────────────
         var minePositions = new Vector3[]
@@ -208,6 +209,7 @@ public static class HubSceneBuilder
 
         for (int i = 0; i < minePositions.Length; i++)
         {
+            if (GameObject.Find($"OreNode_Copper_{i}") != null) continue;
             var mineGO = new GameObject($"OreNode_Copper_{i}");
             mineGO.transform.position = minePositions[i];
 

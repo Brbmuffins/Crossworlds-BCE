@@ -103,6 +103,7 @@ public static class LootPersistenceService
         LootDatabaseItemType.Offhand => "offhand",
         LootDatabaseItemType.Ring => "ring",
         LootDatabaseItemType.Trinket => "trinket",
+        LootDatabaseItemType.Consumable => "consumable",
         _ => "material"
     };
 

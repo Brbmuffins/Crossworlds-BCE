@@ -14,10 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::VendorProfile
   vendorId: sarah_general_goods
   displayName: Sarah Hemphill
+  subtitle: General Goods
   buysItems: 1
   interactionRadius: 3
   stock:
-  - item: {fileID: 11400000, guid: c931a1abb467ab54191b2cb1b90beb6c, type: 2}
-    buyPrice: 25
-  - item: {fileID: 11400000, guid: 12e2a9044217f8044a22580472402e04, type: 2}
-    buyPrice: 20
+  - item: {fileID: 11400000, guid: 4afcc5cabf5e4b39b9dc5dc8f39fa02f, type: 2}
+    buyPrice: 10
+  - item: {fileID: 11400000, guid: c95f2adf2c484e8780610a4317cb4b63, type: 2}
+    buyPrice: 10

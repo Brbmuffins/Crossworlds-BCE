@@ -13,6 +13,7 @@ public sealed class VendorProfile : ScriptableObject
 {
     public string vendorId = "general_goods";
     public string displayName = "Merchant";
+    public string subtitle = "";
     public bool buysItems = true;
     [Range(0f, 20f)] public float interactionRadius = 3f;
     public VendorStockEntry[] stock = Array.Empty<VendorStockEntry>();
