@@ -19,14 +19,23 @@ public static class ForgeCraftingUIBuilder
     {
         var window = AssetDatabase.LoadAssetAtPath<GameObject>(WindowPath);
         var row = AssetDatabase.LoadAssetAtPath<GameObject>(RowPath);
-        if (window != null && row != null && row.GetComponent<RecipeRowUI>() != null) return;
+        if (LayoutIsCurrent(window, row)) return;
         EditorApplication.delayCall += () =>
         {
             var delayedWindow = AssetDatabase.LoadAssetAtPath<GameObject>(WindowPath);
             var delayedRow = AssetDatabase.LoadAssetAtPath<GameObject>(RowPath);
-            if (delayedWindow == null || delayedRow == null || delayedRow.GetComponent<RecipeRowUI>() == null)
-                Rebuild();
+            if (!LayoutIsCurrent(delayedWindow, delayedRow)) Rebuild();
         };
+    }
+
+    static bool LayoutIsCurrent(GameObject window, GameObject row)
+    {
+        if (window == null || row == null || row.GetComponent<RecipeRowUI>() == null) return false;
+        var craftButton = row.transform.Find("Craft") as RectTransform;
+        var smeltTab = window.transform.Find("Panel/SmeltTab") as RectTransform;
+        return craftButton != null && smeltTab != null
+            && Mathf.Approximately(craftButton.anchoredPosition.x, -53f)
+            && Mathf.Approximately(smeltTab.anchoredPosition.x, 145f);
     }
 
     [MenuItem("BCE/Setup/Rebuild Forge Crafting UI")]
@@ -54,21 +63,21 @@ public static class ForgeCraftingUIBuilder
         badgeRect.pivot = new Vector2(0f, 0.5f); badgeRect.anchoredPosition = new Vector2(4f, 0f);
         var badge = badgeRect.gameObject.AddComponent<Image>();
 
-        var iconRect = Rect("Icon", root.transform, new Vector2(0f, 0.5f), new Vector2(62f, 62f));
-        iconRect.pivot = new Vector2(0f, 0.5f); iconRect.anchoredPosition = new Vector2(16f, 0f);
+        var iconRect = Rect("Icon", root.transform, new Vector2(0f, 0.5f), new Vector2(58f, 58f));
+        iconRect.pivot = new Vector2(0f, 0.5f); iconRect.anchoredPosition = new Vector2(14f, 0f);
         var iconBg = iconRect.gameObject.AddComponent<Image>(); iconBg.color = new Color32(9, 14, 13, 235);
         var icon = Stretch("Artwork", iconRect, 5f).gameObject.AddComponent<Image>();
         icon.color = Color.clear; icon.raycastTarget = false;
 
         var name = Text("Name", root.transform, "Copper Ingot", 17f, FontStyles.Bold, new Color32(238, 203, 119, 255),
-            new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(90f, -37f), new Vector2(285f, -10f), TextAlignmentOptions.Left);
+            new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(82f, -37f), new Vector2(278f, -10f), TextAlignmentOptions.Left);
         var level = Text("Level", root.transform, "Lv 1", 12f, FontStyles.Bold, new Color32(188, 158, 93, 255),
-            new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-128f, -35f), new Vector2(-76f, -10f), TextAlignmentOptions.Right);
+            new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-136f, -35f), new Vector2(-102f, -10f), TextAlignmentOptions.Right);
         var ingredients = Text("Ingredients", root.transform, "3× Copper Ore", 13f, FontStyles.Normal, Color.white,
-            new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(90f, 14f), new Vector2(300f, 44f), TextAlignmentOptions.Left);
+            new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(82f, 14f), new Vector2(278f, 44f), TextAlignmentOptions.Left);
         var time = Text("Time", root.transform, "2s", 12f, FontStyles.Normal, new Color32(180, 180, 180, 255),
-            new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-126f, 15f), new Vector2(-82f, 42f), TextAlignmentOptions.Right);
-        var craft = Button("Craft", root.transform, "CRAFT", new Vector2(1f, 0.5f), new Vector2(-48f, 0f), new Vector2(76f, 38f));
+            new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-136f, 15f), new Vector2(-102f, 42f), TextAlignmentOptions.Right);
+        var craft = Button("Craft", root.transform, "CRAFT", new Vector2(1f, 0.5f), new Vector2(-53f, 0f), new Vector2(82f, 38f));
 
         var ui = root.GetComponent<RecipeRowUI>();
         ui.nameLabel = name; ui.levelLabel = level; ui.ingredientsLabel = ingredients; ui.timeLabel = time;
@@ -102,8 +111,8 @@ public static class ForgeCraftingUIBuilder
         Text("Title", panel, "FORGE", 25f, FontStyles.Bold, new Color32(230, 194, 105, 255),
             new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(-130f, -75f), new Vector2(130f, -37f), TextAlignmentOptions.Center).raycastTarget = false;
         var close = Button("Close", panel, "×", new Vector2(1f, 1f), new Vector2(-46f, -48f), new Vector2(34f, 34f));
-        var smeltTab = Button("SmeltTab", panel, "SMELT", new Vector2(0f, 1f), new Vector2(128f, -112f), new Vector2(170f, 34f));
-        var craftTab = Button("CraftTab", panel, "CRAFT", new Vector2(0f, 1f), new Vector2(322f, -112f), new Vector2(170f, 34f));
+        var smeltTab = Button("SmeltTab", panel, "SMELT", new Vector2(0f, 1f), new Vector2(145f, -112f), new Vector2(188f, 34f));
+        var craftTab = Button("CraftTab", panel, "CRAFT", new Vector2(0f, 1f), new Vector2(355f, -112f), new Vector2(188f, 34f));
 
         var smelt = Scroll("SmeltContent", panel, out Transform smeltList);
         var craft = Scroll("CraftContent", panel, out Transform craftList);
