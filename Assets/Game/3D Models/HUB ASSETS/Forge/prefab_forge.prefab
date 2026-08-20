@@ -71,5 +71,29 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 0381a465052f1714faa5020e318fb0bf, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1616847463592991885}
   m_SourcePrefab: {fileID: 100100000, guid: 0381a465052f1714faa5020e318fb0bf, type: 3}
+--- !u!1 &8712422092960340421 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 0381a465052f1714faa5020e318fb0bf, type: 3}
+  m_PrefabInstance: {fileID: 8370454935588283540}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1616847463592991885
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8712422092960340421}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6ea4b6ed0f9e6fd4694b20cfbe62cd7f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ForgeNPC
+  professionId: 2
+  npcName: Craft
+  interactRange: 3.5
+  promptHeight: 3

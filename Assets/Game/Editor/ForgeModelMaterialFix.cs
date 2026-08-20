@@ -3,7 +3,7 @@ using UnityEditor;
 using UnityEditor.Callbacks;
 using UnityEngine;
 
-/// <summary>Creates and maintains the Hub Forge's two-sided URP material override.</summary>
+/// <summary>Maintains the Hub Forge's material and crafting interaction ownership.</summary>
 public static class ForgeModelMaterialFix
 {
     const string ForgePrefabPath = "Assets/Game/3D Models/HUB ASSETS/Forge/prefab_forge.prefab";
@@ -48,9 +48,15 @@ public static class ForgeModelMaterialFix
                 renderer.sharedMaterials = materials;
             }
 
+            ForgeNPC forge = root.GetComponent<ForgeNPC>() ?? root.AddComponent<ForgeNPC>();
+            forge.professionId = 2;
+            forge.npcName = "Craft";
+            forge.interactRange = 3.5f;
+            forge.promptHeight = 3f;
+
             PrefabUtility.SaveAsPrefabAsset(root, ForgePrefabPath);
             AssetDatabase.SaveAssets();
-            Debug.Log($"[FORGE MODEL] Applied two-sided material to {renderers.Length} renderer(s).");
+            Debug.Log($"[FORGE MODEL] Applied two-sided material and crafting interaction to {renderers.Length} renderer(s).");
         }
         finally
         {
@@ -94,6 +100,7 @@ public static class ForgeModelMaterialFix
         Material material = AssetDatabase.LoadAssetAtPath<Material>(ForgeMaterialPath);
         GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(ForgePrefabPath);
         if (material == null || prefab == null || !Mathf.Approximately(material.GetFloat("_Cull"), 0f)) return false;
+        if (prefab.GetComponent<ForgeNPC>() == null) return false;
 
         Renderer[] renderers = prefab.GetComponentsInChildren<Renderer>(true);
         if (renderers.Length == 0) return false;

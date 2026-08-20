@@ -18,6 +18,7 @@ using UnityEngine;
 
 public static class HubSceneBuilder
 {
+    const string ForgePrefabPath = "Assets/Game/3D Models/HUB ASSETS/Forge/prefab_forge.prefab";
     [MenuItem("BCE/Build Hub Scene")]
     static void Build()
     {
@@ -150,36 +151,53 @@ public static class HubSceneBuilder
     }
 
     // ─────────────────────────────────────────────────────────────────────────────
-    //  Step 8: Add Forge NPC + Mining Stations
+    //  Step 8: Add Forge + Crafting Trainer + Mining Stations
     //  Run AFTER BCE/Build Hub Scene. Adds:
-    //    • 1 Forge Master NPC (ForgeNPC, opens ForgeCraftingPanel)
+    //    • prefab_forge (ForgeNPC, opens ForgeCraftingPanel)
+    //    • 1 Crafting Trainer NPC reserved for skill/recipe learning
     //    • 3 Copper Ore gathering stations (server-backed inventory add)
     //  Mining stations are scattered at radius 14 from center.
     // ─────────────────────────────────────────────────────────────────────────────
-    [MenuItem("BCE/Hub Setup/8 - Add Forge and Mining NPCs")]
+    [MenuItem("BCE/Hub Setup/8 - Add Forge, Trainer and Mining")]
     static void AddForgeAndMining()
     {
-        // ── Forge NPC ─────────────────────────────────────────────────────────
-        // Reuse the intentionally unassigned male Hub NPC. Sarah is the female
-        // vendor and must retain NetworkVendor exclusively.
-        var forgeParent = GameObject.Find("forged_male_vendor_rigged_NPC (1)")
-                          ?? GameObject.Find("Forge Master");
-        if (forgeParent == null)
+        // The physical forge owns crafting. Refresh the prefab source, then use
+        // its placed instance (or instantiate its authored pose when missing).
+        ForgeModelMaterialFix.Apply();
+        var forgePrefab = AssetDatabase.LoadAssetAtPath<GameObject>(ForgePrefabPath);
+        var forgeObject = GameObject.Find("prefab_forge");
+        if (forgeObject == null && forgePrefab != null)
+            forgeObject = PrefabUtility.InstantiatePrefab(forgePrefab) as GameObject;
+
+        if (forgeObject == null)
         {
-            Debug.LogError("[HubSceneBuilder] Unused male Hub NPC was not found; Forge Master was not assigned.");
+            Debug.LogError("[HubSceneBuilder] prefab_forge was not found or could not be instantiated.");
             return;
         }
 
-        forgeParent.name = "Forge Master";
-        var npcController = forgeParent.GetComponent<ForgedNpcController>();
-        if (npcController != null) npcController.npcDisplayName = "Forge Master";
+        forgeObject.name = "prefab_forge";
+        var forgeInteraction = forgeObject.GetComponent<ForgeNPC>() ?? forgeObject.AddComponent<ForgeNPC>();
+        forgeInteraction.professionId = 2;
+        forgeInteraction.npcName = "Craft";
+        forgeInteraction.interactRange = 3.5f;
+        forgeInteraction.promptHeight = 3f;
 
-        var fnpc = forgeParent.GetComponent<ForgeNPC>() ?? forgeParent.AddComponent<ForgeNPC>();
-        fnpc.professionId  = 2;
-        fnpc.npcName       = "Forge Master";
-        fnpc.interactRange = 3.5f;
+        // The former Forge Master NPC is reserved for learning the skill and
+        // recipes. No trainer API is invented here; this only separates roles.
+        var trainer = GameObject.Find("forged_male_vendor_rigged_NPC (1)")
+                      ?? GameObject.Find("Forge Master")
+                      ?? GameObject.Find("Crafting Trainer");
+        if (trainer != null)
+        {
+            var oldForgeInteraction = trainer.GetComponent<ForgeNPC>();
+            if (oldForgeInteraction != null) Object.DestroyImmediate(oldForgeInteraction);
+            trainer.name = "Crafting Trainer";
+            var npcController = trainer.GetComponent<ForgedNpcController>();
+            if (npcController != null) npcController.npcDisplayName = "Crafting Trainer";
+        }
+        else Debug.LogWarning("[HubSceneBuilder] Male Crafting Trainer NPC was not found.");
 
-        Debug.Log("[HubSceneBuilder] ✓ Assigned the existing male Hub NPC as Forge Master.");
+        Debug.Log("[HubSceneBuilder] ✓ Forge owns crafting; male NPC reserved as Crafting Trainer.");
 
         // ── Mining Stations (3 × Copper Ore) ───────────────────────────────────
         var minePositions = new Vector3[]
@@ -191,6 +209,7 @@ public static class HubSceneBuilder
 
         for (int i = 0; i < minePositions.Length; i++)
         {
+            if (GameObject.Find($"OreNode_Copper_{i}") != null) continue;
             var mineGO = new GameObject($"OreNode_Copper_{i}");
             mineGO.transform.position = minePositions[i];
 
