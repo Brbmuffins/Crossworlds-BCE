@@ -151,7 +151,8 @@ public static class ForgeCraftingUIBuilder
         var fillArea = Stretch("FillArea", root, 3f);
         var fill = Stretch("Fill", fillArea, 0f); fill.anchorMax = new Vector2(0f, 1f);
         var fillImage = fill.gameObject.AddComponent<Image>(); fillImage.color = new Color32(205, 137, 39, 255);
-        var slider = root.gameObject.AddComponent<Slider>(); slider.fillRect = fill; slider.targetGraphic = bg; slider.direction = Slider.Direction.LeftToRight;
+        var slider = root.gameObject.AddComponent<Slider>(); slider.fillRect = fill; slider.targetGraphic = bg;
+        slider.direction = UnityEngine.UI.Slider.Direction.LeftToRight;
         return slider;
     }
 
