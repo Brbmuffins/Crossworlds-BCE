@@ -10,7 +10,7 @@ public sealed class VendorShopUI : MonoBehaviour
     static VendorShopUI _instance;
     NetworkVendor _vendor;
     GameObject _window;
-    TextMeshProUGUI _title, _status, _gold;
+    TextMeshProUGUI _title, _subtitle, _status, _gold;
     RectTransform _content;
     bool _sellMode, _pending;
 
@@ -44,6 +44,7 @@ public sealed class VendorShopUI : MonoBehaviour
         _pending = false;
         _window.SetActive(true);
         _title.text = vendor.DisplayName;
+        _subtitle.text = vendor.Subtitle;
         SetStatus("Select an item to buy.");
         Render();
     }
@@ -141,7 +142,9 @@ public sealed class VendorShopUI : MonoBehaviour
         _window = Box("VendorWindow", canvasGo.transform, new Color(0.035f, 0.028f, 0.045f, 0.98f));
         var wr = _window.GetComponent<RectTransform>(); wr.anchorMin = wr.anchorMax = new Vector2(0.5f, 0.5f); wr.sizeDelta = new Vector2(720f, 620f);
         _title = Label("Title", _window.transform, "Merchant", 30, FontStyles.Bold, new Color(0.95f, 0.72f, 0.25f));
-        SetRect(_title.rectTransform, new Vector2(0f, .88f), new Vector2(1f, 1f), new Vector2(24, 0), new Vector2(-70, -8));
+        SetRect(_title.rectTransform, new Vector2(0f, .92f), new Vector2(1f, 1f), new Vector2(24, 0), new Vector2(-70, -8));
+        _subtitle = Label("Subtitle", _window.transform, "", 17, FontStyles.Normal, new Color(.85f, .76f, .57f));
+        SetRect(_subtitle.rectTransform, new Vector2(0f, .875f), new Vector2(1f, .93f), new Vector2(24, 0), new Vector2(-70, 0));
         Button("Close", _window.transform, new Vector2(.92f, .91f), new Vector2(.98f, .98f), "×", Close, new Color(.35f, .12f, .12f));
         Button("BuyTab", _window.transform, new Vector2(.08f, .80f), new Vector2(.47f, .88f), "BUY", () => SetMode(false), new Color(.32f, .22f, .08f));
         Button("SellTab", _window.transform, new Vector2(.53f, .80f), new Vector2(.92f, .88f), "SELL", () => SetMode(true), new Color(.18f, .18f, .22f));

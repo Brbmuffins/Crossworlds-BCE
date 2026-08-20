@@ -10,6 +10,8 @@ public sealed class NetworkVendor : NetworkBehaviour, INPCInteractable
 
     public string DisplayName => profile != null && !string.IsNullOrWhiteSpace(profile.displayName)
         ? profile.displayName.Trim() : "Merchant";
+    public string Subtitle => profile != null && !string.IsNullOrWhiteSpace(profile.subtitle)
+        ? profile.subtitle.Trim() : "";
     public string PromptText => $"[E] Browse {DisplayName}";
 
     public override void OnStartServer()

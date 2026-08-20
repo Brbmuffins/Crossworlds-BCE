@@ -24,7 +24,7 @@ public sealed class VendorHoverUI : MonoBehaviour
         var canvas=canvasGo.GetComponent<Canvas>(); canvas.renderMode=RenderMode.ScreenSpaceOverlay; canvas.sortingOrder=116;
         var scaler=canvasGo.GetComponent<CanvasScaler>(); scaler.uiScaleMode=CanvasScaler.ScaleMode.ScaleWithScreenSize; scaler.referenceResolution=new Vector2(1920,1080);
         var bg=new GameObject("VendorName",typeof(RectTransform),typeof(Image)); bg.transform.SetParent(canvasGo.transform,false);
-        var r=bg.GetComponent<RectTransform>(); r.anchorMin=r.anchorMax=new Vector2(.5f,.82f); r.sizeDelta=new Vector2(360,42); bg.GetComponent<Image>().color=new Color(0,0,0,.62f);
+        var r=bg.GetComponent<RectTransform>(); r.anchorMin=r.anchorMax=new Vector2(.5f,.82f); r.sizeDelta=new Vector2(360,58); bg.GetComponent<Image>().color=new Color(0,0,0,.62f);
         var labelGo=new GameObject("Label",typeof(RectTransform),typeof(TextMeshProUGUI)); labelGo.transform.SetParent(bg.transform,false);
         var lr=labelGo.GetComponent<RectTransform>(); lr.anchorMin=Vector2.zero; lr.anchorMax=Vector2.one; lr.offsetMin=lr.offsetMax=Vector2.zero;
         _label=labelGo.GetComponent<TextMeshProUGUI>(); _label.fontSize=20; _label.fontStyle=FontStyles.Bold; _label.color=new Color(1f,.82f,.3f); _label.alignment=TextAlignmentOptions.Center; _label.raycastTarget=false;
@@ -39,7 +39,14 @@ public sealed class VendorHoverUI : MonoBehaviour
         if (ZonePhysics.Raycast(NetworkClient.localPlayer.gameObject, ray, out RaycastHit hit, 100f, ~0, QueryTriggerInteraction.Collide))
         {
             NetworkVendor vendor=hit.collider.GetComponentInParent<NetworkVendor>();
-            if (vendor!=null && vendor.isClient) { _label.text=vendor.DisplayName; panel.SetActive(true); return; }
+            if (vendor!=null && vendor.isClient)
+            {
+                _label.text = string.IsNullOrEmpty(vendor.Subtitle)
+                    ? vendor.DisplayName
+                    : $"{vendor.DisplayName}\n<size=70%><color=#D8C391>{vendor.Subtitle}</color></size>";
+                panel.SetActive(true);
+                return;
+            }
         }
         panel.SetActive(false);
     }
