@@ -38,9 +38,11 @@ public class EscMenu : MonoBehaviour
     Slider      _musicSlider;
     Slider      _sfxSlider;
     Slider      _zoomSlider;
+    Slider      _interfaceScaleSlider;
     TextMeshProUGUI _musicValueLabel;
     TextMeshProUGUI _sfxValueLabel;
     TextMeshProUGUI _zoomValueLabel;
+    TextMeshProUGUI _interfaceScaleValueLabel;
     TextMeshProUGUI _variantModeValueLabel;
     bool        _open;
 
@@ -100,6 +102,7 @@ public class EscMenu : MonoBehaviour
         RefreshMusicSlider();
         RefreshSfxSlider();
         RefreshZoomSlider();
+        RefreshInterfaceScaleSlider();
         RefreshVariantModeLabel();
         _mainView.SetActive(false);
         _optionsView.SetActive(true);
@@ -201,6 +204,7 @@ public class EscMenu : MonoBehaviour
             RefreshMusicSlider();
             RefreshSfxSlider();
             RefreshZoomSlider();
+            RefreshInterfaceScaleSlider();
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible   = true;
         }
@@ -238,7 +242,7 @@ public class EscMenu : MonoBehaviour
 
         // Centred card (also child of _panel)
         var card = MakeRect("Card", _panel.GetComponent<RectTransform>(),
-            new Vector2(0.34f, 0.24f), new Vector2(0.66f, 0.76f));
+            new Vector2(0.34f, 0.16f), new Vector2(0.66f, 0.84f));
         Img(card, new Color(0.04f, 0.03f, 0.12f, 0.97f));
         var cardRt = card.GetComponent<RectTransform>();
 
@@ -291,7 +295,7 @@ public class EscMenu : MonoBehaviour
     void BuildOptionsView(RectTransform parent)
     {
         var header = MakeTmp("OptionsHeader", parent,
-            new Vector2(0.1f, 0.66f), new Vector2(0.9f, 0.74f));
+            new Vector2(0.1f, 0.84f), new Vector2(0.9f, 0.91f));
         header.text      = "OPTIONS";
         header.fontSize  = 16f;
         header.color     = new Color(0.5f, 0.8f, 1f);
@@ -299,7 +303,7 @@ public class EscMenu : MonoBehaviour
         header.alignment = TextAlignmentOptions.Center;
 
         var musicLabel = MakeTmp("MusicVolumeLabel", parent,
-            new Vector2(0.1f, 0.57f), new Vector2(0.58f, 0.63f));
+            new Vector2(0.1f, 0.72f), new Vector2(0.58f, 0.77f));
         musicLabel.text      = "MUSIC";
         musicLabel.fontSize  = 13f;
         musicLabel.color     = Color.white;
@@ -307,18 +311,18 @@ public class EscMenu : MonoBehaviour
         musicLabel.alignment = TextAlignmentOptions.MidlineLeft;
 
         _musicValueLabel = MakeTmp("MusicVolumeValue", parent,
-            new Vector2(0.6f, 0.57f), new Vector2(0.9f, 0.63f));
+            new Vector2(0.6f, 0.72f), new Vector2(0.9f, 0.77f));
         _musicValueLabel.fontSize  = 13f;
         _musicValueLabel.color     = new Color(0.75f, 0.9f, 1f);
         _musicValueLabel.fontStyle = FontStyles.Bold;
         _musicValueLabel.alignment = TextAlignmentOptions.MidlineRight;
 
         _musicSlider = MakeSlider("MusicVolumeSlider", parent,
-            new Vector2(0.1f, 0.52f), new Vector2(0.9f, 0.56f));
+            new Vector2(0.1f, 0.67f), new Vector2(0.9f, 0.71f));
         _musicSlider.onValueChanged.AddListener(OnMusicVolumeChanged);
 
         var sfxLabel = MakeTmp("SfxVolumeLabel", parent,
-            new Vector2(0.1f, 0.44f), new Vector2(0.58f, 0.50f));
+            new Vector2(0.1f, 0.57f), new Vector2(0.58f, 0.62f));
         sfxLabel.text      = "SFX";
         sfxLabel.fontSize  = 13f;
         sfxLabel.color     = Color.white;
@@ -326,18 +330,18 @@ public class EscMenu : MonoBehaviour
         sfxLabel.alignment = TextAlignmentOptions.MidlineLeft;
 
         _sfxValueLabel = MakeTmp("SfxVolumeValue", parent,
-            new Vector2(0.6f, 0.44f), new Vector2(0.9f, 0.50f));
+            new Vector2(0.6f, 0.57f), new Vector2(0.9f, 0.62f));
         _sfxValueLabel.fontSize  = 13f;
         _sfxValueLabel.color     = new Color(0.75f, 0.9f, 1f);
         _sfxValueLabel.fontStyle = FontStyles.Bold;
         _sfxValueLabel.alignment = TextAlignmentOptions.MidlineRight;
 
         _sfxSlider = MakeSlider("SfxVolumeSlider", parent,
-            new Vector2(0.1f, 0.39f), new Vector2(0.9f, 0.43f));
+            new Vector2(0.1f, 0.52f), new Vector2(0.9f, 0.56f));
         _sfxSlider.onValueChanged.AddListener(OnSfxVolumeChanged);
 
         var zoomLabel = MakeTmp("CameraZoomLabel", parent,
-            new Vector2(0.1f, 0.31f), new Vector2(0.58f, 0.37f));
+            new Vector2(0.1f, 0.42f), new Vector2(0.58f, 0.47f));
         zoomLabel.text      = "CAMERA ZOOM";
         zoomLabel.fontSize  = 13f;
         zoomLabel.color     = Color.white;
@@ -345,19 +349,38 @@ public class EscMenu : MonoBehaviour
         zoomLabel.alignment = TextAlignmentOptions.MidlineLeft;
 
         _zoomValueLabel = MakeTmp("CameraZoomValue", parent,
-            new Vector2(0.6f, 0.31f), new Vector2(0.9f, 0.37f));
+            new Vector2(0.6f, 0.42f), new Vector2(0.9f, 0.47f));
         _zoomValueLabel.fontSize  = 13f;
         _zoomValueLabel.color     = new Color(0.75f, 0.9f, 1f);
         _zoomValueLabel.fontStyle = FontStyles.Bold;
         _zoomValueLabel.alignment = TextAlignmentOptions.MidlineRight;
 
         _zoomSlider = MakeSlider("CameraZoomSlider", parent,
-            new Vector2(0.1f, 0.26f), new Vector2(0.9f, 0.30f));
+            new Vector2(0.1f, 0.37f), new Vector2(0.9f, 0.41f));
         _zoomSlider.onValueChanged.AddListener(OnCameraZoomChanged);
+
+        var interfaceScaleLabel = MakeTmp("InterfaceScaleLabel", parent,
+            new Vector2(0.1f, 0.27f), new Vector2(0.58f, 0.32f));
+        interfaceScaleLabel.text      = "INTERFACE SCALE";
+        interfaceScaleLabel.fontSize  = 13f;
+        interfaceScaleLabel.color     = Color.white;
+        interfaceScaleLabel.fontStyle = FontStyles.Bold;
+        interfaceScaleLabel.alignment = TextAlignmentOptions.MidlineLeft;
+
+        _interfaceScaleValueLabel = MakeTmp("InterfaceScaleValue", parent,
+            new Vector2(0.6f, 0.27f), new Vector2(0.9f, 0.32f));
+        _interfaceScaleValueLabel.fontSize  = 13f;
+        _interfaceScaleValueLabel.color     = new Color(0.75f, 0.9f, 1f);
+        _interfaceScaleValueLabel.fontStyle = FontStyles.Bold;
+        _interfaceScaleValueLabel.alignment = TextAlignmentOptions.MidlineRight;
+
+        _interfaceScaleSlider = MakeSlider("InterfaceScaleSlider", parent,
+            new Vector2(0.1f, 0.22f), new Vector2(0.9f, 0.26f));
+        _interfaceScaleSlider.onValueChanged.AddListener(OnInterfaceScaleChanged);
 
         // Variant zone selector mode
         var variantLabel = MakeTmp("VariantModeLabel", parent,
-            new Vector2(0.1f, 0.18f), new Vector2(0.58f, 0.24f));
+            new Vector2(0.1f, 0.13f), new Vector2(0.58f, 0.18f));
         variantLabel.text      = "ABILITY ZONE";
         variantLabel.fontSize  = 13f;
         variantLabel.color     = Color.white;
@@ -366,7 +389,7 @@ public class EscMenu : MonoBehaviour
 
         // Clickable value — toggles between MOUSE and SCROLL WHEEL
         var variantValueGo = MakeRect("VariantModeValueBtn", parent,
-            new Vector2(0.58f, 0.18f), new Vector2(0.9f, 0.24f));
+            new Vector2(0.58f, 0.13f), new Vector2(0.9f, 0.18f));
         _variantModeValueLabel = variantValueGo.AddComponent<TextMeshProUGUI>();
         _variantModeValueLabel.fontSize  = 13f;
         _variantModeValueLabel.color     = new Color(0.75f, 0.9f, 1f);
@@ -375,12 +398,13 @@ public class EscMenu : MonoBehaviour
         var variantBtn = variantValueGo.AddComponent<Button>();
         variantBtn.onClick.AddListener(ToggleVariantMode);
 
-        MakeButton("Back", parent, new Vector2(0.1f, 0.07f), new Vector2(0.9f, 0.15f),
+        MakeButton("Back", parent, new Vector2(0.1f, 0.03f), new Vector2(0.9f, 0.10f),
             new Color(0.16f, 0.16f, 0.26f), ShowMainMenu);
 
         RefreshMusicSlider();
         RefreshSfxSlider();
         RefreshZoomSlider();
+        RefreshInterfaceScaleSlider();
         RefreshVariantModeLabel();
     }
 
@@ -496,6 +520,30 @@ public class EscMenu : MonoBehaviour
         }
 
         return FindAnyObjectByType<CameraFollow>();
+    }
+
+    void RefreshInterfaceScaleSlider()
+    {
+        if (_interfaceScaleSlider == null) return;
+        float scale = InterfaceScaleSettings.Scale;
+        _interfaceScaleSlider.SetValueWithoutNotify(Mathf.InverseLerp(
+            InterfaceScaleSettings.Minimum, InterfaceScaleSettings.Maximum, scale));
+        UpdateInterfaceScaleValueLabel(scale);
+    }
+
+    void OnInterfaceScaleChanged(float normalized)
+    {
+        float scale = Mathf.Lerp(InterfaceScaleSettings.Minimum,
+            InterfaceScaleSettings.Maximum, Mathf.Clamp01(normalized));
+        scale = Mathf.Round(scale * 20f) / 20f;
+        InterfaceScaleSettings.SetScale(scale);
+        UpdateInterfaceScaleValueLabel(scale);
+    }
+
+    void UpdateInterfaceScaleValueLabel(float scale)
+    {
+        if (_interfaceScaleValueLabel != null)
+            _interfaceScaleValueLabel.text = $"{Mathf.RoundToInt(scale * 100f)}%";
     }
 
     void ToggleVariantMode()

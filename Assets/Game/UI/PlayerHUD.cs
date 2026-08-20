@@ -84,6 +84,8 @@ public class PlayerHUD : MonoBehaviour
     TextMeshProUGUI _playerFrameClass;
     TextMeshProUGUI _playerFrameLevel;
     Image       _playerFramePortrait;
+    RectTransform _playerFrameRoot;
+    RectTransform _abilityBarRoot;
     Material    _playerFrameShellMaterial;
     static readonly string[] PlayerPortraitResources =
     {
@@ -188,6 +190,8 @@ public class PlayerHUD : MonoBehaviour
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
         BuildAllUI();
+        InterfaceScaleSettings.Changed += ApplyInterfaceScale;
+        ApplyInterfaceScale(InterfaceScaleSettings.Scale);
     }
 
     void Update()
@@ -293,6 +297,7 @@ public class PlayerHUD : MonoBehaviour
         if (_health) _health.onHealthChanged.RemoveListener(OnHealthChanged);
         if (_stats) _stats.onManaChanged.RemoveListener(OnManaChanged);
         if (_caster) _caster.SpellEquipResult -= OnSpellEquipResult;
+        InterfaceScaleSettings.Changed -= ApplyInterfaceScale;
         if (_playerFrameShellMaterial != null) Destroy(_playerFrameShellMaterial);
     }
 
@@ -347,6 +352,7 @@ public class PlayerHUD : MonoBehaviour
     void BuildPlayerFrame()
     {
         var root = Rt(_canvas.transform, "PlayerFrame");
+        _playerFrameRoot = root;
         root.anchorMin = root.anchorMax = new Vector2(0f, 1f);
         root.pivot = new Vector2(0f, 1f);
         root.anchoredPosition = new Vector2(18f, -14f);
@@ -524,6 +530,7 @@ public class PlayerHUD : MonoBehaviour
     void BuildAbilityBar()
     {
         var root = Rt(_canvas.transform, "AbilityBar");
+        _abilityBarRoot = root;
         root.anchorMin        = new Vector2(0.5f, 0f);
         root.anchorMax        = new Vector2(0.5f, 0f);
         root.pivot            = new Vector2(0.5f, 0f);
@@ -563,6 +570,23 @@ public class PlayerHUD : MonoBehaviour
             ringRt.pivot = new Vector2(0.5f, 0.5f);
             ringRt.anchoredPosition = new Vector2(x, ActionBarSlotCenterY);
             ringRt.sizeDelta = new Vector2(ActionBarSlotSize + 8f, ActionBarSlotSize + 8f);
+        }
+    }
+
+    void ApplyInterfaceScale(float scale)
+    {
+        float clamped = Mathf.Clamp(scale,
+            InterfaceScaleSettings.Minimum, InterfaceScaleSettings.Maximum);
+        Vector3 value = Vector3.one * clamped;
+        if (_playerFrameRoot != null) _playerFrameRoot.localScale = value;
+        if (_abilityBarRoot != null)
+        {
+            _abilityBarRoot.localScale = value;
+            // The artwork contains transparent export space below its visible frame.
+            // Scale that compensating offset with the artwork so a smaller bar stays
+            // on the bottom edge instead of being pulled beneath the screen.
+            _abilityBarRoot.anchoredPosition =
+                new Vector2(0f, ActionBarBottomOffset * clamped);
         }
     }
 

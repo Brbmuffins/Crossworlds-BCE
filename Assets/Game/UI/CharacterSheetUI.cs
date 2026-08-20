@@ -14,6 +14,7 @@ public sealed class CharacterSheetUI : MonoBehaviour
     CharacterWindowView _view;
     CharacterModelPreview _modelPreview;
     CharacterWindowDragHandle _dragHandle;
+    RectTransform _scaledPanel;
     readonly Dictionary<CharacterEquipmentSlot, InventoryBagUI.EquippedItemSnapshot> _equipped = new();
     PlayerProgressManager _progress;
     InventoryBagUI _inventory;
@@ -39,6 +40,8 @@ public sealed class CharacterSheetUI : MonoBehaviour
         if (_instance != null && _instance != this) { Destroy(gameObject); return; }
         _instance = this;
         CreateView();
+        InterfaceScaleSettings.Changed += ApplyInterfaceScale;
+        ApplyInterfaceScale(InterfaceScaleSettings.Scale);
         Hide();
     }
 
@@ -56,6 +59,7 @@ public sealed class CharacterSheetUI : MonoBehaviour
 
     void OnDestroy()
     {
+        InterfaceScaleSettings.Changed -= ApplyInterfaceScale;
         _modelPreview?.Dispose();
         _modelPreview = null;
     }
@@ -107,6 +111,8 @@ public sealed class CharacterSheetUI : MonoBehaviour
         RectTransform panel = _view.transform.Find("Panel") as RectTransform;
         if (panel != null)
         {
+            _scaledPanel = panel;
+            ApplyInterfaceScale(InterfaceScaleSettings.Scale);
             _dragHandle = panel.GetComponent<CharacterWindowDragHandle>() ?? panel.gameObject.AddComponent<CharacterWindowDragHandle>();
             _dragHandle.panel = panel;
         }
@@ -126,6 +132,13 @@ public sealed class CharacterSheetUI : MonoBehaviour
             InventoryBagUI.Refresh();
         }
         else ItemTooltipUI.Instance?.Hide();
+    }
+
+    void ApplyInterfaceScale(float scale)
+    {
+        if (_scaledPanel != null)
+            _scaledPanel.localScale = Vector3.one * Mathf.Clamp(scale,
+                InterfaceScaleSettings.Minimum, InterfaceScaleSettings.Maximum);
     }
 
     void Hide()

@@ -33,6 +33,7 @@ public class XpBar : MonoBehaviour
     TextMeshProUGUI  _xpText;
     TextMeshProUGUI  _gainText;
     CanvasGroup      _cg;
+    RectTransform    _container;
 
     float _displayFraction = 0f;
     float _targetFraction  = 0f;
@@ -52,12 +53,15 @@ public class XpBar : MonoBehaviour
     void Awake()
     {
         BuildUI();
+        InterfaceScaleSettings.Changed += ApplyInterfaceScale;
+        ApplyInterfaceScale(InterfaceScaleSettings.Scale);
         SceneManager.sceneLoaded += OnSceneLoaded;
         ApplySceneVisibility(SceneManager.GetActiveScene());
     }
 
     void OnDestroy()
     {
+        InterfaceScaleSettings.Changed -= ApplyInterfaceScale;
         SceneManager.sceneLoaded -= OnSceneLoaded;
     }
 
@@ -235,6 +239,7 @@ public class XpBar : MonoBehaviour
         var container = new GameObject("XpBarContainer", typeof(RectTransform));
         container.transform.SetParent(root, false);
         var cRt = container.GetComponent<RectTransform>();
+        _container = cRt;
         cRt.anchorMin        = new Vector2(0.5f, 0f);
         cRt.anchorMax        = new Vector2(0.5f, 0f);
         cRt.pivot            = new Vector2(0.5f, 0.5f);
@@ -310,6 +315,17 @@ public class XpBar : MonoBehaviour
         gainRt.pivot = new Vector2(0.5f, 0f);
         gainRt.anchoredPosition = new Vector2(0f, 22f);
         gainRt.sizeDelta = new Vector2(0f, 26f);
+    }
+
+    void ApplyInterfaceScale(float scale)
+    {
+        if (_container == null) return;
+        float clamped = Mathf.Clamp(scale,
+            InterfaceScaleSettings.Minimum, InterfaceScaleSettings.Maximum);
+        _container.localScale = Vector3.one * clamped;
+        // Match the action bar's scale-aware bottom baseline. The XP channel's
+        // original 190px height is part of that same artwork coordinate system.
+        _container.anchoredPosition = new Vector2(0f, ActionBarXpY * clamped);
     }
 
     static void StretchFull(RectTransform rt)
