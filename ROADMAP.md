@@ -395,8 +395,12 @@ Highest-value phase: every piece exists, only glue is missing.
   recipes, honors result stack limits, reuses freed slots, and enforces positions 0–23. Live auth
   health and unauthenticated guards passed after restart. Runtime acceptance with a designated
   test character is still required before calling the player-facing loop complete.
-  *Editor steps remaining:* wire ForgeNPC → `ForgeCraftingPanel.Open()`; build RecipeRowPrefab UI
-  prefab. (`InventoryManager.GetItemCount(itemId)` already exists.)
+  **Forge UI follow-up implemented 2026-08-20:** the unused male Hub NPC is now the Forge Master
+  and opens the Resources-loaded Gothic Forge window with E. The editor builder creates the
+  movable, position-persistent Forge window and recipe-row prefabs, including real result icons,
+  tooltips, ingredient availability, progress/status feedback, tabs, and close controls.
+  *Editor acceptance remaining:* reopen Unity so scripts compile and the missing prefabs auto-build,
+  then craft a Copper Ingot from Kodiac's seeded 12 Copper Ore.
   *Accept:* craft copper ingot from 3 ore in-game; Void Resist Flask reduces boss void damage 25%.
   *Deps:* 0.5, 1.6.
 

@@ -2,6 +2,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 using TMPro;
 
@@ -45,11 +47,28 @@ public class ForgeCraftingPanel : MonoBehaviour
 
     [Header("Navigation")]
     public Button closeButton;
+    public TextMeshProUGUI statusLabel;
 
     public static ForgeCraftingPanel Instance { get; private set; }
 
     bool _smeltTabActive = true;
     bool _crafting       = false;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+    static void Bootstrap()
+    {
+        if (Instance != null) return;
+        var prefab = Resources.Load<GameObject>("Forge/ForgeWindow");
+        if (prefab == null)
+        {
+            Debug.LogError("[FORGE] Resources/Forge/ForgeWindow.prefab is missing. Run BCE/Setup/Rebuild Forge Crafting UI.");
+            return;
+        }
+
+        var window = Instantiate(prefab);
+        DontDestroyOnLoad(window);
+        window.SetActive(false);
+    }
 
     void Awake()
     {
@@ -64,10 +83,19 @@ public class ForgeCraftingPanel : MonoBehaviour
 
     void OnDestroy() { if (Instance == this) Instance = null; }
 
+    void Update()
+    {
+        if (!_crafting && Keyboard.current?.escapeKey.wasPressedThisFrame == true && !IsInputFocused())
+            Close();
+    }
+
     public void Open()
     {
         gameObject.SetActive(true);
+        transform.SetAsLastSibling();
+        GetComponentInChildren<ForgeWindowDragHandle>(true)?.ApplySavedPosition();
         ShowTab(true);
+        SetStatus("Loading recipes…");
         StartCoroutine(LoadRecipes());
     }
 
@@ -80,8 +108,8 @@ public class ForgeCraftingPanel : MonoBehaviour
     void ShowTab(bool smelt)
     {
         _smeltTabActive = smelt;
-        smeltContent.SetActive(smelt);
-        craftContent.SetActive(!smelt);
+        if (smeltContent != null) smeltContent.SetActive(smelt);
+        if (craftContent != null) craftContent.SetActive(!smelt);
     }
 
     // ── Load recipes from server ──────────────────────────────────────────────
@@ -90,7 +118,11 @@ public class ForgeCraftingPanel : MonoBehaviour
     {
         int    charId = AuthManager.CharacterId;
         string token  = AuthManager.Token;
-        if (charId <= 0 || string.IsNullOrEmpty(token)) yield break;
+        if (charId <= 0 || string.IsNullOrEmpty(token))
+        {
+            SetStatus("Select a character before using the Forge.");
+            yield break;
+        }
         string url    = $"{ServerConfig.AuthBaseUrl}/api/professions/recipes/{charId}";
 
         using var req = UnityEngine.Networking.UnityWebRequest.Get(url);
@@ -100,11 +132,23 @@ public class ForgeCraftingPanel : MonoBehaviour
         if (req.result != UnityEngine.Networking.UnityWebRequest.Result.Success)
         {
             Debug.LogWarning($"[FORGE] Failed to load recipes: {req.error}");
+            SetStatus(ReadError(req.downloadHandler.text, "Unable to load recipes."));
             yield break;
         }
 
         var json = JsonUtility.FromJson<RecipesResponse>(req.downloadHandler.text);
-        if (!json.success) yield break;
+        if (json?.success != true || json.data == null)
+        {
+            SetStatus("Unable to load recipes.");
+            yield break;
+        }
+
+        if (smeltListParent == null || craftListParent == null || recipeRowPrefab == null)
+        {
+            Debug.LogError("[FORGE] ForgeWindow prefab references are incomplete. Rebuild it from BCE/Setup/Rebuild Forge Crafting UI.");
+            SetStatus("Forge interface setup is incomplete.");
+            yield break;
+        }
 
         // Clear old rows
         foreach (Transform t in smeltListParent) Destroy(t.gameObject);
@@ -112,6 +156,7 @@ public class ForgeCraftingPanel : MonoBehaviour
 
         PopulateList(json.data.smelt, smeltListParent);
         PopulateList(json.data.craft, craftListParent);
+        SetStatus($"{json.data.smelt?.Length ?? 0} smelting and {json.data.craft?.Length ?? 0} crafting recipes available.");
     }
 
     void PopulateList(RecipeData[] recipes, Transform parent)
@@ -120,7 +165,7 @@ public class ForgeCraftingPanel : MonoBehaviour
         foreach (var recipe in recipes)
         {
             var row = Instantiate(recipeRowPrefab, parent).GetComponent<RecipeRowUI>();
-            row.Populate(recipe, OnCraftClicked);
+            if (row != null) row.Populate(recipe, OnCraftClicked);
         }
     }
 
@@ -135,6 +180,7 @@ public class ForgeCraftingPanel : MonoBehaviour
     IEnumerator CraftRoutine(RecipeData recipe)
     {
         _crafting = true;
+        SetStatus("");
         progressOverlay.SetActive(true);
         progressLabel.text = $"{(recipe.recipe_type == "smelt" ? "Smelting" : "Crafting")} {recipe.result_name}…";
         progressBar.value  = 0f;
@@ -167,26 +213,51 @@ public class ForgeCraftingPanel : MonoBehaviour
         if (req.result == UnityEngine.Networking.UnityWebRequest.Result.Success)
         {
             var resp = JsonUtility.FromJson<CraftResponse>(req.downloadHandler.text);
-            if (resp.success)
+            if (resp?.success == true && resp.data != null)
             {
                 RodChatManager.Instance?.AddSystemMessage(
                     $"[FORGE] Crafted {resp.data.result_name}!" +
                     (resp.data.leveled_up ? $" {GetProfessionName(recipe.profession_id)} leveled up to {resp.data.skill_level}!" : ""));
                 var inv = InventoryManager.Instance;
                 if (inv != null) inv.StartCoroutine(inv.LoadInventory());
+                SetStatus($"Crafted {resp.data.result_name}.");
                 StartCoroutine(LoadRecipes()); // refresh ingredient counts
             }
             else
             {
                 // API convention: error strings are player-readable, show verbatim
                 RodChatManager.Instance?.AddSystemMessage(
-                    $"[FORGE] {(string.IsNullOrEmpty(resp.error) ? "Craft failed" : resp.error)}");
+                    $"[FORGE] {(string.IsNullOrEmpty(resp?.error) ? "Craft failed" : resp.error)}");
+                SetStatus(string.IsNullOrEmpty(resp?.error) ? "Craft failed." : resp.error);
             }
         }
         else
         {
-            RodChatManager.Instance?.AddSystemMessage("[FORGE] Server error — try again.");
+            string error = ReadError(req.downloadHandler.text, "Server error — try again.");
+            RodChatManager.Instance?.AddSystemMessage($"[FORGE] {error}");
+            SetStatus(error);
         }
+    }
+
+    void SetStatus(string value)
+    {
+        if (statusLabel != null) statusLabel.text = value ?? "";
+    }
+
+    static string ReadError(string json, string fallback)
+    {
+        if (!string.IsNullOrWhiteSpace(json))
+        {
+            var response = JsonUtility.FromJson<ErrorResponse>(json);
+            if (!string.IsNullOrWhiteSpace(response?.error)) return response.error;
+        }
+        return fallback;
+    }
+
+    static bool IsInputFocused()
+    {
+        var selected = EventSystem.current?.currentSelectedGameObject;
+        return selected != null && selected.GetComponent<TMP_InputField>() != null;
     }
 
     static string GetProfessionName(string id) =>
@@ -236,6 +307,7 @@ public class ForgeCraftingPanel : MonoBehaviour
         public CraftResult data;
         public string      error;
     }
+    [System.Serializable] class ErrorResponse { public string error; }
     [System.Serializable] class CraftResult
     {
         public string result_name;
@@ -247,7 +319,7 @@ public class ForgeCraftingPanel : MonoBehaviour
 
 // ── RecipeRowUI ───────────────────────────────────────────────────────────────
 
-public class RecipeRowUI : MonoBehaviour
+public class RecipeRowUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
 {
     [Header("Labels")]
     public TextMeshProUGUI nameLabel;
@@ -256,6 +328,9 @@ public class RecipeRowUI : MonoBehaviour
     public TextMeshProUGUI timeLabel;
     public Button          craftButton;
     public Image           rarityBadge;
+    public Image           icon;
+
+    string _itemId;
 
     static readonly Color ColourCommon   = new Color(0.8f, 0.8f, 0.8f);
     static readonly Color ColourUncommon = new Color(0.2f, 0.8f, 0.2f);
@@ -268,6 +343,16 @@ public class RecipeRowUI : MonoBehaviour
         levelLabel.text = $"Lv {recipe.skill_level_required}";
         timeLabel.text  = $"{recipe.craft_time_seconds:0.#}s";
 
+        _itemId = recipe.result_item_id;
+        var definition = LootItemCatalog.Find(_itemId);
+        if (icon != null)
+        {
+            icon.sprite = definition != null ? definition.inventoryIcon : null;
+            icon.preserveAspect = true;
+            icon.color = icon.sprite != null ? Color.white : ColourCommon;
+        }
+
+        bool hasIngredients = true;
         var ingParts = new List<string>();
         if (recipe.ingredients != null)
         {
@@ -276,6 +361,7 @@ public class RecipeRowUI : MonoBehaviour
                 // Check inventory count — red if short
                 int have = InventoryManager.Instance?.GetItemCount(ing.item_id) ?? 0;
                 string col = have >= ing.quantity ? "white" : "red";
+                hasIngredients &= have >= ing.quantity;
                 ingParts.Add($"<color={col}>{ing.quantity}× {ing.name}</color>");
             }
         }
@@ -294,7 +380,7 @@ public class RecipeRowUI : MonoBehaviour
         var group = GetComponent<CanvasGroup>();
         if (group == null) group = gameObject.AddComponent<CanvasGroup>();
 
-        if (recipe.unlocked)
+        if (recipe.unlocked && hasIngredients)
         {
             craftButton.interactable = true;
             craftButton.onClick.AddListener(() => onCraft(recipe));
@@ -307,5 +393,12 @@ public class RecipeRowUI : MonoBehaviour
             nameLabel.color = ColourLocked;
         }
     }
+
+    public void OnPointerEnter(PointerEventData eventData)
+    {
+        if (!string.IsNullOrEmpty(_itemId)) ItemTooltipUI.Instance?.Show(_itemId, eventData.position);
+    }
+
+    public void OnPointerExit(PointerEventData eventData) => ItemTooltipUI.Instance?.Hide();
 }
 #endif

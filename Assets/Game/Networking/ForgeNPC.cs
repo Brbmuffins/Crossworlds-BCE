@@ -98,7 +98,7 @@ public class ForgeNPC : MonoBehaviour
         if (ForgeCraftingPanel.Instance != null)
             ForgeCraftingPanel.Instance.Open();
         else
-            Debug.LogWarning("[ForgeNPC] ForgeCraftingPanel.Instance is null — add the ForgeCraftingPanel to the Hub scene and wire its Inspector fields.");
+            Debug.LogWarning("[ForgeNPC] ForgeCraftingPanel.Instance is null — verify Resources/Forge/ForgeWindow.prefab exists.");
 #endif
     }
 
