@@ -17,10 +17,15 @@ public static class ForgeCraftingUIBuilder
     [DidReloadScripts]
     static void BuildMissingPrefab()
     {
-        if (AssetDatabase.LoadAssetAtPath<GameObject>(WindowPath) != null) return;
+        var window = AssetDatabase.LoadAssetAtPath<GameObject>(WindowPath);
+        var row = AssetDatabase.LoadAssetAtPath<GameObject>(RowPath);
+        if (window != null && row != null && row.GetComponent<RecipeRowUI>() != null) return;
         EditorApplication.delayCall += () =>
         {
-            if (AssetDatabase.LoadAssetAtPath<GameObject>(WindowPath) == null) Rebuild();
+            var delayedWindow = AssetDatabase.LoadAssetAtPath<GameObject>(WindowPath);
+            var delayedRow = AssetDatabase.LoadAssetAtPath<GameObject>(RowPath);
+            if (delayedWindow == null || delayedRow == null || delayedRow.GetComponent<RecipeRowUI>() == null)
+                Rebuild();
         };
     }
 

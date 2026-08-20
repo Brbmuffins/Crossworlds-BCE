@@ -189,7 +189,8 @@ public class CameraFollow : MonoBehaviour
         }
 
         float scroll = mouse.scroll.ReadValue().y;
-        if (Mathf.Abs(scroll) > 0.01f && !AbilityCaster.IsAimingLocally)
+        bool pointerOverUi = EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
+        if (Mathf.Abs(scroll) > 0.01f && !AbilityCaster.IsAimingLocally && !pointerOverUi)
             SetZoomDistance(distance - scroll * zoomSpeed * 0.01f);
 
         Vector3    pos     = _target.position;
