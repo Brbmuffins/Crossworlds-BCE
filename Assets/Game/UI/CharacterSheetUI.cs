@@ -75,6 +75,12 @@ public sealed class CharacterSheetUI : MonoBehaviour
 
     void Update()
     {
+        if (!HasGameplayPlayer())
+        {
+            if (_open) Hide();
+            return;
+        }
+
         BindIdentity(FindLocalIdentity());
         var keyboard = UnityEngine.InputSystem.Keyboard.current;
         if (keyboard != null)
@@ -90,6 +96,8 @@ public sealed class CharacterSheetUI : MonoBehaviour
         }
         if (_open) _modelPreview?.RenderFrame();
     }
+
+    static bool HasGameplayPlayer() => NetworkClient.active && NetworkClient.localPlayer != null;
 
     void CreateView()
     {

@@ -72,6 +72,12 @@ public sealed class InventoryBagUI : MonoBehaviour
 
     void Update()
     {
+        if (!HasGameplayPlayer())
+        {
+            if (_open) HidePanel();
+            return;
+        }
+
         if (!_progressSubscribed && PlayerProgressManager.Local != null)
         {
             PlayerProgressManager.Local.OnDataRefreshed += RefreshGold;
@@ -84,6 +90,8 @@ public sealed class InventoryBagUI : MonoBehaviour
         if (keyboard.bKey.wasPressedThisFrame && !AnyInputFocused()) Toggle();
         else if (_open && keyboard.escapeKey.wasPressedThisFrame && !AnyInputFocused()) HidePanel();
     }
+
+    static bool HasGameplayPlayer() => NetworkClient.active && NetworkClient.localPlayer != null;
 
     public static void Refresh()
     {
