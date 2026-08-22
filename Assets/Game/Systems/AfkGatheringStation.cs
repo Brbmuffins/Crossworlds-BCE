@@ -1,5 +1,6 @@
 #if UNITY_EDITOR || !UNITY_SERVER
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Networking;
@@ -37,10 +38,19 @@ public class AfkGatheringStation : MonoBehaviour
     [Tooltip("At this level there is a 20% chance to award double items per tick.")]
     public int bonusYieldLevel = 10;
 
+    [Header("Depletion & Respawn")]
+    [Min(1)] public int minimumAwardsPerSpawn = 1;
+    [Min(1)] public int maximumAwardsPerSpawn = 5;
+    [Min(1f)] public float respawnSeconds = 900f;
+
     [Header("Interaction")]
     public float interactRange = 3f;
     [Tooltip("How far the player must drift before gathering auto-cancels.")]
     public float cancelRadius  = 4f;
+    [Tooltip("Local height of the floating interaction prompt above the node root.")]
+    public float promptHeight = 2.4f;
+    [Tooltip("Optional prompt verb such as harvesting or salvaging. Leave empty for profession defaults.")]
+    public string interactionVerb = "";
 
     [Header("VFX")]
     [Tooltip("Particle prefab spawned at the station on each yield tick.")]
@@ -61,17 +71,62 @@ public class AfkGatheringStation : MonoBehaviour
 
     GameObject _promptGO;
     TextMesh   _promptMesh;
+    TextMesh   _promptShadowMesh;
     bool       _promptVisible;
+    bool       _promptShowsInRange;
+    int        _remainingAwards;
+    bool       _waitingForAward;
+    bool       _awardResolved;
+    bool       _awardGranted;
+    bool       _awardDepleted;
+    double     _localRespawnAt = -1d;
+
+    GatheringNodeNetworkState _networkState;
+    Renderer[] _localNodeRenderers;
+    Collider[] _localNodeColliders;
+    bool[] _localRendererDefaults;
+    bool[] _localColliderDefaults;
+
+    readonly HashSet<GatheringNodeHoverTarget> _hoverTargets = new();
 
     GatheringHUD _hud;
 
     // ─────────────────────────────────────────────────────────────────────────────
 
-    void Awake() => BuildPrompt();
+    void Awake()
+    {
+        _remainingAwards = Random.Range(
+            Mathf.Max(1, minimumAwardsPerSpawn),
+            Mathf.Max(Mathf.Max(1, minimumAwardsPerSpawn), maximumAwardsPerSpawn) + 1);
+        _networkState = GetComponent<GatheringNodeNetworkState>();
+        if (_networkState != null)
+            _networkState.AwardRequestCompleted += OnAwardRequestCompleted;
+        BuildPrompt();
+        InstallHoverTargets();
+        CacheLocalPresentation();
+    }
     void Start()  => _promptGO.SetActive(false);
+
+    void OnDestroy()
+    {
+        if (_networkState != null)
+            _networkState.AwardRequestCompleted -= OnAwardRequestCompleted;
+    }
 
     void Update()
     {
+        if (!Mirror.NetworkClient.active && _localRespawnAt > 0d &&
+            Time.realtimeSinceStartupAsDouble >= _localRespawnAt)
+        {
+            int respawnAwards = Random.Range(
+                Mathf.Max(1, minimumAwardsPerSpawn),
+                Mathf.Max(Mathf.Max(1, minimumAwardsPerSpawn), maximumAwardsPerSpawn) + 1);
+            _localRespawnAt = -1d;
+            if (_networkState != null) _networkState.ApplyOfflinePresentation(false);
+            else ApplyLocalPresentation(false);
+            _remainingAwards = respawnAwards;
+        }
+
         // Throttled local-player search
         _scanTimer -= Time.deltaTime;
         if (_scanTimer <= 0f)
@@ -85,6 +140,11 @@ public class AfkGatheringStation : MonoBehaviour
         {
             // Player vanished mid-gather (disconnect/scene change) — stop cleanly
             if (_gathering) StopGathering();
+            if (_promptVisible)
+            {
+                _promptVisible = false;
+                _promptGO.SetActive(false);
+            }
             return;
         }
 
@@ -116,14 +176,19 @@ public class AfkGatheringStation : MonoBehaviour
         }
 
         // ── Prompt visibility ──────────────────────────────────────────────────
-        if (inRange != _promptVisible)
+        // Proximity alone never displays a label. It appears only while the
+        // pointer is over this node or one of its visual-child colliders.
+        bool showPrompt = _hoverTargets.Count > 0;
+        if (showPrompt != _promptVisible)
         {
-            _promptVisible = inRange;
-            _promptGO.SetActive(inRange);
+            _promptVisible = showPrompt;
+            _promptGO.SetActive(showPrompt);
         }
 
         if (_promptVisible)
         {
+            if (_promptShowsInRange != inRange)
+                UpdatePromptText(inRange);
             var cam = Camera.main;
             if (cam != null)
                 _promptGO.transform.rotation = Quaternion.LookRotation(
@@ -161,6 +226,7 @@ public class AfkGatheringStation : MonoBehaviour
         _gathering    = true;
         _gatherOrigin = _localPlayer.position;
         _tickProgress = 0f;
+        _promptVisible = false;
         _promptGO.SetActive(false);
         SetGatheringAnim(true);
 
@@ -185,6 +251,42 @@ public class AfkGatheringStation : MonoBehaviour
 
             _tickProgress = 0f;
 
+            if (_networkState != null && Mirror.NetworkClient.active)
+            {
+                _waitingForAward = true;
+                _awardResolved = false;
+                _awardGranted = false;
+                _awardDepleted = false;
+                _networkState.RequestAward();
+                while (_gathering && !_awardResolved) yield return null;
+                _waitingForAward = false;
+                if (!_gathering) yield break;
+                if (!_awardGranted)
+                {
+                    if (_awardDepleted)
+                        StopGathering($"{stationName} is depleted. It will respawn in 15 minutes.");
+                    continue;
+                }
+            }
+            else
+            {
+                // Offline editor fallback. Networked games always use the shared
+                // server-authoritative counter above.
+                if (_remainingAwards <= 0)
+                {
+                    StopGathering($"{stationName} is depleted.");
+                    yield break;
+                }
+                _remainingAwards--;
+                _awardDepleted = _remainingAwards <= 0;
+                if (_awardDepleted)
+                {
+                    _localRespawnAt = Time.realtimeSinceStartupAsDouble + Mathf.Max(1f, respawnSeconds);
+                    if (_networkState != null) _networkState.ApplyOfflinePresentation(true);
+                    else ApplyLocalPresentation(true);
+                }
+            }
+
             int qty   = itemQuantity;
             int level = ProfessionManager.Local?.GetLevel(professionId) ?? 1;
             if (level >= bonusYieldLevel && Random.value < 0.20f)
@@ -200,6 +302,12 @@ public class AfkGatheringStation : MonoBehaviour
             if (_hud != null) _hud.Pulse(qty);
 
             Debug.Log($"[GATHER] {stationName}: +{qty}x {itemId}, +{xpPerTick} xp");
+
+            if (_awardDepleted)
+            {
+                StopGathering($"{stationName} is depleted. It will respawn in 15 minutes.");
+                yield break;
+            }
         }
     }
 
@@ -230,7 +338,8 @@ public class AfkGatheringStation : MonoBehaviour
         if (_localPlayer != null)
         {
             float d = Vector3.Distance(transform.position, _localPlayer.position);
-            _promptVisible = d <= interactRange;
+            _promptVisible = _hoverTargets.Count > 0;
+            UpdatePromptText(d <= interactRange);
             _promptGO.SetActive(_promptVisible);
         }
     }
@@ -281,32 +390,141 @@ public class AfkGatheringStation : MonoBehaviour
         if (anim != null) anim.SetBool(gatheringAnimBool, on);
     }
 
-    string GetGatherVerb() => professionId switch
+    string GetGatherVerb()
     {
-        0 => "chopping",
-        1 => "fishing at",
-        _ => "mining"
-    };
+        if (!string.IsNullOrWhiteSpace(interactionVerb)) return interactionVerb.Trim();
+        return professionId switch
+        {
+            0 => "chopping",
+            1 => "fishing at",
+            _ => "mining"
+        };
+    }
 
     void BuildPrompt()
     {
-        string verb = GetGatherVerb();
-
         _promptGO = new GameObject("GatherPrompt");
         _promptGO.transform.SetParent(transform, false);
-        _promptGO.transform.localPosition = new Vector3(0f, 2.4f, 0f);
-        _promptGO.transform.localScale    = Vector3.one * 0.018f;
+        _promptGO.transform.localPosition = new Vector3(0f, promptHeight, 0f);
+        _promptGO.transform.localScale    = Vector3.one * 0.032f;
 
         _promptMesh = _promptGO.AddComponent<TextMesh>();
-        _promptMesh.text          = $"[F]  {char.ToUpper(verb[0])}{verb.Substring(1)} — {stationName}\nLevel {minLevelRequired}+ required";
         _promptMesh.characterSize = 0.5f;
-        _promptMesh.fontSize      = 54;
+        _promptMesh.fontSize      = 64;
         _promptMesh.fontStyle     = FontStyle.Bold;
         _promptMesh.anchor        = TextAnchor.MiddleCenter;
         _promptMesh.alignment     = TextAlignment.Center;
         _promptMesh.color         = minLevelRequired <= 1
             ? new Color(0.70f, 0.95f, 0.50f)
             : new Color(0.90f, 0.80f, 0.30f);
+
+        var shadowGO = new GameObject("TextShadow");
+        shadowGO.transform.SetParent(_promptGO.transform, false);
+        shadowGO.transform.localPosition = new Vector3(0.035f, -0.035f, 0.01f);
+        _promptShadowMesh = shadowGO.AddComponent<TextMesh>();
+        _promptShadowMesh.characterSize = _promptMesh.characterSize;
+        _promptShadowMesh.fontSize = _promptMesh.fontSize;
+        _promptShadowMesh.fontStyle = FontStyle.Bold;
+        _promptShadowMesh.anchor = TextAnchor.MiddleCenter;
+        _promptShadowMesh.alignment = TextAlignment.Center;
+        _promptShadowMesh.color = new Color(0f, 0f, 0f, 0.9f);
+
+        ConfigurePromptRenderer(_promptMesh, 2);
+        ConfigurePromptRenderer(_promptShadowMesh, 1);
+        UpdatePromptText(false);
+    }
+
+    void UpdatePromptText(bool inRange)
+    {
+        _promptShowsInRange = inRange;
+        string text;
+        if (inRange)
+        {
+            string verb = GetGatherVerb();
+            text = $"[F]  {char.ToUpper(verb[0])}{verb.Substring(1)} — {stationName}\n" +
+                   $"Level {minLevelRequired}+ required\n" +
+                   $"{Mathf.Max(0, _remainingAwards)} award(s) remaining";
+        }
+        else text = $"{stationName}\nMove closer";
+
+        _promptMesh.text = text;
+        if (_promptShadowMesh != null) _promptShadowMesh.text = text;
+    }
+
+    static void ConfigurePromptRenderer(TextMesh mesh, int sortingOrder)
+    {
+        if (mesh == null) return;
+        var renderer = mesh.GetComponent<MeshRenderer>();
+        if (renderer == null) return;
+        renderer.sortingOrder = sortingOrder;
+        renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        renderer.receiveShadows = false;
+    }
+
+    void InstallHoverTargets()
+    {
+        foreach (Collider nodeCollider in GetComponentsInChildren<Collider>(true))
+        {
+            GatheringNodeHoverTarget target =
+                nodeCollider.GetComponent<GatheringNodeHoverTarget>() ??
+                nodeCollider.gameObject.AddComponent<GatheringNodeHoverTarget>();
+            target.owner = this;
+        }
+    }
+
+    internal void SetHovered(GatheringNodeHoverTarget target, bool hovered)
+    {
+        if (target == null) return;
+        if (hovered) _hoverTargets.Add(target);
+        else _hoverTargets.Remove(target);
+    }
+
+    internal void SetRemainingAwards(int value)
+    {
+        _remainingAwards = Mathf.Max(0, value);
+        if (_promptVisible && _localPlayer != null)
+            UpdatePromptText(Vector3.Distance(transform.position, _localPlayer.position) <= interactRange);
+    }
+
+    internal void SetNodeDepleted(bool depleted)
+    {
+        if (!depleted) return;
+        _hoverTargets.Clear();
+        _promptVisible = false;
+        if (_promptGO != null) _promptGO.SetActive(false);
+        if (_gathering && !_waitingForAward)
+            StopGathering($"{stationName} is depleted. It will respawn in 15 minutes.");
+    }
+
+    void OnAwardRequestCompleted(bool granted, bool depleted, int remaining)
+    {
+        _awardGranted = granted;
+        _awardDepleted = depleted;
+        _remainingAwards = Mathf.Max(0, remaining);
+        _awardResolved = true;
+    }
+
+    void CacheLocalPresentation()
+    {
+        _localNodeRenderers = GetComponentsInChildren<Renderer>(true);
+        _localNodeColliders = GetComponentsInChildren<Collider>(true);
+        _localRendererDefaults = new bool[_localNodeRenderers.Length];
+        _localColliderDefaults = new bool[_localNodeColliders.Length];
+        for (int i = 0; i < _localNodeRenderers.Length; i++)
+            _localRendererDefaults[i] = _localNodeRenderers[i] != null && _localNodeRenderers[i].enabled;
+        for (int i = 0; i < _localNodeColliders.Length; i++)
+            _localColliderDefaults[i] = _localNodeColliders[i] != null && _localNodeColliders[i].enabled;
+    }
+
+    void ApplyLocalPresentation(bool hide)
+    {
+        for (int i = 0; i < _localNodeRenderers.Length; i++)
+            if (_localNodeRenderers[i] != null)
+                _localNodeRenderers[i].enabled = !hide && _localRendererDefaults[i];
+        for (int i = 0; i < _localNodeColliders.Length; i++)
+            if (_localNodeColliders[i] != null)
+                _localNodeColliders[i].enabled = !hide && _localColliderDefaults[i];
+        SetNodeDepleted(hide);
     }
 
     static Transform FindLocalPlayer()
@@ -323,5 +541,16 @@ public class AfkGatheringStation : MonoBehaviour
         Gizmos.color = new Color(1f, 0.6f, 0.1f, 0.15f);
         Gizmos.DrawWireSphere(transform.position, cancelRadius);
     }
+}
+
+/// <summary>Forwards Unity mouse-hover events from node child colliders.</summary>
+public sealed class GatheringNodeHoverTarget : MonoBehaviour
+{
+    [HideInInspector] public AfkGatheringStation owner;
+
+    void OnMouseEnter() => owner?.SetHovered(this, true);
+    void OnMouseOver() => owner?.SetHovered(this, true);
+    void OnMouseExit() => owner?.SetHovered(this, false);
+    void OnDisable() => owner?.SetHovered(this, false);
 }
 #endif

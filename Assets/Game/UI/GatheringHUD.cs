@@ -69,13 +69,13 @@ public class GatheringHUD : MonoBehaviour
         scaler.referenceResolution = new Vector2(1920, 1080);
         gameObject.AddComponent<GraphicRaycaster>();   // required for the STOP button to receive clicks
 
-        // Root panel — bottom-center
+        // Root panel — top-center, clear of the action bar and XP display.
         var panel = MakeImage("Panel", _canvas.transform, new Color(0.05f, 0.05f, 0.08f, 0.90f));
         var rt    = panel.GetComponent<RectTransform>();
-        rt.anchorMin        = new Vector2(0.5f, 0f);
-        rt.anchorMax        = new Vector2(0.5f, 0f);
-        rt.pivot            = new Vector2(0.5f, 0f);
-        rt.anchoredPosition = new Vector2(0f, 80f);
+        rt.anchorMin        = new Vector2(0.5f, 1f);
+        rt.anchorMax        = new Vector2(0.5f, 1f);
+        rt.pivot            = new Vector2(0.5f, 1f);
+        rt.anchoredPosition = new Vector2(0f, -80f);
         rt.sizeDelta        = new Vector2(340f, 76f);
 
         string icon = _professionId < ProfessionIcons.Length ? ProfessionIcons[_professionId] : "[?]";

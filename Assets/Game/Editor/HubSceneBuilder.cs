@@ -241,6 +241,15 @@ public static class HubSceneBuilder
             station.xpPerTick        = 10;
             station.interactRange    = 3f;
             station.cancelRadius     = 4f;
+
+            mineGO.AddComponent<Mirror.NetworkIdentity>();
+            var networkState = mineGO.AddComponent<GatheringNodeNetworkState>();
+            networkState.persistentNodeId = GUID.Generate().ToString();
+            networkState.minimumAwardsPerSpawn = 1;
+            networkState.maximumAwardsPerSpawn = 5;
+            networkState.respawnSeconds = 900f;
+            networkState.interactionRange = station.interactRange;
+            networkState.minimumSecondsBetweenAwards = Mathf.Max(0.1f, station.tickInterval - 0.25f);
 #endif
         }
 
