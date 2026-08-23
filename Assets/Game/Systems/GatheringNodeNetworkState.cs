@@ -64,9 +64,13 @@ public sealed class GatheringNodeNetworkState : NetworkBehaviour
             remainingAwards = saved.remaining;
             depleted = saved.depleted;
             respawnAtNetworkTime = saved.respawnAt;
-            if (depleted && NetworkTime.time >= respawnAtNetworkTime) ResetNode();
+            if (depleted && NetworkTime.time >= respawnAtNetworkTime)
+                ResetNode("respawn-after-zone-reload");
+            else
+                Debug.Log($"[GATHER NODE] RESTORE {NodeLogLabel()} remaining={remainingAwards} " +
+                          $"depleted={depleted} respawnIn={Math.Max(0d, respawnAtNetworkTime - NetworkTime.time):0.0}s");
         }
-        else ResetNode();
+        else ResetNode("spawn");
     }
 
     public override void OnStartClient()
@@ -80,7 +84,7 @@ public sealed class GatheringNodeNetworkState : NetworkBehaviour
     void Update()
     {
         if (depleted && NetworkTime.time >= respawnAtNetworkTime)
-            ResetNode();
+            ResetNode("respawn");
     }
 
     public void RequestAward()
@@ -102,7 +106,7 @@ public sealed class GatheringNodeNetworkState : NetworkBehaviour
             return;
 
         if (depleted && NetworkTime.time >= respawnAtNetworkTime)
-            ResetNode();
+            ResetNode("respawn-on-request");
 
         float allowedRange = Mathf.Max(0.5f, interactionRange) + 1f;
         if ((sender.identity.transform.position - transform.position).sqrMagnitude >
@@ -129,8 +133,12 @@ public sealed class GatheringNodeNetworkState : NetworkBehaviour
 
         nextAwardByConnection[connectionId] =
             NetworkTime.time + Mathf.Max(0.1f, minimumSecondsBetweenAwards);
+        int awardsBefore = remainingAwards;
         remainingAwards--;
         bool exhausted = remainingAwards <= 0;
+        Debug.Log($"[GATHER NODE] AWARD {NodeLogLabel()} connection={connectionId} " +
+                  $"player={sender.identity.name} before={awardsBefore} remaining={remainingAwards} " +
+                  $"depleted={exhausted}");
         if (exhausted) DepleteNode();
         else SaveServerState();
 
@@ -144,7 +152,7 @@ public sealed class GatheringNodeNetworkState : NetworkBehaviour
     }
 
     [Server]
-    void ResetNode()
+    void ResetNode(string reason)
     {
         int minimum = Mathf.Max(1, minimumAwardsPerSpawn);
         int maximum = Mathf.Max(minimum, maximumAwardsPerSpawn);
@@ -153,6 +161,9 @@ public sealed class GatheringNodeNetworkState : NetworkBehaviour
         respawnAtNetworkTime = 0d;
         nextAwardByConnection.Clear();
         SaveServerState();
+        Debug.Log($"[GATHER NODE] READY {NodeLogLabel()} reason={reason} " +
+                  $"awards={remainingAwards} range={minimum}-{maximum} " +
+                  $"respawnSeconds={Mathf.Max(1f, respawnSeconds):0.#}");
     }
 
     [Server]
@@ -162,6 +173,9 @@ public sealed class GatheringNodeNetworkState : NetworkBehaviour
         depleted = true;
         respawnAtNetworkTime = NetworkTime.time + Mathf.Max(1f, respawnSeconds);
         SaveServerState();
+        Debug.Log($"[GATHER NODE] DEPLETED {NodeLogLabel()} remaining=0 " +
+                  $"respawnSeconds={Mathf.Max(1f, respawnSeconds):0.#} " +
+                  $"respawnAt={respawnAtNetworkTime:0.000}");
     }
 
     [Server]
@@ -181,6 +195,14 @@ public sealed class GatheringNodeNetworkState : NetworkBehaviour
             ? $"{transform.position.x:0.###}_{transform.position.y:0.###}_{transform.position.z:0.###}"
             : persistentNodeId.Trim();
         return $"{gameObject.scene.path}|{id}";
+    }
+
+    string NodeLogLabel()
+    {
+        string id = string.IsNullOrWhiteSpace(persistentNodeId)
+            ? "position-fallback"
+            : persistentNodeId.Trim();
+        return $"scene={gameObject.scene.name} node={name} id={id}";
     }
 
     void OnRemainingAwardsChanged(int oldValue, int newValue)
