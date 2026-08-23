@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Mirror;
 using UnityEditor;
 using UnityEngine;
 
@@ -702,6 +703,8 @@ namespace Crossworlds.EditorTools
                 "cooldown",
                 "manaCost");
 
+            DrawProjectileLogistics(ability);
+
             DrawFieldGroup(
                 "DAMAGE & CHARGE", ability,
                 "damage",
@@ -768,6 +771,46 @@ namespace Crossworlds.EditorTools
                 "pulseInterval",
                 "pulseRadius",
                 "pulseDamage");
+        }
+
+        void DrawProjectileLogistics(SerializedProperty ability)
+        {
+            SerializedProperty enabled =
+                ability.FindPropertyRelative("launchProjectile");
+            if (enabled == null) return;
+
+            EditorGUILayout.LabelField("PROJECTILE DELIVERY", EyebrowStyle());
+            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+            {
+                EditorGUILayout.PropertyField(enabled);
+                if (!enabled.boolValue) return;
+
+                SerializedProperty prefab =
+                    ability.FindPropertyRelative("projectilePrefab");
+                EditorGUILayout.PropertyField(
+                    prefab,
+                    new GUIContent(
+                        "Projectile VFX Prefab",
+                        "Networked projectile prefab. Its children provide the travelling VFX."));
+                EditorGUILayout.PropertyField(
+                    ability.FindPropertyRelative("projectileSpeed"));
+
+                GameObject projectileObject =
+                    prefab?.objectReferenceValue as GameObject;
+                if (projectileObject == null)
+                {
+                    EditorGUILayout.HelpBox(
+                        "Assign a networked projectile prefab in the VFX tab.",
+                        MessageType.Warning);
+                }
+                else if (projectileObject.GetComponent<PlayerProjectile>() == null ||
+                    projectileObject.GetComponent<NetworkIdentity>() == null)
+                {
+                    EditorGUILayout.HelpBox(
+                        "The prefab needs PlayerProjectile and NetworkIdentity on its root.",
+                        MessageType.Error);
+                }
+            }
         }
 
         void DrawCrowdControlGroup(
@@ -946,6 +989,7 @@ namespace Crossworlds.EditorTools
                 "castingVFX",
                 "castVFX",
                 "hitVFX",
+                "projectilePrefab",
                 "chainVFX",
                 "healVFX",
                 "shieldVFX",
@@ -1029,6 +1073,9 @@ namespace Crossworlds.EditorTools
                 GameObject deployable = ability
                     .FindPropertyRelative("deployablePrefab")
                     ?.objectReferenceValue as GameObject;
+                GameObject projectile = ability
+                    .FindPropertyRelative("projectilePrefab")
+                    ?.objectReferenceValue as GameObject;
 
                 spellPreview.EnsureSpell(
                     prefabAsset,
@@ -1042,7 +1089,7 @@ namespace Crossworlds.EditorTools
                     hitVFX,
                     healVFX,
                     shieldVFX,
-                    deployable);
+                    projectile != null ? projectile : deployable);
 
                 using (new EditorGUILayout.HorizontalScope())
                 {
@@ -1319,6 +1366,9 @@ namespace Crossworlds.EditorTools
             GameObject deploy = ability
                 .FindPropertyRelative("deployablePrefab")
                 ?.objectReferenceValue as GameObject;
+            GameObject projectile = ability
+                .FindPropertyRelative("projectilePrefab")
+                ?.objectReferenceValue as GameObject;
 
             string summary =
                 $"Casting: {(casting != null ? casting.name : "None")}   " +
@@ -1327,6 +1377,7 @@ namespace Crossworlds.EditorTools
                 $"Chain: {(chain != null ? chain.name : "None")}   " +
                 $"Heal: {(heal != null ? heal.name : "None")}   " +
                 $"Shield: {(shield != null ? shield.name : "None")}   " +
+                $"Projectile: {(projectile != null ? projectile.name : "None")}   " +
                 $"Deploy: {(deploy != null ? deploy.name : "None")}";
             EditorGUILayout.LabelField(summary, EditorStyles.miniLabel);
         }
@@ -1350,6 +1401,8 @@ namespace Crossworlds.EditorTools
                     AssignVFX(ability, "castVFX", selectedVFX);
                 if (GUILayout.Button("→ Hit"))
                     AssignVFX(ability, "hitVFX", selectedVFX);
+                if (GUILayout.Button("→ Projectile"))
+                    AssignProjectilePrefab(ability, selectedVFX);
                 if (GUILayout.Button("Chain"))
                     AssignVFX(ability, "chainVFX", selectedVFX);
                 if (GUILayout.Button("→ Heal"))
@@ -1370,6 +1423,29 @@ namespace Crossworlds.EditorTools
             if (field == null) return;
 
             field.objectReferenceValue = prefab;
+            serializedCaster.ApplyModifiedProperties();
+            MarkChanged();
+        }
+
+        void AssignProjectilePrefab(
+            SerializedProperty ability, GameObject prefab)
+        {
+            if (prefab == null) return;
+            if (prefab.GetComponent<PlayerProjectile>() == null ||
+                prefab.GetComponent<NetworkIdentity>() == null)
+            {
+                EditorUtility.DisplayDialog(
+                    "Projectile Prefab Required",
+                    $"'{prefab.name}' is visual-only. A projectile prefab needs PlayerProjectile and NetworkIdentity on its root. Add this VFX as a child of a projectile prefab, or use Player_FireballProjectile.",
+                    "OK");
+                return;
+            }
+
+            AssignVFX(ability, "projectilePrefab", prefab);
+            SerializedProperty launch =
+                ability.FindPropertyRelative("launchProjectile");
+            if (launch != null)
+                launch.boolValue = true;
             serializedCaster.ApplyModifiedProperties();
             MarkChanged();
         }
