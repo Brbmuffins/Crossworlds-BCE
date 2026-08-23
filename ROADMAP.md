@@ -14,6 +14,12 @@ conversation: it names its files, acceptance criteria, and dependencies. Tasks m
 
 ---
 
+> **Mining material expansion (2026-08-23):** Bronze, Tin, Steel, Silver, Hell,
+> and Moon now have Loot Forge ore/ingot definitions, transparent 512px inventory
+> icons, Node Forge vein definitions, and idempotent live smelting recipes. Each
+> vein retains the standard 1–5 depletion roll and 15-minute respawn. Dedicated
+> world-model prefabs remain optional authoring; colored fallback rocks are ready.
+
 > **Legendary and Relic rarity support (2026-08-23):** Existing serialized rarity
 > values are frozen at Common=0 through Legendary=4, with Relic appended at 5.
 > Loot Forge persistence and all item presentation use one canonical rarity mapping;
