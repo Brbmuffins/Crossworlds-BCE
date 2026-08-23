@@ -1,5 +1,6 @@
 using UnityEngine;
 using Mirror;
+using System.Collections;
 
 /// <summary>
 /// PlayerProjectile — Skill-shot projectile fired by player abilities.
@@ -85,12 +86,29 @@ public class PlayerProjectile : NetworkBehaviour
     {
         _hit = true;
         CancelInvoke(nameof(SelfDestruct));
+        speed = 0f;
+
+        Collider hitbox = GetComponent<Collider>();
+        if (hitbox != null)
+            hitbox.enabled = false;
 
         if (NetworkServer.active)
+        {
             RpcHitEffect(transform.position);
+            StartCoroutine(DestroyAfterRpcFlush());
+        }
         else
+        {
             SpawnHitEffect(transform.position);
+            DestroyProjectile();
+        }
+    }
 
+    IEnumerator DestroyAfterRpcFlush()
+    {
+        // Keep the NetworkIdentity alive through one network update so Mirror can
+        // deliver RpcHitEffect before the projectile's destroy message.
+        yield return null;
         DestroyProjectile();
     }
 
@@ -113,6 +131,11 @@ public class PlayerProjectile : NetworkBehaviour
 #if UNITY_EDITOR || !UNITY_SERVER
         if (impactVFX == null) return;
         GameObject effect = Instantiate(impactVFX, pos, Quaternion.identity);
+        foreach (ParticleSystem particles in
+            effect.GetComponentsInChildren<ParticleSystem>(true))
+        {
+            particles.Play(true);
+        }
         Destroy(effect, Mathf.Max(0.05f, impactVFXLifetime));
 #endif
     }
