@@ -114,6 +114,13 @@ public class AbilityDef
     public GameObject turretPrefab;
     public float cooldown = 3f;
 
+    [Header("Projectile Delivery")]
+    [Tooltip("Launch a server-authoritative projectile instead of applying direct shape damage immediately.")]
+    public bool launchProjectile = false;
+    [Tooltip("Prefab containing NetworkIdentity, a trigger collider, and PlayerProjectile.")]
+    public GameObject projectilePrefab;
+    [Min(0.1f)] public float projectileSpeed = 20f;
+
     [Header("Resource Cost")]
     [Min(0f)] public float manaCost = 0f;
 
@@ -3922,7 +3929,7 @@ public class AbilityCaster : NetworkBehaviour
         if (!isVariantSpell && usesChainDamage)
             CastChainDamage(ability, indicator, castOrigin, damageMultiplier, aimTime);
 
-        if (!isVariantSpell && !usesChainDamage && ability.shape == AbilityShape.Rectangle && HasDirectDamage(ability) && indicator != null)
+        if (!isVariantSpell && !usesChainDamage && !ability.launchProjectile && ability.shape == AbilityShape.Rectangle && HasDirectDamage(ability) && indicator != null)
         {
             float chargeFraction = GetChargeFraction(ability, aimTime);
             float damage = ability.damage > 0f
@@ -3931,7 +3938,7 @@ public class AbilityCaster : NetworkBehaviour
             ApplyRectangleDamage(ability, indicator, damage, damageMultiplier);
         }
 
-        if (!isVariantSpell && !usesChainDamage && ability.shape == AbilityShape.Cone && HasDirectDamage(ability) && indicator != null)
+        if (!isVariantSpell && !usesChainDamage && !ability.launchProjectile && ability.shape == AbilityShape.Cone && HasDirectDamage(ability) && indicator != null)
         {
             float chargeFraction = GetChargeFraction(ability, aimTime);
             float damage = ability.damage > 0f
@@ -3977,7 +3984,7 @@ public class AbilityCaster : NetworkBehaviour
                 castOrigin);
         }
 
-        if (!usesChainDamage && ability.shape == AbilityShape.Circle && HasDirectDamage(ability) && !IsArcaneStep(ability) && !IsVoidMaw(ability))
+        if (!usesChainDamage && !ability.launchProjectile && ability.shape == AbilityShape.Circle && HasDirectDamage(ability) && !IsArcaneStep(ability) && !IsVoidMaw(ability))
         {
             ApplyCircleDamage(
                 ability,
@@ -4028,6 +4035,9 @@ public class AbilityCaster : NetworkBehaviour
             float coneRange = ability.range * indicator.transform.localScale.x;
             castPoint = castOrigin + indicator.transform.forward * coneRange;
         }
+
+        if (!isVariantSpell && ability.launchProjectile)
+            LaunchAbilityProjectile(ability, indicator, castOrigin, castPoint, aimTime, damageMultiplier);
 
         Vector3 pulsePoint = castPoint;
         if (TryApplyCrowdControl(
@@ -4589,6 +4599,60 @@ public class AbilityCaster : NetworkBehaviour
         // while healing Player-tagged units during the same pulse sequence.
         if (ShouldRunPulseHealing(ability))
             StartCoroutine(PulseHealing(ability, centre));
+    }
+
+    void LaunchAbilityProjectile(
+        AbilityDef ability,
+        GameObject indicator,
+        Vector3 castOrigin,
+        Vector3 castPoint,
+        float aimTime,
+        float damageMultiplier)
+    {
+        if (ability == null || ability.projectilePrefab == null)
+        {
+            Debug.LogWarning($"[COMBAT] Projectile ability '{ability?.abilityName}' has no projectile prefab.", this);
+            return;
+        }
+
+        bool offline = !NetworkClient.active && !NetworkServer.active;
+        if (!NetworkServer.active && !offline)
+            return;
+
+        Vector3 spawnPosition = castOrigin + Vector3.up * 1.2f;
+        Vector3 direction = indicator != null
+            ? indicator.transform.forward
+            : castPoint - spawnPosition;
+        direction.y = 0f;
+        if (direction.sqrMagnitude < 0.0001f)
+            direction = transform.forward;
+
+        float chargeFraction = GetChargeFraction(ability, aimTime);
+        float damage = ability.chargeable
+            ? Mathf.Lerp(ability.damage, ability.maxChargeDamage, chargeFraction)
+            : ability.damage;
+
+        GameObject projectileObject = Instantiate(
+            ability.projectilePrefab,
+            spawnPosition,
+            Quaternion.LookRotation(direction.normalized, Vector3.up));
+        PlayerProjectile projectile = projectileObject.GetComponent<PlayerProjectile>();
+        if (projectile == null)
+        {
+            Debug.LogError($"[COMBAT] Projectile prefab for '{ability.abilityName}' is missing PlayerProjectile.", projectileObject);
+            Destroy(projectileObject);
+            return;
+        }
+
+        projectile.speed = Mathf.Max(0.1f, ability.projectileSpeed);
+        projectile.maxRange = Mathf.Max(0.1f, ability.range);
+        projectile.Init(damage * damageMultiplier, spawnPosition, gameObject);
+
+        if (NetworkServer.active)
+        {
+            ZoneScene.PlaceWith(projectileObject, gameObject);
+            NetworkServer.Spawn(projectileObject);
+        }
     }
 
     static bool ShouldRunPulseDamage(AbilityDef ability)
