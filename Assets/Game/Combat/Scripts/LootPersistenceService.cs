@@ -52,7 +52,7 @@ public static class LootPersistenceService
         {
             itemId = definition.itemId.Trim(),
             displayName = definition.displayName?.Trim(),
-            rarity = RarityName(definition.rarity),
+            rarity = ItemRarityUtility.StorageName(definition.rarity),
             itemType = ItemTypeName(definition.databaseItemType),
             equipmentSlot = EquipmentSlotName(definition.equipmentSlot),
             iconId = string.IsNullOrWhiteSpace(definition.iconId) ? null : definition.iconId,
@@ -82,15 +82,6 @@ public static class LootPersistenceService
             Debug.Log($"[LOOT DB] Synced '{definition.itemId}' as " +
                       $"{dto.itemType}/{dto.equipmentSlot ?? "inventory"}.");
     }
-
-    static string RarityName(ItemRarity rarity) => rarity switch
-    {
-        ItemRarity.Uncommon => "uncommon",
-        ItemRarity.Rare => "rare",
-        ItemRarity.Epic => "epic",
-        ItemRarity.Legendary => "epic",
-        _ => "common"
-    };
 
     static string ItemTypeName(LootDatabaseItemType type) => type switch
     {

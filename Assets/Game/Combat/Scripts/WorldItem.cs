@@ -38,10 +38,6 @@ public class WorldItem : NetworkBehaviour
     private bool    _pickupRequested = false;
     private int     _pendingPickerConnectionId = -1;
 
-    static readonly Color ColorCommon   = new Color(0.75f, 0.75f, 0.75f);
-    static readonly Color ColorUncommon = new Color(0.2f,  0.9f,  0.2f);
-    static readonly Color ColorRare     = new Color(0.2f,  0.5f,  1f);
-    static readonly Color ColorEpic     = new Color(0.7f,  0.1f,  1f);
     static readonly Color ColorGold     = new Color(1f,    0.8f,  0.1f);
 
     void Start()
@@ -390,21 +386,12 @@ public class WorldItem : NetworkBehaviour
 
     public static Color GetRarityColor(string id, ItemRarity rarity)
     {
-        if (string.IsNullOrEmpty(id))                    return ColorCommon;
+        if (string.IsNullOrEmpty(id))                    return ItemRarityUtility.Color(ItemRarity.Common);
         if (id.StartsWith("gold:"))                      return ColorGold;
-        switch (rarity)
-        {
-            case ItemRarity.Legendary: return new Color(1f, 0.6f, 0.1f);
-            case ItemRarity.Epic:      return ColorEpic;
-            case ItemRarity.Rare:      return ColorRare;
-            case ItemRarity.Uncommon:  return ColorUncommon;
-        }
+        if (rarity != ItemRarity.Common) return ItemRarityUtility.Color(rarity);
 
         // Preserve the existing naming-convention fallback for older tables
         // that have not authored the new rarity field yet.
-        if (id.Contains("epic")) return ColorEpic;
-        if (id.Contains("iron") || id.Contains("rare")) return ColorRare;
-        if (id.Contains("bar") || id.Contains("uncommon")) return ColorUncommon;
-        return ColorCommon;
+        return ItemRarityUtility.Color(ItemRarityUtility.InferLegacyItemId(id));
     }
 }

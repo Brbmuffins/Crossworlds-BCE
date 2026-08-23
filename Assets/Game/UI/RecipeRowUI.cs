@@ -19,9 +19,6 @@ public sealed class RecipeRowUI : MonoBehaviour, IPointerEnterHandler, IPointerE
 
     string _itemId;
 
-    static readonly Color ColourCommon = new(0.8f, 0.8f, 0.8f);
-    static readonly Color ColourUncommon = new(0.2f, 0.8f, 0.2f);
-    static readonly Color ColourRare = new(0.2f, 0.4f, 1f);
     static readonly Color ColourLocked = new(0.4f, 0.4f, 0.4f, 0.5f);
 
     public void Populate(ForgeCraftingPanel.RecipeData recipe, System.Action<ForgeCraftingPanel.RecipeData> onCraft)
@@ -55,12 +52,8 @@ public sealed class RecipeRowUI : MonoBehaviour, IPointerEnterHandler, IPointerE
 
         if (rarityBadge != null)
         {
-            rarityBadge.color = recipe.result_rarity switch
-            {
-                "uncommon" => ColourUncommon,
-                "rare" => ColourRare,
-                _ => ColourCommon
-            };
+            ItemRarityUtility.TryParse(recipe.result_rarity, out ItemRarity rarity);
+            rarityBadge.color = ItemRarityUtility.Color(rarity);
         }
 
         var group = GetComponent<CanvasGroup>();

@@ -79,14 +79,15 @@ public class ItemCatalogManager : MonoBehaviour
         return string.Join(" ", parts);
     }
 
-    /// <summary>Rarity colour for new-system item_id strings (parsed by convention).</summary>
+    /// <summary>Rarity colour from a Loot Forge definition, with legacy ID inference as fallback.</summary>
     public static Color GetRarityColor(string itemId)
     {
         if (string.IsNullOrEmpty(itemId)) return Color.gray;
-        if (itemId.Contains("epic"))      return new Color(0.7f, 0.1f, 1f);
-        if (itemId.Contains("rare") || itemId.Contains("iron")) return new Color(0.2f, 0.5f, 1f);
-        if (itemId.Contains("uncommon") || itemId.Contains("bar")) return new Color(0.2f, 0.9f, 0.2f);
-        return Color.gray; // common
+        LootItemDefinition definition = LootItemCatalog.Find(itemId);
+        ItemRarity rarity = definition != null
+            ? definition.rarity
+            : ItemRarityUtility.InferLegacyItemId(itemId);
+        return ItemRarityUtility.Color(rarity);
     }
 
     // ── Fetch ─────────────────────────────────────────────────────────────────

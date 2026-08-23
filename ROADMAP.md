@@ -14,6 +14,12 @@ conversation: it names its files, acceptance criteria, and dependencies. Tasks m
 
 ---
 
+> **Legendary and Relic rarity support (2026-08-23):** Existing serialized rarity
+> values are frozen at Common=0 through Legendary=4, with Relic appended at 5.
+> Loot Forge persistence and all item presentation use one canonical rarity mapping;
+> the live `items.rarity` enum and auth API accept `legendary` and `relic`.
+> Local Unity changes remain editor compile/play-test pending.
+
 > **PVP zone night lighting (2026-08-10):** `PVPZONE` retains its existing Night Moon
 > Mid skybox and now uses cool low-intensity moonlight, reduced ambient/reflection
 > contribution, and subtle blue fog so it reads as night while preserving combat visibility.

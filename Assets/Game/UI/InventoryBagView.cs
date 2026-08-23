@@ -105,6 +105,8 @@ public sealed class InventoryBagView : MonoBehaviour
         float min = Mathf.Min(rarity.r, Mathf.Min(rarity.g, rarity.b));
         if (max - min < 0.18f) return new Color(1f, 1f, 1f, 1f);
         if (rarity.g > rarity.r && rarity.g > rarity.b) return new Color(0.2f, 1f, 0.3f, 1f);
+        if (rarity.r > 0.9f && rarity.g < 0.2f && rarity.b < 0.3f) return new Color(1f, 0.05f, 0.18f, 1f);
+        if (rarity.r > 0.9f && rarity.g > 0.2f && rarity.g < 0.75f && rarity.b < 0.3f) return new Color(1f, 0.48f, 0.04f, 1f);
         if (rarity.r > 0.45f && rarity.b > 0.65f) return new Color(0.82f, 0.16f, 1f, 1f);
         return new Color(0.12f, 0.55f, 1f, 1f);
     }

@@ -77,7 +77,8 @@ Unity still calls these on every spawn. Do not rename, remove, or alter:
 ```
 characters      — now has: level, experience, gold, stat_str, stat_agi, stat_int, stat_vit
                   NOTE: column is "experience" not "xp" — verified 2026-07-03 audit
-items           — id VARCHAR(64), name, rarity, item_type, stat_bonus JSON, sell_value
+items           — id VARCHAR(64), name, rarity ENUM(common,uncommon,rare,epic,legendary,relic),
+                  item_type, stat_bonus JSON, sell_value
 inventory       — character_id, slot_index, item_id, quantity, equipped
 professions     — character_id, profession_id, skill_level, skill_xp
 recipes         — id, profession_id, skill_level_required, result_item_id

@@ -257,7 +257,12 @@ public sealed class CharacterSheetUI : MonoBehaviour
             }
             LootItemDefinition definition = LootItemCatalog.Find(item.ItemId);
             Sprite icon = definition != null ? definition.inventoryIcon : null;
-            Color rarity = definition != null ? LootItemCatalog.RarityColor(definition.rarity) : ItemCatalogManager.GetRarityColor(item.ItemId);
+            ItemRarity rarityTier = definition != null
+                ? definition.rarity
+                : ItemRarityUtility.TryParse(item.ServerRarity, out ItemRarity parsedRarity)
+                    ? parsedRarity
+                    : ItemRarityUtility.InferLegacyItemId(item.ItemId);
+            Color rarity = ItemRarityUtility.Color(rarityTier);
             _view.SetEquipment(slot, icon, item.Quantity, rarity, false);
         }
         if (_pendingPreviewRefresh != null) StopCoroutine(_pendingPreviewRefresh);
@@ -355,7 +360,7 @@ public sealed class CharacterSheetUI : MonoBehaviour
     void OnEquipmentEnter(CharacterEquipmentSlot slot, PointerEventData eventData)
     {
         if (_equipped.TryGetValue(slot, out var item))
-            ItemTooltipUI.Instance?.Show(item.ItemId, eventData.position);
+            ItemTooltipUI.Instance?.Show(item.ItemId, eventData.position, item.ServerRarity);
     }
 
     void BindIdentity(PlayerIdentity identity)

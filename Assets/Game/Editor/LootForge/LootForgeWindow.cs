@@ -300,8 +300,6 @@ namespace Crossworlds.EditorTools.LootForge
                 issues.Add("Database Item ID must use 1–64 lowercase letters, numbers, underscores, or hyphens.");
             if (string.IsNullOrWhiteSpace(definition.displayName) || definition.displayName.Trim().Length > 128)
                 issues.Add("Display Name is required and must be 128 characters or fewer.");
-            if (definition.rarity == ItemRarity.Legendary)
-                issues.Add("The live database supports Common, Uncommon, Rare, or Epic rarity; Legendary is not supported.");
             if (definition.databaseItemType == LootDatabaseItemType.Unspecified)
                 issues.Add("Database Item Type must be explicitly selected; new items cannot silently default to Material.");
             bool equipment = IsEquipment(definition.databaseItemType);

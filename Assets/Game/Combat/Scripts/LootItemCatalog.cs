@@ -20,14 +20,7 @@ public static class LootItemCatalog
         get { EnsureLoaded(); return _byId.Values; }
     }
 
-    public static Color RarityColor(ItemRarity rarity) => rarity switch
-    {
-        ItemRarity.Uncommon => new Color(0.2f, 0.9f, 0.2f),
-        ItemRarity.Rare => new Color(0.2f, 0.5f, 1f),
-        ItemRarity.Epic => new Color(0.7f, 0.1f, 1f),
-        ItemRarity.Legendary => new Color(1f, 0.5f, 0.1f),
-        _ => new Color(0.75f, 0.75f, 0.75f)
-    };
+    public static Color RarityColor(ItemRarity rarity) => ItemRarityUtility.Color(rarity);
 
     static void EnsureLoaded()
     {

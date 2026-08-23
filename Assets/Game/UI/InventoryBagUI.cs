@@ -261,7 +261,7 @@ public sealed class InventoryBagUI : MonoBehaviour
                 var slot = visible[i];
                 var definition = LootItemCatalog.Find(slot.item_id);
                 _view.SetSlot(i, definition != null ? definition.inventoryIcon : null, slot.quantity, slot.equipped == 1,
-                    definition != null ? LootItemCatalog.RarityColor(definition.rarity) : ItemCatalogManager.GetRarityColor(slot.item_id));
+                    ItemRarityUtility.Color(ResolveRarity(slot)));
             }
         }
     }
@@ -301,7 +301,7 @@ public sealed class InventoryBagUI : MonoBehaviour
     void OnSlotEnter(int visibleIndex, PointerEventData eventData)
     {
         var slot = VisibleSlot(visibleIndex);
-        if (slot != null) ItemTooltipUI.Instance?.Show(slot.item_id, eventData.position);
+        if (slot != null) ItemTooltipUI.Instance?.Show(slot.item_id, eventData.position, slot.rarity);
     }
 
     void OnSlotExit() => ItemTooltipUI.Instance?.Hide();
@@ -358,7 +358,9 @@ public sealed class InventoryBagUI : MonoBehaviour
     {
         var definition = LootItemCatalog.Find(slot.item_id);
         if (definition != null) return definition.rarity;
-        return Enum.TryParse(slot.rarity, true, out ItemRarity rarity) ? rarity : ItemRarity.Common;
+        return ItemRarityUtility.TryParse(slot.rarity, out ItemRarity rarity)
+            ? rarity
+            : ItemRarityUtility.InferLegacyItemId(slot.item_id);
     }
 
     void ClearDragIcon()
