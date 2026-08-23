@@ -22,6 +22,7 @@ namespace Crossworlds.EditorTools
         float lifetime = 3f;
         float maxRange = 12f;
         float colliderRadius = 0.3f;
+        Action<GameObject> createdCallback;
 
         [MenuItem("BCE/Spell Forge/Projectile Builder", priority = 40)]
         public static void Open()
@@ -31,8 +32,16 @@ namespace Crossworlds.EditorTools
 
         public static void OpenWithVisual(GameObject visual)
         {
+            OpenWithVisual(visual, null);
+        }
+
+        public static void OpenWithVisual(
+            GameObject visual,
+            Action<GameObject> onCreated)
+        {
             var window = GetWindow<ProjectileForgeWindow>(true, "Projectile Builder");
             window.minSize = new Vector2(410f, 360f);
+            window.createdCallback = onCreated;
             if (visual != null)
             {
                 window.travellingVFX = visual;
@@ -70,7 +79,9 @@ namespace Crossworlds.EditorTools
             }
 
             EditorGUILayout.HelpBox(
-                "After creation, return to the spell's VFX tab and press → Projectile again. The new networked prefab will already be selected.",
+                createdCallback != null
+                    ? "The finished projectile will be assigned to the current spell automatically."
+                    : "After creation, assign the selected prefab to Projectile VFX Prefab in the spell's VFX tab.",
                 MessageType.None);
         }
 
@@ -82,6 +93,7 @@ namespace Crossworlds.EditorTools
                 $"{OutputFolder}/{safeName}.prefab");
 
             var root = new GameObject(safeName);
+            GameObject prefab = null;
             try
             {
                 root.AddComponent<NetworkIdentity>();
@@ -113,19 +125,24 @@ namespace Crossworlds.EditorTools
                 visual.transform.localPosition = Vector3.zero;
                 visual.transform.localRotation = Quaternion.identity;
 
-                GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, path);
-                RegisterWithNetworkManager(prefab);
-                AssetDatabase.SaveAssets();
-                SpellVFXBrowserWindow.SetExternalSpellForgeSelection(prefab);
-                Selection.activeObject = prefab;
-                EditorGUIUtility.PingObject(prefab);
-                Debug.Log($"[Projectile Forge] Created and registered {path}", prefab);
-                ShowNotification(new GUIContent("Projectile prefab created"));
+                prefab = PrefabUtility.SaveAsPrefabAsset(root, path);
             }
             finally
             {
                 DestroyImmediate(root);
             }
+
+            // The temporary root must be destroyed before LoginScene is saved;
+            // otherwise Unity serializes that construction object into the scene.
+            RegisterWithNetworkManager(prefab);
+            AssetDatabase.SaveAssets();
+            SpellVFXBrowserWindow.SetExternalSpellForgeSelection(prefab);
+            Selection.activeObject = prefab;
+            EditorGUIUtility.PingObject(prefab);
+            createdCallback?.Invoke(prefab);
+            createdCallback = null;
+            Debug.Log($"[Projectile Forge] Created and registered {path}", prefab);
+            ShowNotification(new GUIContent("Projectile prefab created"));
         }
 
         static void RegisterWithNetworkManager(GameObject prefab)

@@ -1434,7 +1434,10 @@ namespace Crossworlds.EditorTools
             if (prefab.GetComponent<PlayerProjectile>() == null ||
                 prefab.GetComponent<NetworkIdentity>() == null)
             {
-                ProjectileForgeWindow.OpenWithVisual(prefab);
+                ProjectileForgeWindow.OpenWithVisual(
+                    prefab,
+                    createdProjectile =>
+                        AssignProjectilePrefab(ability, createdProjectile));
                 return;
             }
 
