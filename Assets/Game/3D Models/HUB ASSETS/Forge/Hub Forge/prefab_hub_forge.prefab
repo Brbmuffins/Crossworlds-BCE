@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 5256181418071996724}
   - component: {fileID: 8004376958590799358}
   - component: {fileID: 5793043198472303009}
+  - component: {fileID: 5072083194775277190}
   m_Layer: 0
   m_Name: prefab_hub_forge
   m_TagString: Untagged
@@ -67,7 +68,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 6859468808281306577, guid: 0a05c7634ff9fa140a0260b8dd6e7dc7, type: 3}
+  - {fileID: 2100000, guid: eb06b9f033a70d749bddcfe673853cb9, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -113,3 +114,19 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 7001910207373676431, guid: 0a05c7634ff9fa140a0260b8dd6e7dc7, type: 3}
+--- !u!114 &5072083194775277190
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8364800925001313323}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6ea4b6ed0f9e6fd4694b20cfbe62cd7f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ForgeNPC
+  professionId: 2
+  npcName: Craft
+  interactRange: 3.5
+  promptHeight: 3
