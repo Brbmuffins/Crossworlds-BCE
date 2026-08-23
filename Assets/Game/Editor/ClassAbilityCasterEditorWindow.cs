@@ -1434,10 +1434,7 @@ namespace Crossworlds.EditorTools
             if (prefab.GetComponent<PlayerProjectile>() == null ||
                 prefab.GetComponent<NetworkIdentity>() == null)
             {
-                EditorUtility.DisplayDialog(
-                    "Projectile Prefab Required",
-                    $"'{prefab.name}' is visual-only. A projectile prefab needs PlayerProjectile and NetworkIdentity on its root. Add this VFX as a child of a projectile prefab, or use Player_FireballProjectile.",
-                    "OK");
+                ProjectileForgeWindow.OpenWithVisual(prefab);
                 return;
             }
 
