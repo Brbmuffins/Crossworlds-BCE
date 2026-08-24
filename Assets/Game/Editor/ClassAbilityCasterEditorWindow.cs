@@ -1073,6 +1073,20 @@ namespace Crossworlds.EditorTools
 
                 EditorGUILayout.Space(3f);
                 EditorGUILayout.LabelField(
+                    "Spell Runtime Settings", EditorStyles.boldLabel);
+                EditorGUILayout.PropertyField(
+                    ability.FindPropertyRelative("projectileSpeed"),
+                    new GUIContent(
+                        "Speed",
+                        "Applied by this spell when it launches the projectile."));
+                EditorGUILayout.PropertyField(
+                    ability.FindPropertyRelative("range"),
+                    new GUIContent(
+                        "Maximum Range",
+                        "Applied by this spell when it launches the projectile."));
+
+                EditorGUILayout.Space(3f);
+                EditorGUILayout.LabelField(
                     "Prefab Defaults", EditorStyles.boldLabel);
                 var projectileObject = new SerializedObject(projectile);
                 projectileObject.Update();
@@ -1110,7 +1124,7 @@ namespace Crossworlds.EditorTools
                 }
 
                 EditorGUILayout.HelpBox(
-                    "Projectile Speed and Maximum Range come from this spell's Projectile Delivery and Range settings. Open the prefab to replace or reposition its travelling VFX child.",
+                    "Open the prefab only to replace or reposition its travelling VFX child. Gameplay speed and range are controlled above for this spell.",
                     MessageType.None);
             }
         }

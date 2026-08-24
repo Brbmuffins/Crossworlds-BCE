@@ -134,6 +134,11 @@ namespace Crossworlds.EditorTools
 
             // The temporary root must be destroyed before LoginScene is saved;
             // otherwise Unity serializes that construction object into the scene.
+            AssetDatabase.ImportAsset(
+                path,
+                ImportAssetOptions.ForceSynchronousImport |
+                ImportAssetOptions.ForceUpdate);
+            prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
             RegisterWithNetworkManager(prefab);
             AssetDatabase.SaveAssets();
             SpellVFXBrowserWindow.SetExternalSpellForgeSelection(prefab);
