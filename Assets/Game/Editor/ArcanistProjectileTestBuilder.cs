@@ -115,6 +115,8 @@ public static class ArcanistProjectileTestBuilder
             fireball.launchProjectile = true;
             fireball.projectilePrefab = projectilePrefab;
             fireball.projectileSpeed = 18f;
+            fireball.combustionPoints = 10;
+            fireball.spendCombustion = false;
             fireball.variants = Array.Empty<AbilityVariant>();
 
             if (caster.equippedIndices == null || caster.equippedIndices.Length != 4)

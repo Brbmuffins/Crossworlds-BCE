@@ -703,6 +703,14 @@ namespace Crossworlds.EditorTools
                 "cooldown",
                 "manaCost");
 
+            if (abilityCaster is ArcanistAbilityCaster)
+            {
+                DrawFieldGroup(
+                    "ARCANIST COMBUSTION", ability,
+                    "combustionPoints",
+                    "spendCombustion");
+            }
+
             DrawProjectileLogistics(ability);
 
             DrawFieldGroup(
