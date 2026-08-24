@@ -65,7 +65,7 @@ public class ItemTooltipUI : MonoBehaviour
     // ── Public API ────────────────────────────────────────────────────────────
 
     /// <summary>Show a tooltip for an item ID, near the given screen position.</summary>
-    public void Show(string itemId, Vector2 screenPos)
+    public void Show(string itemId, Vector2 screenPos, string serverRarity = null)
     {
         if (string.IsNullOrEmpty(itemId)) { Hide(); return; }
 
@@ -81,11 +81,13 @@ public class ItemTooltipUI : MonoBehaviour
             ? System.Globalization.CultureInfo.CurrentCulture.TextInfo
                    .ToTitleCase(def.item_type.Replace('_', ' '))
             : "";
-        Color rarityColor = lootDefinition != null
-            ? LootItemCatalog.RarityColor(lootDefinition.rarity)
-            : ItemCatalogManager.GetRarityColor(itemId);
-        string rarityName = lootDefinition != null
-            ? FormatRarity(lootDefinition.rarity) : "";
+        ItemRarity rarity = lootDefinition != null
+            ? lootDefinition.rarity
+            : ItemRarityUtility.TryParse(serverRarity, out ItemRarity parsedRarity)
+                ? parsedRarity
+                : ItemRarityUtility.InferLegacyItemId(itemId);
+        Color rarityColor = ItemRarityUtility.Color(rarity);
+        string rarityName = ItemRarityUtility.DisplayName(rarity);
 
         _nameTxt.text = displayName;
         _nameTxt.color = rarityColor;
@@ -187,15 +189,6 @@ public class ItemTooltipUI : MonoBehaviour
                 parts[i] = char.ToUpper(parts[i][0]) + parts[i].Substring(1);
         return string.Join(" ", parts);
     }
-
-    static string FormatRarity(ItemRarity rarity) => rarity switch
-    {
-        ItemRarity.Uncommon => "Uncommon",
-        ItemRarity.Rare => "Rare",
-        ItemRarity.Epic => "Epic",
-        ItemRarity.Legendary => "Legendary",
-        _ => "Common"
-    };
 
     static string FormatEquipmentSlot(LootEquipmentSlot slot) => slot switch
     {
