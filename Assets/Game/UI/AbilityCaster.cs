@@ -127,7 +127,7 @@ public class AbilityDef
     public Sprite icon;
 
     [Header("Spell Timing")]
-    [Tooltip("Cast immediately when the ability key is pressed. Skips the targeting/confirmation phase and snapshots the current cursor aim, but still respects Cast Time, mana, cooldown, animation, and server validation.")]
+    [Tooltip("Commit the spell when its bind is pressed, without a confirmation click. The spell still respects Cast Time, mana, cooldown, animation, and server validation, and snapshots the current cursor aim.")]
     public bool instantCast = false;
     [Tooltip("Seconds after committing the aim before this spell fires. Moving during this window cancels the cast without starting cooldown.")]
     [Min(0f)] public float castTime = 0.6f;

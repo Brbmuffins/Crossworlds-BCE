@@ -1281,6 +1281,16 @@ namespace Crossworlds.EditorTools
                     {
                         DrawIconProperty(property);
                     }
+                    else if (propertyName == "instantCast" &&
+                        property.propertyType ==
+                        SerializedPropertyType.Boolean)
+                    {
+                        EditorGUILayout.PropertyField(
+                            property,
+                            new GUIContent(
+                                "Cast On Bind Press (No Click)",
+                                "Commit as soon as the ability bind is pressed. Cast Time and all normal validation still apply; only the targeting-confirmation click is skipped."));
+                    }
                     else
                     {
                         EditorGUILayout.PropertyField(
