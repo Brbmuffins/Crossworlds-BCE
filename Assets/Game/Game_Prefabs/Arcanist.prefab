@@ -89,7 +89,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Mirror::Mirror.NetworkIdentity
   sceneId: 0
-  _assetId: 0
+  _assetId: 4039904018
   serverOnly: 0
   visibility: 0
   hasSpawned: 0
@@ -316,6 +316,7 @@ MonoBehaviour:
   syncDirection: 0
   syncMode: 0
   syncInterval: 0
+  combustion: 0
   cam: {fileID: 0}
   castAnimator: {fileID: 6313034496870542683}
   castMoveInterruptDistance: 0.5
@@ -366,6 +367,8 @@ MonoBehaviour:
     projectilePrefab: {fileID: 0}
     projectileSpeed: 20
     manaCost: 25
+    combustionPoints: 0
+    spendCombustion: 0
     icon: {fileID: 21300000, guid: ae2a72439316c2848b28cd3af4c774c4, type: 3}
     instantCast: 0
     castTime: 0.6
@@ -451,8 +454,10 @@ MonoBehaviour:
     projectilePrefab: {fileID: 0}
     projectileSpeed: 20
     manaCost: 30
+    combustionPoints: 30
+    spendCombustion: 0
     icon: {fileID: 21300000, guid: 39435ebd679e43743b34150e62b3d185, type: 3}
-    instantCast: 0
+    instantCast: 1
     castTime: 0.6
     marauderCastAnimation: {fileID: 0}
     animationPlaybackSpeed: 1
@@ -536,6 +541,8 @@ MonoBehaviour:
     projectilePrefab: {fileID: 0}
     projectileSpeed: 20
     manaCost: 20
+    combustionPoints: 0
+    spendCombustion: 0
     icon: {fileID: 21300000, guid: 07a271c2956bdca46a772b89662daf1e, type: 3}
     instantCast: 0
     castTime: 0
@@ -621,6 +628,8 @@ MonoBehaviour:
     projectilePrefab: {fileID: 0}
     projectileSpeed: 20
     manaCost: 10
+    combustionPoints: 0
+    spendCombustion: 1
     icon: {fileID: 21300000, guid: 70fb95ee0dff6ea44a4f6561c4d87cda, type: 3}
     instantCast: 0
     castTime: 0.6
@@ -706,6 +715,8 @@ MonoBehaviour:
     projectilePrefab: {fileID: 0}
     projectileSpeed: 20
     manaCost: 0
+    combustionPoints: 0
+    spendCombustion: 0
     icon: {fileID: 21300000, guid: b0b4b45b2cc99554eb06793c34d87efd, type: 3}
     instantCast: 0
     castTime: 0.6
@@ -857,6 +868,8 @@ MonoBehaviour:
     projectilePrefab: {fileID: 0}
     projectileSpeed: 20
     manaCost: 0
+    combustionPoints: 0
+    spendCombustion: 0
     icon: {fileID: 21300000, guid: 17951649342328b44a00606416d2b440, type: 3}
     instantCast: 0
     castTime: 0.6
@@ -942,6 +955,8 @@ MonoBehaviour:
     projectilePrefab: {fileID: 0}
     projectileSpeed: 20
     manaCost: 0
+    combustionPoints: 0
+    spendCombustion: 0
     icon: {fileID: 21300000, guid: b0b4b45b2cc99554eb06793c34d87efd, type: 3}
     instantCast: 0
     castTime: 0.6
@@ -1027,6 +1042,8 @@ MonoBehaviour:
     projectilePrefab: {fileID: 0}
     projectileSpeed: 20
     manaCost: 0
+    combustionPoints: 0
+    spendCombustion: 0
     icon: {fileID: 21300000, guid: b0b4b45b2cc99554eb06793c34d87efd, type: 3}
     instantCast: 0
     castTime: 0.6
@@ -1112,6 +1129,8 @@ MonoBehaviour:
     projectilePrefab: {fileID: 0}
     projectileSpeed: 20
     manaCost: 0
+    combustionPoints: 0
+    spendCombustion: 0
     icon: {fileID: 21300000, guid: b0b4b45b2cc99554eb06793c34d87efd, type: 3}
     instantCast: 0
     castTime: 0.6
@@ -1197,6 +1216,8 @@ MonoBehaviour:
     projectilePrefab: {fileID: 0}
     projectileSpeed: 20
     manaCost: 0
+    combustionPoints: 0
+    spendCombustion: 0
     icon: {fileID: 21300000, guid: bdaa746a3e0ae6e47b308084df58536b, type: 3}
     instantCast: 0
     castTime: 0.6
@@ -1282,6 +1303,8 @@ MonoBehaviour:
     projectilePrefab: {fileID: 0}
     projectileSpeed: 20
     manaCost: 0
+    combustionPoints: 0
+    spendCombustion: 0
     icon: {fileID: 21300000, guid: bdaa746a3e0ae6e47b308084df58536b, type: 3}
     instantCast: 0
     castTime: 0.6
@@ -1367,6 +1390,8 @@ MonoBehaviour:
     projectilePrefab: {fileID: 0}
     projectileSpeed: 20
     manaCost: 0
+    combustionPoints: 0
+    spendCombustion: 0
     icon: {fileID: 21300000, guid: bdaa746a3e0ae6e47b308084df58536b, type: 3}
     instantCast: 0
     castTime: 0.6
@@ -1452,6 +1477,8 @@ MonoBehaviour:
     projectilePrefab: {fileID: 0}
     projectileSpeed: 20
     manaCost: 0
+    combustionPoints: 0
+    spendCombustion: 0
     icon: {fileID: 21300000, guid: c02f03c383a15344c82f557c9fd617d8, type: 3}
     instantCast: 0
     castTime: 0.6
@@ -1537,6 +1564,8 @@ MonoBehaviour:
     projectilePrefab: {fileID: 0}
     projectileSpeed: 20
     manaCost: 0
+    combustionPoints: 0
+    spendCombustion: 0
     icon: {fileID: 21300000, guid: c02f03c383a15344c82f557c9fd617d8, type: 3}
     instantCast: 0
     castTime: 0.6
@@ -1622,6 +1651,8 @@ MonoBehaviour:
     projectilePrefab: {fileID: 0}
     projectileSpeed: 20
     manaCost: 0
+    combustionPoints: 0
+    spendCombustion: 0
     icon: {fileID: 21300000, guid: c02f03c383a15344c82f557c9fd617d8, type: 3}
     instantCast: 0
     castTime: 0.6
@@ -1707,6 +1738,8 @@ MonoBehaviour:
     projectilePrefab: {fileID: 0}
     projectileSpeed: 20
     manaCost: 0
+    combustionPoints: 0
+    spendCombustion: 0
     icon: {fileID: 21300000, guid: b0b4b45b2cc99554eb06793c34d87efd, type: 3}
     instantCast: 0
     castTime: 0.6
@@ -1792,6 +1825,8 @@ MonoBehaviour:
     projectilePrefab: {fileID: 0}
     projectileSpeed: 20
     manaCost: 0
+    combustionPoints: 0
+    spendCombustion: 0
     icon: {fileID: 21300000, guid: b0b4b45b2cc99554eb06793c34d87efd, type: 3}
     instantCast: 0
     castTime: 0.6
@@ -1877,6 +1912,8 @@ MonoBehaviour:
     projectilePrefab: {fileID: 0}
     projectileSpeed: 20
     manaCost: 0
+    combustionPoints: 0
+    spendCombustion: 0
     icon: {fileID: 21300000, guid: b0b4b45b2cc99554eb06793c34d87efd, type: 3}
     instantCast: 0
     castTime: 0.6
@@ -1962,6 +1999,8 @@ MonoBehaviour:
     projectilePrefab: {fileID: 0}
     projectileSpeed: 20
     manaCost: 0
+    combustionPoints: 0
+    spendCombustion: 0
     icon: {fileID: 21300000, guid: b0b4b45b2cc99554eb06793c34d87efd, type: 3}
     instantCast: 0
     castTime: 0.6
@@ -2047,6 +2086,8 @@ MonoBehaviour:
     projectilePrefab: {fileID: 0}
     projectileSpeed: 20
     manaCost: 0
+    combustionPoints: 0
+    spendCombustion: 0
     icon: {fileID: 21300000, guid: b0b4b45b2cc99554eb06793c34d87efd, type: 3}
     instantCast: 0
     castTime: 0.6
@@ -2132,6 +2173,8 @@ MonoBehaviour:
     projectilePrefab: {fileID: 0}
     projectileSpeed: 20
     manaCost: 0
+    combustionPoints: 0
+    spendCombustion: 0
     icon: {fileID: 21300000, guid: b0b4b45b2cc99554eb06793c34d87efd, type: 3}
     instantCast: 0
     castTime: 0.6
@@ -2217,6 +2260,8 @@ MonoBehaviour:
     projectilePrefab: {fileID: 0}
     projectileSpeed: 20
     manaCost: 0
+    combustionPoints: 0
+    spendCombustion: 0
     icon: {fileID: 21300000, guid: b0b4b45b2cc99554eb06793c34d87efd, type: 3}
     instantCast: 0
     castTime: 0.6
@@ -2302,6 +2347,8 @@ MonoBehaviour:
     projectilePrefab: {fileID: 0}
     projectileSpeed: 20
     manaCost: 0
+    combustionPoints: 0
+    spendCombustion: 0
     icon: {fileID: 21300000, guid: b0b4b45b2cc99554eb06793c34d87efd, type: 3}
     instantCast: 0
     castTime: 0.6
@@ -2387,6 +2434,8 @@ MonoBehaviour:
     projectilePrefab: {fileID: 0}
     projectileSpeed: 20
     manaCost: 0
+    combustionPoints: 0
+    spendCombustion: 0
     icon: {fileID: 21300000, guid: b0b4b45b2cc99554eb06793c34d87efd, type: 3}
     instantCast: 0
     castTime: 0.6
@@ -2455,28 +2504,30 @@ MonoBehaviour:
     deployablePrefab: {fileID: 0}
     variants: []
   - abilityName: Fireball
-    description: Launch a fireball that damages the first enemy it hits.
+    description: Launch a fireball that damages the first enemy it hits. Builds Combustion
     variantOnly: 0
     variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
-    shape: 1
+    shape: 2
     category: 0
-    range: 12
+    range: 30
     coneAngle: 8
     useFixedRange: 1
-    rectWidth: 1.5
+    rectWidth: 2
     indicatorSize: 1.5
     spawnTurret: 0
     turretPrefab: {fileID: 0}
-    cooldown: 2
+    cooldown: 1
     launchProjectile: 1
-    projectilePrefab: {fileID: 2579358237458845117, guid: 944c85439c4dc4740b8e38ce3c8e32ac, type: 3}
-    projectileSpeed: 18
+    projectilePrefab: {fileID: 2147556738353283415, guid: ebf9d1046b4a91e429396c74891bbbec, type: 3}
+    projectileSpeed: 30
     manaCost: 0
-    icon: {fileID: 0}
-    instantCast: 0
+    combustionPoints: 10
+    spendCombustion: 0
+    icon: {fileID: 21300000, guid: 04841b8a9cae96b42aa2a2689b689515, type: 3}
+    instantCast: 1
     castTime: 0.25
-    marauderCastAnimation: {fileID: 0}
-    animationPlaybackSpeed: 1
+    marauderCastAnimation: {fileID: -203655887218126122, guid: 27ee34cdce2745142aeddee355fceec2, type: 3}
+    animationPlaybackSpeed: 3
     moveCasterToTarget: 0
     instantMovement: 0
     movementTiming: 0
@@ -2497,9 +2548,97 @@ MonoBehaviour:
     chargedTint: {r: 0, g: 0, b: 0, a: 0}
     fireVisual: 0
     castVFX: {fileID: 0}
+    castingVFX: {fileID: 4383198014134784344, guid: 3c4ae3e6f45788048a118a00f2f7f6db, type: 3}
+    healVFX: {fileID: 0}
+    hitVFX: {fileID: 5702081643239173938, guid: c4e024e869935d4439fbc6a3aa5c6020, type: 3}
+    shieldVFX: {fileID: 0}
+    chainVFX: {fileID: 0}
+    castVFXAtCaster: 0
+    hitVFXFollowsTarget: 0
+    castSFX: {fileID: 0}
+    hitSFX: {fileID: 0}
+    sfxVolume: 0.85
+    shieldAbsorb: 0
+    shieldDuration: 0
+    healAmount: 0
+    healingDelay: 0
+    hotTickAmount: 0
+    hotTicks: 0
+    hotInterval: 1
+    usePulseHealing: 0
+    statusEffect: 0
+    statusDuration: 0
+    statusValue: 0
+    activeDuration: 0
+    chainTargets: 0
+    chainDamageFalloff: 5
+    chainRadius: 6
+    pullRadius: 0
+    pullDuration: 0
+    crowdControlType: 0
+    pullDestination: 0
+    pullSpeed: 8
+    pullStopDistance: 1.25
+    knockUpHeight: 2.5
+    knockUpDuration: 0.8
+    usePulseDamage: 1
+    pulseDamageIsDoT: 1
+    pulseCount: 5
+    pulseInterval: 1
+    pulseRadius: 0
+    pulseDamage: 5
+    pulseVFXLifetime: 0
+    deployablePrefab: {fileID: 0}
+    variants: []
+  - abilityName: Combustion Meteor
+    description: A single apocalyptic meteor falls from the sky onto your enemies.
+      Exhausts Combustion
+    variantOnly: 1
+    variantIndicatorTint: {r: 0.2, g: 1, b: 0.3, a: 0.7}
+    shape: 0
+    category: 0
+    range: 30
+    coneAngle: 60
+    useFixedRange: 0
+    rectWidth: 1.5
+    indicatorSize: 10
+    spawnTurret: 0
+    turretPrefab: {fileID: 0}
+    cooldown: 3
+    launchProjectile: 0
+    projectilePrefab: {fileID: 0}
+    projectileSpeed: 20
+    manaCost: 0
+    combustionPoints: 0
+    spendCombustion: 0
+    icon: {fileID: 21300000, guid: a320b7a365e233b4aba10ed060f50243, type: 3}
+    instantCast: 0
+    castTime: 0
+    marauderCastAnimation: {fileID: 0}
+    animationPlaybackSpeed: 1.548
+    moveCasterToTarget: 0
+    instantMovement: 0
+    movementTiming: 0
+    moveToSpeed: 14
+    fixedMovementDuration: 0.9
+    movementArcHeight: 0
+    resolveEffectsOnLanding: 0
+    animationLandingPoint: 0.8
+    chargeable: 0
+    maxChargeTime: 1.5
+    damage: 40
+    damageDelay: 0.5
+    secondaryDamage: 0
+    secondaryDamageDelay: 0
+    maxChargeDamage: 10
+    maxChargeSizeMultiplier: 1.8
+    targetTag: Enemy
+    chargedTint: {r: 0, g: 0, b: 0, a: 0}
+    fireVisual: 0
+    castVFX: {fileID: 8976656117374038702, guid: a9439af0bb27ad84ca99735f2b0c4082, type: 3}
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
-    hitVFX: {fileID: 0}
+    hitVFX: {fileID: 5190096796826894380, guid: 213cb19431e225740a13fe506860e981, type: 3}
     shieldVFX: {fileID: 0}
     chainVFX: {fileID: 0}
     castVFXAtCaster: 0
@@ -2559,6 +2698,8 @@ MonoBehaviour:
     projectilePrefab: {fileID: 0}
     projectileSpeed: 20
     manaCost: 0
+    combustionPoints: 0
+    spendCombustion: 0
     icon: {fileID: 0}
     instantCast: 0
     castTime: 0.6
@@ -2644,6 +2785,8 @@ MonoBehaviour:
     projectilePrefab: {fileID: 0}
     projectileSpeed: 20
     manaCost: 0
+    combustionPoints: 0
+    spendCombustion: 0
     icon: {fileID: 0}
     instantCast: 0
     castTime: 0.6
@@ -2729,6 +2872,8 @@ MonoBehaviour:
     projectilePrefab: {fileID: 0}
     projectileSpeed: 20
     manaCost: 0
+    combustionPoints: 0
+    spendCombustion: 0
     icon: {fileID: 0}
     instantCast: 0
     castTime: 0.6
@@ -2814,6 +2959,8 @@ MonoBehaviour:
     projectilePrefab: {fileID: 0}
     projectileSpeed: 20
     manaCost: 0
+    combustionPoints: 0
+    spendCombustion: 0
     icon: {fileID: 0}
     instantCast: 0
     castTime: 0.6

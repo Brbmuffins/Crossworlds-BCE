@@ -512,6 +512,11 @@ namespace Crossworlds.EditorTools
             SpellForgeSelectionChanged?.Invoke();
         }
 
+        public static void SetExternalSpellForgeSelection(GameObject prefab)
+        {
+            SetSpellForgeSelection(prefab);
+        }
+
         Entry SelectedEntry()
         {
             return selectedIndex >= 0 && selectedIndex < filteredEntries.Count
