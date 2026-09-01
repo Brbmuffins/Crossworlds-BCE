@@ -283,6 +283,15 @@ public static class GatheringZoneBuilder
             var go = new GameObject(def.name);
             go.transform.position = def.pos;
 
+            go.AddComponent<NetworkIdentity>();
+            var networkState = go.AddComponent<GatheringNodeNetworkState>();
+            networkState.persistentNodeId = GUID.Generate().ToString();
+            networkState.minimumAwardsPerSpawn = 1;
+            networkState.maximumAwardsPerSpawn = 5;
+            networkState.respawnSeconds = 900f;
+            networkState.interactionRange = 3.5f;
+            networkState.minimumSecondsBetweenAwards = Mathf.Max(0.1f, def.tick - 0.25f);
+
             var s               = go.AddComponent<AfkGatheringStation>();
             s.stationName       = def.name;
             s.professionId      = def.profId;

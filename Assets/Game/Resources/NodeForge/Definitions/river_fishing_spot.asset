@@ -1,0 +1,42 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5e9e2e62a65a4dd881d5f070275e6ad1, type: 3}
+  m_Name: river_fishing_spot
+  m_EditorClassIdentifier: Assembly-CSharp::GatheringNodeDefinition
+  nodeId: river_fishing_spot
+  displayName: River Fishing Spot
+  category: 1
+  professionId: 1
+  minimumLevel: 1
+  yieldItem: {fileID: 0}
+  itemId: fish_river
+  itemQuantity: 1
+  secondsPerYield: 8
+  experiencePerYield: 8
+  bonusYieldLevel: 10
+  minimumAwardsPerSpawn: 1
+  maximumAwardsPerSpawn: 5
+  respawnSeconds: 900
+  interactionRange: 3
+  cancelRadius: 4
+  promptHeight: 1.5
+  interactionVerb:
+  gatheringAnimationBool:
+  visualPrefab: {fileID: 0}
+  visualLocalPosition: {x: 0, y: 0.02, z: 0}
+  visualLocalEulerAngles: {x: 90, y: 0, z: 0}
+  visualLocalScale: {x: 3, y: 3, z: 1}
+  yieldVFXPrefab: {fileID: 0}
+  colliderCenter: {x: 0, y: 0.25, z: 0}
+  colliderSize: {x: 3, y: 0.5, z: 3}
+  fallbackShape: 2
+  fallbackColor: {r: 0.15, g: 0.45, b: 0.7, a: 0.8}

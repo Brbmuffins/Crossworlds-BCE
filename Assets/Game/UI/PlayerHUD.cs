@@ -84,6 +84,16 @@ public class PlayerHUD : MonoBehaviour
     TextMeshProUGUI _playerFrameClass;
     TextMeshProUGUI _playerFrameLevel;
     Image       _playerFramePortrait;
+    GameObject  _combustionRoot;
+    Image       _combustionFill;
+    TextMeshProUGUI _combustionLabel;
+    // Measured from the 2172x724 source artwork and mapped into the 300x106
+    // runtime frame. These dimensions fit the transparent inner track exactly.
+    const float CombustionFillWidth = 260f;
+    const float CombustionFillHeight = 13.5f;
+    const float CombustionFillY = -0.35f;
+    RectTransform _playerFrameRoot;
+    RectTransform _abilityBarRoot;
     Material    _playerFrameShellMaterial;
     static readonly string[] PlayerPortraitResources =
     {
@@ -188,6 +198,8 @@ public class PlayerHUD : MonoBehaviour
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
         BuildAllUI();
+        InterfaceScaleSettings.Changed += ApplyInterfaceScale;
+        ApplyInterfaceScale(InterfaceScaleSettings.Scale);
     }
 
     void Update()
@@ -214,6 +226,7 @@ public class PlayerHUD : MonoBehaviour
 
         TickHpBar();
         TickManaWell();
+        TickCombustionBar();
         TickAbilityBar();
         TickLevelBadge();
         TickCastBar();
@@ -286,6 +299,7 @@ public class PlayerHUD : MonoBehaviour
 
         RebuildAbilitySlots();
         RebuildSpellbook();
+        TickCombustionBar();
     }
 
     void OnDestroy()
@@ -293,6 +307,7 @@ public class PlayerHUD : MonoBehaviour
         if (_health) _health.onHealthChanged.RemoveListener(OnHealthChanged);
         if (_stats) _stats.onManaChanged.RemoveListener(OnManaChanged);
         if (_caster) _caster.SpellEquipResult -= OnSpellEquipResult;
+        InterfaceScaleSettings.Changed -= ApplyInterfaceScale;
         if (_playerFrameShellMaterial != null) Destroy(_playerFrameShellMaterial);
     }
 
@@ -319,6 +334,9 @@ public class PlayerHUD : MonoBehaviour
         _canvas = MakeCanvas(100);
         BuildPlayerFrame();
         BuildAbilityBar();
+        // Build after the action bar so its centre ornament cannot cover the
+        // combustion fill or split the value label.
+        BuildCombustionBar();
         BuildCastBar();
         BuildAbilityTooltip();
 
@@ -347,6 +365,7 @@ public class PlayerHUD : MonoBehaviour
     void BuildPlayerFrame()
     {
         var root = Rt(_canvas.transform, "PlayerFrame");
+        _playerFrameRoot = root;
         root.anchorMin = root.anchorMax = new Vector2(0f, 1f);
         root.pivot = new Vector2(0f, 1f);
         root.anchoredPosition = new Vector2(18f, -14f);
@@ -437,6 +456,79 @@ public class PlayerHUD : MonoBehaviour
         _playerFrameLevel.outlineWidth = .16f;
     }
 
+    void BuildCombustionBar()
+    {
+        RectTransform root = Rt(_canvas.transform, "CombustionBar");
+        _combustionRoot = root.gameObject;
+        root.anchorMin = root.anchorMax = new Vector2(0.5f, 0f);
+        root.pivot = new Vector2(0.5f, 0f);
+        root.anchoredPosition = new Vector2(0f, 185f);
+        root.sizeDelta = new Vector2(300f, 106f);
+
+        Image background = Img(root, "Background", new Color(0.08f, 0.015f, 0.005f, 0.92f));
+        PlaceCentered(
+            background.rectTransform,
+            0f,
+            CombustionFillY,
+            CombustionFillWidth,
+            CombustionFillHeight);
+
+        _combustionFill = Img(root, "Fill", new Color(1f, 0.24f, 0.015f, 0.98f));
+        RectTransform fillRect = _combustionFill.rectTransform;
+        fillRect.anchorMin = fillRect.anchorMax = new Vector2(0.5f, 0.5f);
+        fillRect.pivot = new Vector2(0f, 0.5f);
+        fillRect.anchoredPosition = new Vector2(
+            -CombustionFillWidth * 0.5f,
+            CombustionFillY);
+        fillRect.sizeDelta = new Vector2(0f, CombustionFillHeight);
+
+        Image frame = Img(root, "Frame", Color.white);
+        frame.sprite = Resources.Load<Sprite>("UI/Combustion Bar");
+        frame.preserveAspect = true;
+        frame.raycastTarget = false;
+        Stretch(frame.rectTransform);
+
+        _combustionLabel = Lbl(root, "Value", "0 / 100", 11f);
+        _combustionLabel.alignment = TextAlignmentOptions.Center;
+        _combustionLabel.fontStyle = FontStyles.Bold;
+        _combustionLabel.color = new Color32(255, 222, 156, 255);
+        _combustionLabel.outlineColor = new Color32(35, 5, 0, 255);
+        _combustionLabel.outlineWidth = .15f;
+        PlaceCentered(
+            _combustionLabel.rectTransform,
+            0f,
+            CombustionFillY,
+            CombustionFillWidth,
+            16f);
+
+        _combustionRoot.SetActive(false);
+    }
+
+    static void PlaceCentered(RectTransform rt, float x, float y, float width, float height)
+    {
+        rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
+        rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.anchoredPosition = new Vector2(x, y);
+        rt.sizeDelta = new Vector2(width, height);
+    }
+
+    void TickCombustionBar()
+    {
+        if (_combustionRoot == null) return;
+
+        bool visible = _caster is ArcanistAbilityCaster;
+        if (_combustionRoot.activeSelf != visible)
+            _combustionRoot.SetActive(visible);
+        if (!visible) return;
+
+        int value = _caster.CurrentCombustion;
+        RectTransform fillRect = _combustionFill.rectTransform;
+        fillRect.sizeDelta = new Vector2(
+            CombustionFillWidth * _caster.CombustionFraction,
+            fillRect.sizeDelta.y);
+        _combustionLabel.text = $"{value} / {AbilityCaster.MaxCombustion}";
+    }
+
     static void Place(RectTransform rt, float x, float y, float width, float height)
     {
         rt.anchorMin = rt.anchorMax = new Vector2(0f, 1f);
@@ -524,6 +616,7 @@ public class PlayerHUD : MonoBehaviour
     void BuildAbilityBar()
     {
         var root = Rt(_canvas.transform, "AbilityBar");
+        _abilityBarRoot = root;
         root.anchorMin        = new Vector2(0.5f, 0f);
         root.anchorMax        = new Vector2(0.5f, 0f);
         root.pivot            = new Vector2(0.5f, 0f);
@@ -563,6 +656,23 @@ public class PlayerHUD : MonoBehaviour
             ringRt.pivot = new Vector2(0.5f, 0.5f);
             ringRt.anchoredPosition = new Vector2(x, ActionBarSlotCenterY);
             ringRt.sizeDelta = new Vector2(ActionBarSlotSize + 8f, ActionBarSlotSize + 8f);
+        }
+    }
+
+    void ApplyInterfaceScale(float scale)
+    {
+        float clamped = Mathf.Clamp(scale,
+            InterfaceScaleSettings.Minimum, InterfaceScaleSettings.Maximum);
+        Vector3 value = Vector3.one * clamped;
+        if (_playerFrameRoot != null) _playerFrameRoot.localScale = value;
+        if (_abilityBarRoot != null)
+        {
+            _abilityBarRoot.localScale = value;
+            // The artwork contains transparent export space below its visible frame.
+            // Scale that compensating offset with the artwork so a smaller bar stays
+            // on the bottom edge instead of being pulled beneath the screen.
+            _abilityBarRoot.anchoredPosition =
+                new Vector2(0f, ActionBarBottomOffset * clamped);
         }
     }
 

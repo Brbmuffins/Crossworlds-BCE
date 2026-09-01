@@ -167,6 +167,15 @@ public static class AfkStationBuilder
         station.interactRange    = 3f;
         station.cancelRadius     = 4f;
 
+        go.AddComponent<Mirror.NetworkIdentity>();
+        var networkState = go.AddComponent<GatheringNodeNetworkState>();
+        networkState.persistentNodeId = GUID.Generate().ToString();
+        networkState.minimumAwardsPerSpawn = 1;
+        networkState.maximumAwardsPerSpawn = 5;
+        networkState.respawnSeconds = 900f;
+        networkState.interactionRange = station.interactRange;
+        networkState.minimumSecondsBetweenAwards = Mathf.Max(0.1f, station.tickInterval - 0.25f);
+
         // Atmospheric point light (weak)
         var lightGO         = new GameObject("Light");
         lightGO.transform.SetParent(go.transform, false);

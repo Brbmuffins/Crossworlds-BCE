@@ -35,6 +35,7 @@ public sealed class InventoryBagUI : MonoBehaviour
 
     InventoryBagView _view;
     InventoryWindowDragHandle _dragHandle;
+    RectTransform _scaledPanel;
     InventorySlotData[] _data = new InventorySlotData[TotalSlots];
     InventoryFilter _filter;
     bool _open;
@@ -60,6 +61,8 @@ public sealed class InventoryBagUI : MonoBehaviour
         if (_instance != null && _instance != this) { Destroy(gameObject); return; }
         _instance = this;
         CreateView();
+        InterfaceScaleSettings.Changed += ApplyInterfaceScale;
+        ApplyInterfaceScale(InterfaceScaleSettings.Scale);
         HidePanel();
     }
 
@@ -69,6 +72,8 @@ public sealed class InventoryBagUI : MonoBehaviour
             PlayerProgressManager.Local.OnDataRefreshed -= RefreshGold;
         _progressSubscribed = false;
     }
+
+    void OnDestroy() => InterfaceScaleSettings.Changed -= ApplyInterfaceScale;
 
     void Update()
     {
@@ -114,6 +119,8 @@ public sealed class InventoryBagUI : MonoBehaviour
         }
         _view = Instantiate(prefab, transform);
         _view.name = "InventoryWindow";
+        _scaledPanel = _view.transform.Find("Panel") as RectTransform;
+        ApplyInterfaceScale(InterfaceScaleSettings.Scale);
         _dragHandle = _view.GetComponentInChildren<InventoryWindowDragHandle>(true);
         _view.Initialize(HidePanel, SetFilter, OnSlotClicked, OnSlotEnter, OnSlotExit,
             OnSlotBeginDrag, OnSlotDrag, OnSlotEndDrag);
@@ -132,6 +139,13 @@ public sealed class InventoryBagUI : MonoBehaviour
             StartCoroutine(FetchInventory());
         }
         else ItemTooltipUI.Instance?.Hide();
+    }
+
+    void ApplyInterfaceScale(float scale)
+    {
+        if (_scaledPanel != null)
+            _scaledPanel.localScale = Vector3.one * Mathf.Clamp(scale,
+                InterfaceScaleSettings.Minimum, InterfaceScaleSettings.Maximum);
     }
 
     void HidePanel()
@@ -247,7 +261,7 @@ public sealed class InventoryBagUI : MonoBehaviour
                 var slot = visible[i];
                 var definition = LootItemCatalog.Find(slot.item_id);
                 _view.SetSlot(i, definition != null ? definition.inventoryIcon : null, slot.quantity, slot.equipped == 1,
-                    definition != null ? LootItemCatalog.RarityColor(definition.rarity) : ItemCatalogManager.GetRarityColor(slot.item_id));
+                    ItemRarityUtility.Color(ResolveRarity(slot)));
             }
         }
     }
@@ -287,7 +301,7 @@ public sealed class InventoryBagUI : MonoBehaviour
     void OnSlotEnter(int visibleIndex, PointerEventData eventData)
     {
         var slot = VisibleSlot(visibleIndex);
-        if (slot != null) ItemTooltipUI.Instance?.Show(slot.item_id, eventData.position);
+        if (slot != null) ItemTooltipUI.Instance?.Show(slot.item_id, eventData.position, slot.rarity);
     }
 
     void OnSlotExit() => ItemTooltipUI.Instance?.Hide();
@@ -344,7 +358,9 @@ public sealed class InventoryBagUI : MonoBehaviour
     {
         var definition = LootItemCatalog.Find(slot.item_id);
         if (definition != null) return definition.rarity;
-        return Enum.TryParse(slot.rarity, true, out ItemRarity rarity) ? rarity : ItemRarity.Common;
+        return ItemRarityUtility.TryParse(slot.rarity, out ItemRarity rarity)
+            ? rarity
+            : ItemRarityUtility.InferLegacyItemId(slot.item_id);
     }
 
     void ClearDragIcon()

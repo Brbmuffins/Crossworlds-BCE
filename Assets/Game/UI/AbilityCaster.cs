@@ -114,13 +114,29 @@ public class AbilityDef
     public GameObject turretPrefab;
     public float cooldown = 3f;
 
+    [Header("Projectile Delivery")]
+    [Tooltip("Launch a server-authoritative projectile instead of applying direct shape damage immediately.")]
+    public bool launchProjectile = false;
+    [Tooltip("Prefab containing NetworkIdentity, a trigger collider, and PlayerProjectile.")]
+    public GameObject projectilePrefab;
+    [Min(0.1f)] public float projectileSpeed = 20f;
+
     [Header("Resource Cost")]
     [Min(0f)] public float manaCost = 0f;
+
+    [Header("Arcanist Combustion")]
+    [Min(0)]
+    [InspectorName("Combustion Points")]
+    [Tooltip("Combustion gained when this spell successfully casts. Only used by the Arcanist.")]
+    public int combustionPoints = 0;
+    [InspectorName("Combustion Spend")]
+    [Tooltip("Spend all current Combustion when this spell successfully casts. Only used by the Arcanist.")]
+    public bool spendCombustion = false;
 
     public Sprite icon;
 
     [Header("Spell Timing")]
-    [Tooltip("Cast immediately when the ability key is pressed. Skips the targeting/confirmation phase and snapshots the current cursor aim, but still respects Cast Time, mana, cooldown, animation, and server validation.")]
+    [Tooltip("Commit the spell when its bind is pressed, without a confirmation click. The spell still respects Cast Time, mana, cooldown, animation, and server validation, and snapshots the current cursor aim.")]
     public bool instantCast = false;
     [Tooltip("Seconds after committing the aim before this spell fires. Moving during this window cancels the cast without starting cooldown.")]
     [Min(0f)] public float castTime = 0.6f;
@@ -289,6 +305,20 @@ public class AbilityDef
 
 public class AbilityCaster : NetworkBehaviour
 {
+    public const int MaxCombustion = 100;
+
+    [SyncVar(hook = nameof(OnCombustionChanged))]
+    [SerializeField, Range(0, MaxCombustion)]
+    int combustion;
+
+    public int CurrentCombustion => combustion;
+    public float CombustionFraction => combustion / (float)MaxCombustion;
+    public event System.Action<int> CombustionChanged;
+    AbilityDef pendingCombustionCriticalAbility;
+    int pendingCombustionCriticalBonus;
+    bool combustionMeteorGuaranteedThisCast;
+    bool combustionMeteorRollThisCast;
+
     const string DefaultDecalShaderName = "Shader Graphs/Decal";
     const float RectFillAlpha = 0.14f;
     const float RectFillChargedAlpha = 0.24f;
@@ -3798,6 +3828,8 @@ public class AbilityCaster : NetworkBehaviour
         // Notify passive (Phase Charge meter, etc.)
         _passive?.OnAbilityCast(passiveAbility);
 
+        ApplyCombustionForCast(passiveAbility);
+
         // Phase Charge: scale next damage ability
         float damageMultiplier = _phaseCharge != null
             ? _phaseCharge.ConsumeBonusIfCharged(passiveAbility)
@@ -3807,6 +3839,12 @@ public class AbilityCaster : NetworkBehaviour
         // shape and every dispatched ability since they all read this value.
         if (_characterStats != null)
             damageMultiplier *= _characterStats.DamageMultiplier;
+
+        TryTriggerCombustionMeteor(
+            passiveAbility,
+            indicator,
+            aimTime,
+            damageMultiplier);
 
         Vector3 castOrigin = transform.position;
         Vector3 movementDestination = indicator != null
@@ -3861,6 +3899,139 @@ public class AbilityCaster : NetworkBehaviour
             movementDestination,
             movementDuration);
         return true;
+    }
+
+    void ApplyCombustionForCast(AbilityDef ability)
+    {
+        if (!(this is ArcanistAbilityCaster) || ability == null)
+            return;
+
+        bool isCombustionMeteor = string.Equals(
+            ability.abilityName,
+            "Combustion Meteor",
+            System.StringComparison.OrdinalIgnoreCase);
+        combustionMeteorGuaranteedThisCast =
+            !isCombustionMeteor && ability.spendCombustion && combustion > 0;
+        combustionMeteorRollThisCast =
+            !isCombustionMeteor && !ability.spendCombustion &&
+            combustion >= MaxCombustion;
+
+        pendingCombustionCriticalAbility = ability.spendCombustion ? null : ability;
+        pendingCombustionCriticalBonus = ability.spendCombustion
+            ? 0
+            : Mathf.Max(0, ability.combustionPoints);
+
+        // Generating spells award nothing until their damage actually reduces a
+        // target's health. Spenders still clear the resource when committed.
+        if (!ability.spendCombustion)
+            return;
+
+        int next = 0;
+
+        if (NetworkServer.active)
+        {
+            SetCombustionServer(next);
+            return;
+        }
+
+        // Supports editor/offline play without weakening server authority in a
+        // networked session. Remote clients return before reaching this method.
+        if (!NetworkClient.active)
+            SetCombustionOffline(next);
+    }
+
+    void TryTriggerCombustionMeteor(
+        AbilityDef triggeringAbility,
+        GameObject triggeringIndicator,
+        float aimTime,
+        float damageMultiplier)
+    {
+        bool guaranteed = combustionMeteorGuaranteedThisCast;
+        bool rollAtFull = combustionMeteorRollThisCast;
+        combustionMeteorGuaranteedThisCast = false;
+        combustionMeteorRollThisCast = false;
+
+        if (!(this is ArcanistAbilityCaster) || triggeringAbility == null ||
+            (!guaranteed && !rollAtFull))
+            return;
+
+        if (!guaranteed && Random.value >= 0.25f)
+            return;
+
+        AbilityDef meteor = FindSpellbookAbilityByName("Combustion Meteor");
+        if (meteor == null)
+        {
+            Debug.LogWarning(
+                "[COMBAT] Combustion proc succeeded, but 'Combustion Meteor' is missing from the Arcanist spellbook.",
+                this);
+            return;
+        }
+
+        Vector3 targetPosition = triggeringIndicator != null
+            ? triggeringIndicator.transform.position
+            : transform.position;
+        Quaternion targetRotation = triggeringIndicator != null
+            ? triggeringIndicator.transform.rotation
+            : transform.rotation;
+
+        GameObject meteorProxy = CreateServerCastProxy(
+            meteor,
+            targetPosition,
+            targetRotation,
+            Vector3.one);
+        ResolveCastEffects(
+            meteor,
+            meteorProxy,
+            aimTime,
+            damageMultiplier,
+            transform.position);
+
+        if (meteorProxy != null)
+            Destroy(meteorProxy);
+
+        if (NetworkServer.active)
+            RpcCombustionMeteorTriggered(targetPosition, targetRotation);
+    }
+
+    [ClientRpc]
+    void RpcCombustionMeteorTriggered(
+        Vector3 targetPosition,
+        Quaternion targetRotation)
+    {
+        if (isLocalPlayer) return;
+        AbilityDef meteor = FindSpellbookAbilityByName("Combustion Meteor");
+        PlayLocalCastVFX(meteor, targetPosition, targetRotation);
+    }
+
+    [Server]
+    void SetCombustionServer(int value)
+    {
+        combustion = Mathf.Clamp(value, 0, MaxCombustion);
+    }
+
+    void SetCombustionOffline(int value)
+    {
+        int previous = combustion;
+        combustion = Mathf.Clamp(value, 0, MaxCombustion);
+        OnCombustionChanged(previous, combustion);
+    }
+
+    void OnCombustionChanged(int previous, int current)
+    {
+        CombustionChanged?.Invoke(current);
+    }
+
+    public void AwardCombustionFromDamage(int points, bool critical)
+    {
+        if (!(this is ArcanistAbilityCaster) || points <= 0)
+            return;
+
+        int award = critical ? points * 2 : points;
+        int next = Mathf.Clamp(combustion + award, 0, MaxCombustion);
+        if (NetworkServer.active)
+            SetCombustionServer(next);
+        else if (!NetworkClient.active)
+            SetCombustionOffline(next);
     }
 
     System.Collections.IEnumerator ResolveCastEffectsOnLanding(
@@ -3922,7 +4093,7 @@ public class AbilityCaster : NetworkBehaviour
         if (!isVariantSpell && usesChainDamage)
             CastChainDamage(ability, indicator, castOrigin, damageMultiplier, aimTime);
 
-        if (!isVariantSpell && !usesChainDamage && ability.shape == AbilityShape.Rectangle && HasDirectDamage(ability) && indicator != null)
+        if (!isVariantSpell && !usesChainDamage && !ability.launchProjectile && ability.shape == AbilityShape.Rectangle && HasDirectDamage(ability) && indicator != null)
         {
             float chargeFraction = GetChargeFraction(ability, aimTime);
             float damage = ability.damage > 0f
@@ -3931,7 +4102,7 @@ public class AbilityCaster : NetworkBehaviour
             ApplyRectangleDamage(ability, indicator, damage, damageMultiplier);
         }
 
-        if (!isVariantSpell && !usesChainDamage && ability.shape == AbilityShape.Cone && HasDirectDamage(ability) && indicator != null)
+        if (!isVariantSpell && !usesChainDamage && !ability.launchProjectile && ability.shape == AbilityShape.Cone && HasDirectDamage(ability) && indicator != null)
         {
             float chargeFraction = GetChargeFraction(ability, aimTime);
             float damage = ability.damage > 0f
@@ -3977,7 +4148,7 @@ public class AbilityCaster : NetworkBehaviour
                 castOrigin);
         }
 
-        if (!usesChainDamage && ability.shape == AbilityShape.Circle && HasDirectDamage(ability) && !IsArcaneStep(ability) && !IsVoidMaw(ability))
+        if (!usesChainDamage && !ability.launchProjectile && ability.shape == AbilityShape.Circle && HasDirectDamage(ability) && !IsArcaneStep(ability) && !IsVoidMaw(ability))
         {
             ApplyCircleDamage(
                 ability,
@@ -4028,6 +4199,9 @@ public class AbilityCaster : NetworkBehaviour
             float coneRange = ability.range * indicator.transform.localScale.x;
             castPoint = castOrigin + indicator.transform.forward * coneRange;
         }
+
+        if (!isVariantSpell && ability.launchProjectile)
+            LaunchAbilityProjectile(ability, indicator, castOrigin, castPoint, aimTime, damageMultiplier);
 
         Vector3 pulsePoint = castPoint;
         if (TryApplyCrowdControl(
@@ -4591,6 +4765,64 @@ public class AbilityCaster : NetworkBehaviour
             StartCoroutine(PulseHealing(ability, centre));
     }
 
+    void LaunchAbilityProjectile(
+        AbilityDef ability,
+        GameObject indicator,
+        Vector3 castOrigin,
+        Vector3 castPoint,
+        float aimTime,
+        float damageMultiplier)
+    {
+        if (ability == null || ability.projectilePrefab == null)
+        {
+            Debug.LogWarning($"[COMBAT] Projectile ability '{ability?.abilityName}' has no projectile prefab.", this);
+            return;
+        }
+
+        bool offline = !NetworkClient.active && !NetworkServer.active;
+        if (!NetworkServer.active && !offline)
+            return;
+
+        Vector3 spawnPosition = castOrigin + Vector3.up * 1.2f;
+        Vector3 direction = indicator != null
+            ? indicator.transform.forward
+            : castPoint - spawnPosition;
+        direction.y = 0f;
+        if (direction.sqrMagnitude < 0.0001f)
+            direction = transform.forward;
+
+        float chargeFraction = GetChargeFraction(ability, aimTime);
+        float damage = ability.chargeable
+            ? Mathf.Lerp(ability.damage, ability.maxChargeDamage, chargeFraction)
+            : ability.damage;
+
+        GameObject projectileObject = Instantiate(
+            ability.projectilePrefab,
+            spawnPosition,
+            Quaternion.LookRotation(direction.normalized, Vector3.up));
+        PlayerProjectile projectile = projectileObject.GetComponent<PlayerProjectile>();
+        if (projectile == null)
+        {
+            Debug.LogError($"[COMBAT] Projectile prefab for '{ability.abilityName}' is missing PlayerProjectile.", projectileObject);
+            Destroy(projectileObject);
+            return;
+        }
+
+        projectile.speed = Mathf.Max(0.1f, ability.projectileSpeed);
+        projectile.maxRange = Mathf.Max(0.1f, ability.range);
+        projectile.Init(
+            damage * damageMultiplier,
+            spawnPosition,
+            gameObject,
+            ability.spendCombustion ? 0 : Mathf.Max(0, ability.combustionPoints));
+
+        if (NetworkServer.active)
+        {
+            ZoneScene.PlaceWith(projectileObject, gameObject);
+            NetworkServer.Spawn(projectileObject);
+        }
+    }
+
     static bool ShouldRunPulseDamage(AbilityDef ability)
     {
         if (ability == null)
@@ -4923,7 +5155,7 @@ public class AbilityCaster : NetworkBehaviour
                 continue;
             }
 
-            DealAbilityDamage(health, damage);
+            DealAbilityDamage(health, damage, ability);
             EmitPulseTargetVFX(ability, health, hitVFXLifetime);
         }
     }
@@ -5080,7 +5312,7 @@ public class AbilityCaster : NetworkBehaviour
         return PvpCombatRules.MatchesTarget(gameObject, hit, targetTag, out health);
     }
 
-    void DealAbilityDamage(Health health, float damage)
+    void DealAbilityDamage(Health health, float damage, AbilityDef ability = null)
     {
         // A caster can overlap their own landing/area collider. Offensive abilities
         // must never turn that overlap into self-damage, even if their target tag is
@@ -5092,7 +5324,18 @@ public class AbilityCaster : NetworkBehaviour
             ? _characterStats.ApplyCriticalStrike(damage, out wasCritical)
             : Mathf.Max(0f, damage);
 
+        float healthBefore = health.currentHealth;
         health.TakeDamage(finalDamage, gameObject, wasCritical);
+        bool dealtHealthDamage = health.currentHealth < healthBefore;
+
+        if (dealtHealthDamage && ability == pendingCombustionCriticalAbility &&
+            pendingCombustionCriticalBonus > 0)
+        {
+            int bonus = pendingCombustionCriticalBonus;
+            pendingCombustionCriticalBonus = 0;
+            pendingCombustionCriticalAbility = null;
+            AwardCombustionFromDamage(bonus, wasCritical);
+        }
     }
 
     void ResolveDirectAbilityHit(
@@ -5109,23 +5352,24 @@ public class AbilityCaster : NetworkBehaviour
             : ability.damageDelay;
         float vfxLifetime = Mathf.Max(4f, latestDamageDelay + 0.5f);
 
-        ResolveAbilityDamage(health, damage, ability.damageDelay);
+        ResolveAbilityDamage(ability, health, damage, ability.damageDelay);
         ResolveAbilityDamage(
+            ability,
             health,
             secondaryDamage,
             ability.secondaryDamageDelay);
         EmitAbilityHitVFX(ability, health, hitWorldOffset, vfxLifetime);
     }
 
-    void ResolveAbilityDamage(Health health, float damage, float delay)
+    void ResolveAbilityDamage(AbilityDef ability, Health health, float damage, float delay)
     {
         if (health == null || !health.IsAlive || damage <= 0f)
             return;
 
         if (delay > 0f)
-            StartCoroutine(DealDelayedAbilityDamage(health, damage, delay));
+            StartCoroutine(DealDelayedAbilityDamage(ability, health, damage, delay));
         else
-            DealAbilityDamage(health, damage);
+            DealAbilityDamage(health, damage, ability);
     }
 
     void EmitAbilityHitVFX(
@@ -5152,6 +5396,7 @@ public class AbilityCaster : NetworkBehaviour
     }
 
     System.Collections.IEnumerator DealDelayedAbilityDamage(
+        AbilityDef ability,
         Health health,
         float damage,
         float delay)
@@ -5159,7 +5404,7 @@ public class AbilityCaster : NetworkBehaviour
         yield return new WaitForSeconds(Mathf.Max(0f, delay));
 
         if (health != null && health.IsAlive)
-            DealAbilityDamage(health, damage);
+            DealAbilityDamage(health, damage, ability);
     }
 
     bool AddMatchingHit(Collider hit, string targetTag, System.Collections.Generic.List<Collider> hits, System.Collections.Generic.HashSet<Health> matched)
@@ -5711,7 +5956,7 @@ public class AbilityCaster : NetworkBehaviour
             if (!TryGetMatchingHealth(col, "Enemy", out Health h)) continue;
             if (h == null || !h.isRobotic) continue;
             float dmg = (ability.damage > 0f ? ability.damage : 60f) * dmgMult;
-            DealAbilityDamage(h, dmg);
+            DealAbilityDamage(h, dmg, ability);
             EmitHitVFX(ability.hitVFX, h.transform.position + Vector3.up);
         }
     }
@@ -5778,7 +6023,7 @@ public class AbilityCaster : NetworkBehaviour
             if (stacks > 0)
             {
                 float dmg = baseDmg * stacks * dmgMult;
-                DealAbilityDamage(health, dmg);
+                DealAbilityDamage(health, dmg, ability);
                 EmitHitVFX(ability.hitVFX, health.transform.position + Vector3.up * 0.5f);
             }
         }
@@ -5823,6 +6068,20 @@ public class AbilityCaster : NetworkBehaviour
     {
         Vector3 center = indicator != null ? indicator.transform.position : transform.position;
         float radius = GetCircleDamageRadius(ability, aimTime);
+        if (string.Equals(
+                ability?.abilityName,
+                "Combustion Meteor",
+                System.StringComparison.OrdinalIgnoreCase) &&
+            ability.damageDelay > 0f)
+        {
+            StartCoroutine(ResolveCombustionMeteorImpact(
+                ability,
+                center,
+                radius,
+                ability.damage * damageMultiplier));
+            return;
+        }
+
         Collider[] hits = ZonePhysics.OverlapSphere(
             gameObject,
             center,
@@ -5841,6 +6100,36 @@ public class AbilityCaster : NetworkBehaviour
                 health,
                 ability.damage * damageMultiplier,
                 ability.secondaryDamage * damageMultiplier);
+        }
+    }
+
+    System.Collections.IEnumerator ResolveCombustionMeteorImpact(
+        AbilityDef ability,
+        Vector3 center,
+        float radius,
+        float damage)
+    {
+        yield return new WaitForSeconds(Mathf.Max(0f, ability.damageDelay));
+
+        Collider[] hits = ZonePhysics.OverlapSphere(
+            gameObject,
+            center,
+            PulsePhysicsQueryRadius(radius));
+        var damaged = new System.Collections.Generic.HashSet<Health>();
+
+        foreach (Collider hit in hits)
+        {
+            if (!TryGetMatchingHealth(hit, ability.targetTag, out Health health) ||
+                !IsWithinHorizontalPulseRadius(health.transform.position, center, radius) ||
+                !damaged.Add(health))
+                continue;
+
+            DealAbilityDamage(health, damage, ability);
+            EmitAbilityHitVFX(
+                ability,
+                health,
+                Vector3.up * 0.5f,
+                4f);
         }
     }
 
@@ -6403,7 +6692,7 @@ public class AbilityCaster : NetworkBehaviour
                 {
                     // Zone 1: Burst Damage + Stagger
                     float dmgVal = (ability.damage > 0f ? ability.damage : 20f) * 1.6f * damageMultiplier;
-                    DealAbilityDamage(targetHealth, dmgVal);
+                    DealAbilityDamage(targetHealth, dmgVal, ability);
 
                     StatusEffectManager sem = hit.GetComponent<StatusEffectManager>() ?? targetHealth.GetComponent<StatusEffectManager>();
                     if (sem != null)
@@ -6417,7 +6706,7 @@ public class AbilityCaster : NetworkBehaviour
                 {
                     // Zone 2: Burn DoT (Cursed effect)
                     float instantDmg = (ability.damage > 0f ? ability.damage : 20f) * 0.6f * damageMultiplier;
-                    DealAbilityDamage(targetHealth, instantDmg);
+                    DealAbilityDamage(targetHealth, instantDmg, ability);
 
                     StatusEffectManager sem = hit.GetComponent<StatusEffectManager>() ?? targetHealth.GetComponent<StatusEffectManager>();
                     if (sem != null)
@@ -6432,7 +6721,7 @@ public class AbilityCaster : NetworkBehaviour
                 {
                     // Zone 3: Slow & Weakened
                     float dmgVal = (ability.damage > 0f ? ability.damage : 20f) * 0.8f * damageMultiplier;
-                    DealAbilityDamage(targetHealth, dmgVal);
+                    DealAbilityDamage(targetHealth, dmgVal, ability);
 
                     StatusEffectManager sem = hit.GetComponent<StatusEffectManager>() ?? targetHealth.GetComponent<StatusEffectManager>();
                     if (sem != null)
@@ -8569,10 +8858,12 @@ public class AbilityCaster : NetworkBehaviour
                 ? Mathf.Lerp(ability.damage, ability.maxChargeDamage, chargeFraction)
                 : ability.damage;
             ResolveAbilityDamage(
+                ability,
                 health,
                 damage * damageMultiplier,
                 ability.damageDelay);
             ResolveAbilityDamage(
+                ability,
                 health,
                 ability.secondaryDamage * damageMultiplier,
                 ability.secondaryDamageDelay);

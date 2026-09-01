@@ -6,9 +6,9 @@ using UnityEngine;
 /// <summary>Maintains the Hub Forge's material and crafting interaction ownership.</summary>
 public static class ForgeModelMaterialFix
 {
-    const string ForgePrefabPath = "Assets/Game/3D Models/HUB ASSETS/Forge/prefab_forge.prefab";
-    const string ForgeTexturePath = "Assets/Game/3D Models/HUB ASSETS/Forge/tripo_convert_ebee01ce-43fd-498a-b8f1-88fb851922e4.fbm/forge_blacksmithing_basecolor.PNG";
-    const string ForgeMaterialPath = "Assets/Game/3D Models/HUB ASSETS/Forge/forge_blacksmithing_two_sided.mat";
+    const string ForgePrefabPath = "Assets/Game/3D Models/HUB ASSETS/Forge/Hub Forge/prefab_hub_forge.prefab";
+    const string ForgeTexturePath = "Assets/Game/3D Models/HUB ASSETS/Forge/Hub Forge/tripo_convert_5f26a899-7e11-4ff8-b38a-abb4646efd48.fbm/tripo_rgb_6aee4885-4940-488f-8987-b835a02d8108.png";
+    const string ForgeMaterialPath = "Assets/Game/3D Models/HUB ASSETS/Forge/Hub Forge/forge_blacksmithing_two_sided.mat";
 
     [DidReloadScripts]
     static void ApplyMissingFix()
@@ -37,7 +37,7 @@ public static class ForgeModelMaterialFix
             Renderer[] renderers = root.GetComponentsInChildren<Renderer>(true);
             if (renderers.Length == 0)
             {
-                Debug.LogError("[FORGE MODEL] prefab_forge contains no renderers.", root);
+                Debug.LogError("[FORGE MODEL] prefab_hub_forge contains no renderers.", root);
                 return;
             }
 
