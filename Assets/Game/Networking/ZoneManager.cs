@@ -45,6 +45,9 @@ using UnityEngine.SceneManagement;
 [AddComponentMenu("BCE/Network/Zone Manager")]
 public class ZoneManager : MonoBehaviour
 {
+    public event System.Action<Scene> ZoneLoaded;
+    public event System.Action<Scene, int> ZoneOccupancyChanged;
+    public event System.Action<Scene> ZoneUnloading;
     const float ArrivalMinimumSpacing = 1.1f;
     const float ArrivalGroundSearchHeight = 3f;
     const float ArrivalGroundSearchDistance = 7f;
@@ -370,6 +373,7 @@ public class ZoneManager : MonoBehaviour
         // Mirror only auto-spawns scene objects for the initial scene load, so an
         // additively-loaded zone's baked NetworkIdentities need spawning explicitly.
         NetworkServer.SpawnObjects();
+        ZoneLoaded?.Invoke(loaded);
 
         Debug.Log($"[Zone] Loaded '{zoneName}' (handle {loaded.handle}, instanced={instanced}).");
         onReady(loaded);
@@ -389,6 +393,7 @@ public class ZoneManager : MonoBehaviour
         _connZone[connId] = scene.handle;
         _scenesByHandle[scene.handle] = scene;
         CancelPendingUnload(scene.handle);
+        ZoneOccupancyChanged?.Invoke(scene, set.Count);
     }
 
     /// <summary>Schedules an unload if the zone is empty. Safe to call repeatedly.</summary>
@@ -409,6 +414,8 @@ public class ZoneManager : MonoBehaviour
         if (_occupants.TryGetValue(handle, out HashSet<int> set))
         {
             set.Remove(connId);
+            if (_scenesByHandle.TryGetValue(handle, out Scene scene) && scene.IsValid())
+                ZoneOccupancyChanged?.Invoke(scene, set.Count);
             if (set.Count == 0) ReleaseZone(handle);
         }
     }
@@ -437,10 +444,18 @@ public class ZoneManager : MonoBehaviour
         }
 
         string zoneName = scene.name;
+        ZoneUnloading?.Invoke(scene);
         Forget(handle);
 
         Debug.Log($"[Zone] Unloading empty '{zoneName}' (handle {handle}).");
         yield return SceneManager.UnloadSceneAsync(scene);
+    }
+
+    public int OccupantCount(Scene scene)
+    {
+        return scene.IsValid() && _occupants.TryGetValue(scene.handle, out HashSet<int> set)
+            ? set.Count
+            : 0;
     }
 
     void Forget(SceneHandle handle)

@@ -227,12 +227,15 @@ public class RodNetworkManager : NetworkManager
     {
         GameObject[] generatedLootPrefabs =
             Resources.LoadAll<GameObject>("EnemyForge/Loot");
+        GameObject[] gatheringPrefabs =
+            Resources.LoadAll<GameObject>("Gathering/NetworkPrefabs");
 
         // Stage all prefabs into spawnPrefabs BEFORE base.OnStartClient() so Mirror's
         // built-in RegisterPrefab pass picks them all up in one shot.
         RegisterIntoSpawnList(classPrefabs);
         RegisterIntoSpawnList(worldPrefabs);
         RegisterIntoSpawnList(generatedLootPrefabs);
+        RegisterIntoSpawnList(gatheringPrefabs);
         if (chatManagerPrefab != null)
             RegisterIntoSpawnList(new[] { chatManagerPrefab });
 
@@ -242,6 +245,7 @@ public class RodNetworkManager : NetworkManager
         DirectRegister(classPrefabs);
         DirectRegister(worldPrefabs);
         DirectRegister(generatedLootPrefabs);
+        DirectRegister(gatheringPrefabs);
         if (chatManagerPrefab != null)
             DirectRegister(new[] { chatManagerPrefab });
     }

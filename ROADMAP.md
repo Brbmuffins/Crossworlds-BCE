@@ -25,6 +25,15 @@ conversation: it names its files, acceptance criteria, and dependencies. Tasks m
 > 1% Legendary). Inventory storage, Common/Uncommon-only bonus yield, and Mining XP
 > are committed atomically through the trusted game-service API.
 
+> **Dynamic zone mineral populations (2026-09-03):** A server-owned ore spawner
+> now targets 10 veins for the first player in every non-Hub gameplay zone, adds
+> two per additional zone occupant, and caps each loaded zone instance at 30.
+> Placement uses authored bounds plus ground, slope, player-distance, and node-spacing
+> checks. An editor builder creates the shared Resources prefab and adds/validates
+> spawn volumes. VoidDungeon remains excluded while it is a geometry-free placeholder;
+> add its volume when the playable dungeon environment lands. Unity play validation
+> remains required.
+
 > **Legendary and Relic rarity support (2026-08-23):** Existing serialized rarity
 > values are frozen at Common=0 through Legendary=4, with Relic appended at 5.
 > Loot Forge persistence and all item presentation use one canonical rarity mapping;

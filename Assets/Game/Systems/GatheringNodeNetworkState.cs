@@ -121,7 +121,7 @@ public sealed class GatheringNodeNetworkState : NetworkBehaviour
         if ((sender.identity.transform.position - transform.position).sqrMagnitude >
             allowedRange * allowedRange)
         {
-            TargetAwardResult(sender, false, depleted, remainingAwards);
+            TargetAwardResult(sender, false, depleted, remainingAwards, "", 0, 0, 0, false, "");
             return;
         }
 
@@ -130,14 +130,14 @@ public sealed class GatheringNodeNetworkState : NetworkBehaviour
         if (nextAwardByConnection.TryGetValue(connectionId, out double nextAllowed) &&
             NetworkTime.time < nextAllowed)
         {
-            TargetAwardResult(sender, false, depleted, remainingAwards);
+            TargetAwardResult(sender, false, depleted, remainingAwards, "", 0, 0, 0, false, "");
             return;
         }
 
         if (depleted || remainingAwards <= 0)
         {
             if (!depleted) DepleteNode();
-            TargetAwardResult(sender, false, true, 0);
+            TargetAwardResult(sender, false, true, 0, "", 0, 0, 0, false, "");
             return;
         }
         if (remainingAwards - pendingAwardConnections.Count <= 0)
@@ -191,8 +191,8 @@ public sealed class GatheringNodeNetworkState : NetworkBehaviour
 
     [TargetRpc]
     void TargetAwardResult(NetworkConnection target, bool granted, bool nowDepleted, int awardsLeft,
-        string itemId = "", int quantity = 0, int skillLevel = 0, int skillXp = 0,
-        bool leveledUp = false, string message = "")
+        string itemId, int quantity, int skillLevel, int skillXp,
+        bool leveledUp, string message)
     {
         AwardRequestCompleted?.Invoke(granted, nowDepleted, awardsLeft, itemId, quantity,
             skillLevel, skillXp, leveledUp, message);
