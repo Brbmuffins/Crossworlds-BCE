@@ -1,13 +1,13 @@
-# build-server.ps1 — headless Linux dedicated-server build + VPS package.
+# build-server.ps1 - headless Linux dedicated-server build + VPS package.
 # Run from the repo root:  powershell -ExecutionPolicy Bypass -File tools\build-server.ps1
 #
 # Prereqs (one-time, interactive):
-#   1. git lfs pull            — all LFS objects present (no pointer files)
+#   1. git lfs pull            - all LFS objects present (no pointer files)
 #   2. Unity editor version in ProjectSettings/ProjectVersion.txt installed
 #      with the "Linux Dedicated Server Build Support" module.
 #
-# Output: build\DedicatedServer\CrossWords.x86_64 (+ CrossWords_Data) — the exact
-# names the live crossworlds-server systemd unit's ExecStart expects — then packed
+# Output: build\DedicatedServer\CrossWords.x86_64 (+ CrossWords_Data) - the exact
+# names the live crossworlds-server systemd unit's ExecStart expects - then packed
 # into build\crossworlds-server.tar.gz for upload with tools\deploy-server.sh.
 
 $ErrorActionPreference = 'Stop'
@@ -27,21 +27,29 @@ if ($pointers) { throw "LFS pointer files present - run 'git lfs pull' first:`n$
 Write-Host "Building Linux dedicated server with Unity $version (batchmode)..."
 $log = "$repo\build\server-build.log"
 New-Item -ItemType Directory -Force "$repo\build" | Out-Null
-& $unity -batchmode -quit -projectPath $repo `
-  -executeMethod BuildScript.BuildDedicatedServer `
-  -logFile $log
-if ($LASTEXITCODE -ne 0) { throw "Build FAILED (exit $LASTEXITCODE) - see $log" }
+$unityArgs = @(
+  '-batchmode',
+  '-quit',
+  '-projectPath', $repo,
+  '-executeMethod', 'BuildScript.BuildDedicatedServer',
+  '-logFile', $log
+)
+$unityProcess = Start-Process -FilePath $unity -ArgumentList $unityArgs `
+  -Wait -PassThru -WindowStyle Hidden
+if ($unityProcess.ExitCode -ne 0) {
+  throw "Build FAILED (exit $($unityProcess.ExitCode)) - see $log"
+}
 
 # BuildScript already emits CrossWords.x86_64 / CrossWords_Data (the names the
-# live crossworlds-server unit expects) — no rename needed.
+# live crossworlds-server unit expects) - no rename needed.
 $out = "$repo\build\DedicatedServer"
 if (-not (Test-Path "$out\CrossWords.x86_64")) {
-  throw "Expected $out\CrossWords.x86_64 not found — did BuildScript.locationPathName change?"
+  throw "Expected $out\CrossWords.x86_64 not found - did BuildScript.locationPathName change?"
 }
 
 $tar = "$repo\build\crossworlds-server.tar.gz"
 if (Test-Path $tar) { Remove-Item $tar }
-# Exclude Unity's IL2CPP symbol/backup folders — huge and must not ship
+# Exclude Unity's IL2CPP symbol/backup folders - huge and must not ship
 tar -czf $tar -C $out --exclude "*_BackUpThisFolder_ButDontShipItWithYourGame" --exclude "*_BurstDebugInformation_DoNotShip" .
 Write-Host "OK -> $tar"
 Write-Host "Next: scp $tar and tools/deploy-server.sh to the VPS, then run: sudo bash deploy-server.sh"
