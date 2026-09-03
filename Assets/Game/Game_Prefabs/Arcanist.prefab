@@ -2638,7 +2638,7 @@ MonoBehaviour:
     castVFX: {fileID: 8976656117374038702, guid: a9439af0bb27ad84ca99735f2b0c4082, type: 3}
     castingVFX: {fileID: 0}
     healVFX: {fileID: 0}
-    hitVFX: {fileID: 5190096796826894380, guid: 213cb19431e225740a13fe506860e981, type: 3}
+    hitVFX: {fileID: 5381161939726235375, guid: f16f56bb9f80fe446883ae4faaf74ef4, type: 3}
     shieldVFX: {fileID: 0}
     chainVFX: {fileID: 0}
     castVFXAtCaster: 0

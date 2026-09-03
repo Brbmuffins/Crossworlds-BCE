@@ -3998,7 +3998,10 @@ public class AbilityCaster : NetworkBehaviour
         Vector3 targetPosition,
         Quaternion targetRotation)
     {
-        if (isLocalPlayer) return;
+        // The proc is rolled authoritatively after the triggering cast, so a remote
+        // client cannot predict and render it in FinalizeCast. Only a host has already
+        // rendered it through the server-side ResolveCastEffects path.
+        if (isLocalPlayer && NetworkServer.active) return;
         AbilityDef meteor = FindSpellbookAbilityByName("Combustion Meteor");
         PlayLocalCastVFX(meteor, targetPosition, targetRotation);
     }
