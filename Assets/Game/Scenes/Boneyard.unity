@@ -2221,6 +2221,52 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4103333903944158, guid: 1a365141225c22e49a7bb976869b22a8, type: 3}
   m_PrefabInstance: {fileID: 1241433878}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1267574187
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1267574189}
+  - component: {fileID: 1267574188}
+  m_Layer: 0
+  m_Name: Dynamic Ore Spawn Volume
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1267574188
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1267574187}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5347bd26a4fc48cab282f96d281a6a91, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::OreSpawnVolume
+  size: {x: 900, y: 610, z: 900}
+  groundSearchHeight: 20
+--- !u!4 &1267574189
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1267574187}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 2500, y: 300, z: 2500}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1323919748
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2722,8 +2768,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MusicZoneTrigger
   zoneTrack: {fileID: 8300000, guid: d96eaad5500d951418fd3206775fcf25, type: 3}
+  additionalTracks: []
   stopMusicInstead: 0
   restartIfAlreadyPlaying: 0
+  minSilenceSeconds: 30
+  maxSilenceSeconds: 120
   fadeSeconds: 1.5
   localPlayerOnly: 1
   triggerOnce: 0
@@ -3302,3 +3351,4 @@ SceneRoots:
   - {fileID: 82990110}
   - {fileID: 1661549601}
   - {fileID: 601040022}
+  - {fileID: 1267574189}
