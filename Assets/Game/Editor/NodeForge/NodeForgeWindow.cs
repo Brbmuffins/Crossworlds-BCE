@@ -140,6 +140,7 @@ namespace Crossworlds.EditorTools.NodeForge
             EditorGUILayout.LabelField("Profession & Yield", EditorStyles.boldLabel);
             Draw(serialized, "professionId", "Profession ID");
             Draw(serialized, "minimumLevel", "Minimum Level");
+            Draw(serialized, "lootTable", "Weighted Loot Table");
             Draw(serialized, "yieldItem", "Loot Forge Item");
             Draw(serialized, "itemId", "Database Item ID");
             Draw(serialized, "itemQuantity", "Quantity per Yield");

@@ -20,6 +20,11 @@ conversation: it names its files, acceptance criteria, and dependencies. Tasks m
 > vein retains the standard 1–5 depletion roll and 15-minute respawn. Dedicated
 > world-model prefabs remain optional authoring; colored fallback rocks are ready.
 
+> **Weighted Mineral Veins (2026-09-03):** The four Hub ore nodes now share a
+> server-rolled table containing all nine ores (76% Common, 20% Uncommon, 3% Epic,
+> 1% Legendary). Inventory storage, Common/Uncommon-only bonus yield, and Mining XP
+> are committed atomically through the trusted game-service API.
+
 > **Legendary and Relic rarity support (2026-08-23):** Existing serialized rarity
 > values are frozen at Common=0 through Legendary=4, with Relic appended at 5.
 > Loot Forge persistence and all item presentation use one canonical rarity mapping;

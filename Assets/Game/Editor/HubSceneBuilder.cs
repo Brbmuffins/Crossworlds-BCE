@@ -232,9 +232,12 @@ public static class HubSceneBuilder
             // Server-backed gathering station.
 #if UNITY_EDITOR || !UNITY_SERVER
             var station = mineGO.AddComponent<AfkGatheringStation>();
-            station.stationName      = "Copper Vein";
+            var oreLootTable = AssetDatabase.LoadAssetAtPath<GatheringLootTable>(
+                "Assets/Game/Resources/Gathering/OreDropTable.asset");
+            station.stationName      = "Mineral Vein";
             station.professionId     = 2;
             station.minLevelRequired = 1;
+            station.lootTable        = oreLootTable;
             station.itemId           = "ore_copper";
             station.itemQuantity     = 1;
             station.tickInterval     = 5f;
@@ -250,6 +253,10 @@ public static class HubSceneBuilder
             networkState.respawnSeconds = 900f;
             networkState.interactionRange = station.interactRange;
             networkState.minimumSecondsBetweenAwards = Mathf.Max(0.1f, station.tickInterval - 0.25f);
+            networkState.lootTable = oreLootTable;
+            networkState.experiencePerAward = station.xpPerTick;
+            networkState.bonusYieldLevel = station.bonusYieldLevel;
+            networkState.professionId = station.professionId;
 #endif
         }
 

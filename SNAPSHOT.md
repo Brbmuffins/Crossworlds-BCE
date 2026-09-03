@@ -34,6 +34,10 @@ that override statements below:
   destination. Player abilities keep their existing Enemy targeting, while the
   server treats another player as an opponent only when both occupy PVPZONE;
   `Health` rejects player-on-player damage in every other scene.
+- **Server-authoritative weighted mining added 2026-09-03:** Hub Mineral Veins use a
+  shared `GatheringLootTable` covering all nine ores. The dedicated server rolls the
+  reward and the auth API atomically stores the item, applies eligible common/uncommon
+  bonus yield, and awards Mining XP; clients no longer select networked gathering rewards.
 - **Necromancer class framework added 2026-08-10:** Unity reserves class index 5,
   with Spell Forge, character-selection, network-prefab, mastery, Generic-rig, and
   animator setup handled by `BCE/Heroes/Build Necromancer Class`. The existing

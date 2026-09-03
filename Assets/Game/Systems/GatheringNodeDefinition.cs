@@ -35,6 +35,8 @@ public sealed class GatheringNodeDefinition : ScriptableObject
     [Min(1)] public int minimumLevel = 1;
 
     [Header("Yield")]
+    [Tooltip("Optional weighted reward table. When assigned, the dedicated server rolls the reward.")]
+    public GatheringLootTable lootTable;
     [Tooltip("Preferred item reference. When assigned, its stable database ID is used.")]
     public LootItemDefinition yieldItem;
     [Tooltip("Database item ID. Use this for existing database-only materials.")]
@@ -87,6 +89,7 @@ public sealed class GatheringNodeDefinition : ScriptableObject
         station.professionId = professionId;
         station.minLevelRequired = Mathf.Max(1, minimumLevel);
         station.itemId = ResolvedItemId;
+        station.lootTable = lootTable;
         station.itemQuantity = Mathf.Max(1, itemQuantity);
         station.tickInterval = Mathf.Max(0.1f, secondsPerYield);
         station.xpPerTick = Mathf.Max(0, experiencePerYield);
@@ -111,6 +114,10 @@ public sealed class GatheringNodeDefinition : ScriptableObject
         state.respawnSeconds = Mathf.Max(1f, respawnSeconds);
         state.interactionRange = Mathf.Max(0.5f, interactionRange);
         state.minimumSecondsBetweenAwards = Mathf.Max(0.1f, secondsPerYield - 0.25f);
+        state.lootTable = lootTable;
+        state.experiencePerAward = Mathf.Max(0, experiencePerYield);
+        state.bonusYieldLevel = Mathf.Max(1, bonusYieldLevel);
+        state.professionId = professionId;
     }
 
     void OnValidate()

@@ -159,6 +159,9 @@ public static class AfkStationBuilder
         station.stationName      = cfg.stationName;
         station.professionId     = cfg.professionId;
         station.itemId           = cfg.itemId;
+        if (cfg.itemId.StartsWith("ore_", System.StringComparison.OrdinalIgnoreCase))
+            station.lootTable = AssetDatabase.LoadAssetAtPath<GatheringLootTable>(
+                "Assets/Game/Resources/Gathering/OreDropTable.asset");
         station.xpPerTick        = cfg.xpPerTick;
         station.tickInterval     = cfg.tickInterval;
         station.minLevelRequired = cfg.minLevel;
@@ -175,6 +178,10 @@ public static class AfkStationBuilder
         networkState.respawnSeconds = 900f;
         networkState.interactionRange = station.interactRange;
         networkState.minimumSecondsBetweenAwards = Mathf.Max(0.1f, station.tickInterval - 0.25f);
+        networkState.lootTable = station.lootTable;
+        networkState.experiencePerAward = station.xpPerTick;
+        networkState.bonusYieldLevel = station.bonusYieldLevel;
+        networkState.professionId = station.professionId;
 
         // Atmospheric point light (weak)
         var lightGO         = new GameObject("Light");

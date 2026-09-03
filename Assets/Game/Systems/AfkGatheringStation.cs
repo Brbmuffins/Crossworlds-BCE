@@ -9,8 +9,7 @@ using UnityEngine.Networking;
 /// AfkGatheringStation — Press F once to start, then go AFK.
 ///
 /// Drift beyond cancelRadius, press F/Escape, or click STOP to cancel.
-/// Items are added via POST /api/inventory/add-item (server validates JWT + ownership).
-/// XP is awarded via ProfessionManager.AwardXp → POST /api/professions/award-xp.
+/// Networked rewards and XP are rolled and persisted by the dedicated server.
 ///
 /// Profession IDs:  0 = Woodcutting  |  1 = Fishing  |  2 = Mining
 /// </summary>
@@ -27,6 +26,7 @@ public class AfkGatheringStation : MonoBehaviour
     public int minLevelRequired  = 1;
 
     [Header("Yield — per tick")]
+    public GatheringLootTable lootTable;
     public string itemId       = "ore_copper";
     public int    itemQuantity = 1;
     public float  tickInterval = 5f;
@@ -79,6 +79,8 @@ public class AfkGatheringStation : MonoBehaviour
     bool       _awardResolved;
     bool       _awardGranted;
     bool       _awardDepleted;
+    string     _awardedItemId;
+    int        _awardedQuantity;
     double     _localRespawnAt = -1d;
 
     GatheringNodeNetworkState _networkState;
@@ -203,6 +205,13 @@ public class AfkGatheringStation : MonoBehaviour
 
     void TryStartGathering()
     {
+        if (Mirror.NetworkClient.active && _networkState == null)
+        {
+            RodChatManager.Instance?.AddSystemMessage(
+                "This resource node is not configured for authoritative gathering.");
+            return;
+        }
+
         var pm = ProfessionManager.Local;
 
         // Wait for profession data to load before allowing level-gated stations
@@ -234,7 +243,8 @@ public class AfkGatheringStation : MonoBehaviour
         RodChatManager.Instance?.AddSystemMessage($"You begin {verb} {stationName}...");
 
         // Pass onStop callback so STOP button cancels cleanly through StopGathering
-        _hud = GatheringHUD.Show(stationName, itemId, tickInterval, professionId,
+        string yieldLabel = lootTable != null ? lootTable.displayName : itemId;
+        _hud = GatheringHUD.Show(stationName, yieldLabel, tickInterval, professionId,
                                  () => StopGathering("You stopped gathering."));
 
         if (pm != null) pm.onLevelUp += OnLevelUp;
@@ -263,10 +273,18 @@ public class AfkGatheringStation : MonoBehaviour
                 if (!_gathering) yield break;
                 if (!_awardGranted)
                 {
+                    if (!string.IsNullOrWhiteSpace(_awardFailureMessage))
+                        RodChatManager.Instance?.AddSystemMessage(_awardFailureMessage);
                     if (_awardDepleted)
                         StopGathering($"{stationName} is depleted. It will respawn in 15 minutes.");
                     continue;
                 }
+
+                SpawnTickVFX();
+                string displayName = ItemCatalogManager.GetDisplayName(_awardedItemId);
+                if (_hud != null) _hud.Pulse(_awardedQuantity, displayName);
+                RodChatManager.Instance?.AddSystemMessage($"Mined {_awardedQuantity}x {displayName}!");
+                Debug.Log($"[GATHER] {stationName}: +{_awardedQuantity}x {_awardedItemId}, +{xpPerTick} xp");
             }
             else
             {
@@ -287,21 +305,27 @@ public class AfkGatheringStation : MonoBehaviour
                 }
             }
 
-            int qty   = itemQuantity;
-            int level = ProfessionManager.Local?.GetLevel(professionId) ?? 1;
-            if (level >= bonusYieldLevel && Random.value < 0.20f)
+            if (!Mirror.NetworkClient.active)
             {
-                qty *= 2;
-                RodChatManager.Instance?.AddSystemMessage($"Bonus yield! x{qty} {itemId}");
+                string offlineItemId = itemId;
+                int qty = itemQuantity;
+                ItemRarity rarity = ItemRarity.Common;
+                if (lootTable != null && lootTable.TryRoll(out LootItemDefinition rolled, out int rolledQty))
+                {
+                    offlineItemId = rolled.itemId;
+                    qty = rolledQty;
+                    rarity = rolled.rarity;
+                }
+                int level = ProfessionManager.Local?.GetLevel(professionId) ?? 1;
+                if (level >= bonusYieldLevel && (int)rarity <= (int)ItemRarity.Uncommon && Random.value < 0.20f)
+                    qty *= 2;
+
+                StartCoroutine(PostItem(offlineItemId, qty));
+                ProfessionManager.Local?.AwardXp(professionId, xpPerTick);
+                SpawnTickVFX();
+                if (_hud != null) _hud.Pulse(qty, ItemCatalogManager.GetDisplayName(offlineItemId));
+                Debug.Log($"[GATHER OFFLINE] {stationName}: +{qty}x {offlineItemId}, +{xpPerTick} xp");
             }
-
-            StartCoroutine(PostItem(qty));
-            ProfessionManager.Local?.AwardXp(professionId, xpPerTick);
-            SpawnTickVFX();
-
-            if (_hud != null) _hud.Pulse(qty);
-
-            Debug.Log($"[GATHER] {stationName}: +{qty}x {itemId}, +{xpPerTick} xp");
 
             if (_awardDepleted)
             {
@@ -352,13 +376,13 @@ public class AfkGatheringStation : MonoBehaviour
 
     // ── Item API ──────────────────────────────────────────────────────────────────
 
-    IEnumerator PostItem(int qty)
+    IEnumerator PostItem(string awardedItemId, int qty)
     {
         int    charId = AuthManager.CharacterId;
         string jwt    = AuthManager.Token;
         if (charId <= 0 || string.IsNullOrEmpty(jwt)) yield break;
 
-        string json = $"{{\"characterId\":{charId},\"itemId\":\"{itemId}\",\"quantity\":{qty}}}";
+        string json = $"{{\"characterId\":{charId},\"itemId\":\"{awardedItemId}\",\"quantity\":{qty}}}";
 
         using var req = new UnityWebRequest($"{ServerConfig.AuthBaseUrl}/api/inventory/add-item", "POST");
         req.uploadHandler   = new UploadHandlerRaw(System.Text.Encoding.UTF8.GetBytes(json));
@@ -496,12 +520,34 @@ public class AfkGatheringStation : MonoBehaviour
             StopGathering($"{stationName} is depleted. It will respawn in 15 minutes.");
     }
 
-    void OnAwardRequestCompleted(bool granted, bool depleted, int remaining)
+    string _awardFailureMessage;
+
+    void OnAwardRequestCompleted(bool granted, bool depleted, int remaining,
+        string awardedItemId, int quantity, int skillLevel, int skillXp,
+        bool leveledUp, string message)
     {
         _awardGranted = granted;
         _awardDepleted = depleted;
         _remainingAwards = Mathf.Max(0, remaining);
+        _awardedItemId = awardedItemId;
+        _awardedQuantity = Mathf.Max(0, quantity);
+        _awardFailureMessage = granted ? "" : message;
+        if (granted)
+        {
+            ProfessionManager.Local?.ApplyAuthoritativeState(
+                professionId, skillLevel, skillXp, leveledUp);
+            if (!string.IsNullOrWhiteSpace(message))
+                RodChatManager.Instance?.AddSystemMessage(message);
+            StartCoroutine(RefreshInventoryAfterAward());
+        }
         _awardResolved = true;
+    }
+
+    IEnumerator RefreshInventoryAfterAward()
+    {
+        if (InventoryManager.Instance != null)
+            yield return InventoryManager.Instance.LoadInventory();
+        InventoryBagUI.Refresh();
     }
 
     void CacheLocalPresentation()

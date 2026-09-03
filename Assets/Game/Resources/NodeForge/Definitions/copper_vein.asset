@@ -13,10 +13,11 @@ MonoBehaviour:
   m_Name: copper_vein
   m_EditorClassIdentifier: Assembly-CSharp::GatheringNodeDefinition
   nodeId: copper_vein
-  displayName: Copper Vein
+  displayName: Mineral Vein
   category: 0
   professionId: 2
   minimumLevel: 1
+  lootTable: {fileID: 11400000, guid: a09c1f2d55664967aadf817736ea127f, type: 2}
   yieldItem: {fileID: 11400000, guid: cc822dd4104d40679b2b0cabfba69a28, type: 2}
   itemId: ore_copper
   itemQuantity: 1

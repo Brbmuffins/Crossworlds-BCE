@@ -32,6 +32,8 @@ public sealed class GatheringNodeInstance : MonoBehaviour
         if (definition == null || UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode) return;
         AfkGatheringStation station = GetComponent<AfkGatheringStation>();
         if (station != null) definition.ApplyTo(station);
+        GatheringNodeNetworkState networkState = GetComponent<GatheringNodeNetworkState>();
+        if (networkState != null) definition.ApplyTo(networkState);
         BoxCollider interactionCollider = GetComponent<BoxCollider>();
         if (interactionCollider != null)
         {

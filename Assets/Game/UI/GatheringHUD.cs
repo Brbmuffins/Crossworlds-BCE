@@ -148,6 +148,12 @@ public class GatheringHUD : MonoBehaviour
         _pulseRoutine = StartCoroutine(DoPulse(qty));
     }
 
+    public void Pulse(int qty, string itemId)
+    {
+        if (!string.IsNullOrWhiteSpace(itemId)) _itemId = itemId;
+        Pulse(qty);
+    }
+
     public void FlashLevelUp(int newLevel)
     {
         if (_flashRoutine != null) StopCoroutine(_flashRoutine);

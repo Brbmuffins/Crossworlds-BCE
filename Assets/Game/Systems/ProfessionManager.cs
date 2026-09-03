@@ -134,6 +134,27 @@ public class ProfessionManager : MonoBehaviour
         StartCoroutine(PostAwardXp(professionId, xpAmount));
     }
 
+    /// <summary>Updates the client cache from a trusted dedicated-server transaction.</summary>
+    public void ApplyAuthoritativeState(int professionId, int skillLevel, int skillXp, bool leveledUp)
+    {
+        int oldLevel = GetLevel(professionId);
+        if (!_professions.TryGetValue(professionId, out ProfessionRecord record))
+        {
+            record = new ProfessionRecord { profession_id = professionId };
+            _professions[professionId] = record;
+        }
+        record.skill_level = Mathf.Max(1, skillLevel);
+        record.skill_xp = Mathf.Max(0, skillXp);
+        if (leveledUp && record.skill_level > oldLevel)
+        {
+            onLevelUp?.Invoke(professionId, record.skill_level);
+            string professionName = professionId < ProfessionNames.Length
+                ? ProfessionNames[professionId] : $"Profession {professionId}";
+            RodChatManager.Instance?.AddSystemMessage(
+                $"{professionName} reached level {record.skill_level}!");
+        }
+    }
+
     // ─────────────────────────────────────────────────────────────────────────────
     // Network
     // ─────────────────────────────────────────────────────────────────────────────

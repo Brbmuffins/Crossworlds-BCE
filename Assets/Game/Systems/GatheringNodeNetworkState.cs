@@ -25,6 +25,13 @@ public sealed class GatheringNodeNetworkState : NetworkBehaviour
     [Min(0.5f)] public float interactionRange = 3f;
     [Min(0.1f)] public float minimumSecondsBetweenAwards = 4.75f;
 
+    [Header("Authoritative Reward")]
+    public GatheringLootTable lootTable;
+    [Min(0)] public int experiencePerAward = 10;
+    [Min(1)] public int bonusYieldLevel = 10;
+    [Tooltip("Profession index. Mining is 2.")]
+    public int professionId = 2;
+
     [SyncVar(hook = nameof(OnRemainingAwardsChanged))]
     int remainingAwards;
     [SyncVar(hook = nameof(OnDepletedChanged))]
@@ -36,9 +43,10 @@ public sealed class GatheringNodeNetworkState : NetworkBehaviour
     public bool IsDepleted => depleted;
     public double RespawnAtNetworkTime => respawnAtNetworkTime;
 
-    public event Action<bool, bool, int> AwardRequestCompleted;
+    public event Action<bool, bool, int, string, int, int, int, bool, string> AwardRequestCompleted;
 
     readonly Dictionary<int, double> nextAwardByConnection = new();
+    readonly HashSet<int> pendingAwardConnections = new();
     Renderer[] cachedRenderers = Array.Empty<Renderer>();
     Collider[] cachedColliders = Array.Empty<Collider>();
     bool[] rendererDefaults = Array.Empty<bool>();
@@ -91,7 +99,8 @@ public sealed class GatheringNodeNetworkState : NetworkBehaviour
     {
         if (!isClient)
         {
-            AwardRequestCompleted?.Invoke(false, depleted, remainingAwards);
+            AwardRequestCompleted?.Invoke(false, depleted, remainingAwards, "", 0, 0, 0, false,
+                "Gathering requires a server connection.");
             return;
         }
         CmdRequestAward();
@@ -117,6 +126,7 @@ public sealed class GatheringNodeNetworkState : NetworkBehaviour
         }
 
         int connectionId = sender.connectionId;
+        if (pendingAwardConnections.Contains(connectionId)) return;
         if (nextAwardByConnection.TryGetValue(connectionId, out double nextAllowed) &&
             NetworkTime.time < nextAllowed)
         {
@@ -128,6 +138,37 @@ public sealed class GatheringNodeNetworkState : NetworkBehaviour
         {
             if (!depleted) DepleteNode();
             TargetAwardResult(sender, false, true, 0);
+            return;
+        }
+        if (remainingAwards - pendingAwardConnections.Count <= 0)
+        {
+            TargetAwardResult(sender, false, false, remainingAwards, "", 0, 0, 0, false,
+                "Another miner is finishing this node's final reward.");
+            return;
+        }
+
+        if (lootTable == null || !lootTable.TryRoll(out LootItemDefinition item, out int quantity))
+        {
+            TargetAwardResult(sender, false, depleted, remainingAwards, "", 0, 0, 0, false,
+                "This node has no valid reward table.");
+            return;
+        }
+
+        pendingAwardConnections.Add(connectionId);
+        GatheringPersistenceService.Award(sender, persistentNodeId, item, quantity,
+            professionId, experiencePerAward, bonusYieldLevel, CompleteAward);
+    }
+
+    [Server]
+    void CompleteAward(NetworkConnectionToClient sender, GatheringAwardResponse response)
+    {
+        if (sender == null) return;
+        int connectionId = sender.connectionId;
+        pendingAwardConnections.Remove(connectionId);
+        if (response?.success != true || response.data == null || response.data.stored < 1)
+        {
+            TargetAwardResult(sender, false, depleted, remainingAwards, "", 0, 0, 0, false,
+                response?.error ?? "Your inventory is full.");
             return;
         }
 
@@ -142,13 +183,19 @@ public sealed class GatheringNodeNetworkState : NetworkBehaviour
         if (exhausted) DepleteNode();
         else SaveServerState();
 
-        TargetAwardResult(sender, true, exhausted, remainingAwards);
+        GatheringAwardData data = response.data;
+        TargetAwardResult(sender, true, exhausted, remainingAwards, data.item_id,
+            data.stored, data.skill_level, data.skill_xp, data.leveled_up,
+            data.bonus_yield ? "Bonus yield!" : "");
     }
 
     [TargetRpc]
-    void TargetAwardResult(NetworkConnection target, bool granted, bool nowDepleted, int awardsLeft)
+    void TargetAwardResult(NetworkConnection target, bool granted, bool nowDepleted, int awardsLeft,
+        string itemId = "", int quantity = 0, int skillLevel = 0, int skillXp = 0,
+        bool leveledUp = false, string message = "")
     {
-        AwardRequestCompleted?.Invoke(granted, nowDepleted, awardsLeft);
+        AwardRequestCompleted?.Invoke(granted, nowDepleted, awardsLeft, itemId, quantity,
+            skillLevel, skillXp, leveledUp, message);
     }
 
     [Server]
@@ -160,6 +207,7 @@ public sealed class GatheringNodeNetworkState : NetworkBehaviour
         depleted = false;
         respawnAtNetworkTime = 0d;
         nextAwardByConnection.Clear();
+        pendingAwardConnections.Clear();
         SaveServerState();
         Debug.Log($"[GATHER NODE] READY {NodeLogLabel()} reason={reason} " +
                   $"awards={remainingAwards} range={minimum}-{maximum} " +
@@ -254,5 +302,7 @@ public sealed class GatheringNodeNetworkState : NetworkBehaviour
         respawnSeconds = Mathf.Max(1f, respawnSeconds);
         interactionRange = Mathf.Max(0.5f, interactionRange);
         minimumSecondsBetweenAwards = Mathf.Max(0.1f, minimumSecondsBetweenAwards);
+        experiencePerAward = Mathf.Max(0, experiencePerAward);
+        bonusYieldLevel = Mathf.Max(1, bonusYieldLevel);
     }
 }

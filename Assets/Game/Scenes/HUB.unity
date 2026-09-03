@@ -421,9 +421,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d60c66628a917094fbeffd5f4e56962e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AfkGatheringStation
-  stationName: Copper Vein
+  stationName: Mineral Vein
   professionId: 2
   minLevelRequired: 1
+  lootTable: {fileID: 11400000, guid: a09c1f2d55664967aadf817736ea127f, type: 2}
   itemId: ore_copper
   itemQuantity: 1
   tickInterval: 5
@@ -496,6 +497,10 @@ MonoBehaviour:
   respawnSeconds: 900
   interactionRange: 3
   minimumSecondsBetweenAwards: 4.75
+  lootTable: {fileID: 11400000, guid: a09c1f2d55664967aadf817736ea127f, type: 2}
+  experiencePerAward: 10
+  bonusYieldLevel: 10
+  professionId: 2
 --- !u!114 &104280545
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4172,9 +4177,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d60c66628a917094fbeffd5f4e56962e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AfkGatheringStation
-  stationName: Copper Vein
+  stationName: Mineral Vein
   professionId: 2
   minLevelRequired: 1
+  lootTable: {fileID: 11400000, guid: a09c1f2d55664967aadf817736ea127f, type: 2}
   itemId: ore_copper
   itemQuantity: 1
   tickInterval: 5
@@ -4240,6 +4246,10 @@ MonoBehaviour:
   respawnSeconds: 900
   interactionRange: 3
   minimumSecondsBetweenAwards: 4.75
+  lootTable: {fileID: 11400000, guid: a09c1f2d55664967aadf817736ea127f, type: 2}
+  experiencePerAward: 10
+  bonusYieldLevel: 10
+  professionId: 2
 --- !u!114 &1346825637
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4289,9 +4299,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d60c66628a917094fbeffd5f4e56962e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AfkGatheringStation
-  stationName: Copper Vein
+  stationName: Mineral Vein
   professionId: 2
   minLevelRequired: 1
+  lootTable: {fileID: 11400000, guid: a09c1f2d55664967aadf817736ea127f, type: 2}
   itemId: ore_copper
   itemQuantity: 1
   tickInterval: 5
@@ -4364,6 +4375,10 @@ MonoBehaviour:
   respawnSeconds: 900
   interactionRange: 3
   minimumSecondsBetweenAwards: 4.75
+  lootTable: {fileID: 11400000, guid: a09c1f2d55664967aadf817736ea127f, type: 2}
+  experiencePerAward: 10
+  bonusYieldLevel: 10
+  professionId: 2
 --- !u!114 &1359520816
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5928,9 +5943,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d60c66628a917094fbeffd5f4e56962e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AfkGatheringStation
-  stationName: Copper Vein
+  stationName: Mineral Vein
   professionId: 2
   minLevelRequired: 1
+  lootTable: {fileID: 11400000, guid: a09c1f2d55664967aadf817736ea127f, type: 2}
   itemId: ore_copper
   itemQuantity: 1
   tickInterval: 5
@@ -6003,6 +6019,10 @@ MonoBehaviour:
   respawnSeconds: 900
   interactionRange: 3
   minimumSecondsBetweenAwards: 4.75
+  lootTable: {fileID: 11400000, guid: a09c1f2d55664967aadf817736ea127f, type: 2}
+  experiencePerAward: 10
+  bonusYieldLevel: 10
+  professionId: 2
 --- !u!114 &1783400765
 MonoBehaviour:
   m_ObjectHideFlags: 0
