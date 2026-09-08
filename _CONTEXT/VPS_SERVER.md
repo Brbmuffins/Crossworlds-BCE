@@ -90,7 +90,16 @@ sudo bash deploy-server.sh            # rollback: sudo bash deploy-server.sh --r
 
 ### Client Build (Windows)
 1. Unity → `BuildScript.BuildWindowsClient` (or **File → Build Settings** → Windows x86_64)
-2. Zip the output and replace `/var/www/crossworlds/downloads/WindowsClient.zip`
+2. Direct website release: run `tools/build-windows-installer.ps1 -Version X.Y.Z`.
+3. Sign the generated installer and release packages with the production Authenticode
+   certificate, then test a clean install and an upgrade from the previous version.
+4. Publish every file from `build/DirectRelease/releases/` beneath
+   `/var/www/crossworlds/downloads/updates/win-x64/`. Keep the existing ZIP until
+   installer and upgrade QA pass.
+
+Steam builds do not include the direct launcher. Package the Unity player directly in
+its Steam depot and launch with `--distribution=steam`; SteamPipe exclusively owns its
+installation and updates.
 
 ### FileZilla / SFTP Settings
 - Host: `15.204.243.36`, Port: 22, Protocol: SFTP, User: `ubuntu`

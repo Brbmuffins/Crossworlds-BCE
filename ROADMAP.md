@@ -14,6 +14,19 @@ conversation: it names its files, acceptance criteria, and dependencies. Tasks m
 
 ---
 
+> **Direct Windows installer foundation (2026-09-08):** The website build now has
+> a separate .NET 8/Velopack launcher and packaging script. It checks the self-hosted
+> `downloads/updates/win-x64` feed before play, applies verified releases, and launches
+> Unity with `--distribution=direct`. Steam remains a separate future depot using
+> `--distribution=steam` with SteamPipe as its only updater. Version 1.1.0 packages
+> build successfully. The owner approved unsigned early distribution on 2026-09-08;
+> the existing ZIP remains available as a fallback.
+
+> **TODO — Windows release signing (deferred 2026-09-08):** Purchase or provision a
+> trusted Authenticode code-signing certificate, add certificate-secret handling to
+> the release pipeline, sign the launcher/installer before packaging, and validate
+> timestamping plus Windows SmartScreen behavior. Never commit certificate material.
+
 > **Mining material expansion (2026-08-23):** Bronze, Tin, Steel, Silver, Hell,
 > and Moon now have Loot Forge ore/ingot definitions, transparent 512px inventory
 > icons, Node Forge vein definitions, and idempotent live smelting recipes. Each

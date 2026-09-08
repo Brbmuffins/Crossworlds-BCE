@@ -35,6 +35,12 @@ desktop.ini
 *.slnx
 *.unityproj
 
+# Standalone direct-distribution launcher source (not Unity-generated project files).
+!Launcher/
+!Launcher/**/*.csproj
+/Launcher/**/bin/
+/.tools/
+
 # ── Cowork / local session files ──────────────────────────────────────────────
 .claude/
 
