@@ -8,6 +8,14 @@ No rewrites of working systems: the Mirror combat core, the Node API, and the ol
 endpoints are working — tasks extend or wire them, never restructure them. If a task
 seems to require touching more than its listed files, stop and re-scope.
 
+> **Illustrated portal map (2026-09-10):** The procedural waypoint presentation now
+> loads the approved illustrated Crossworlds map from Resources. Existing travel remains
+> server-authoritative; transparent circular hotspots align to the painted portal markers,
+> provide hover/selection feedback, and retain locked-state behavior. HUB is now an explicit
+> player destination, the baked artwork replaces procedural labels/routes, and additive-zone
+> current-location detection follows the local player's scene. Unity play-mode alignment and
+> end-to-end portal travel remain to be confirmed in the editor.
+
 **Task format.** Each task is sized for one fresh Sonnet session with zero prior
 conversation: it names its files, acceptance criteria, and dependencies. Tasks marked
 **⚠ DECISION** need an answer from the project owner first (questions collected at the end).

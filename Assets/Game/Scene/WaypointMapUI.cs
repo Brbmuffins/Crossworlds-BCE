@@ -29,6 +29,8 @@ public sealed class WaypointMapUI : MonoBehaviour
     TextMeshProUGUI _title;
     TextMeshProUGUI _status;
     Image _mapImage;
+    bool _usesIllustratedBackground;
+    static Sprite _hotspotRingSprite;
     Action<WaypointMapNode> _onNodeSelected;
     string _currentSceneName;
 
@@ -100,21 +102,35 @@ public sealed class WaypointMapUI : MonoBehaviour
         _onNodeSelected = onNodeSelected;
         _title.text = string.IsNullOrWhiteSpace(title) ? "WORLD MAP" : title;
         _mapImage.sprite = background;
+        _usesIllustratedBackground = background != null;
+        _title.gameObject.SetActive(!_usesIllustratedBackground);
+        _mapArea.anchorMin = _usesIllustratedBackground
+            ? new Vector2(0.03f, 0.14f)
+            : new Vector2(0.03f, 0.16f);
+        _mapArea.anchorMax = _usesIllustratedBackground
+            ? new Vector2(0.97f, 0.97f)
+            : new Vector2(0.97f, 0.88f);
         _mapImage.color = background != null
             ? Color.white
             : new Color(0.08f, 0.06f, 0.045f, 1f);
         _mapImage.type = Image.Type.Simple;
+        _mapImage.preserveAspect = background != null;
 
         _panel.SetActive(true);
         ClearLayer(_lineLayer);
         ClearLayer(_nodeLayer);
         SetStatusText("Select a destination.");
 
-        _currentSceneName = SceneManager.GetActiveScene().name;
+        _currentSceneName = PlayerIdentity.Local != null && PlayerIdentity.Local.gameObject.scene.IsValid()
+            ? PlayerIdentity.Local.gameObject.scene.name
+            : SceneManager.GetActiveScene().name;
 
         Canvas.ForceUpdateCanvases();
-        DrawBarrierPlaceholder();
-        DrawConnections(nodes, connections);
+        if (!_usesIllustratedBackground)
+        {
+            DrawBarrierPlaceholder();
+            DrawConnections(nodes, connections);
+        }
         DrawCurrentLocation(nodes);
         DrawNodes(nodes);
 
@@ -209,17 +225,26 @@ public sealed class WaypointMapUI : MonoBehaviour
         GameObject buttonGo = MakeRect(node.id + "_Node", _nodeLayer, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f));
         RectTransform buttonRt = buttonGo.GetComponent<RectTransform>();
         buttonRt.anchoredPosition = local;
-        buttonRt.sizeDelta = new Vector2(28f, 28f);
+        buttonRt.sizeDelta = _usesIllustratedBackground
+            ? new Vector2(64f, 64f)
+            : new Vector2(28f, 28f);
 
         Image icon = buttonGo.AddComponent<Image>();
-        icon.sprite = node.icon;
-        icon.color = node.icon != null ? Color.white : nodeColor;
+        icon.sprite = _usesIllustratedBackground ? GetHotspotRingSprite() : node.icon;
+        icon.color = _usesIllustratedBackground
+            ? Color.clear
+            : node.icon != null ? Color.white : nodeColor;
 
         Button button = buttonGo.AddComponent<Button>();
         ColorBlock colors = button.colors;
-        colors.normalColor = Color.white;
-        colors.highlightedColor = new Color(1.5f, 1.5f, 1.5f, 1f);
-        colors.pressedColor = new Color(0.7f, 0.7f, 0.7f, 1f);
+        colors.normalColor = _usesIllustratedBackground ? Color.clear : Color.white;
+        colors.highlightedColor = _usesIllustratedBackground
+            ? new Color(1f, 0.82f, 0.25f, 0.8f)
+            : new Color(1.5f, 1.5f, 1.5f, 1f);
+        colors.pressedColor = _usesIllustratedBackground
+            ? new Color(1f, 0.68f, 0.12f, 1f)
+            : new Color(0.7f, 0.7f, 0.7f, 1f);
+        colors.selectedColor = colors.highlightedColor;
         button.colors = colors;
         button.onClick.AddListener(() => SelectNode(node));
 
@@ -229,6 +254,9 @@ public sealed class WaypointMapUI : MonoBehaviour
         EventTrigger et = buttonGo.AddComponent<EventTrigger>();
         AddPointerEvent(et, EventTriggerType.PointerEnter, _ => SetStatusText(hoverText));
         AddPointerEvent(et, EventTriggerType.PointerExit, _ => SetStatusText("Select a destination."));
+
+        if (_usesIllustratedBackground)
+            return;
 
         GameObject ring = MakeRect(node.id + "_Ring", buttonRt, Vector2.zero, Vector2.one);
         Image ringImage = ring.AddComponent<Image>();
@@ -337,10 +365,17 @@ public sealed class WaypointMapUI : MonoBehaviour
                 new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f));
             RectTransform glowRt = glow.GetComponent<RectTransform>();
             glowRt.anchoredPosition = local;
-            glowRt.sizeDelta = new Vector2(52f, 52f);
+            glowRt.sizeDelta = _usesIllustratedBackground
+                ? new Vector2(64f, 64f)
+                : new Vector2(52f, 52f);
             Image glowImg = glow.AddComponent<Image>();
+            if (_usesIllustratedBackground)
+                glowImg.sprite = GetHotspotRingSprite();
             glowImg.color = new Color(1f, 0.92f, 0.32f, 0.55f);
             glowImg.raycastTarget = false;
+
+            if (_usesIllustratedBackground)
+                break;
 
             // "— you are here —" text below the node label
             TextMeshProUGUI hereLabel = MakeTmp("CurrentLocationLabel", _nodeLayer,
@@ -363,6 +398,42 @@ public sealed class WaypointMapUI : MonoBehaviour
         var entry = new EventTrigger.Entry { eventID = type };
         entry.callback.AddListener(action);
         trigger.triggers.Add(entry);
+    }
+
+    static Sprite GetHotspotRingSprite()
+    {
+        if (_hotspotRingSprite != null)
+            return _hotspotRingSprite;
+
+        const int size = 64;
+        const float innerRadius = 22f;
+        const float outerRadius = 29f;
+        var texture = new Texture2D(size, size, TextureFormat.RGBA32, false, true)
+        {
+            name = "WaypointHotspotRing",
+            hideFlags = HideFlags.HideAndDontSave,
+            filterMode = FilterMode.Bilinear,
+            wrapMode = TextureWrapMode.Clamp
+        };
+        var pixels = new Color32[size * size];
+        Vector2 center = new Vector2((size - 1) * 0.5f, (size - 1) * 0.5f);
+        for (int y = 0; y < size; y++)
+        {
+            for (int x = 0; x < size; x++)
+            {
+                float radius = Vector2.Distance(new Vector2(x, y), center);
+                byte alpha = radius >= innerRadius && radius <= outerRadius ? (byte)255 : (byte)0;
+                pixels[y * size + x] = new Color32(255, 255, 255, alpha);
+            }
+        }
+
+        texture.SetPixels32(pixels);
+        texture.Apply(false, true);
+        _hotspotRingSprite = Sprite.Create(texture, new Rect(0f, 0f, size, size),
+            new Vector2(0.5f, 0.5f), 100f);
+        _hotspotRingSprite.name = "WaypointHotspotRing";
+        _hotspotRingSprite.hideFlags = HideFlags.HideAndDontSave;
+        return _hotspotRingSprite;
     }
 
     void DrawBarrierPlaceholder()
@@ -391,12 +462,34 @@ public sealed class WaypointMapUI : MonoBehaviour
 
     Vector2 MapToLocal(Vector2 normalized)
     {
-        Rect rect = _mapArea.rect;
+        Rect rect = GetDisplayedMapRect();
         normalized.x = Mathf.Clamp01(normalized.x);
         normalized.y = Mathf.Clamp01(normalized.y);
         return new Vector2(
-            (normalized.x - _mapArea.pivot.x) * rect.width,
-            (normalized.y - _mapArea.pivot.y) * rect.height);
+            rect.xMin + normalized.x * rect.width,
+            rect.yMin + normalized.y * rect.height);
+    }
+
+    Rect GetDisplayedMapRect()
+    {
+        Rect rect = _mapArea.rect;
+        if (!_usesIllustratedBackground || _mapImage.sprite == null || rect.height <= 0f)
+            return rect;
+
+        Rect spriteRect = _mapImage.sprite.rect;
+        if (spriteRect.height <= 0f)
+            return rect;
+
+        float spriteAspect = spriteRect.width / spriteRect.height;
+        float rectAspect = rect.width / rect.height;
+        if (rectAspect > spriteAspect)
+        {
+            float width = rect.height * spriteAspect;
+            return new Rect(rect.center.x - width * 0.5f, rect.yMin, width, rect.height);
+        }
+
+        float height = rect.width / spriteAspect;
+        return new Rect(rect.xMin, rect.center.y - height * 0.5f, rect.width, height);
     }
 
     static void ClearLayer(RectTransform layer)

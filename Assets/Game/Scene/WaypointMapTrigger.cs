@@ -11,6 +11,7 @@ using UnityEngine.SceneManagement;
 [AddComponentMenu("BCE/Scene/Waypoint Map Trigger")]
 public sealed class WaypointMapTrigger : NetworkBehaviour
 {
+    const string DefaultMapResourcePath = "WorldMap/CrossworldsPortalMap";
     const string AshenWastelandsSpawnId = "AshenWastelandsSpawnPoint";
     const string BoneyardSpawnId = "BoneYardPlayerSpawnPoint";
     const string DarkwoodSpawnId = "DarkwoodSpawnLocation";
@@ -67,7 +68,10 @@ public sealed class WaypointMapTrigger : NetworkBehaviour
             nodes = DefaultNodes();
         if (connections == null || connections.Length == 0)
             connections = DefaultConnections();
-
+#if UNITY_EDITOR || !UNITY_SERVER
+        if (mapBackground == null)
+            mapBackground = Resources.Load<Sprite>(DefaultMapResourcePath);
+#endif
     }
 
 #if UNITY_EDITOR || !UNITY_SERVER
@@ -207,6 +211,8 @@ public sealed class WaypointMapTrigger : NetworkBehaviour
             ? template.mapTitle
             : "WORLD MAP";
         Sprite background = template != null ? template.mapBackground : null;
+        if (background == null)
+            background = Resources.Load<Sprite>(DefaultMapResourcePath);
         WaypointMapNode[] mapNodes = template != null && template.nodes != null && template.nodes.Length > 0
             ? template.nodes
             : DefaultNodes();
@@ -518,7 +524,7 @@ public sealed class WaypointMapTrigger : NetworkBehaviour
                 subtitle = "island - not to scale",
                 sceneName = "",
                 unlocked = false,
-                normalizedPosition = new Vector2(0.07f, 0.15f),
+                normalizedPosition = new Vector2(0.095f, 0.808f),
                 labelOffset = new Vector2(0f, -42f),
                 color = new Color(0.0f, 0.75f, 0.78f, 1f),
                 description = "Placeholder island node."
@@ -530,7 +536,7 @@ public sealed class WaypointMapTrigger : NetworkBehaviour
                 subtitle = "unwritten",
                 sceneName = "",
                 unlocked = false,
-                normalizedPosition = new Vector2(0.05f, 0.52f),
+                normalizedPosition = new Vector2(0.082f, 0.491f),
                 labelOffset = new Vector2(0f, -40f),
                 color = new Color(0.72f, 0.66f, 0.66f, 1f),
                 description = "Placeholder southwest region."
@@ -542,7 +548,7 @@ public sealed class WaypointMapTrigger : NetworkBehaviour
                 subtitle = "harvest · craft · relax",
                 sceneName = SceneNames.GatheringZone,
                 unlocked = true,
-                normalizedPosition = new Vector2(0.24f, 0.72f),
+                normalizedPosition = new Vector2(0.251f, 0.367f),
                 labelOffset = new Vector2(0f, -34f),
                 color = new Color(0.82f, 0.36f, 0.38f, 1f),
                 description = "A peaceful zone for AFK woodcutting, fishing, and mining. A forge is available for crafting."
@@ -554,7 +560,7 @@ public sealed class WaypointMapTrigger : NetworkBehaviour
                 subtitle = "",
                 sceneName = "",
                 unlocked = false,
-                normalizedPosition = new Vector2(0.46f, 0.86f),
+                normalizedPosition = new Vector2(0.475f, 0.259f),
                 labelOffset = new Vector2(0f, -34f),
                 color = new Color(0.34f, 0.68f, 0.31f, 1f),
                 description = "Placeholder forest zone."
@@ -568,7 +574,7 @@ public sealed class WaypointMapTrigger : NetworkBehaviour
                 arrivalSpawnId = DarkwoodSpawnId,
                 useArrivalSpawnRotation = true,
                 unlocked = true,
-                normalizedPosition = new Vector2(0.44f, 0.45f),
+                normalizedPosition = new Vector2(0.459f, 0.561f),
                 labelOffset = new Vector2(0f, -36f),
                 color = new Color(0.78f, 0.35f, 0.28f, 1f),
                 description = "Darkwood region."
@@ -580,7 +586,7 @@ public sealed class WaypointMapTrigger : NetworkBehaviour
                 subtitle = "",
                 sceneName = SceneNames.ToujamBasin,
                 unlocked = true,
-                normalizedPosition = new Vector2(0.72f, 0.55f),
+                normalizedPosition = new Vector2(0.725f, 0.495f),
                 labelOffset = new Vector2(0f, -34f),
                 color = new Color(0.78f, 0.62f, 0.02f, 1f),
                 description = "Placeholder basin zone."
@@ -594,7 +600,7 @@ public sealed class WaypointMapTrigger : NetworkBehaviour
                 arrivalSpawnId = BoneyardSpawnId,
                 useArrivalSpawnRotation = true,
                 unlocked = true,
-                normalizedPosition = new Vector2(0.64f, 0.31f),
+                normalizedPosition = new Vector2(0.661f, 0.672f),
                 labelOffset = new Vector2(0f, -36f),
                 color = new Color(0.64f, 0.58f, 0.50f, 1f),
                 description = "A graveyard haunted by the restless dead."
@@ -608,7 +614,7 @@ public sealed class WaypointMapTrigger : NetworkBehaviour
                 arrivalSpawnId = PvpZoneSpawnId,
                 useArrivalSpawnRotation = true,
                 unlocked = true,
-                normalizedPosition = new Vector2(0.82f, 0.20f),
+                normalizedPosition = new Vector2(0.854f, 0.765f),
                 labelOffset = new Vector2(0f, -36f),
                 color = new Color(0.82f, 0.20f, 0.16f, 1f),
                 description = "A contested arena where players can fight one another."
@@ -622,10 +628,24 @@ public sealed class WaypointMapTrigger : NetworkBehaviour
                 arrivalSpawnId = AshenWastelandsSpawnId,
                 useArrivalSpawnRotation = true,
                 unlocked = true,
-                normalizedPosition = new Vector2(0.94f, 0.74f),
+                normalizedPosition = new Vector2(0.915f, 0.350f),
                 labelOffset = new Vector2(0f, -40f),
                 color = new Color(0.85f, 0.42f, 0.18f, 1f),
                 description = "A scorched wasteland consumed by ancient fire."
+            },
+            new WaypointMapNode
+            {
+                id = "hub",
+                displayName = "HUB",
+                subtitle = "sanctuary",
+                sceneName = SceneNames.Hub,
+                arrivalSpawnId = HubReturnSpawnPoint.DefaultSpawnId,
+                useArrivalSpawnRotation = true,
+                unlocked = true,
+                normalizedPosition = new Vector2(0.394f, 0.429f),
+                labelOffset = new Vector2(0f, -34f),
+                color = new Color(0.86f, 0.68f, 0.24f, 1f),
+                description = "Return to the Hub."
             },
         };
     }
