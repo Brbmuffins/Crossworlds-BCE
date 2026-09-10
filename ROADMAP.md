@@ -22,6 +22,13 @@ conversation: it names its files, acceptance criteria, and dependencies. Tasks m
 
 ---
 
+> **Zone loading-screen artwork (2026-09-10):** The runtime loading overlay now
+> selects full-screen artwork for all ten canonical gameplay zones while preserving
+> its existing fade, physics-settle, additive-scene readiness, and Mirror travel
+> behavior. Destination labels are normalized so display-name variants such as
+> `BONE YARD`/`Boneyard`, `PVP ZONE`/`PVPZONE`, and singular/plural Ashen names share
+> the correct image. Non-zone operations retain the dark fallback background.
+
 > **Direct Windows installer foundation (2026-09-08):** The website build now has
 > a separate .NET 8/Velopack launcher and packaging script. It checks the self-hosted
 > `downloads/updates/win-x64` feed before play, applies verified releases, and launches

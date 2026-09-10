@@ -1,5 +1,7 @@
 #if UNITY_EDITOR || !UNITY_SERVER
 using System.Collections;
+using System.Collections.Generic;
+using System.Text;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -40,10 +42,29 @@ public sealed class LoadingScreen : MonoBehaviour
     CanvasGroup     _group;
     TextMeshProUGUI _sceneLabel;
     TextMeshProUGUI _dotLabel;
+    RawImage        _backgroundImage;
+    AspectRatioFitter _backgroundFitter;
     bool            _visible;
     Coroutine       _autoHideCo;
     Coroutine       _dotCo;
     string          _pendingLabel;
+
+    static readonly Dictionary<string, string> BackgroundsByDestination =
+        new Dictionary<string, string>
+        {
+            { "hub", "hub" },
+            { "darkwood", "darkwood" },
+            { "toujambasin", "toujam-basin" },
+            { "boneyard", "boneyard" },
+            { "ashenwasteland", "ashen-wastelands" },
+            { "ashenwastelands", "ashen-wastelands" },
+            { "gatheringzone", "gathering-zone" },
+            { "arenacopper", "arena-copper" },
+            { "copperarena", "arena-copper" },
+            { "pvpzone", "pvp-zone" },
+            { "gmisland", "gm-island" },
+            { "voiddungeon", "void-dungeon" },
+        };
 
     // ── Public API ────────────────────────────────────────────────────────────
 
@@ -108,6 +129,7 @@ public sealed class LoadingScreen : MonoBehaviour
             MusicController.Instance?.Stop(MusicController.TravelFadeOutSeconds);
 
         _pendingLabel = label;
+        ApplyBackground(label);
         if (_sceneLabel != null)
             _sceneLabel.text = string.IsNullOrEmpty(label) ? "Loading..." : label;
 
@@ -221,6 +243,40 @@ public sealed class LoadingScreen : MonoBehaviour
         return null;
     }
 
+    void ApplyBackground(string destinationLabel)
+    {
+        if (_backgroundImage == null)
+            return;
+
+        Texture2D texture = null;
+        string key = NormalizeDestination(destinationLabel);
+        if (BackgroundsByDestination.TryGetValue(key, out string resourceName))
+            texture = Resources.Load<Texture2D>($"LoadingScreens/{resourceName}");
+
+        _backgroundImage.texture = texture;
+        _backgroundImage.color = texture != null
+            ? Color.white
+            : new Color(0.05f, 0.05f, 0.08f, 1f);
+
+        if (_backgroundFitter != null)
+            _backgroundFitter.aspectRatio = texture != null && texture.height > 0
+                ? (float)texture.width / texture.height
+                : 16f / 9f;
+    }
+
+    static string NormalizeDestination(string label)
+    {
+        if (string.IsNullOrWhiteSpace(label))
+            return string.Empty;
+
+        var key = new StringBuilder(label.Length);
+        foreach (char character in label)
+            if (char.IsLetterOrDigit(character))
+                key.Append(char.ToLowerInvariant(character));
+
+        return key.ToString();
+    }
+
     // ── Build UI ──────────────────────────────────────────────────────────────
 
     void Build()
@@ -235,13 +291,26 @@ public sealed class LoadingScreen : MonoBehaviour
         _group.interactable   = false;
         _group.blocksRaycasts = true;
 
-        // Background
-        var bg = new GameObject("BG", typeof(RectTransform), typeof(Image));
+        // Destination artwork fills the screen while preserving its cinematic aspect.
+        var bg = new GameObject("BG", typeof(RectTransform), typeof(RawImage), typeof(AspectRatioFitter));
         bg.transform.SetParent(transform, false);
         var bgRt = bg.GetComponent<RectTransform>();
-        bgRt.anchorMin = Vector2.zero; bgRt.anchorMax = Vector2.one;
-        bgRt.offsetMin = bgRt.offsetMax = Vector2.zero;
-        bg.GetComponent<Image>().color = new Color(0.05f, 0.05f, 0.08f, 1f);
+        bgRt.anchorMin = bgRt.anchorMax = new Vector2(0.5f, 0.5f);
+        bgRt.anchoredPosition = Vector2.zero;
+        _backgroundImage = bg.GetComponent<RawImage>();
+        _backgroundImage.color = new Color(0.05f, 0.05f, 0.08f, 1f);
+        _backgroundFitter = bg.GetComponent<AspectRatioFitter>();
+        _backgroundFitter.aspectMode = AspectRatioFitter.AspectMode.EnvelopeParent;
+        _backgroundFitter.aspectRatio = 16f / 9f;
+
+        // A restrained veil keeps the destination label readable over bright scenes.
+        var veil = new GameObject("ArtworkVeil", typeof(RectTransform), typeof(Image));
+        veil.transform.SetParent(transform, false);
+        var veilRt = veil.GetComponent<RectTransform>();
+        veilRt.anchorMin = Vector2.zero;
+        veilRt.anchorMax = Vector2.one;
+        veilRt.offsetMin = veilRt.offsetMax = Vector2.zero;
+        veil.GetComponent<Image>().color = new Color(0.015f, 0.01f, 0.025f, 0.26f);
 
         // Scene / destination label
         var labelGO = new GameObject("SceneLabel", typeof(RectTransform), typeof(TextMeshProUGUI));
