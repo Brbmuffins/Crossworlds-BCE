@@ -1,0 +1,14 @@
+{"events":[
+{"start":"2026-09-10T11:30:00Z","end":"2026-09-10T14:30:00Z","symbols":["ALL"],"reason":"U.S. Producer Price Index release","source":"https://www.bls.gov/schedule/2026/09_sched.htm"},
+{"start":"2026-09-11T11:30:00Z","end":"2026-09-11T14:30:00Z","symbols":["ALL"],"reason":"U.S. Consumer Price Index release","source":"https://www.bls.gov/schedule/2026/09_sched.htm"},
+{"start":"2026-09-16T17:00:00Z","end":"2026-09-16T20:30:00Z","symbols":["ALL"],"reason":"Federal Reserve policy decision and press conference","source":"https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm"},
+{"start":"2026-10-02T11:30:00Z","end":"2026-10-02T14:30:00Z","symbols":["ALL"],"reason":"U.S. Employment Situation release","source":"https://www.bls.gov/schedule/news_release/empsit.htm"},
+{"start":"2026-10-14T11:30:00Z","end":"2026-10-14T14:30:00Z","symbols":["ALL"],"reason":"U.S. Consumer Price Index release","source":"https://www.bls.gov/schedule/2026/"},
+{"start":"2026-10-15T11:30:00Z","end":"2026-10-15T14:30:00Z","symbols":["ALL"],"reason":"U.S. Producer Price Index release","source":"https://www.bls.gov/schedule/2026/"},
+{"start":"2026-10-28T17:00:00Z","end":"2026-10-28T20:30:00Z","symbols":["ALL"],"reason":"Federal Reserve policy decision and press conference","source":"https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm"},
+{"start":"2026-11-06T12:30:00Z","end":"2026-11-06T15:30:00Z","symbols":["ALL"],"reason":"U.S. Employment Situation release","source":"https://www.bls.gov/schedule/news_release/empsit.htm"},
+{"start":"2026-11-10T12:30:00Z","end":"2026-11-10T15:30:00Z","symbols":["ALL"],"reason":"U.S. Consumer Price Index release","source":"https://www.bls.gov/schedule/2026/"},
+{"start":"2026-11-13T12:30:00Z","end":"2026-11-13T15:30:00Z","symbols":["ALL"],"reason":"U.S. Producer Price Index release","source":"https://www.bls.gov/schedule/2026/"},
+{"start":"2026-12-04T12:30:00Z","end":"2026-12-04T15:30:00Z","symbols":["ALL"],"reason":"U.S. Employment Situation release","source":"https://www.bls.gov/schedule/news_release/empsit.htm"},
+{"start":"2026-12-09T18:00:00Z","end":"2026-12-09T21:30:00Z","symbols":["ALL"],"reason":"Federal Reserve policy decision and press conference","source":"https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm"}
+]}
