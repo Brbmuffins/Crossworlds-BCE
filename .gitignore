@@ -101,3 +101,9 @@ WIKI_CORRECTIONS_*.md
 Backend_GM_Permissions_Handoff.md
 Docs/vps-character-system-prompt.txt
 DEV_ENV_VPS_SETUP.md
+
+# Local crypto-bot working copies; keep them out of the game repository.
+/.codex-db/
+/.codex-regime/
+/.codex-resilience/
+/.codex-telemetry/
