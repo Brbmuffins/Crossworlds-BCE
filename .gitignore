@@ -107,3 +107,6 @@ DEV_ENV_VPS_SETUP.md
 /.codex-regime/
 /.codex-resilience/
 /.codex-telemetry/
+
+# External open-source cores for local research; never bundle into Unity or the game repo.
+/research/
