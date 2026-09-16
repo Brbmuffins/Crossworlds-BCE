@@ -4207,7 +4207,7 @@ public class AbilityCaster : NetworkBehaviour
             CastMagicShield(ability);
 
         if (ability.spawnTurret && indicator != null)
-            SpawnTurret(ability, indicator.transform.position);
+            SpawnTurret(ability, indicator.transform.position, damageMultiplier);
 
         // ── Route to ability-specific behaviours ──────────────────
         Vector3    castPoint   = indicator != null ? indicator.transform.position : transform.position;
@@ -4624,7 +4624,13 @@ public class AbilityCaster : NetworkBehaviour
             // ─ Marauder ──────────────────────────────────────────
             case "Runic Snare":
                 SpawnDeployableAt(shockMinePrefab ?? ability.deployablePrefab, castPoint,
-                    go => { var m = go.GetComponent<ShockMineBehaviour>(); if (m) m.owner = gameObject; });
+                    go =>
+                    {
+                        var mine = go.GetComponent<ShockMineBehaviour>();
+                        if (mine == null) return;
+                        mine.owner = gameObject;
+                        mine.damage *= dmgMult;
+                    });
                 break;
 
             case "Battle Hymn":
@@ -4645,7 +4651,7 @@ public class AbilityCaster : NetworkBehaviour
 
             // ─ Ironclad ──────────────────────────────────────────
             case "Counter Blow":
-                kineticReversalHandler?.Activate();
+                kineticReversalHandler?.Activate(dmgMult);
                 break;
 
             case "Gravity Slam":
@@ -4653,7 +4659,7 @@ public class AbilityCaster : NetworkBehaviour
                 break;
 
             case "Shieldwall Charge":
-                dashHandler?.BreachSlam(GetComponent<PassiveThreatProtocol>());
+                dashHandler?.BreachSlam(GetComponent<PassiveThreatProtocol>(), dmgMult);
                 break;
 
             case "Stalwart Stance":
@@ -4687,7 +4693,7 @@ public class AbilityCaster : NetworkBehaviour
                 break;
 
             case "Spirit Wisps":
-                CastNaniteSwarm(ability, castPoint);
+                CastNaniteSwarm(ability, castPoint, dmgMult);
                 break;
 
             case "Divine Spark":
@@ -4726,7 +4732,11 @@ public class AbilityCaster : NetworkBehaviour
                 SpawnDeployableAt(nullFieldPrefab ?? ability.deployablePrefab, castPoint, go =>
                 {
                     var zone = go.GetComponent<NullFieldZone>();
-                    if (zone != null) zone.owner = gameObject;
+                    if (zone != null)
+                    {
+                        zone.owner = gameObject;
+                        zone.decayDamagePerSecond *= dmgMult;
+                    }
                 });
                 break;
 
@@ -5925,7 +5935,7 @@ public class AbilityCaster : NetworkBehaviour
         }
     }
 
-    void CastNaniteSwarm(AbilityDef ability, Vector3 castPoint)
+    void CastNaniteSwarm(AbilityDef ability, Vector3 castPoint, float damageMultiplier)
     {
         GameObject prefab = naniteSwarmPrefab ?? ability.deployablePrefab;
         if (prefab == null) return;
@@ -5949,6 +5959,7 @@ public class AbilityCaster : NetworkBehaviour
             s.targetHealth = targetH;
             s.target       = targetT;
             s.owner        = gameObject;
+            s.chipDamage  *= damageMultiplier;
             if (ability.healAmount > 0f) s.healAmount = ability.healAmount;
         });
     }
@@ -6731,7 +6742,7 @@ public class AbilityCaster : NetworkBehaviour
                     StatusEffectManager sem = hit.GetComponent<StatusEffectManager>() ?? targetHealth.GetComponent<StatusEffectManager>();
                     if (sem != null)
                     {
-                        float dps = (ability.damage > 0f ? ability.damage : 20f) * 0.3f;
+                        float dps = (ability.damage > 0f ? ability.damage : 20f) * 0.3f * damageMultiplier;
                         sem.AddEffect(new StatusEffect(StatusEffectType.Cursed, 6f, dps, gameObject));
                     }
 
@@ -6781,14 +6792,14 @@ public class AbilityCaster : NetworkBehaviour
             ApplyAbilityShield(ability, health);
     }
 
-    void SpawnTurret(AbilityDef ability, Vector3 position)
+    void SpawnTurret(AbilityDef ability, Vector3 position, float damageMultiplier)
     {
         if (ability.turretPrefab != null)
         {
             GameObject turret = Instantiate(ability.turretPrefab, position, Quaternion.identity);
             turret.name = "Turret";
 
-            ConfigureSpawnedTurret(turret);
+            ConfigureSpawnedTurret(turret, damageMultiplier);
         }
         else
         {
@@ -6796,11 +6807,11 @@ public class AbilityCaster : NetworkBehaviour
             turret.name = "Turret (Placeholder)";
             turret.transform.position = position;
             turret.transform.localScale = new Vector3(0.6f, 1f, 0.6f);
-            ConfigureSpawnedTurret(turret);
+            ConfigureSpawnedTurret(turret, damageMultiplier);
         }
     }
 
-    void ConfigureSpawnedTurret(GameObject turret)
+    void ConfigureSpawnedTurret(GameObject turret, float damageMultiplier)
     {
         if (turret == null)
             return;
@@ -6810,6 +6821,7 @@ public class AbilityCaster : NetworkBehaviour
             turretController = turret.AddComponent<TurretController>();
 
         turretController.owner = gameObject;
+        turretController.damage *= damageMultiplier;
 
         GuardianFollower guardian = turret.GetComponent<GuardianFollower>();
         if (guardian != null)
@@ -8694,7 +8706,7 @@ public class AbilityCaster : NetworkBehaviour
         }
 
         if (effectAbility.spawnTurret && indicator != null)
-            SpawnTurret(effectAbility, indicator.transform.position);
+            SpawnTurret(effectAbility, indicator.transform.position, damageMultiplier);
 
         DispatchAbility(effectAbility, castPoint, damageMultiplier);
         StartPulseEffectsIfNeeded(
@@ -8893,7 +8905,10 @@ public class AbilityCaster : NetworkBehaviour
         if (ability.statusDuration > 0f)
         {
             StatusEffectManager sem = hit.GetComponent<StatusEffectManager>() ?? health.GetComponent<StatusEffectManager>();
-            sem?.AddEffect(new StatusEffect(ability.statusEffect, ability.statusDuration, ability.statusValue, gameObject));
+            float effectValue = ability.statusEffect == StatusEffectType.Cursed
+                ? ability.statusValue * damageMultiplier
+                : ability.statusValue;
+            sem?.AddEffect(new StatusEffect(ability.statusEffect, ability.statusDuration, effectValue, gameObject));
             playedHitVfx = true;
         }
 

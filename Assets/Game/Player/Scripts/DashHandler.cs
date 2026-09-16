@@ -41,13 +41,13 @@ public class DashHandler : MonoBehaviour
     }
 
     // ── Breach Slam ───────────────────────────────────────────────
-    public void BreachSlam(PassiveThreatProtocol threat = null)
+    public void BreachSlam(PassiveThreatProtocol threat = null, float damageMultiplier = 1f)
     {
         if (_dashing) return;
-        StartCoroutine(SlamRoutine(threat));
+        StartCoroutine(SlamRoutine(threat, damageMultiplier));
     }
 
-    private IEnumerator SlamRoutine(PassiveThreatProtocol threat)
+    private IEnumerator SlamRoutine(PassiveThreatProtocol threat, float damageMultiplier)
     {
         _dashing = true;
         Vector3 dir   = transform.forward;
@@ -83,7 +83,7 @@ public class DashHandler : MonoBehaviour
             if (!PvpCombatRules.MatchesTarget(gameObject, col, enemyTag, out Health health) ||
                 !damaged.Add(health))
                 continue;
-            health.TakeDamage(slamDamage, gameObject);
+            health.TakeDamage(slamDamage * damageMultiplier, gameObject);
             health.GetComponent<StatusEffectManager>()?.AddEffect(
                 new StatusEffect(StatusEffectType.Stagger, staggerDuration));
         }

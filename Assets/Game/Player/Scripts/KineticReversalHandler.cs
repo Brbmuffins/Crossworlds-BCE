@@ -31,13 +31,13 @@ public class KineticReversalHandler : MonoBehaviour
         _health = GetComponent<Health>();
     }
 
-    public void Activate()
+    public void Activate(float damageMultiplier = 1f)
     {
         if (_active) return;
-        StartCoroutine(AbsorbRoutine());
+        StartCoroutine(AbsorbRoutine(damageMultiplier));
     }
 
-    private IEnumerator AbsorbRoutine()
+    private IEnumerator AbsorbRoutine(float damageMultiplier)
     {
         _active = true;
         _health.BeginAbsorption(absorbWindow);
@@ -47,10 +47,10 @@ public class KineticReversalHandler : MonoBehaviour
 
         yield return new WaitForSeconds(absorbWindow);
 
-        Release();
+        Release(damageMultiplier);
     }
 
-    private void Release()
+    private void Release(float damageMultiplier)
     {
         _active = false;
         float absorbed = _health.AbsorbedAmount;
@@ -60,7 +60,7 @@ public class KineticReversalHandler : MonoBehaviour
 
         // Scale damage: 0 absorbed → minDamage, 100+ absorbed → maxDamage
         float t      = Mathf.Clamp01(absorbed / 100f);
-        float damage = Mathf.Lerp(minDamage, maxDamage, t);
+        float damage = Mathf.Lerp(minDamage, maxDamage, t) * damageMultiplier;
 
         // Cone damage
         Collider[] hits = ZonePhysics.OverlapSphere(gameObject, transform.position, coneRange);

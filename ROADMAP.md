@@ -20,8 +20,14 @@ seems to require touching more than its listed files, stop and re-scope.
 > into damaging variant payloads, including pulse- or secondary-damage variants.
 > All newly authored AbilityDef damage skills already receive the existing global
 > class-stat multiplier; an ability-specific coefficient remains an explicit
-> balance choice (zero by default). Standalone deployable/status-effect attacks
-> do not use AbilityDef and need a separate audited owner-scaling pass.
+> balance choice (zero by default). The follow-on owner-scaling pass now snapshots
+> that cast multiplier into spawned turrets, shock mines, nanite chip damage, and
+> null-field curse damage; singularity burst already did so. Ability-authored
+> Cursed effects and the special sweet-spot burn are scaled when applied, never
+> again on each tick. Shieldwall Charge's slam and Counter Blow's delayed
+> release also snapshot the cast multiplier. Enemy attacks and standalone damage
+> sources without an AbilityCaster owner remain unchanged. Unity compilation
+> and play-mode damage checks are still pending before wider coefficient tuning.
 
 > **Illustrated portal map (2026-09-10):** The procedural waypoint presentation now
 > loads the approved illustrated Crossworlds map from Resources. Existing travel remains
