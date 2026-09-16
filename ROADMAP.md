@@ -16,6 +16,12 @@ seems to require touching more than its listed files, stop and re-scope.
 > abilities remain unchanged. Unity compilation and play-mode balance checks
 > are pending. Before wider rollout, record level/gear damage baselines and
 > validate charged hits, variants, and time-to-kill in the editor.
+> Follow-up: the cast path now carries a pilot coefficient from a parent attack
+> into damaging variant payloads, including pulse- or secondary-damage variants.
+> All newly authored AbilityDef damage skills already receive the existing global
+> class-stat multiplier; an ability-specific coefficient remains an explicit
+> balance choice (zero by default). Standalone deployable/status-effect attacks
+> do not use AbilityDef and need a separate audited owner-scaling pass.
 
 > **Illustrated portal map (2026-09-10):** The procedural waypoint presentation now
 > loads the approved illustrated Crossworlds map from Resources. Existing travel remains
