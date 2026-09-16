@@ -8,6 +8,15 @@ No rewrites of working systems: the Mirror combat core, the Node API, and the ol
 endpoints are working — tasks extend or wire them, never restructure them. If a task
 seems to require touching more than its listed files, stop and re-scope.
 
+> **Combat stat-scaling pilot (2026-09-16):** Corrected Necromancer's class index
+> and primary-stat mapping in CharacterStats. AbilityDef now supports optional
+> per-primary-stat damage; only Arcanist Ice Spikes and Shadowblade Blade Flurry
+> opt in at 0.25 damage per point above the class starting baseline. Existing
+> global damage multipliers, critical hits, gear/API ownership, and all other
+> abilities remain unchanged. Unity compilation and play-mode balance checks
+> are pending. Before wider rollout, record level/gear damage baselines and
+> validate charged hits, variants, and time-to-kill in the editor.
+
 > **Illustrated portal map (2026-09-10):** The procedural waypoint presentation now
 > loads the approved illustrated Crossworlds map from Resources. Existing travel remains
 > server-authoritative; transparent circular hotspots align to the painted portal markers,

@@ -176,6 +176,9 @@ public class AbilityDef
     public float maxChargeTime = 1.5f;
     public float damage = 10f;
     [Min(0f)]
+    [Tooltip("Extra damage per class-primary stat point above its starting value. Zero preserves existing damage.")]
+    public float bonusDamagePerPrimaryStat = 0f;
+    [Min(0f)]
     [Tooltip("Seconds to wait after locking in a target before applying this spell's damage.")]
     public float damageDelay = 0f;
     [Min(0f)]
@@ -3838,7 +3841,13 @@ public class AbilityCaster : NetworkBehaviour
         // Gear + attunement damage bonus (CharacterStats) — applies to every
         // shape and every dispatched ability since they all read this value.
         if (_characterStats != null)
+        {
             damageMultiplier *= _characterStats.DamageMultiplier;
+            if (passiveAbility.category == AbilityCategory.Damage && passiveAbility.damage > 0f)
+                damageMultiplier *= 1f +
+                    _characterStats.GetPrimaryStatDamageBonus(passiveAbility.bonusDamagePerPrimaryStat)
+                    / passiveAbility.damage;
+        }
 
         TryTriggerCombustionMeteor(
             passiveAbility,

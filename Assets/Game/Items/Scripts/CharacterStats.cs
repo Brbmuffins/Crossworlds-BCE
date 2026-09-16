@@ -4,8 +4,8 @@ using UnityEngine.Events;
 
 // Central hub for character power modifiers.
 // The old local Equipment/Inventory path has been retired; live bonuses now come
-// from inspector baselines, mastery, and temporary effects until server-backed
-// gear stats are wired in.
+// from inspector baselines, authenticated progression and equipment, mastery,
+// and temporary effects.
 [RequireComponent(typeof(Health))]
 public class CharacterStats : NetworkBehaviour
 {
@@ -149,6 +149,24 @@ public class CharacterStats : NetworkBehaviour
     public int EffectiveIntelligence => _progressionInt + _equipmentInt;
     public int EffectiveVitality => _progressionVit + _equipmentVit;
 
+    int GetPrimaryStatAboveBaseline()
+    {
+        int primary = _progressionClassIndex switch
+        {
+            0 => EffectiveIntelligence,
+            1 => EffectiveVitality,
+            2 => EffectiveAgility,
+            3 => EffectiveIntelligence,
+            4 => EffectiveIntelligence,
+            5 => EffectiveIntelligence,
+            _ => 5
+        };
+        return Mathf.Max(0, primary - (_progressionClassIndex == 1 ? 10 : 5));
+    }
+
+    public float GetPrimaryStatDamageBonus(float damagePerPoint) =>
+        GetPrimaryStatAboveBaseline() * Mathf.Max(0f, damagePerPoint);
+
     public void SetMasteryBonuses(float dmgPct, float healPct, float cdrPct, float maxHpPct)
     {
         _masteryDmgPct   = dmgPct;
@@ -163,7 +181,7 @@ public class CharacterStats : NetworkBehaviour
     public void SetProgressionStats(int classIndex, int level, int strength, int agility,
         int intelligence, int vitality)
     {
-        _progressionClassIndex = Mathf.Clamp(classIndex, 0, 4);
+        _progressionClassIndex = Mathf.Clamp(classIndex, 0, 5);
         _progressionLevel = Mathf.Max(1, level);
         _progressionStr = Mathf.Max(0, strength);
         _progressionAgi = Mathf.Max(0, agility);
@@ -193,19 +211,8 @@ public class CharacterStats : NetworkBehaviour
 
     void RecalculateProgressionBonuses()
     {
-        int primaryValue = _progressionClassIndex switch
-        {
-            0 => EffectiveIntelligence, // Marauder (legacy Engineer)
-            1 => EffectiveVitality, // Ironclad (legacy Guardian)
-            2 => EffectiveAgility, // Shadowblade / Night Hunter
-            3 => EffectiveIntelligence, // Cleric
-            4 => EffectiveIntelligence, // Arcanist
-            _ => EffectiveStrength
-        };
-        int primaryBaseline = _progressionClassIndex == 1 ? 10 : 5;
-
         _progressionDamagePct =
-            Mathf.Max(0, primaryValue - primaryBaseline) * primaryStatDamagePctPerPoint +
+            GetPrimaryStatAboveBaseline() * primaryStatDamagePctPerPoint +
             Mathf.Max(0, EffectiveStrength - 5) * strengthDamagePctPerPoint;
         _progressionMaxHealth = Mathf.Max(0, EffectiveVitality - 10) * maxHealthPerVitality;
         _progressionMaxMana = Mathf.Max(0, EffectiveIntelligence - 5) * maxManaPerIntelligence;
