@@ -1,5 +1,13 @@
 # SNAPSHOT.md — Crossworlds BCE, State of the Project
 
+**Combat balance delta (2026-09-16, Unity editor compiled):** Ability-specific stat
+coefficients now come from a versioned `Resources/Combat` JSON definition, used
+authoritatively by the Unity dedicated server (with an optional server-only
+override). `CharacterStats` synchronizes the balance version; the character
+sheet exposes base/gear totals and ability scaling in hover details. See
+`_CONTEXT/COMBAT_BALANCE.md`. The Combat Balance validator passed in Unity;
+live balance and dedicated-server behavior remain unverified.
+
 **Audit date:** 2026-07-03 (full audit) — **delta update 2026-07-25 below supersedes stale claims**
 **Auditor:** Claude (senior-lead audit pass)
 **Scope:** `D:\Crossworlds` working tree (branch `main`, HEAD `ee7706d`) + server docs in `_CONTEXT/` and `CrossWorlds/CLAUDE.md`

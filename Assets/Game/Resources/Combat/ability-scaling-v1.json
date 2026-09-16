@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "abilities": [
+    { "classIndex": 4, "abilityName": "Ice Spikes", "stat": "Intelligence", "damagePerPoint": 0.25 },
+    { "classIndex": 2, "abilityName": "Blade Flurry", "stat": "Agility", "damagePerPoint": 0.25 }
+  ]
+}

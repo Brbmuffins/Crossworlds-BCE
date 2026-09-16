@@ -132,6 +132,7 @@ public class CharacterStats : NetworkBehaviour
     [SyncVar(hook = nameof(OnProgressionValueChanged))] private int _equipmentAgi;
     [SyncVar(hook = nameof(OnProgressionValueChanged))] private int _equipmentInt;
     [SyncVar(hook = nameof(OnProgressionValueChanged))] private int _equipmentVit;
+    [SyncVar] private int _combatBalanceVersion;
     private float _progressionDamagePct;
     private float _progressionMaxHealth;
     private float _progressionMaxMana;
@@ -148,6 +149,31 @@ public class CharacterStats : NetworkBehaviour
     public int EffectiveAgility => _progressionAgi + _equipmentAgi;
     public int EffectiveIntelligence => _progressionInt + _equipmentInt;
     public int EffectiveVitality => _progressionVit + _equipmentVit;
+    public int ProgressionClassIndex => _progressionClassIndex;
+    public int CombatBalanceVersion => _combatBalanceVersion;
+    public int ProgressionStrength => _progressionStr;
+    public int ProgressionAgility => _progressionAgi;
+    public int ProgressionIntelligence => _progressionInt;
+    public int ProgressionVitality => _progressionVit;
+    public int EquipmentStrength => _equipmentStr;
+    public int EquipmentAgility => _equipmentAgi;
+    public int EquipmentIntelligence => _equipmentInt;
+    public int EquipmentVitality => _equipmentVit;
+
+    public int GetScalingStatValue(CombatScalingStat stat) => stat switch
+    {
+        CombatScalingStat.Strength => EffectiveStrength,
+        CombatScalingStat.Agility => EffectiveAgility,
+        CombatScalingStat.Intelligence => EffectiveIntelligence,
+        CombatScalingStat.Vitality => EffectiveVitality,
+        _ => 0
+    };
+
+    public static int GetScalingBaseline(CombatScalingStat stat) =>
+        stat == CombatScalingStat.Vitality ? 10 : 5;
+
+    public float GetScalingDamageBonus(CombatScalingStat stat, float damagePerPoint) =>
+        CombatBalance.CalculateStatBonus(stat, GetScalingStatValue(stat), damagePerPoint);
 
     int GetPrimaryStatAboveBaseline()
     {
@@ -164,8 +190,11 @@ public class CharacterStats : NetworkBehaviour
         return Mathf.Max(0, primary - (_progressionClassIndex == 1 ? 10 : 5));
     }
 
-    public float GetPrimaryStatDamageBonus(float damagePerPoint) =>
-        GetPrimaryStatAboveBaseline() * Mathf.Max(0f, damagePerPoint);
+    public override void OnStartServer()
+    {
+        base.OnStartServer();
+        _combatBalanceVersion = CombatBalance.Version;
+    }
 
     public void SetMasteryBonuses(float dmgPct, float healPct, float cdrPct, float maxHpPct)
     {

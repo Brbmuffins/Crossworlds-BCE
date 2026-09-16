@@ -1169,10 +1169,13 @@ public class PlayerHUD : MonoBehaviour
             remaining > 0.05f
                 ? $"{(ability.instantCast ? "INSTANT CAST     " : "")}COOLDOWN  {remaining:0.#}s / {cooldown:0.#}s     MANA  {mana:0.#}"
                 : $"{(ability.instantCast ? "INSTANT CAST     " : "")}COOLDOWN  {cooldown:0.#}s     MANA  {mana:0.#}";
-        _abilityTooltipDescription.text =
-            string.IsNullOrWhiteSpace(ability.description)
-                ? "No description authored yet."
-                : ability.description.Trim();
+        string description = string.IsNullOrWhiteSpace(ability.description)
+            ? "No description authored yet."
+            : ability.description.Trim();
+        string scaling = GetAbilityScalingText(ability);
+        _abilityTooltipDescription.text = string.IsNullOrEmpty(scaling)
+            ? description
+            : $"{description}\n<color=#FFD34E>{scaling}</color>";
 
         PositionAbilityTooltip(pointerPosition);
     }
@@ -1188,6 +1191,20 @@ public class PlayerHUD : MonoBehaviour
 
         ability = _caster.abilities[slot];
         return ability != null;
+    }
+
+    string GetAbilityScalingText(AbilityDef ability)
+    {
+        if (ability == null || ability.category != AbilityCategory.Damage || _caster == null)
+            return "";
+        CharacterStats stats = _caster.GetComponent<CharacterStats>();
+        if (stats == null || stats.CombatBalanceVersion != CombatBalance.Version ||
+            !CombatBalance.TryGetRule(stats.ProgressionClassIndex, ability.abilityName,
+                out CombatBalance.AbilityRule rule) ||
+            !CombatBalance.TryGetStat(rule, out CombatScalingStat stat))
+            return "";
+        return $"+1 {stat} adds {rule.damagePerPoint:0.##} damage " +
+            $"(current extra: {stats.GetScalingDamageBonus(stat, rule.damagePerPoint):0.##}).";
     }
 
     void PositionAbilityTooltip(Vector2 pointerPosition)
@@ -1561,6 +1578,9 @@ public class PlayerHUD : MonoBehaviour
             sb.Append(
                 $"<color=#d8d3e3><i>{ab.description.Trim()}</i></color>\n");
         }
+        string scalingDescription = GetAbilityScalingText(ab);
+        if (!string.IsNullOrEmpty(scalingDescription))
+            sb.Append($"<color=#FFD34E>{scalingDescription}</color>\n");
         if (hasVariants)
         {
             AppendVariantStats(sb, ab, _caster);

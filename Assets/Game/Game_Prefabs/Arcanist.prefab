@@ -733,7 +733,6 @@ MonoBehaviour:
     chargeable: 0
     maxChargeTime: 1.5
     damage: 20
-    bonusDamagePerPrimaryStat: 0.25
     damageDelay: 0
     secondaryDamage: 0
     secondaryDamageDelay: 0

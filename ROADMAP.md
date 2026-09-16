@@ -8,26 +8,19 @@ No rewrites of working systems: the Mirror combat core, the Node API, and the ol
 endpoints are working — tasks extend or wire them, never restructure them. If a task
 seems to require touching more than its listed files, stop and re-scope.
 
-> **Combat stat-scaling pilot (2026-09-16):** Corrected Necromancer's class index
-> and primary-stat mapping in CharacterStats. AbilityDef now supports optional
-> per-primary-stat damage; only Arcanist Ice Spikes and Shadowblade Blade Flurry
-> opt in at 0.25 damage per point above the class starting baseline. Existing
-> global damage multipliers, critical hits, gear/API ownership, and all other
-> abilities remain unchanged. Unity compilation and play-mode balance checks
-> are pending. Before wider rollout, record level/gear damage baselines and
-> validate charged hits, variants, and time-to-kill in the editor.
-> Follow-up: the cast path now carries a pilot coefficient from a parent attack
-> into damaging variant payloads, including pulse- or secondary-damage variants.
-> All newly authored AbilityDef damage skills already receive the existing global
-> class-stat multiplier; an ability-specific coefficient remains an explicit
-> balance choice (zero by default). The follow-on owner-scaling pass now snapshots
-> that cast multiplier into spawned turrets, shock mines, nanite chip damage, and
-> null-field curse damage; singularity burst already did so. Ability-authored
-> Cursed effects and the special sweet-spot burn are scaled when applied, never
-> again on each tick. Shieldwall Charge's slam and Counter Blow's delayed
-> release also snapshot the cast multiplier. Enemy attacks and standalone damage
-> sources without an AbilityCaster owner remain unchanged. Unity compilation
-> and play-mode damage checks are still pending before wider coefficient tuning.
+> **Combat stat scaling (2026-09-16):** Necromancer's class index and Intelligence
+> mapping are corrected. All AbilityDef damage skills retain the existing global
+> stat multiplier; deployed attacks, delayed attacks, and Cursed damage now
+> snapshot it at cast time. Two ability-specific pilots (Arcanist Ice Spikes and
+> Shadowblade Blade Flurry, 0.25 damage per stat above baseline) are defined in
+> versioned `Resources/Combat/ability-scaling-v1.json`, with a dedicated-server
+> override available. Variants inherit parent rules. The character sheet shows
+> authenticated base/gear stat breakdowns, while stat and ability/spellbook
+> tooltips explain matching coefficients, guarded by the server balance version.
+> Old gear/API contracts
+> and enemy damage remain unchanged. See `_CONTEXT/COMBAT_BALANCE.md` for tuning
+> and validation. Unity editor compilation and the Combat Balance validator passed;
+> authenticated play-mode, dedicated-server build, and time-to-kill checks remain pending.
 
 > **Illustrated portal map (2026-09-10):** The procedural waypoint presentation now
 > loads the approved illustrated Crossworlds map from Resources. Existing travel remains

@@ -176,9 +176,6 @@ public class AbilityDef
     public float maxChargeTime = 1.5f;
     public float damage = 10f;
     [Min(0f)]
-    [Tooltip("Extra damage per class-primary stat point above its starting value. Zero preserves existing damage; a damaging variant inherits its parent coefficient.")]
-    public float bonusDamagePerPrimaryStat = 0f;
-    [Min(0f)]
     [Tooltip("Seconds to wait after locking in a target before applying this spell's damage.")]
     public float damageDelay = 0f;
     [Min(0f)]
@@ -3848,12 +3845,15 @@ public class AbilityCaster : NetworkBehaviour
                 : passiveAbility.pulseDamage > 0f
                     ? passiveAbility.pulseDamage
                     : passiveAbility.secondaryDamage;
-            float scalingPerPoint = passiveAbility.bonusDamagePerPrimaryStat;
-            if (scalingPerPoint <= 0f && !ReferenceEquals(passiveAbility, ability))
-                scalingPerPoint = ability.bonusDamagePerPrimaryStat;
-            if (passiveAbility.category == AbilityCategory.Damage && scalingBaseDamage > 0f)
+            bool hasRule = CombatBalance.TryGetRule(_characterStats.ProgressionClassIndex,
+                passiveAbility.abilityName, out CombatBalance.AbilityRule scalingRule);
+            if (!hasRule && !ReferenceEquals(passiveAbility, ability))
+                hasRule = CombatBalance.TryGetRule(_characterStats.ProgressionClassIndex,
+                    ability.abilityName, out scalingRule);
+            if (passiveAbility.category == AbilityCategory.Damage && scalingBaseDamage > 0f &&
+                hasRule && CombatBalance.TryGetStat(scalingRule, out CombatScalingStat scalingStat))
                 damageMultiplier *= 1f +
-                    _characterStats.GetPrimaryStatDamageBonus(scalingPerPoint)
+                    _characterStats.GetScalingDamageBonus(scalingStat, scalingRule.damagePerPoint)
                     / scalingBaseDamage;
         }
 

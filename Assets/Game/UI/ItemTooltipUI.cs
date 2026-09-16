@@ -64,6 +64,24 @@ public class ItemTooltipUI : MonoBehaviour
 
     // ── Public API ────────────────────────────────────────────────────────────
 
+    /// <summary>Display non-item details using the existing inventory tooltip styling.</summary>
+    public void ShowDetails(string title, string subtitle, string details, Vector2 screenPos)
+    {
+        if (string.IsNullOrWhiteSpace(title)) { Hide(); return; }
+        _nameTxt.text = title;
+        _nameTxt.color = ColText;
+        _rarityTxt.text = subtitle ?? "";
+        _border.color = ColBorder;
+        _slotTxt.gameObject.SetActive(false);
+        _slotTopDivider.gameObject.SetActive(false);
+        _slotBottomDivider.gameObject.SetActive(false);
+        _detailsTxt.text = details ?? "";
+        _detailsTxt.gameObject.SetActive(!string.IsNullOrWhiteSpace(details));
+        ResizePanel(false);
+        PositionNearCursor(screenPos);
+        _panelRT.gameObject.SetActive(true);
+    }
+
     /// <summary>Show a tooltip for an item ID, near the given screen position.</summary>
     public void Show(string itemId, Vector2 screenPos, string serverRarity = null)
     {

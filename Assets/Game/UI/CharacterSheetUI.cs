@@ -1,6 +1,7 @@
 #if UNITY_EDITOR || !UNITY_SERVER
 using System.Collections;
 using System.Collections.Generic;
+using System.Text;
 using Mirror;
 using TMPro;
 using UnityEngine;
@@ -116,6 +117,10 @@ public sealed class CharacterSheetUI : MonoBehaviour
         _view.Initialize(Hide, OnEquipmentClicked, OnEquipmentEnter,
             () => ItemTooltipUI.Instance?.Hide(), OnEquipmentBeginDrag,
             OnEquipmentDrag, OnEquipmentEndDrag);
+        BindStatTooltip(_view.strValue, CombatScalingStat.Strength);
+        BindStatTooltip(_view.agiValue, CombatScalingStat.Agility);
+        BindStatTooltip(_view.intValue, CombatScalingStat.Intelligence);
+        BindStatTooltip(_view.vitValue, CombatScalingStat.Vitality);
         RectTransform panel = _view.transform.Find("Panel") as RectTransform;
         if (panel != null)
         {
@@ -208,6 +213,64 @@ public sealed class CharacterSheetUI : MonoBehaviour
     {
         if (_view.combatValues != null && index >= 0 && index < _view.combatValues.Length)
             _view.combatValues[index].text = value;
+    }
+
+    void BindStatTooltip(TextMeshProUGUI valueText, CombatScalingStat stat)
+    {
+        if (valueText == null) return;
+        valueText.raycastTarget = true;
+        var trigger = valueText.GetComponent<EventTrigger>() ?? valueText.gameObject.AddComponent<EventTrigger>();
+        var enter = new EventTrigger.Entry { eventID = EventTriggerType.PointerEnter };
+        enter.callback.AddListener(data => ShowStatTooltip(stat, (PointerEventData)data));
+        var exit = new EventTrigger.Entry { eventID = EventTriggerType.PointerExit };
+        exit.callback.AddListener(_ => ItemTooltipUI.Instance?.Hide());
+        trigger.triggers.Add(enter);
+        trigger.triggers.Add(exit);
+    }
+
+    void ShowStatTooltip(CombatScalingStat stat, PointerEventData pointer)
+    {
+        if (!_open || NetworkClient.localPlayer == null) return;
+        CharacterStats stats = NetworkClient.localPlayer.GetComponent<CharacterStats>();
+        if (stats == null) return;
+
+        int characterValue = stat switch
+        {
+            CombatScalingStat.Strength => stats.ProgressionStrength,
+            CombatScalingStat.Agility => stats.ProgressionAgility,
+            CombatScalingStat.Intelligence => stats.ProgressionIntelligence,
+            _ => stats.ProgressionVitality
+        };
+        int gearValue = stat switch
+        {
+            CombatScalingStat.Strength => stats.EquipmentStrength,
+            CombatScalingStat.Agility => stats.EquipmentAgility,
+            CombatScalingStat.Intelligence => stats.EquipmentIntelligence,
+            _ => stats.EquipmentVitality
+        };
+
+        var details = new StringBuilder();
+        details.AppendLine($"Character: {characterValue}");
+        details.AppendLine($"Equipped gear: +{gearValue}");
+        details.AppendLine($"Effective total: {stats.GetScalingStatValue(stat)}");
+        Health health = stats.GetComponent<Health>();
+        if (health != null) details.AppendLine($"Current max health: {health.maxHealth:0}");
+        details.AppendLine($"Outgoing damage: {stats.DamageMultiplier * 100f:0.#}% of base");
+
+        if (stats.CombatBalanceVersion == CombatBalance.Version && CombatBalance.Version > 0)
+        {
+            foreach (CombatBalance.AbilityRule rule in CombatBalance.GetRulesForClass(stats.ProgressionClassIndex))
+            {
+                if (!CombatBalance.TryGetStat(rule, out CombatScalingStat ruleStat) || ruleStat != stat) continue;
+                details.AppendLine();
+                details.AppendLine($"{rule.abilityName}: +{rule.damagePerPoint:0.##} damage per {stat} point above {CharacterStats.GetScalingBaseline(stat)}.");
+            }
+        }
+        else
+            details.AppendLine("Ability values unavailable until client and server balance versions match.");
+
+        ItemTooltipUI.Instance?.ShowDetails(stat.ToString(),
+            $"Combat balance v{stats.CombatBalanceVersion}", details.ToString().TrimEnd(), pointer.position);
     }
 
     void RefreshEquipment()
