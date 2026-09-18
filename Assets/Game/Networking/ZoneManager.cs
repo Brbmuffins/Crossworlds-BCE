@@ -529,6 +529,7 @@ public class ZoneManager : MonoBehaviour
         if (controller != null) controller.enabled = true;
 
         Physics.SyncTransforms();
+        player.GetComponent<PlayerFallDamage>()?.ResetTracking();
 
         // Without ServerTeleport the NetworkTransform treats a cross-zone jump as
         // ordinary movement and interpolates the player across the whole map —

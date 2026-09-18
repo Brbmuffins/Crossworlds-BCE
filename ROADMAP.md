@@ -22,6 +22,11 @@ seems to require touching more than its listed files, stop and re-scope.
 > and validation. Unity editor compilation and the Combat Balance validator passed;
 > authenticated play-mode, dedicated-server build, and time-to-kill checks remain pending.
 
+> **Fall damage (2026-09-18):** Server-side player landing damage uses observed
+> height and zone-local ground checks, with teleport/water/GM-flight safeguards.
+> Code is complete but Unity compilation and host/dedicated play tests are pending.
+> See `_CONTEXT/FALL_DAMAGE.md` for tuning and acceptance checks.
+
 > **Illustrated portal map (2026-09-10):** The procedural waypoint presentation now
 > loads the approved illustrated Crossworlds map from Resources. Existing travel remains
 > server-authoritative; transparent circular hotspots align to the painted portal markers,

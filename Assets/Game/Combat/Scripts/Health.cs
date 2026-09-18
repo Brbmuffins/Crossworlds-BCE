@@ -183,6 +183,8 @@ public class Health : NetworkBehaviour
     public override void OnStartServer()
     {
         base.OnStartServer();
+        if (isPlayer && GetComponent<PlayerFallDamage>() == null)
+            gameObject.AddComponent<PlayerFallDamage>();
         _serverSpawnPosition = transform.position;
         _serverSpawnRotation = transform.rotation;
         _hasServerSpawnPoint = true;
@@ -819,6 +821,7 @@ public class Health : NetworkBehaviour
 
         transform.SetPositionAndRotation(position, rotation);
         Physics.SyncTransforms();
+        if (NetworkServer.active) GetComponent<PlayerFallDamage>()?.ResetTracking();
     }
 
     void StartRespawnInvulnerability()
