@@ -10,6 +10,10 @@ The packaged Unity player lives under `Game/` and is launched with
 directly and launch it with `--distribution=steam`; Steam then owns all file
 installation and patching, and Velopack is not included in that depot.
 
+The direct launcher's executable, installer, and desktop shortcut use the
+approved portal-crest icon from `Crossworlds.Launcher/Assets`. The PNG is the
+source artwork; the multi-size `.ico` is the Windows build input.
+
 ## Build a direct release
 
 1. Build the Windows Unity client to `build/WindowsClient`.

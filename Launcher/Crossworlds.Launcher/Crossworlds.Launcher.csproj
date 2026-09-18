@@ -8,6 +8,7 @@
     <AssemblyName>CrossworldsLauncher</AssemblyName>
     <RootNamespace>Crossworlds.Launcher</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\CrossworldsDesktop-PortalCrest.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Velopack" Version="1.2.0" />

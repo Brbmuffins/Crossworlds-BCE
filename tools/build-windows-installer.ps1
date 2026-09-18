@@ -9,6 +9,7 @@ $repo = Split-Path -Parent $PSScriptRoot
 $dotnet = Join-Path $repo '.tools\dotnet\dotnet.exe'
 $launcherRoot = Join-Path $repo 'Launcher'
 $project = Join-Path $launcherRoot 'Crossworlds.Launcher\Crossworlds.Launcher.csproj'
+$installerIcon = Join-Path $launcherRoot 'Crossworlds.Launcher\Assets\CrossworldsDesktop-PortalCrest.ico'
 $gameBuild = Join-Path $repo 'build\WindowsClient'
 $releaseRoot = Join-Path $repo 'build\DirectRelease'
 $launcherPublish = Join-Path $releaseRoot 'launcher'
@@ -20,6 +21,9 @@ if (-not (Test-Path $dotnet)) {
 }
 if (-not (Test-Path (Join-Path $gameBuild 'Crossworlds.exe'))) {
   throw 'Windows client missing. Build it with BCE/Build/Windows Client first.'
+}
+if (-not (Test-Path $installerIcon)) {
+  throw "Installer icon missing: $installerIcon"
 }
 
 New-Item -ItemType Directory -Force $releaseRoot, $releases | Out-Null
@@ -44,6 +48,7 @@ try {
     --packVersion $Version `
     --packDir $staging `
     --mainExe CrossworldsLauncher.exe `
+    --icon $installerIcon `
     --packTitle 'Crossworlds - Beyond the Celestial Edge' `
     --outputDir $releases
   if ($LASTEXITCODE -ne 0) { throw 'Velopack packaging failed.' }
